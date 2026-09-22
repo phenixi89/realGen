@@ -33,9 +33,12 @@ def main():
     parser.add_argument("--saas-url", type=str, required=True, help="URL de demo de ton SaaS")
     parser.add_argument("--voice", type=str, default="Kore")
     parser.add_argument("--whisper-model", type=str, default="small")
-    parser.add_argument("--capture-mode", type=str, default="video", choices=["video", "screenshots"],
+    parser.add_argument("--capture-mode", type=str, default="video",
+                         choices=["video", "screenshots", "video_desktop"],
                          help="video = enregistrement mobile continu ; "
-                              "screenshots = captures desktop animees en zoom in/out au montage")
+                              "screenshots = captures desktop animees en zoom in/out au montage ; "
+                              "video_desktop = enregistrement desktop continu, recadre ensuite sur "
+                              "chaque fonctionnalite montree (mouvement reel, pas un zoom artificiel)")
     parser.add_argument("--force", action="store_true",
                          help="Ignore les sorties existantes et regenere tout depuis zero (equivalent a --from-step script)")
     parser.add_argument("--from-step", type=str, choices=STEPS, default=None,
@@ -66,10 +69,10 @@ def main():
             print(f"[{i}] audio manquant, on saute ce reel")
             continue
 
-        # 3. Demo screen-record. En mode screenshots, "features" (ecrit par
-        #    1_generate_script.py dans scripts.json, cf. features.py) fixe
-        #    quelles fonctionnalites capturer pour CE reel -- garde le texte
-        #    et les captures synchronises sur les memes fonctionnalites.
+        # 3. Demo screen-record. En mode screenshots/video_desktop, "features"
+        #    (ecrit par 1_generate_script.py dans scripts.json, cf. features.py)
+        #    fixe quelles fonctionnalites capturer pour CE reel -- garde le
+        #    texte et les captures synchronises sur les memes fonctionnalites.
         video_dir = out / "video" / f"reel_{i:02d}"
         feature_ids = scripts[i - 1].get("features") or []
         features_args = ["--features", ",".join(feature_ids)] if feature_ids else []
@@ -87,6 +90,16 @@ def main():
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3b_build_video_from_screenshots.py"),
                  "--screens", str(video_dir), "--out", str(video_path), *force_flag_for("video")])
+        elif args.capture_mode == "video_desktop":
+            if not (video_dir / "segments.json").exists():
+                print(f"[{i}] pas d'enregistrement desktop genere, on saute")
+                continue
+            # 3c. Recadre l'enregistrement continu sur chaque fonctionnalite
+            #     montree (cf. 3_record_demo.py:capture_pc_video) plutot que
+            #     de garder le viewport desktop entier.
+            video_path = video_dir / "zoom.mp4"
+            run([sys.executable, str(ROOT / "3c_build_video_from_recording.py"),
+                 "--dir", str(video_dir), "--out", str(video_path), *force_flag_for("video")])
         else:
             videos = list(video_dir.glob("*.webm"))
             if not videos:

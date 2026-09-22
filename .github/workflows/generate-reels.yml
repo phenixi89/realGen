@@ -19,11 +19,12 @@ on:
         required: false
         default: false
       capture_mode:
-        description: "video (mobile, enregistrement continu) ou screenshots (desktop, zoom in/out au montage)"
+        description: "video (mobile) / screenshots (desktop, zoom in/out) / video_desktop (desktop, recadre sur chaque fonctionnalite)"
         type: choice
         options:
           - video
           - screenshots
+          - video_desktop
         required: false
         default: video
       from_step:

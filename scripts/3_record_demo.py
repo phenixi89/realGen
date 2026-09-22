@@ -8,9 +8,11 @@ Usage:
 """
 import argparse
 import asyncio
+import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 from playwright.async_api import async_playwright
@@ -27,11 +29,12 @@ VIEWPORT = {"width": 405, "height": 720}
 # la taille du viewport (405x720) produisait une image ~2.7x trop petite.
 RECORD_SIZE = {"width": 1080, "height": 1920}
 
-# Viewport large ecran pour le mode "screenshots" (--mode screenshots) : au-dela
-# du seuil `md`/`xl` Tailwind de l'app, ca fait apparaitre la barre d'outils
-# desktop (EditorDock, AccountMenu) qui n'existe pas sur le viewport mobile
-# ci-dessus.
+# Viewport large ecran pour les modes "screenshots" et "video_desktop" :
+# au-dela du seuil `md`/`xl` Tailwind de l'app, ca fait apparaitre la barre
+# d'outils desktop (EditorDock, AccountMenu) qui n'existe pas sur le viewport
+# mobile ci-dessus.
 DESKTOP_VIEWPORT = {"width": 1440, "height": 900}
+DESKTOP_SCALE_FACTOR = 2  # equivalent Retina, sans quoi le texte capture reste flou une fois agrandi
 
 
 async def dismiss_cookie_banner(page):
@@ -167,6 +170,52 @@ async def capture_pc_screenshots(page, out_dir: Path, feature_ids: list[str] | N
     return shots
 
 
+async def capture_pc_video(page, out_dir: Path, feature_ids: list[str] | None = None) -> list[dict]:
+    """
+    Mode "video desktop" (--mode video_desktop) : le meme parcours que
+    capture_pc_screenshots(), mais sur l'enregistrement video continu deja
+    actif sur le context (cf. record()) plutot que des captures figees.
+    Chaque appel a shoot() ne prend pas de photo : il marque la frontiere
+    d'un segment (nom + position de l'element vise a cet instant), pour un
+    recadrage ulterieur par 3c_build_video_from_recording.py sur cette seule
+    zone -- pas le viewport desktop entier.
+
+    N'est jamais un point de non-retour : si ce mode echoue ou rend mal,
+    --mode screenshots reste un chemin totalement independant et inchange.
+    """
+    segments: list[dict] = []
+    t0 = time.monotonic()
+
+    async def shoot(name: str, element):
+        try:
+            bbox = await element.bounding_box()
+        except Exception:
+            bbox = None
+        segments.append({"name": name, "end": time.monotonic() - t0, "bbox": bbox})
+
+    first_row = page.locator("li:visible", has=page.locator("button[title]")).first
+    await first_row.wait_for(state="visible", timeout=30000)
+    await page.wait_for_timeout(800)
+    await shoot("mes_cvs", first_row)
+
+    await first_row.hover()
+    await page.wait_for_timeout(400)
+    await shoot("mes_cvs_actions", first_row)
+
+    await first_row.click()
+    form_panel = page.locator("#editor-form-panel")
+    await form_panel.wait_for(state="visible", timeout=30000)
+    await page.wait_for_timeout(1000)
+    await features_module.dismiss_onboarding_tooltip(page)
+
+    await features_module.run_features(page, out_dir, shoot, form_panel, feature_ids)
+
+    starts = [0.0] + [s["end"] for s in segments[:-1]]
+    for seg, start in zip(segments, starts):
+        seg["start"] = start
+    return segments
+
+
 async def record(url: str, out_dir: Path, email: str | None, password: str | None, mode: str = "video",
                   feature_ids: list[str] | None = None):
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -176,10 +225,25 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
         context_kwargs = dict(
             # Rendu a densite de pixels plus elevee (equivalent "Retina") --
             # sans ca, le texte/l'UI captures restent flous une fois agrandis.
-            device_scale_factor=2 if mode == "screenshots" else 3,
+            device_scale_factor=DESKTOP_SCALE_FACTOR if mode in ("screenshots", "video_desktop") else 3,
         )
         if mode == "screenshots":
             context_kwargs["viewport"] = DESKTOP_VIEWPORT
+        elif mode == "video_desktop":
+            context_kwargs.update(
+                viewport=DESKTOP_VIEWPORT,
+                record_video_dir=str(out_dir),
+                # Explicitement egal a viewport*scale : sans ca, Playwright
+                # etirerait l'enregistrement vers une autre resolution, et
+                # les bbox (en pixels CSS) captures par capture_pc_video()
+                # ne correspondraient plus aux pixels reels de la video --
+                # le recadrage de 3c_build_video_from_recording.py viserait
+                # a cote de l'element.
+                record_video_size={
+                    "width": DESKTOP_VIEWPORT["width"] * DESKTOP_SCALE_FACTOR,
+                    "height": DESKTOP_VIEWPORT["height"] * DESKTOP_SCALE_FACTOR,
+                },
+            )
         else:
             context_kwargs.update(
                 viewport=VIEWPORT,
@@ -198,6 +262,7 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
         await page.goto(url, wait_until="networkidle", timeout=60000)
         await dismiss_cookie_banner(page)
 
+        segments = None
         try:
             if email and password:
                 await login(page, email, password)
@@ -210,6 +275,8 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
                 # local a la volee) -- la liste "Mes CVs" a capturer suppose
                 # qu'il y en a au moins un.
                 await capture_pc_screenshots(page, out_dir, feature_ids)
+            elif mode == "video_desktop":
+                segments = await capture_pc_video(page, out_dir, feature_ids)
             else:
                 await play_demo_steps(page)
         except Exception:
@@ -223,26 +290,49 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
             raise
         finally:
             await context.close()  # necessaire pour flush la video sur disque
-            await browser.close()
+
+        if mode == "video_desktop" and segments:
+            # page.video n'est resolu qu'une fois le context ferme (video
+            # flushee sur disque, cf. ci-dessus) -- doit rester avant
+            # browser.close(), qui invaliderait la reference.
+            raw_path = Path(await page.video.path())
+            final_raw_path = out_dir / "raw.webm"
+            raw_path.replace(final_raw_path)
+            manifest = {
+                "device_scale_factor": context_kwargs["device_scale_factor"],
+                "video_size": context_kwargs["record_video_size"],
+                "segments": segments,
+            }
+            (out_dir / "segments.json").write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        await browser.close()
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", type=str, required=True, help="URL de ton SaaS (page de demo/app)")
     parser.add_argument("--out", type=str, default="output/video")
-    parser.add_argument("--mode", type=str, default="video", choices=["video", "screenshots"],
-                         help="video = enregistrement continu (mobile) ; "
-                              "screenshots = captures fixes desktop, animees ensuite au montage (zoom in/out)")
+    parser.add_argument("--mode", type=str, default="video", choices=["video", "screenshots", "video_desktop"],
+                         help="video = enregistrement continu mobile ; "
+                              "screenshots = captures fixes desktop, animees ensuite au montage (zoom in/out) ; "
+                              "video_desktop = enregistrement continu desktop, recadre ensuite (3c) sur "
+                              "chaque fonctionnalite montree plutot que le viewport entier")
     parser.add_argument("--force", action="store_true",
                          help="Re-enregistre meme si une sortie existe deja dans --out")
     parser.add_argument("--features", type=str, default=None,
-                         help="Ids de features.FEATURES separes par des virgules (mode screenshots "
-                              "uniquement) ; omis = tout le catalogue dans l'ordre par defaut")
+                         help="Ids de features.FEATURES separes par des virgules (modes screenshots/"
+                              "video_desktop uniquement) ; omis = tout le catalogue dans l'ordre par defaut")
     args = parser.parse_args()
     feature_ids = [f.strip() for f in args.features.split(",") if f.strip()] if args.features else None
 
     out_dir = Path(args.out)
-    pattern = "*.png" if args.mode == "screenshots" else "*.webm"
+    if args.mode == "screenshots":
+        pattern = "*.png"
+    elif args.mode == "video_desktop":
+        pattern = "segments.json"
+    else:
+        pattern = "*.webm"
 
     if out_dir.exists():
         existing = sorted(out_dir.glob(pattern))
@@ -254,7 +344,8 @@ def main():
             # sinon un vieux .webm (nomme par un hash Playwright, pas
             # deterministe) traine a cote du nouveau et un glob() ulterieur
             # peut en reprendre un au hasard.
-            for f in existing:
+            stray = list(out_dir.glob("*.webm")) if args.mode == "video_desktop" else []
+            for f in {*existing, *stray}:
                 f.unlink()
 
     email = os.environ.get("DEMO_EMAIL")
