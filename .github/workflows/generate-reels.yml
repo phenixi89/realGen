@@ -42,25 +42,27 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    # Image pre-construite (voir build-image.yml / Dockerfile) : python,
+    # deps pip (dont torch/whisper), navigateur Playwright et modele
+    # Whisper "small" y sont deja installes -- plus rien a (re)installer a
+    # chaque run, seul git checkout le code de scripts/.
+    container:
+      image: ghcr.io/phenixi89/realgen-pipeline:latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Install Playwright browsers
-        run: playwright install --with-deps chromium
-
-      # fonts-dejavu-core : la police des sous-titres brules (5_assemble.py).
-      # Sans elle, fontconfig substitue silencieusement une police par
-      # defaut differente de celle configuree, rendu moins net/coherent.
-      - name: Install ffmpeg + fonts
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      # Reveille le service de demo (Render free tier se met en veille apres
+      # inactivite, ~30-60s de cold start) en tache de fond, sans bloquer :
+      # les etapes 1-2 (Gemini script/voix) tournent en parallele pendant
+      # qu'il se reveille, au lieu d'attendre le cold-start plus tard,
+      # bloquant en plein milieu du run, a l'etape 3 (Playwright).
+      - name: Warm-up du service de demo (arriere-plan)
+        run: |
+          ( curl -sS --max-time 90 -o /dev/null "${{ vars.SAAS_URL }}" || true ) &
+          disown
 
       # Persiste output/ entre les runs : si le pipeline echoue en cours de
       # route (ex: etape 3), le prochain run reprend la ou il s'est arrete

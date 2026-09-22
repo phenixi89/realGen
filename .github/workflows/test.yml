@@ -8,16 +8,16 @@ on:
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
+    # Meme image que generate-reels.yml (voir build-image.yml / Dockerfile) :
+    # deps deja installees, plus besoin de pip install (dont torch/whisper,
+    # le plus long) a chaque push.
+    container:
+      image: ghcr.io/phenixi89/realgen-pipeline:latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
 
       - name: Compile check (syntax)
         run: python -m py_compile scripts/*.py
