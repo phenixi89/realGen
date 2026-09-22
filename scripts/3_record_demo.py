@@ -25,6 +25,12 @@ VIEWPORT = {"width": 405, "height": 720}
 # la taille du viewport (405x720) produisait une image ~2.7x trop petite.
 RECORD_SIZE = {"width": 1080, "height": 1920}
 
+# Viewport large ecran pour le mode "screenshots" (--mode screenshots) : au-dela
+# du seuil `md`/`xl` Tailwind de l'app, ca fait apparaitre la barre d'outils
+# desktop (EditorDock, AccountMenu) qui n'existe pas sur le viewport mobile
+# ci-dessus.
+DESKTOP_VIEWPORT = {"width": 1440, "height": 900}
+
 
 async def login(page, email: str, password: str):
     """
@@ -94,20 +100,88 @@ async def play_demo_steps(page):
     await page.wait_for_timeout(1500)
 
 
-async def record(url: str, out_dir: Path, email: str | None, password: str | None):
+async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
+    """
+    Mode "PC" : au lieu d'enregistrer une video continue (fragile -- doit
+    rester stable pendant toute l'interaction), on prend des captures d'ecran
+    nettes a des etapes cles. 5_assemble.py (via build_video_from_screenshots)
+    anime chacune avec un zoom in/out (ffmpeg zoompan) pour donner du mouvement
+    a l'assemblage final, sans dependre du timing d'un enregistrement live.
+    """
+    shots: list[Path] = []
+
+    async def shoot(name: str):
+        path = out_dir / f"{len(shots) + 1:02d}_{name}.png"
+        await page.screenshot(path=str(path))
+        shots.append(path)
+
+    # Le compte est deja connecte : ouvre le menu (icone User, coin haut
+    # droit de la barre desktop) puis "Mes CVs" (FolderOpen), qui liste les
+    # CVs sauvegardes du compte demo -- exactement l'ecran "Mes CVs
+    # sauvegardés" vise pour la premiere capture.
+    account_button = page.locator("button:visible").filter(has=page.locator("svg.lucide-user")).first
+    await account_button.wait_for(state="visible", timeout=30000)
+    await account_button.click()
+    await page.wait_for_timeout(400)
+
+    my_cvs_item = page.locator("button:visible").filter(has_text=re.compile("mes cv", re.I)).first
+    await my_cvs_item.click()
+    await page.wait_for_selector("div[role='dialog']", timeout=10000)
+    await page.wait_for_timeout(800)
+    await shoot("mes_cvs")
+
+    # Survole la premiere ligne pour reveler ses icones d'action (Renommer,
+    # Dupliquer, Supprimer -- masquees hors survol) avant de capturer, puis
+    # ouvre ce CV dans l'editeur.
+    first_row = page.locator("li:visible", has=page.locator("button[title]")).first
+    await first_row.hover()
+    await page.wait_for_timeout(400)
+    await shoot("mes_cvs_actions")
+
+    await first_row.click()
+    await page.wait_for_selector("div[role='dialog']", state="detached", timeout=15000)
+    await page.wait_for_timeout(1500)
+    await shoot("editeur")
+
+    # Bascule sur quelques onglets du dock lateral (EditorDock, colonne
+    # d'icones a gauche) pour montrer differentes sections en cours d'edition.
+    dock_tabs = page.locator("aside nav button:visible")
+    tab_count = await dock_tabs.count()
+    for i in range(min(tab_count, 2)):
+        await dock_tabs.nth(i).click()
+        await page.wait_for_timeout(900)
+        await shoot(f"section_{i + 1}")
+
+    # Mode focus (icone agrandir de la barre superieure) : affiche l'apercu
+    # stylise en plein ecran, le plan le plus "vendeur" du produit.
+    focus_button = page.locator("button[title]:visible").filter(has=page.locator("svg.lucide-maximize-2")).first
+    if await focus_button.count():
+        await focus_button.click()
+        await page.wait_for_timeout(1200)
+        await shoot("apercu_focus")
+
+    return shots
+
+
+async def record(url: str, out_dir: Path, email: str | None, password: str | None, mode: str = "video"):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        context = await browser.new_context(
-            viewport=VIEWPORT,
-            # Rendu a densite de pixels plus elevee (equivalent "Retina") avant
-            # que Playwright ne redimensionne vers RECORD_SIZE : sans ca, le
-            # texte/l'UI captures restent flous meme une fois la video agrandie.
-            device_scale_factor=3,
-            record_video_dir=str(out_dir),
-            record_video_size=RECORD_SIZE,
+        context_kwargs = dict(
+            # Rendu a densite de pixels plus elevee (equivalent "Retina") --
+            # sans ca, le texte/l'UI captures restent flous une fois agrandis.
+            device_scale_factor=2 if mode == "screenshots" else 3,
         )
+        if mode == "screenshots":
+            context_kwargs["viewport"] = DESKTOP_VIEWPORT
+        else:
+            context_kwargs.update(
+                viewport=VIEWPORT,
+                record_video_dir=str(out_dir),
+                record_video_size=RECORD_SIZE,
+            )
+        context = await browser.new_context(**context_kwargs)
         page = await context.new_page()
         # Capture la console/les erreurs JS de la page : en cas d'echec, ca
         # dit si l'app a plante cote client au lieu de deviner a l'aveugle.
@@ -124,7 +198,14 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
             else:
                 print("ATTENTION: pas de credentials fournis, demo enregistree sans connexion", file=sys.stderr)
 
-            await play_demo_steps(page)
+            if mode == "screenshots":
+                # S'appuie sur un CV deja sauvegarde dans le compte demo
+                # (contrairement au mode video, qui genere un profil fictif
+                # local a la volee) -- la liste "Mes CVs" a capturer suppose
+                # qu'il y en a au moins un.
+                await capture_pc_screenshots(page, out_dir)
+            else:
+                await play_demo_steps(page)
         except Exception:
             # Screenshot + HTML dans out_dir pour diagnostiquer sans deviner :
             # ils sont remontes comme artifact GitHub Actions meme en echec.
@@ -143,28 +224,31 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", type=str, required=True, help="URL de ton SaaS (page de demo/app)")
     parser.add_argument("--out", type=str, default="output/video")
+    parser.add_argument("--mode", type=str, default="video", choices=["video", "screenshots"],
+                         help="video = enregistrement continu (mobile) ; "
+                              "screenshots = captures fixes desktop, animees ensuite au montage (zoom in/out)")
     parser.add_argument("--force", action="store_true",
-                         help="Re-enregistre meme si une video existe deja dans --out")
+                         help="Re-enregistre meme si une sortie existe deja dans --out")
     args = parser.parse_args()
 
     out_dir = Path(args.out)
+    pattern = "*.png" if args.mode == "screenshots" else "*.webm"
 
     if not args.force and out_dir.exists():
-        existing = list(out_dir.glob("*.webm"))
+        existing = sorted(out_dir.glob(pattern))
         if existing:
-            print(f"REPRISE: {existing[0]} existe deja, on saute (--force pour re-enregistrer)")
+            print(f"REPRISE: {len(existing)} fichier(s) existent deja dans {out_dir}, on saute (--force pour re-enregistrer)")
             return
 
     email = os.environ.get("DEMO_EMAIL")
     password = os.environ.get("DEMO_PASSWORD")
-    asyncio.run(record(args.url, out_dir, email, password))
+    asyncio.run(record(args.url, out_dir, email, password, mode=args.mode))
 
-    # Playwright nomme le fichier automatiquement (hash) dans out_dir
-    videos = list(out_dir.glob("*.webm"))
-    if videos:
-        print(f"OK -> {videos[0]}")
+    outputs = sorted(out_dir.glob(pattern))
+    if outputs:
+        print(f"OK -> {len(outputs)} fichier(s) dans {out_dir}")
     else:
-        print("ATTENTION: aucune video generee, verifie l'URL et les selecteurs")
+        print("ATTENTION: aucune sortie generee, verifie l'URL et les selecteurs")
 
 
 if __name__ == "__main__":

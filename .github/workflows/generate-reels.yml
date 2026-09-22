@@ -18,6 +18,14 @@ on:
         type: boolean
         required: false
         default: false
+      capture_mode:
+        description: "video (mobile, enregistrement continu) ou screenshots (desktop, zoom in/out au montage)"
+        type: choice
+        options:
+          - video
+          - screenshots
+        required: false
+        default: video
 
 jobs:
   generate:
@@ -66,6 +74,7 @@ jobs:
             --n "${{ github.event.inputs.n || '3' }}" \
             --saas-url "${{ vars.SAAS_URL }}" \
             --voice "${{ github.event.inputs.voice || 'Kore' }}" \
+            --capture-mode "${{ github.event.inputs.capture_mode || 'video' }}" \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }}
 
       # if: always() -- meme si le pipeline echoue en route (ex: etape 3),

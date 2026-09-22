@@ -28,6 +28,9 @@ def main():
     parser.add_argument("--saas-url", type=str, required=True, help="URL de demo de ton SaaS")
     parser.add_argument("--voice", type=str, default="Kore")
     parser.add_argument("--whisper-model", type=str, default="small")
+    parser.add_argument("--capture-mode", type=str, default="video", choices=["video", "screenshots"],
+                         help="video = enregistrement mobile continu ; "
+                              "screenshots = captures desktop animees en zoom in/out au montage")
     parser.add_argument("--force", action="store_true",
                          help="Ignore les sorties existantes et regenere tout depuis zero")
     args = parser.parse_args()
@@ -53,15 +56,29 @@ def main():
             continue
 
         # 3. Demo screen-record (meme demo reutilisee pour chaque reel ici ;
-        #    adapte play_demo_steps() dans 3_record_demo.py pour varier les parcours)
+        #    adapte play_demo_steps() / capture_pc_screenshots() dans
+        #    3_record_demo.py pour varier les parcours)
         video_dir = out / "video" / f"reel_{i:02d}"
         run([sys.executable, str(ROOT / "3_record_demo.py"),
-             "--url", args.saas_url, "--out", str(video_dir), *force_flag])
-        videos = list(video_dir.glob("*.webm"))
-        if not videos:
-            print(f"[{i}] pas de video generee, on saute")
-            continue
-        video_path = videos[0]
+             "--url", args.saas_url, "--out", str(video_dir),
+             "--mode", args.capture_mode, *force_flag])
+
+        if args.capture_mode == "screenshots":
+            if not list(video_dir.glob("*.png")):
+                print(f"[{i}] pas de captures generees, on saute")
+                continue
+            # 3b. Anime les captures fixes (zoom in/out) en une video muette,
+            #     consommee ensuite par 5_assemble.py comme n'importe quelle
+            #     autre video source.
+            video_path = video_dir / "zoom.mp4"
+            run([sys.executable, str(ROOT / "3b_build_video_from_screenshots.py"),
+                 "--screens", str(video_dir), "--out", str(video_path), *force_flag])
+        else:
+            videos = list(video_dir.glob("*.webm"))
+            if not videos:
+                print(f"[{i}] pas de video generee, on saute")
+                continue
+            video_path = videos[0]
 
         # 4. Sous-titres
         subs_path = out / "subs" / f"reel_{i:02d}.srt"
