@@ -94,20 +94,34 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
             record_video_size=VIEWPORT,
         )
         page = await context.new_page()
+        # Capture la console/les erreurs JS de la page : en cas d'echec, ca
+        # dit si l'app a plante cote client au lieu de deviner a l'aveugle.
+        page.on("console", lambda msg: print(f"[console:{msg.type}] {msg.text}", file=sys.stderr))
+        page.on("pageerror", lambda exc: print(f"[pageerror] {exc}", file=sys.stderr))
         # Render free tier met le service en veille apres inactivite : le
         # premier chargement peut prendre 30-60s (cold start).
         page.set_default_timeout(60000)
         await page.goto(url, wait_until="networkidle", timeout=60000)
 
-        if email and password:
-            await login(page, email, password)
-        else:
-            print("ATTENTION: pas de credentials fournis, demo enregistree sans connexion", file=sys.stderr)
+        try:
+            if email and password:
+                await login(page, email, password)
+            else:
+                print("ATTENTION: pas de credentials fournis, demo enregistree sans connexion", file=sys.stderr)
 
-        await play_demo_steps(page)
-
-        await context.close()  # necessaire pour flush la video sur disque
-        await browser.close()
+            await play_demo_steps(page)
+        except Exception:
+            # Screenshot + HTML dans out_dir pour diagnostiquer sans deviner :
+            # ils sont remontes comme artifact GitHub Actions meme en echec.
+            debug_dir = out_dir.parent.parent / "debug"
+            debug_dir.mkdir(parents=True, exist_ok=True)
+            await page.screenshot(path=str(debug_dir / f"{out_dir.name}.png"), full_page=True)
+            (debug_dir / f"{out_dir.name}.html").write_text(await page.content(), encoding="utf-8")
+            print(f"DEBUG: capture -> {debug_dir}", file=sys.stderr)
+            raise
+        finally:
+            await context.close()  # necessaire pour flush la video sur disque
+            await browser.close()
 
 
 def main():

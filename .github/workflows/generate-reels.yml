@@ -65,8 +65,18 @@ jobs:
             --voice "${{ github.event.inputs.voice || 'Kore' }}" \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }}
 
-      - name: Upload reels
+      # if: always() -- meme si le pipeline echoue en route (ex: etape 3),
+      # on veut recuperer ce qui a deja ete genere (scripts, audio, video,
+      # screenshot de debug) plutot que rien du tout.
+      - name: Upload output (reels + debug)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: reels
-          path: output/final/
+          name: output
+          path: |
+            output/final/
+            output/audio/
+            output/scripts.json
+            output/video/
+            output/debug/
+          if-no-files-found: ignore
