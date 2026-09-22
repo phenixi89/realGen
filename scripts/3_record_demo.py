@@ -32,6 +32,20 @@ RECORD_SIZE = {"width": 1080, "height": 1920}
 DESKTOP_VIEWPORT = {"width": 1440, "height": 900}
 
 
+async def dismiss_cookie_banner(page):
+    """
+    Bandeau RGPD (App.jsx) : fixe en bas d'ecran tant qu'aucun consentement
+    n'est enregistre. Sans ca, il reste visible sur toutes les captures/
+    l'enregistrement -- gênant surtout en mode screenshots, ou il finit dans
+    le cadrage final.
+    """
+    accept = page.locator("button:visible").filter(has_text=re.compile("j'ai compris|compris", re.I)).first
+    try:
+        await accept.click(timeout=3000)
+    except Exception:
+        pass  # deja accepte (execution precedente / --force) ou bandeau absent
+
+
 async def login(page, email: str, password: str):
     """
     Connexion via le formulaire email/mot de passe (modale AuthModal d'OpusCV).
@@ -187,6 +201,7 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
         # premier chargement peut prendre 30-60s (cold start).
         page.set_default_timeout(60000)
         await page.goto(url, wait_until="networkidle", timeout=60000)
+        await dismiss_cookie_banner(page)
 
         try:
             if email and password:

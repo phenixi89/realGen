@@ -29,11 +29,19 @@ def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool
         z_expr = f"min(zoom+0.0015,1.18)"
 
     vf = (
-        # Sur-echantillonne largement avant le zoom : zoompan degrade vite
-        # une image trop proche de sa taille de sortie.
-        f"scale=3240:-2,"
+        # Les captures desktop (mode screenshots) sont en paysage (1440x900) ;
+        # le format de sortie est vertical (9:16). scale+crop "cover" d'abord
+        # pour remplir tout le cadre 1080x1920 sans bande blanche (recadre
+        # le paysage sur sa partie centrale) -- sans cette etape, zoompan
+        # partait d'une image bien plus large que haute et laissait la moitie
+        # basse du cadre vide.
+        f"scale=-2:{OUT_SIZE[1] * 3}:force_original_aspect_ratio=increase,"
+        f"crop={OUT_SIZE[0] * 3}:{OUT_SIZE[1] * 3},"
+        # x/y : formule centree standard de zoompan -- utilise ow/oh (taille
+        # de sortie), pas iw/ih (taille source), sinon le cadrage part du
+        # coin haut-gauche au lieu du centre a zoom=1.
         f"zoompan=z='{z_expr}':d={frames}:s={OUT_SIZE[0]}x{OUT_SIZE[1]}:"
-        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':fps={FPS},"
+        f"x='iw/2-(ow/zoom/2)':y='ih/2-(oh/zoom/2)':fps={FPS},"
         f"format=yuv420p"
     )
     cmd = [
