@@ -11,13 +11,11 @@ import asyncio
 import os
 import re
 import sys
-from io import BytesIO
 from pathlib import Path
 
-from PIL import Image
 from playwright.async_api import async_playwright
 
-from scene_compose import compose_scene
+import features as features_module
 
 # Taille CSS de la page (garde le point de rupture mobile de l'app -- c'est
 # ce qui determine quelle version de l'UI (responsive) s'affiche).
@@ -34,19 +32,6 @@ RECORD_SIZE = {"width": 1080, "height": 1920}
 # desktop (EditorDock, AccountMenu) qui n'existe pas sur le viewport mobile
 # ci-dessus.
 DESKTOP_VIEWPORT = {"width": 1440, "height": 900}
-
-
-async def dismiss_onboarding_tooltip(page):
-    """
-    Popover d'aide au premier affichage de l'editeur (EditorDock.jsx :
-    "Comment modifier votre CV" + bouton "Compris !") : plaque en haut du
-    dock lateral tant qu'on ne l'a pas ferme -- masque les boutons de
-    section juste en dessous sur les toutes premieres captures sinon.
-    """
-    got_it = page.locator("button:visible").filter(has_text=re.compile(r"^compris\s*!?$", re.I)).first
-    if await got_it.count():
-        await got_it.click()
-        await page.wait_for_timeout(300)
 
 
 async def dismiss_cookie_banner(page):
@@ -131,36 +116,18 @@ async def play_demo_steps(page):
     await page.wait_for_timeout(1500)
 
 
-# Sections du dock lateral (EditorDock.jsx, SECTIONS + le bouton Design juste
-# en dessous) : aria-label = libelle FR exact (common:sections.*), plus fiable
-# qu'un index de position si l'app ajoute/retire un onglet.
-DOCK_SECTIONS = ["Identité", "Expériences", "Formation", "Compétences", "Langues"]
-DESIGN_TAB_LABEL = "Design"  # editor.topBar.designTab
-
-
-async def _capture_scene(page, out_dir: Path, index: int, name: str, element) -> Path:
-    """
-    Capture une "scene" : le viewport entier (fond, pour le flou) + l'element
-    precis (carte nette) -- composes en une seule image verticale prete a
-    animer par scene_compose.compose_scene(). Remplace l'ancien plein-ecran
-    recadre en paysage->portrait, qui perdait du contenu sur les bords.
-    """
-    bg_bytes = await page.screenshot()
-    fg_bytes = await element.screenshot()
-    scene = compose_scene(Image.open(BytesIO(bg_bytes)), Image.open(BytesIO(fg_bytes)))
-    path = out_dir / f"{index:02d}_{name}.png"
-    scene.save(path)
-    return path
-
-
-async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
+async def capture_pc_screenshots(page, out_dir: Path, feature_ids: list[str] | None = None) -> list[Path]:
     """
     Mode "PC" : au lieu d'enregistrer une video continue (fragile -- doit
-    rester stable pendant toute l'interaction), on capture chaque section de
-    l'app individuellement (liste des CVs, chaque onglet d'edition -- y
-    compris Experiences --, Design, fonctions IA, apercu du CV) plutot qu'un
-    plein-ecran unique. Chaque scene est composee (fond floute + carte nette,
-    voir scene_compose.py) et animee au montage (zoom in/out).
+    rester stable pendant toute l'interaction), on capture chaque
+    fonctionnalite individuellement (liste des CVs, puis celles choisies
+    dans features.py) plutot qu'un plein-ecran unique. Chaque scene est
+    composee (fond floute + carte nette, voir scene_compose.py) et animee
+    au montage (zoom in/out).
+
+    feature_ids : ids de features.FEATURES a montrer pour ce reel (cf.
+    "features" dans scripts.json, choisi par 1_generate_script.py) ;
+    None = tout le catalogue, dans l'ordre par defaut.
     """
     shots: list[Path] = []
     idx = 0
@@ -168,7 +135,7 @@ async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
     async def shoot(name: str, element):
         nonlocal idx
         idx += 1
-        shots.append(await _capture_scene(page, out_dir, idx, name, element))
+        shots.append(await features_module._capture_scene(page, out_dir, idx, name, element))
 
     # Une fois connecte, App.jsx affiche directement Dashboard.jsx (pas de
     # menu compte a ouvrir ni de modale) : "Mes CVs sauvegardés" y est deja
@@ -193,85 +160,15 @@ async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
     form_panel = page.locator("#editor-form-panel")
     await form_panel.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(1000)
-    await dismiss_onboarding_tooltip(page)
+    await features_module.dismiss_onboarding_tooltip(page)
 
-    # Chaque onglet de contenu (Identite, Experiences -- en mode edition --,
-    # Formation, Competences, Langues) : le panneau de gauche est capture a
-    # chaque fois, avec le contenu de l'onglet actif.
-    for label in DOCK_SECTIONS:
-        tab = page.locator(f"aside nav button[aria-label='{label}']").first
-        if await tab.count() == 0:
-            continue
-        await tab.click()
-        await page.wait_for_timeout(700)
-        await dismiss_onboarding_tooltip(page)  # peut reapparaitre au premier changement d'onglet
-
-        if label == "Expériences":
-            # Parcours en 3 temps plutot qu'une capture unique isolee :
-            # liste repliee -> carte depliee (formulaire poste/entreprise/
-            # dates) -> double-clic sur les missions dans l'apercu en direct
-            # (LivePreview.jsx, data-exp-part="missions"), qui ouvre
-            # directement MissionsModal -- exactement le geste utilisateur
-            # reel, pas un raccourci via le bouton "Modifier les missions".
-            await shoot("section_experiences_liste", form_panel)
-
-            first_card = page.locator("[role='button'][aria-expanded='false']").first
-            if await first_card.count():
-                await first_card.click()
-                await page.wait_for_timeout(500)
-                await shoot("section_experiences_ouverte", form_panel)
-
-                mission_area = page.locator("[data-exp-part='missions']:visible").first
-                if await mission_area.count():
-                    await mission_area.dblclick()
-                    dialog = page.locator("div[role='dialog']").first
-                    try:
-                        await dialog.wait_for(state="visible", timeout=6000)
-                        await page.wait_for_timeout(500)
-                        await shoot("edition_missions", dialog)
-                        await page.keyboard.press("Escape")
-                        await page.wait_for_timeout(400)
-                    except Exception:
-                        print("ATTENTION: modale missions introuvable, capture ignoree", file=sys.stderr)
-            continue
-
-        await shoot(f"section_{label.lower()}", form_panel)
-
-    # Onglet Design (theme/personnalisation) : meme panneau, contenu differe.
-    design_tab = page.locator(f"aside nav button[aria-label='{DESIGN_TAB_LABEL}']").first
-    if await design_tab.count():
-        await design_tab.click()
-        await page.wait_for_timeout(700)
-        await shoot("design", form_panel)
-
-    # Fonctions IA : le bouton "Adapter a une offre" ouvre une modale dediee
-    # (dialog) -- une des fonctionnalites phares du produit.
-    adapt_button = page.locator("button:visible").filter(has=page.locator("svg.lucide-zap")).first
-    if await adapt_button.count():
-        await adapt_button.click()
-        dialog = page.locator("div[role='dialog']").first
-        try:
-            await dialog.wait_for(state="visible", timeout=8000)
-            await page.wait_for_timeout(600)
-            await shoot("fonctions_ia", dialog)
-            await page.keyboard.press("Escape")
-            await page.wait_for_timeout(400)
-        except Exception:
-            print("ATTENTION: modale IA introuvable, capture ignoree", file=sys.stderr)
-
-    # Mode focus (icone agrandir de la barre superieure) : affiche l'apercu
-    # stylise en plein ecran, le plan le plus "vendeur" du produit.
-    focus_button = page.locator("button[title]:visible").filter(has=page.locator("svg.lucide-maximize-2")).first
-    if await focus_button.count():
-        await focus_button.click()
-        await page.wait_for_timeout(1200)
-        preview = page.locator("main").first
-        await shoot("apercu_cv", preview)
+    await features_module.run_features(page, out_dir, shoot, form_panel, feature_ids)
 
     return shots
 
 
-async def record(url: str, out_dir: Path, email: str | None, password: str | None, mode: str = "video"):
+async def record(url: str, out_dir: Path, email: str | None, password: str | None, mode: str = "video",
+                  feature_ids: list[str] | None = None):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async with async_playwright() as p:
@@ -312,7 +209,7 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
                 # (contrairement au mode video, qui genere un profil fictif
                 # local a la volee) -- la liste "Mes CVs" a capturer suppose
                 # qu'il y en a au moins un.
-                await capture_pc_screenshots(page, out_dir)
+                await capture_pc_screenshots(page, out_dir, feature_ids)
             else:
                 await play_demo_steps(page)
         except Exception:
@@ -338,7 +235,11 @@ def main():
                               "screenshots = captures fixes desktop, animees ensuite au montage (zoom in/out)")
     parser.add_argument("--force", action="store_true",
                          help="Re-enregistre meme si une sortie existe deja dans --out")
+    parser.add_argument("--features", type=str, default=None,
+                         help="Ids de features.FEATURES separes par des virgules (mode screenshots "
+                              "uniquement) ; omis = tout le catalogue dans l'ordre par defaut")
     args = parser.parse_args()
+    feature_ids = [f.strip() for f in args.features.split(",") if f.strip()] if args.features else None
 
     out_dir = Path(args.out)
     pattern = "*.png" if args.mode == "screenshots" else "*.webm"
@@ -358,7 +259,7 @@ def main():
 
     email = os.environ.get("DEMO_EMAIL")
     password = os.environ.get("DEMO_PASSWORD")
-    asyncio.run(record(args.url, out_dir, email, password, mode=args.mode))
+    asyncio.run(record(args.url, out_dir, email, password, mode=args.mode, feature_ids=feature_ids))
 
     outputs = sorted(out_dir.glob(pattern))
     if outputs:

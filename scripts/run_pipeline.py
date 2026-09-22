@@ -66,13 +66,16 @@ def main():
             print(f"[{i}] audio manquant, on saute ce reel")
             continue
 
-        # 3. Demo screen-record (meme demo reutilisee pour chaque reel ici ;
-        #    adapte play_demo_steps() / capture_pc_screenshots() dans
-        #    3_record_demo.py pour varier les parcours)
+        # 3. Demo screen-record. En mode screenshots, "features" (ecrit par
+        #    1_generate_script.py dans scripts.json, cf. features.py) fixe
+        #    quelles fonctionnalites capturer pour CE reel -- garde le texte
+        #    et les captures synchronises sur les memes fonctionnalites.
         video_dir = out / "video" / f"reel_{i:02d}"
+        feature_ids = scripts[i - 1].get("features") or []
+        features_args = ["--features", ",".join(feature_ids)] if feature_ids else []
         run([sys.executable, str(ROOT / "3_record_demo.py"),
              "--url", args.saas_url, "--out", str(video_dir),
-             "--mode", args.capture_mode, *force_flag_for("video")])
+             "--mode", args.capture_mode, *features_args, *force_flag_for("video")])
 
         if args.capture_mode == "screenshots":
             if not list(video_dir.glob("*.png")):

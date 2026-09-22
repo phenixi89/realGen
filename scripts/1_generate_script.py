@@ -14,6 +14,8 @@ from pathlib import Path
 
 from google import genai
 
+from features import FEATURES
+
 ANGLES = [
     "avant/apres : CV mal fait vs CV optimise par l'outil (score ATS)",
     "3 erreurs de CV que les recruteurs detestent, + comment l'outil les corrige",
@@ -22,6 +24,20 @@ ANGLES = [
     "comparatif : reecrire son CV a la main (long, stressant) vs l'optimiser avec l'IA (rapide)",
     "les 33 themes de mise en page, pour un CV qui sort du lot sans sacrifier l'ATS",
 ]
+
+# Fonctionnalites (features.py, catalogue partage avec 3_record_demo.py) mises
+# en avant pour chaque angle -- garantit que le texte du reel parle de ce qui
+# est reellement montre a l'ecran en mode screenshots, plutot que les deux
+# etant generes independamment et pouvant diverger. "apercu_cv" est ajoute a
+# tous les angles : c'est le plan de fin naturel (rendu final du CV).
+ANGLE_FEATURES = {
+    ANGLES[0]: ["fonctions_ia", "design", "apercu_cv"],
+    ANGLES[1]: ["experiences", "apercu_cv"],
+    ANGLES[2]: ["identite", "experiences", "apercu_cv"],
+    ANGLES[3]: ["experiences", "formation", "apercu_cv"],
+    ANGLES[4]: ["identite", "experiences", "competences", "apercu_cv"],
+    ANGLES[5]: ["design", "apercu_cv"],
+}
 
 PRODUCT_CONTEXT = """Produit : OpusCV (SaaS opuscv.tech), une application qui analyse un CV existant
 (PDF ou Word) via l'IA (Gemini), detecte ce qui bloque le passage des filtres ATS des recruteurs,
@@ -51,7 +67,12 @@ MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 
 
 def generate_script(client: genai.Client, angle: str) -> dict:
+    feature_ids = ANGLE_FEATURES.get(angle, [])
+    hints = "\n".join(f"- {FEATURES[fid].script_hint}" for fid in feature_ids if fid in FEATURES)
     prompt = f"{SYSTEM_PROMPT}\n\nAngle : {angle}"
+    if hints:
+        prompt += ("\n\nCe reel va MONTRER A L'ECRAN, dans cet ordre, uniquement ces actions concretes "
+                   f"(base ton texte, notamment la partie DEMO/SOLUTION, sur celles-ci) :\n{hints}")
     response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
     text = response.text.strip()
     # Sécurité : au cas où le modèle ajoute des backticks malgré la consigne
@@ -61,6 +82,9 @@ def generate_script(client: genai.Client, angle: str) -> dict:
     except json.JSONDecodeError:
         data = {"raw": text, "error": "JSON invalide, voir champ raw"}
     data["angle"] = angle
+    # Consomme par 3_record_demo.py (--features) via run_pipeline.py : garde
+    # texte et captures d'ecran synchronises sur les memes fonctionnalites.
+    data["features"] = feature_ids
     return data
 
 
