@@ -10,6 +10,8 @@ Usage:
 """
 import argparse
 import asyncio
+import os
+import sys
 from pathlib import Path
 
 from playwright.async_api import async_playwright
@@ -18,22 +20,35 @@ from playwright.async_api import async_playwright
 VIEWPORT = {"width": 405, "height": 720}
 
 
+async def login(page, email: str, password: str):
+    """
+    Connexion via le formulaire email/mot de passe (modale AuthModal d'OpusCV).
+    Les champs n'ont pas de `name`/`data-testid` -- on cible par `type`, plus
+    stable ici que le texte (qui passe par i18n).
+    """
+    await page.get_by_role("button", name="Se connecter", exact=False).first.click()
+    await page.wait_for_selector("input[type='email']", timeout=10000)
+    await page.fill("input[type='email']", email)
+    await page.fill("input[type='password']", password)
+    await page.click("button[type='submit']")
+    # Attend la fermeture de la modale (redirection post-login)
+    await page.wait_for_selector("input[type='password']", state="detached", timeout=15000)
+    await page.wait_for_timeout(1000)
+
+
 async def play_demo_steps(page):
     """
-    ICI : la sequence d'actions a rejouer sur ton SaaS.
-    Exemple generique -- remplace les selecteurs par les tiens.
+    ICI : la sequence d'actions a rejouer sur ton SaaS, une fois connecte.
+    Exemple generique -- remplace les selecteurs par les tiens (upload de CV,
+    lancement de l'analyse IA, apercu du PDF optimise, etc.).
     """
-    # Exemple : remplir un champ nom
-    # await page.fill("input[name='full_name']", "Camille Dupont")
-    # await page.wait_for_timeout(800)
-
-    # Exemple : cliquer sur "Generer mon CV"
-    # await page.click("text=Generer mon CV")
+    # Exemple : cliquer sur "Analyser un CV" / "Essayer gratuitement"
+    # await page.click("text=Analyser mon CV")
     # await page.wait_for_timeout(2000)
 
-    # Exemple : attendre l'apparition du resultat
-    # await page.wait_for_selector(".cv-preview", timeout=15000)
-    # await page.wait_for_timeout(3000)
+    # Exemple : uploader un fichier de demo
+    # await page.set_input_files("input[type='file']", "assets/cv_demo.pdf")
+    # await page.wait_for_selector(".analysis-result", timeout=30000)
 
     # Placeholder : juste un scroll pour avoir un enregistrement non vide
     await page.wait_for_timeout(1500)
@@ -41,7 +56,7 @@ async def play_demo_steps(page):
     await page.wait_for_timeout(1500)
 
 
-async def record(url: str, out_dir: Path):
+async def record(url: str, out_dir: Path, email: str | None, password: str | None):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async with async_playwright() as p:
@@ -53,6 +68,11 @@ async def record(url: str, out_dir: Path):
         )
         page = await context.new_page()
         await page.goto(url, wait_until="networkidle")
+
+        if email and password:
+            await login(page, email, password)
+        else:
+            print("ATTENTION: pas de credentials fournis, demo enregistree sans connexion", file=sys.stderr)
 
         await play_demo_steps(page)
 
@@ -67,7 +87,9 @@ def main():
     args = parser.parse_args()
 
     out_dir = Path(args.out)
-    asyncio.run(record(args.url, out_dir))
+    email = os.environ.get("DEMO_EMAIL")
+    password = os.environ.get("DEMO_PASSWORD")
+    asyncio.run(record(args.url, out_dir, email, password))
 
     # Playwright nomme le fichier automatiquement (hash) dans out_dir
     videos = list(out_dir.glob("*.webm"))

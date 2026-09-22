@@ -37,6 +37,8 @@ jobs:
       - name: Run pipeline
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEMO_EMAIL: ${{ secrets.DEMO_EMAIL }}
+          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
         run: |
           python scripts/run_pipeline.py \
             --n "${{ github.event.inputs.n || '3' }}" \

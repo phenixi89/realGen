@@ -14,10 +14,13 @@ import sys
 import wave
 from pathlib import Path
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # Voix disponibles cote Gemini TTS (exemples courants a adapter selon la doc a jour)
 VOICES = ["Kore", "Puck", "Enceladus", "Aoede", "Zephyr"]
+
+TTS_MODEL_NAME = os.environ.get("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
 
 
 def script_to_text(script: dict) -> str:
@@ -27,13 +30,19 @@ def script_to_text(script: dict) -> str:
     return " ".join(p for p in parts if p)
 
 
-def synthesize(model, text: str, voice: str, pcm_path: Path):
+def synthesize(client: genai.Client, text: str, voice: str, pcm_path: Path):
     """Appelle l'API Gemini TTS et ecrit le flux audio en wav (PCM 24kHz 16-bit mono)."""
-    response = model.generate_content(
-        f"[style: chaleureux, dynamique, rythme rapide pour reseaux sociaux] {text}",
-        generation_config={"response_modalities": ["AUDIO"],
-                            "speech_config": {"voice_config": {
-                                "prebuilt_voice_config": {"voice_name": voice}}}},
+    response = client.models.generate_content(
+        model=TTS_MODEL_NAME,
+        contents=f"[style: chaleureux, dynamique, rythme rapide pour reseaux sociaux] {text}",
+        config=types.GenerateContentConfig(
+            response_modalities=["AUDIO"],
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice)
+                )
+            ),
+        ),
     )
     audio_data = response.candidates[0].content.parts[0].inline_data.data
 
@@ -64,8 +73,7 @@ def main():
         print("ERREUR: variable d'environnement GEMINI_API_KEY manquante", file=sys.stderr)
         sys.exit(1)
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash-exp")  # a adapter vers le modele TTS dispo sur ton compte
+    client = genai.Client(api_key=api_key)
 
     scripts = json.loads(Path(args.scripts).read_text(encoding="utf-8"))
     out_dir = Path(args.out)
@@ -82,7 +90,7 @@ def main():
 
         print(f"[{i}/{len(scripts)}] Synthese voix ({args.voice})...")
         try:
-            synthesize(model, text, args.voice, wav_path)
+            synthesize(client, text, args.voice, wav_path)
             convert_to_mp3(wav_path, mp3_path)
             print(f"    -> {mp3_path}")
         except Exception as e:

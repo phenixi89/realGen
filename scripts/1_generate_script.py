@@ -12,18 +12,29 @@ import os
 import sys
 from pathlib import Path
 
-import google.generativeai as genai
+from google import genai
 
 ANGLES = [
-    "avant/apres : CV mal fait vs CV genere par l'outil",
-    "3 erreurs de CV que les recruteurs detestent, + solution via l'outil",
-    "demo rapide : upload d'infos -> CV genere en live",
-    "temoignage fictif type : 'j'ai decroche un entretien grace a ce CV'",
-    "comparatif : CV fait a la main (long, stressant) vs avec l'IA (rapide)",
+    "avant/apres : CV mal fait vs CV optimise par l'outil (score ATS)",
+    "3 erreurs de CV que les recruteurs detestent, + comment l'outil les corrige",
+    "demo rapide : upload d'un CV existant -> analyse et optimisation en live",
+    "temoignage fictif type : 'mon CV etait invisible pour les ATS, maintenant il passe'",
+    "comparatif : reecrire son CV a la main (long, stressant) vs l'optimiser avec l'IA (rapide)",
+    "les 33 themes de mise en page, pour un CV qui sort du lot sans sacrifier l'ATS",
 ]
 
+PRODUCT_CONTEXT = """Produit : OpusCV (SaaS opuscv.tech), une application qui analyse un CV existant
+(PDF ou Word) via l'IA (Gemini), detecte ce qui bloque le passage des filtres ATS des recruteurs,
+propose des optimisations concretes, puis regenere un PDF stylise (33 themes disponibles).
+L'utilisateur peut aussi decliner son CV par offre d'emploi et le partager via un lien public.
+Plan gratuit : 3 CV sauvegardes, 25 actions IA/jour. Plan Pro : illimite.
+Ton de marque : direct, concret, oriente resultat (decrocher des entretiens), jamais "corporate"."""
+
 SYSTEM_PROMPT = """Tu es copywriter specialise en contenu court viral (TikTok/Instagram Reels)
-pour un SaaS qui genere des CV automatiquement avec l'IA.
+pour le SaaS decrit ci-dessous. Base-toi UNIQUEMENT sur ces informations produit reelles,
+n'invente pas de fonctionnalites qui n'existent pas :
+
+""" + PRODUCT_CONTEXT + """
 
 Pour l'angle donne, ecris un script de reel de 15 a 20 secondes en francais, avec cette structure STRICTE :
 1. HOOK (1 phrase, 2 secondes max, doit arreter le scroll)
@@ -36,9 +47,12 @@ Reponds UNIQUEMENT en JSON valide, sans markdown, sans backticks, format :
 """
 
 
-def generate_script(model, angle: str) -> dict:
+MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+
+
+def generate_script(client: genai.Client, angle: str) -> dict:
     prompt = f"{SYSTEM_PROMPT}\n\nAngle : {angle}"
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
     text = response.text.strip()
     # Sécurité : au cas où le modèle ajoute des backticks malgré la consigne
     text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
@@ -61,14 +75,13 @@ def main():
         print("ERREUR: variable d'environnement GEMINI_API_KEY manquante", file=sys.stderr)
         sys.exit(1)
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    client = genai.Client(api_key=api_key)
 
     angles = (ANGLES * ((args.n // len(ANGLES)) + 1))[: args.n]
     scripts = []
     for i, angle in enumerate(angles, 1):
         print(f"[{i}/{len(angles)}] Generation script pour angle: {angle}")
-        scripts.append(generate_script(model, angle))
+        scripts.append(generate_script(client, angle))
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
