@@ -36,6 +36,19 @@ RECORD_SIZE = {"width": 1080, "height": 1920}
 DESKTOP_VIEWPORT = {"width": 1440, "height": 900}
 
 
+async def dismiss_onboarding_tooltip(page):
+    """
+    Popover d'aide au premier affichage de l'editeur (EditorDock.jsx :
+    "Comment modifier votre CV" + bouton "Compris !") : plaque en haut du
+    dock lateral tant qu'on ne l'a pas ferme -- masque les boutons de
+    section juste en dessous sur les toutes premieres captures sinon.
+    """
+    got_it = page.locator("button:visible").filter(has_text=re.compile(r"^compris\s*!?$", re.I)).first
+    if await got_it.count():
+        await got_it.click()
+        await page.wait_for_timeout(300)
+
+
 async def dismiss_cookie_banner(page):
     """
     Bandeau RGPD (App.jsx) : fixe en bas d'ecran tant qu'aucun consentement
@@ -180,6 +193,7 @@ async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
     form_panel = page.locator("#editor-form-panel")
     await form_panel.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(1000)
+    await dismiss_onboarding_tooltip(page)
 
     # Chaque onglet de contenu (Identite, Experiences -- en mode edition --,
     # Formation, Competences, Langues) : le panneau de gauche est capture a
@@ -190,6 +204,37 @@ async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
             continue
         await tab.click()
         await page.wait_for_timeout(700)
+        await dismiss_onboarding_tooltip(page)  # peut reapparaitre au premier changement d'onglet
+
+        if label == "Expériences":
+            # Parcours en 3 temps plutot qu'une capture unique isolee :
+            # liste repliee -> carte depliee (formulaire poste/entreprise/
+            # dates) -> double-clic sur les missions dans l'apercu en direct
+            # (LivePreview.jsx, data-exp-part="missions"), qui ouvre
+            # directement MissionsModal -- exactement le geste utilisateur
+            # reel, pas un raccourci via le bouton "Modifier les missions".
+            await shoot("section_experiences_liste", form_panel)
+
+            first_card = page.locator("[role='button'][aria-expanded='false']").first
+            if await first_card.count():
+                await first_card.click()
+                await page.wait_for_timeout(500)
+                await shoot("section_experiences_ouverte", form_panel)
+
+                mission_area = page.locator("[data-exp-part='missions']:visible").first
+                if await mission_area.count():
+                    await mission_area.dblclick()
+                    dialog = page.locator("div[role='dialog']").first
+                    try:
+                        await dialog.wait_for(state="visible", timeout=6000)
+                        await page.wait_for_timeout(500)
+                        await shoot("edition_missions", dialog)
+                        await page.keyboard.press("Escape")
+                        await page.wait_for_timeout(400)
+                    except Exception:
+                        print("ATTENTION: modale missions introuvable, capture ignoree", file=sys.stderr)
+            continue
+
         await shoot(f"section_{label.lower()}", form_panel)
 
     # Onglet Design (theme/personnalisation) : meme panneau, contenu differe.
