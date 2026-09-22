@@ -1,0 +1,39 @@
+name: Test
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile check (syntax)
+        run: python -m py_compile scripts/*.py
+
+      - name: Import check
+        run: |
+          python -c "import ast, pathlib
+          for f in pathlib.Path('scripts').glob('*.py'):
+              ast.parse(f.read_text(encoding='utf-8'), filename=str(f))
+          print('OK: tous les scripts parsent correctement')"
+
+      - name: Vérifie run_pipeline.py --help
+        run: python scripts/run_pipeline.py --help
+
+      - name: Vérifie chaque étape --help
+        run: |
+          for f in scripts/1_generate_script.py scripts/2_generate_voice.py scripts/3_record_demo.py scripts/4_generate_subtitles.py scripts/5_assemble.py; do
+            echo "== $f =="
+            python "$f" --help
+          done
