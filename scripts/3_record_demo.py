@@ -65,12 +65,18 @@ async def play_demo_steps(page):
     # Declenche le chargement du CV de demo (clic sur la zone de depot)
     await page.locator("div.border-dashed").click()
 
+    # L'editeur (barreSuperieure) rend sa barre d'outils deux fois -- une
+    # version desktop ("hidden md:flex") et une mobile ("flex md:hidden") --
+    # donc ce bouton existe deux fois dans le DOM. Le viewport etant mobile,
+    # seule la copie mobile est visible : :visible ecarte l'autre.
+    apercu_pdf = page.locator("button[aria-label='Aperçu fidèle']:visible").first
+
     # Attend l'ouverture de l'editeur avec le CV genere
-    await page.wait_for_selector("button[aria-label='Aperçu fidèle']", timeout=15000)
+    await apercu_pdf.wait_for(state="visible", timeout=15000)
     await page.wait_for_timeout(1000)
 
     # Bascule sur l'apercu PDF stylise -- le rendu final vendeur
-    await page.click("button[aria-label='Aperçu fidèle']")
+    await apercu_pdf.click()
     await page.wait_for_timeout(2500)
     await page.mouse.wheel(0, 300)
     await page.wait_for_timeout(1500)
