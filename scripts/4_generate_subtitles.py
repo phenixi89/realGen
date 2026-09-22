@@ -27,10 +27,11 @@ from pathlib import Path
 
 import whisper
 
-from script_text import script_to_text
+from script_text import scene_texts, script_to_text
 
 MAX_WORDS_PER_CUE = 4
 DEFAULT_WORD_DURATION = 0.32
+SCENE_LEAD_S = 0.15
 
 _PUNCT_RE = re.compile(r"^[\W_]+|[\W_]+$", re.UNICODE)
 
@@ -98,6 +99,36 @@ def chunk_words(words: list[dict], max_words: int = MAX_WORDS_PER_CUE) -> list[d
     return cues
 
 
+def scene_ranges(scene_word_counts: list[int]) -> list[tuple[int, int]]:
+    ranges, pos = [], 0
+    for count in scene_word_counts:
+        ranges.append((pos, pos + count))
+        pos += count
+    return ranges
+
+
+def build_timeline(aligned: list[dict], scenes: list[dict], audio_duration: float) -> dict:
+    """
+    Quand chaque scene est-elle dite dans l'audio : debut = premier mot de
+    la scene (un leger temps d'avance pour que l'image arrive avec la voix,
+    pas apres), fin = debut de la scene suivante. La premiere scene part de
+    0, la derniere va jusqu'au bout de l'audio -- la video couvre donc
+    exactement la duree de la voix, sans boucle ni coupure.
+    """
+    ranges = scene_ranges([len(s["texte"].split()) for s in scenes])
+    starts = []
+    for k, (a, _) in enumerate(ranges):
+        start = 0.0 if k == 0 else max(starts[-1] + 0.3, aligned[a]["start"] - SCENE_LEAD_S)
+        starts.append(start)
+    end_total = max(audio_duration, aligned[-1]["end"] if aligned else 0.0)
+    items = []
+    for k, scene in enumerate(scenes):
+        end = starts[k + 1] if k + 1 < len(scenes) else end_total
+        items.append({"feature": scene.get("feature"), "start": round(starts[k], 3),
+                      "end": round(end, 3), "texte": scene["texte"]})
+    return {"duration": round(end_total, 3), "scenes": items}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--audio", type=str, required=True)
@@ -106,31 +137,53 @@ def main():
     parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--model", type=str, default="small",
                          help="tiny/base/small (utilise uniquement pour le timing, pas le texte affiche)")
+    parser.add_argument("--timeline-out", type=str, default=None,
+                         help="Ecrit aussi la timeline des scenes (debut/fin de chaque scene dans l'audio), "
+                              "utilisee par le montage pour caler l'image sur la voix")
     parser.add_argument("--force", action="store_true",
                          help="Regenere meme si --out existe deja")
     args = parser.parse_args()
 
     out_path = Path(args.out)
-    if not args.force and out_path.exists():
+    timeline_path = Path(args.timeline_out) if args.timeline_out else None
+    if not args.force and out_path.exists() and (timeline_path is None or timeline_path.exists()):
         print(f"REPRISE: {out_path} existe deja, on saute (--force pour regenerer)")
         return
 
     scripts = json.loads(Path(args.scripts).read_text(encoding="utf-8"))
-    reference_text = script_to_text(scripts[args.index - 1])
-    reference_words = reference_text.split()
+    script = scripts[args.index - 1]
+    scenes = [{"feature": s.get("feature"), "texte": s["texte"]} for s in script.get("scenes", [])
+              if s.get("texte", "").strip()] or [{"feature": None, "texte": t} for t in scene_texts(script)]
+    reference_words = script_to_text(script).split()
 
     print(f"Chargement du modele Whisper '{args.model}'...")
     model = whisper.load_model(args.model)
 
     print(f"Transcription de {args.audio} (mesure du timing uniquement)...")
-    result = model.transcribe(args.audio, language="fr", word_timestamps=True)
+    audio = whisper.load_audio(args.audio)
+    audio_duration = len(audio) / whisper.audio.SAMPLE_RATE
+    result = model.transcribe(audio, language="fr", word_timestamps=True)
     whisper_words = [w for seg in result["segments"] for w in seg.get("words", [])]
 
     aligned = align_to_reference(whisper_words, reference_words)
 
+    # Cues decoupees scene par scene : un sous-titre ne chevauche jamais une
+    # coupe d'image, il change en meme temps que la fonctionnalite montree.
+    cues = []
+    for a, b in scene_ranges([len(s["texte"].split()) for s in scenes]):
+        cues.extend(chunk_words(aligned[a:b]))
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(chunk_words(aligned), ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(json.dumps(cues, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"OK -> {out_path}")
+
+    if timeline_path:
+        timeline = build_timeline(aligned, scenes, audio_duration)
+        timeline_path.parent.mkdir(parents=True, exist_ok=True)
+        timeline_path.write_text(json.dumps(timeline, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"OK -> {timeline_path} ({len(timeline['scenes'])} scenes, {timeline['duration']}s)")
+        for s in timeline["scenes"]:
+            print(f"   {s['start']:6.2f}-{s['end']:6.2f}s  {s['feature'] or '-':18} {s['texte'][:50]}")
 
 
 if __name__ == "__main__":

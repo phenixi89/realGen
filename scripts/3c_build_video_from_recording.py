@@ -30,6 +30,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from timeline import clip_lengths, concat_with_xfade, load_timeline, plan_items
+
 OUT_SIZE = (1080, 1920)
 OUT_RATIO = OUT_SIZE[0] / OUT_SIZE[1]
 XFADE_DURATION = 0.4
@@ -156,11 +158,59 @@ def build_video_from_recording(recording_dir: Path, out_path: Path):
         subprocess.run(cmd, check=True)
 
 
+def _extract_fitted(raw_path: Path, clip_path: Path, seg: dict, length: float, crop_box):
+    """
+    Adapte un segment enregistre a la duree que lui donne la voix : trop
+    long -> on garde la FIN (l'etat final de l'action, le plus parlant) ;
+    trop court -> on le montre en entier puis on fige sa derniere image.
+    """
+    natural = max(seg["end"] - seg["start"], 0.05)
+    if natural >= length:
+        start, take, pad = seg["end"] - length, length, 0.0
+    else:
+        start, take, pad = seg["start"], natural, length - natural
+    x, y, w, h = crop_box
+    vf = f"crop={w}:{h}:{x}:{y},scale={OUT_SIZE[0]}:{OUT_SIZE[1]},setsar=1,fps=25"
+    if pad > 0:
+        vf += f",tpad=stop_mode=clone:stop_duration={pad:.3f}"
+    vf += ",format=yuv420p"
+    # -t AVANT -i : limite ce qu'on LIT du segment ; place apres, il
+    # limiterait la SORTIE et couperait l'image figee ajoutee par tpad.
+    subprocess.run([
+        "ffmpeg", "-y", "-loglevel", "error", "-ss", f"{start:.3f}", "-t", f"{take:.3f}", "-i", str(raw_path),
+        "-vf", vf, "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        str(clip_path),
+    ], check=True)
+
+
+def build_video_on_timeline(recording_dir: Path, out_path: Path, timeline: dict):
+    manifest = json.loads((recording_dir / "segments.json").read_text(encoding="utf-8"))
+    scale = manifest["device_scale_factor"]
+    video_w, video_h = manifest["video_size"]["width"], manifest["video_size"]["height"]
+    media_by_feature: dict[str, list[dict]] = {}
+    for seg in manifest["segments"]:
+        media_by_feature.setdefault(seg.get("feature") or "", []).append(seg)
+
+    plan = plan_items(timeline, media_by_feature)
+    durations = [d for _, d in plan]
+    with tempfile.TemporaryDirectory() as tmp:
+        clips = []
+        for i, ((seg, _), length) in enumerate(zip(plan, clip_lengths(durations))):
+            clip = Path(tmp) / f"clip_{i:02d}.mp4"
+            crop_box = _compute_crop_box(seg.get("bbox"), video_w, video_h, scale)
+            _extract_fitted(recording_dir / "raw.webm", clip, seg, length, crop_box)
+            clips.append(clip)
+        concat_with_xfade(clips, durations, out_path)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", type=str, required=True,
                          help="Dossier contenant raw.webm + segments.json (--mode video_desktop)")
     parser.add_argument("--out", type=str, required=True)
+    parser.add_argument("--timeline", type=str, default=None,
+                         help="timeline.json (4_generate_subtitles.py) : cale chaque scene sur la voix. "
+                              "Absent -> segments bout a bout dans l'ordre d'enregistrement")
     parser.add_argument("--force", action="store_true",
                          help="Reconstruit meme si --out existe deja")
     args = parser.parse_args()
@@ -170,7 +220,11 @@ def main():
         print(f"REPRISE: {out_path} existe deja, on saute (--force pour reconstruire)")
         return
 
-    build_video_from_recording(Path(args.dir), out_path)
+    timeline = load_timeline(args.timeline)
+    if timeline:
+        build_video_on_timeline(Path(args.dir), out_path, timeline)
+    else:
+        build_video_from_recording(Path(args.dir), out_path)
     print(f"OK -> {out_path}")
 
 

@@ -1,58 +1,130 @@
 """
-Catalogue des fonctionnalites capturables en mode screenshots (--mode screenshots
-de 3_record_demo.py).
+Catalogue des fonctionnalites d'OpusCV capturables (modes screenshots et
+video_desktop de 3_record_demo.py).
 
-Pourquoi un catalogue plutot que le tour cable en dur qu'il remplace : sans
-ca, rien ne garantit que le texte du reel (1_generate_script.py) parle d'une
-fonctionnalite realement montree a l'ecran. Chaque fonctionnalite est une
-petite fonction Playwright autonome -- pas une liste de selecteurs en JSON --
-parce que l'enchainement reel a des dependances d'etat (onglet a cliquer
-avant de pouvoir deplier une carte, modale a fermer avant de continuer) qui
-se pretent mal a du pur declaratif.
+Chaque fonctionnalite est une petite fonction Playwright autonome -- pas une
+liste de selecteurs en JSON -- parce que l'enchainement reel a des
+dependances d'etat (onglet a ouvrir avant de deplier une carte, modale a
+refermer avant la suivante) qui se pretent mal a du pur declaratif.
 
 Le meme catalogue sert deux fins :
-  - 1_generate_script.py y pioche label/script_hint pour ecrire un texte qui
-    colle aux fonctionnalites choisies pour ce reel (angle -> feature ids) ;
-  - 3_record_demo.py execute, via run_features(), la liste de features
-    choisie pour ce reel en mode screenshots.
+  - 1_generate_script.py le donne a l'IA (id + description de ce qu'on voit
+    a l'ecran) pour qu'elle ecrive un scenario scene par scene, chaque scene
+    = une fonctionnalite + la phrase dite pendant qu'elle est a l'ecran ;
+  - 3_record_demo.py capture les fonctionnalites du scenario. Chaque capture
+    est etiquetee avec son id de fonctionnalite : le montage (3b/3c) les
+    replace ensuite dans l'ORDRE DU SCENARIO, cale sur le timing de la voix
+    -- l'ordre de capture, lui, reste libre (dicte par les dependances d'etat).
+
+Selecteurs : titres/aria-label FR exacts de l'app (locales/fr/*.json du repo
+cv-optimizer-fastapi-react), icone lucide en secours quand le titre peut
+changer (ex: le titre devient le message de quota epuise).
+
+    python features.py   # liste le catalogue (utile pour ecrire un scenario a la main)
 """
 from __future__ import annotations
 
+import os
+import re
 import sys
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from typing import Awaitable, Callable
 
-from PIL import Image
-
-from scene_compose import compose_scene
-
-# Sections du dock lateral (EditorDock.jsx, SECTIONS + le bouton Design juste
-# en dessous) : aria-label = libelle FR exact (common:sections.*), plus fiable
-# qu'un index de position si l'app ajoute/retire un onglet.
-DESIGN_TAB_LABEL = "Design"  # editor.topBar.designTab
+# Offre d'emploi fictive tapee dans les modales "Adapter" / "Lettre" : montre
+# le geste reel (coller une offre) sans lancer la generation IA, qui
+# consommerait le quota du compte demo a chaque execution du pipeline.
+SAMPLE_JOB_OFFER = (
+    "Responsable Marketing Digital (CDI, Paris) - Vous pilotez l'acquisition "
+    "B2B, le SEO et les campagnes LinkedIn Ads. 5 ans d'experience minimum, "
+    "maitrise de HubSpot et de Google Analytics 4."
+)
 
 
 @dataclass
 class DemoContext:
     page: object
     form_panel: object
-    shoot: Callable[[str, object], Awaitable[Path]]
+    shoot: Callable[[str, object], Awaitable[None]]
 
+
+# ---------------------------------------------------------------------------
+# Helpers d'etat
+# ---------------------------------------------------------------------------
 
 async def dismiss_onboarding_tooltip(page):
     """
     Popover d'aide au premier affichage de l'editeur (EditorDock.jsx :
-    "Comment modifier votre CV" + bouton "Compris !") : plaque en haut du
-    dock lateral tant qu'on ne l'a pas ferme -- masque les boutons de
-    section juste en dessous sur les toutes premieres captures sinon.
+    "Comment modifier votre CV" + bouton "Compris !") : plaque sur le dock
+    lateral tant qu'on ne l'a pas ferme -- masque les boutons de section.
     """
-    import re
     got_it = page.locator("button:visible").filter(has_text=re.compile(r"^compris\s*!?$", re.I)).first
     if await got_it.count():
         await got_it.click()
         await page.wait_for_timeout(300)
+
+
+def _checklist_button(page):
+    # ChecklistButton.jsx : seul <button aria-expanded> de la barre du haut
+    # (les cartes d'experience sont des <div role=button>, exclues ici).
+    return page.locator("button[aria-expanded]:visible").filter(
+        has_text=re.compile(r"corriger|votre cv|point|pr[eê]t", re.I)).first
+
+
+async def close_checklist_if_open(page):
+    """
+    La checklist s'ouvre toute seule des que l'aide du dock est fermee
+    (autoOpen) et pose un calque plein ecran qui intercepte tous les clics
+    suivants -- a refermer avant toute autre interaction.
+    """
+    button = _checklist_button(page)
+    if await button.count() and await button.get_attribute("aria-expanded") == "true":
+        await button.click()
+        await page.wait_for_timeout(400)
+
+
+async def reset_state(page):
+    """Referme toute modale restee ouverte (y compris une confirmation de fermeture)."""
+    for _ in range(3):
+        dialogs = page.locator("div[role='dialog']:visible")
+        if await dialogs.count() == 0:
+            break
+        confirm = dialogs.last.locator("button").filter(
+            has_text=re.compile(r"fermer sans|abandonner|quitter|effacer", re.I)).first
+        if await confirm.count():
+            await confirm.click()
+        else:
+            await page.keyboard.press("Escape")
+        await page.wait_for_timeout(400)
+    await close_checklist_if_open(page)
+
+
+async def _top_button(page, title: str, icon: str):
+    """Bouton de la barre du haut, par titre exact, sinon par son icone lucide."""
+    by_title = page.locator(f'button[title="{title}"]:visible').first
+    if await by_title.count():
+        return by_title
+    by_icon = page.locator("button:visible").filter(has=page.locator(f"svg.lucide-{icon}")).first
+    return by_icon if await by_icon.count() else None
+
+
+async def _open_dialog(page, button, timeout: int = 8000):
+    await button.click()
+    dialog = page.locator("div[role='dialog']:visible").last
+    await dialog.wait_for(state="visible", timeout=timeout)
+    await page.wait_for_timeout(600)
+    return dialog
+
+
+async def _click_dock(ctx: DemoContext, label: str) -> bool:
+    tab = ctx.page.locator(f'aside nav button[aria-label="{label}"]').first
+    if await tab.count() == 0:
+        print(f"ATTENTION: onglet '{label}' introuvable", file=sys.stderr)
+        return False
+    await tab.click()
+    await ctx.page.wait_for_timeout(700)
+    return True
 
 
 async def _capture_scene(page, out_dir: Path, index: int, name: str, element) -> Path:
@@ -61,6 +133,9 @@ async def _capture_scene(page, out_dir: Path, index: int, name: str, element) ->
     precis (carte nette) -- composes en une seule image verticale prete a
     animer par scene_compose.compose_scene().
     """
+    from PIL import Image
+    from scene_compose import compose_scene
+
     bg_bytes = await page.screenshot()
     fg_bytes = await element.screenshot()
     scene = compose_scene(Image.open(BytesIO(bg_bytes)), Image.open(BytesIO(fg_bytes)))
@@ -69,159 +144,305 @@ async def _capture_scene(page, out_dir: Path, index: int, name: str, element) ->
     return path
 
 
-def _make_simple_section_capture(label: str, name: str):
-    """Fabrique une feature "clique cet onglet du dock, capture le panneau"."""
+# ---------------------------------------------------------------------------
+# Fonctionnalites
+# ---------------------------------------------------------------------------
 
+def _make_section_capture(label: str, name: str):
     async def capture(ctx: DemoContext):
-        tab = ctx.page.locator(f"aside nav button[aria-label='{label}']").first
-        if await tab.count() == 0:
-            return
-        await tab.click()
-        await ctx.page.wait_for_timeout(700)
-        await ctx.shoot(name, ctx.form_panel)
-
+        if await _click_dock(ctx, label):
+            await ctx.shoot(name, ctx.form_panel)
     return capture
 
 
 async def _capture_experiences(ctx: DemoContext):
     """
-    Parcours en 3 temps plutot qu'une capture unique isolee : liste repliee
-    -> carte ouverte (formulaire poste/entreprise/dates) -> double-clic sur
-    les missions dans le LivePreview (data-exp-part="missions"), qui ouvre
-    MissionsModal directement -- exactement le geste utilisateur reel.
+    Liste repliee -> carte ouverte -> double-clic sur les missions dans
+    l'apercu en direct (LivePreview.jsx, data-exp-part="missions"), qui ouvre
+    MissionsModal directement : le geste utilisateur reel.
     """
-    tab = ctx.page.locator("aside nav button[aria-label='Expériences']").first
-    if await tab.count() == 0:
+    if not await _click_dock(ctx, "Expériences"):
         return
-    await tab.click()
-    await ctx.page.wait_for_timeout(700)
-    await ctx.shoot("section_experiences_liste", ctx.form_panel)
+    await ctx.shoot("experiences_liste", ctx.form_panel)
 
     first_card = ctx.page.locator("[role='button'][aria-expanded='false']").first
     if await first_card.count() == 0:
         return
     await first_card.click()
     await ctx.page.wait_for_timeout(500)
-    await ctx.shoot("section_experiences_ouverte", ctx.form_panel)
+    await ctx.shoot("experiences_ouverte", ctx.form_panel)
 
     mission_area = ctx.page.locator("[data-exp-part='missions']:visible").first
     if await mission_area.count() == 0:
         return
     await mission_area.dblclick()
-    dialog = ctx.page.locator("div[role='dialog']").first
+    dialog = ctx.page.locator("div[role='dialog']:visible").last
+    await dialog.wait_for(state="visible", timeout=6000)
+    await ctx.page.wait_for_timeout(500)
+    await ctx.shoot("experiences_missions", dialog)
+    await reset_state(ctx.page)
+
+
+async def _capture_design_themes(ctx: DemoContext):
+    """
+    Panneau Design, puis deux themes appliques l'un apres l'autre : l'apercu
+    (<main>) change en direct -- le "avant/apres" le plus visuel du produit.
+    Rien n'est sauvegarde (pas de sauvegarde automatique dans l'editeur).
+    """
+    if not await _click_dock(ctx, "Design"):
+        return
+    await ctx.shoot("design_panneau", ctx.form_panel)
+
+    themes = ctx.form_panel.locator("button.border-2[title]")
+    count = await themes.count()
+    preview = ctx.page.locator("main").first
+    for n, idx in enumerate(i for i in (3, 7) if i < count):
+        theme = themes.nth(idx)
+        await theme.scroll_into_view_if_needed()
+        await theme.click()
+        await ctx.page.wait_for_timeout(1000)
+        await ctx.shoot(f"design_theme_{n + 1}", preview)
+
+
+async def _capture_checklist(ctx: DemoContext):
+    button = _checklist_button(ctx.page)
+    if await button.count() == 0:
+        return
+    if await button.get_attribute("aria-expanded") != "true":
+        await button.click()
+    panel = ctx.page.locator("div.fixed.shadow-2xl.z-50:visible").first
+    await panel.wait_for(state="visible", timeout=6000)
+    await ctx.page.wait_for_timeout(500)
+    await ctx.shoot("checklist", panel)
+    await close_checklist_if_open(ctx.page)
+
+
+def _make_offer_modal_capture(title: str, icon: str, name: str):
+    """Modale IA avec champ "offre d'emploi" : ouverture, puis offre tapee (sans generer)."""
+
+    async def capture(ctx: DemoContext):
+        button = await _top_button(ctx.page, title, icon)
+        if button is None:
+            print(f"ATTENTION: bouton '{title}' introuvable", file=sys.stderr)
+            return
+        dialog = await _open_dialog(ctx.page, button)
+        await ctx.shoot(f"{name}_ouverte", dialog)
+        textarea = dialog.locator("textarea").first
+        if await textarea.count():
+            await textarea.click()
+            await textarea.press_sequentially(SAMPLE_JOB_OFFER, delay=12)
+            await ctx.page.wait_for_timeout(400)
+            await ctx.shoot(f"{name}_offre", dialog)
+            await textarea.fill("")  # evite la confirmation "abandonner ?" a la fermeture
+        await reset_state(ctx.page)
+
+    return capture
+
+
+async def _capture_relecture(ctx: DemoContext):
+    """Fautes relevees a l'analyse initiale (pas d'appel IA a l'ouverture), puis une corrigee."""
+    button = await _top_button(ctx.page, "Relecture orthographique", "spell-check-2")
+    if button is None:
+        return
+    dialog = await _open_dialog(ctx.page, button)
+    await ctx.shoot("relecture", dialog)
+    fix = dialog.locator("button").filter(has_text=re.compile(r"^\s*corriger\s*$", re.I)).first
+    if await fix.count():
+        await fix.click()
+        await ctx.page.wait_for_timeout(700)
+        await ctx.shoot("relecture_corrigee", dialog)
+    await reset_state(ctx.page)
+
+
+async def _capture_partage(ctx: DemoContext):
+    button = await _top_button(ctx.page, "Partager", "share-2")
+    if button is None:
+        return
+    dialog = await _open_dialog(ctx.page, button)
+    await ctx.page.wait_for_timeout(800)  # GET /shares
+    await ctx.shoot("partage", dialog)
+    await reset_state(ctx.page)
+
+
+async def _capture_apercu_pdf(ctx: DemoContext):
+    button = ctx.page.locator('button[aria-label="Aperçu fidèle"]:visible').first
+    if await button.count() == 0:
+        return
+    dialog = await _open_dialog(ctx.page, button)
+    # Le PDF est genere cote serveur (lent sur Render free tier).
     try:
-        await dialog.wait_for(state="visible", timeout=6000)
+        await dialog.locator("iframe").first.wait_for(state="visible", timeout=40000)
+    except Exception:
+        print("ATTENTION: apercu PDF non charge a temps, capture de la modale telle quelle", file=sys.stderr)
+    await ctx.page.wait_for_timeout(1500)
+    await ctx.shoot("apercu_pdf", dialog)
+    await reset_state(ctx.page)
+
+
+async def _capture_mode_sombre(ctx: DemoContext):
+    button = await _top_button(ctx.page, "Thème sombre", "moon")
+    if button is None:
+        return
+    await button.click()
+    await ctx.page.wait_for_timeout(900)
+    await ctx.shoot("mode_sombre", ctx.page.locator("body"))
+    back = await _top_button(ctx.page, "Thème clair", "sun")
+    if back is not None:
+        await back.click()
         await ctx.page.wait_for_timeout(500)
-        await ctx.shoot("edition_missions", dialog)
-        await ctx.page.keyboard.press("Escape")
-        await ctx.page.wait_for_timeout(400)
-    except Exception:
-        print("ATTENTION: modale missions introuvable, capture ignoree", file=sys.stderr)
 
 
-async def _capture_design(ctx: DemoContext):
-    tab = ctx.page.locator(f"aside nav button[aria-label='{DESIGN_TAB_LABEL}']").first
-    if await tab.count() == 0:
+async def _capture_entretien(ctx: DemoContext):
+    """Consomme une action IA : la modale genere les questions des son ouverture."""
+    button = await _top_button(ctx.page, "Questions d'entretien", "message-square")
+    if button is None:
         return
-    await tab.click()
-    await ctx.page.wait_for_timeout(700)
-    await ctx.shoot("design", ctx.form_panel)
-
-
-async def _capture_fonctions_ia(ctx: DemoContext):
-    """Bouton "Adapter a une offre" : ouvre une modale dediee (dialog)."""
-    adapt_button = ctx.page.locator("button:visible").filter(has=ctx.page.locator("svg.lucide-zap")).first
-    if await adapt_button.count() == 0:
-        return
-    await adapt_button.click()
-    dialog = ctx.page.locator("div[role='dialog']").first
+    dialog = await _open_dialog(ctx.page, button)
     try:
-        await dialog.wait_for(state="visible", timeout=8000)
-        await ctx.page.wait_for_timeout(600)
-        await ctx.shoot("fonctions_ia", dialog)
-        await ctx.page.keyboard.press("Escape")
-        await ctx.page.wait_for_timeout(400)
+        await ctx.page.wait_for_load_state("networkidle", timeout=45000)
     except Exception:
-        print("ATTENTION: modale IA introuvable, capture ignoree", file=sys.stderr)
+        pass
+    await ctx.page.wait_for_timeout(1000)
+    await ctx.shoot("entretien", dialog)
+    await reset_state(ctx.page)
+
+
+async def _capture_adapter(ctx: DemoContext):
+    # Titre = libelle, ou message de quota epuise -> icone zap en secours.
+    await _make_offer_modal_capture("Adapter à une offre", "zap", "adapter")(ctx)
 
 
 async def _capture_apercu_cv(ctx: DemoContext):
     """
-    Mode focus (icone agrandir de la barre superieure) : affiche l'apercu
-    stylise en plein ecran. Doit rester la DERNIERE feature executee -- le
-    mode focus masque le dock de sections, donc plus aucune autre feature
-    n'est accessible une fois ce bouton clique.
+    Mode focus : apercu stylise plein ecran. Toujours execute en DERNIER --
+    le mode focus demonte le dock, plus aucune autre fonctionnalite n'est
+    accessible ensuite.
     """
-    focus_button = ctx.page.locator("button[title]:visible").filter(has=ctx.page.locator("svg.lucide-maximize-2")).first
-    if await focus_button.count() == 0:
+    button = await _top_button(ctx.page, "Focus preview", "maximize-2")
+    if button is None:
         return
-    await focus_button.click()
+    await button.click()
     await ctx.page.wait_for_timeout(1200)
-    preview = ctx.page.locator("main").first
-    await ctx.shoot("apercu_cv", preview)
+    await ctx.shoot("apercu_cv", ctx.page.locator("main").first)
 
+
+# ---------------------------------------------------------------------------
+# Catalogue
+# ---------------------------------------------------------------------------
 
 @dataclass
 class Feature:
     id: str
     label: str
-    # Phrase courte injectee dans le prompt du script audio (1_generate_script.py)
-    # pour que le texte parle de ce qui est reellement montre a l'ecran.
-    script_hint: str
-    capture: Callable[[DemoContext], Awaitable[None]]
-    # Certaines features ferment des portes derriere elles (le mode focus
-    # masque le dock) : forcees en derniere position par run_features().
+    # Ce que le spectateur VOIT a l'ecran -- donne a l'IA pour qu'elle ecrive
+    # une phrase qui colle a l'image affichee pendant qu'elle est dite.
+    description: str
+    capture: Callable[[DemoContext], Awaitable[None]] | None
     must_be_last: bool = False
+    # Declenche un appel IA facture sur le quota du compte demo : exclu par
+    # defaut (ALLOW_AI_QUOTA_FEATURES=1 pour l'autoriser).
+    consumes_ai: bool = False
 
 
-FEATURES: dict[str, Feature] = {
-    f.id: f
-    for f in [
-        Feature("identite", "Identite / profil", "modifier ses infos de contact et son resume en un clic",
-                _make_simple_section_capture("Identité", "section_identite")),
-        Feature("experiences", "Experiences (edition + missions IA)",
-                "deplier une experience et reecrire ses missions directement depuis l'apercu",
-                _capture_experiences),
-        Feature("formation", "Formation", "renseigner ses diplomes et formations",
-                _make_simple_section_capture("Formation", "section_formation")),
-        Feature("competences", "Competences", "lister ses competences cles",
-                _make_simple_section_capture("Compétences", "section_competences")),
-        Feature("langues", "Langues", "indiquer son niveau dans chaque langue",
-                _make_simple_section_capture("Langues", "section_langues")),
-        Feature("design", "Design / 33 themes", "changer de theme de mise en page en un clic parmi 33",
-                _capture_design),
-        Feature("fonctions_ia", "Adapter a une offre (IA)",
-                "adapter automatiquement son CV a une offre d'emploi precise avec l'IA",
-                _capture_fonctions_ia),
-        Feature("apercu_cv", "Apercu stylise plein ecran", "voir le rendu final, fidele et stylise, du CV",
-                _capture_apercu_cv, must_be_last=True),
-    ]
-}
+# "dashboard" n'a pas de fonction : il est capture pendant la mise en place
+# (3_record_demo.py), avant l'ouverture de l'editeur.
+FEATURES: dict[str, Feature] = {f.id: f for f in [
+    Feature("dashboard", "Mes CVs", "le tableau de bord avec la liste des CV sauvegardes et leurs actions (renommer, dupliquer)", None),
+    Feature("checklist", "Checklist 'A corriger'", "la liste des points a corriger detectes sur le CV, classes par priorite, avec l'etat 'pret a envoyer'", _capture_checklist),
+    Feature("identite", "Identite / profil", "le formulaire identite : nom, poste vise, email, telephone, ville, resume", _make_section_capture("Identité", "identite")),
+    Feature("experiences", "Experiences + missions", "la liste des experiences, une experience depliee, puis la fenetre d'edition des missions ouverte par double-clic dans l'apercu", _capture_experiences),
+    Feature("formation", "Formation", "la section formation : diplomes, ecoles, dates", _make_section_capture("Formation", "formation")),
+    Feature("competences", "Competences", "les competences cles sous forme d'etiquettes", _make_section_capture("Compétences", "competences")),
+    Feature("langues", "Langues", "les langues avec leur niveau", _make_section_capture("Langues", "langues")),
+    Feature("structure", "Structure", "l'ordre des blocs du CV, reorganisable par glisser-deposer", _make_section_capture("Structure — ordre des blocs", "structure")),
+    Feature("relecture", "Relecture orthographique", "les fautes d'orthographe detectees, puis une faute corrigee en un clic", _capture_relecture),
+    Feature("fonctions_ia", "Adapter a une offre (IA)", "la fenetre 'Adapter a une offre' : on colle une offre d'emploi, l'IA adapte le CV a ce poste", _capture_adapter),
+    Feature("lettre_motivation", "Lettre de motivation (IA)", "la fenetre de lettre de motivation : on colle l'offre, l'IA ecrit une lettre calee sur l'offre et le CV", _make_offer_modal_capture("Lettre de motivation", "mail", "lettre")),
+    Feature("partage", "Partage par lien", "le partage du CV par un lien public, consultable sans compte ni piece jointe", _capture_partage),
+    Feature("apercu_pdf", "Apercu PDF fidele", "le PDF exact tel qu'il sera telecharge", _capture_apercu_pdf),
+    Feature("design", "Themes (33) en direct", "le panneau Design puis le CV qui change de theme en un clic (33 themes)", _capture_design_themes),
+    Feature("mode_sombre", "Mode sombre", "l'editeur complet en mode sombre", _capture_mode_sombre),
+    Feature("entretien", "Simulation d'entretien (IA)", "six questions d'entretien probables generees depuis le CV, avec une piste de reponse", _capture_entretien, consumes_ai=True),
+    Feature("apercu_cv", "Apercu plein ecran", "le rendu final du CV, stylise, en plein ecran", _capture_apercu_cv, must_be_last=True),
+]}
 
-# Ordre par defaut (et fallback) si un reel ne precise pas de features.
+# Ordre de CAPTURE (dependances d'etat), independant de l'ordre d'affichage
+# dans le scenario. La checklist passe tot (elle s'ouvre seule), le theme et
+# le mode sombre tard (ils changent l'apparence des captures suivantes),
+# l'entretien juste avant la fin (sa confirmation de fermeture est la plus
+# susceptible de bloquer la suite).
 DEFAULT_FEATURE_ORDER = [
-    "identite", "experiences", "formation", "competences", "langues",
-    "design", "fonctions_ia", "apercu_cv",
+    "dashboard", "checklist", "identite", "experiences", "formation", "competences", "langues",
+    "structure", "relecture", "fonctions_ia", "lettre_motivation", "partage", "apercu_pdf",
+    "design", "mode_sombre", "entretien", "apercu_cv",
 ]
+
+# Anciens ids (scripts.json generes avant le catalogue actuel).
+ALIASES = {"design_themes": "design"}
+
+
+def ai_quota_allowed() -> bool:
+    return os.environ.get("ALLOW_AI_QUOTA_FEATURES", "").lower() in ("1", "true", "yes")
+
+
+def available_features() -> dict[str, Feature]:
+    """Catalogue propose a l'IA / accepte a la capture (sans les features a quota, sauf opt-in)."""
+    allow = ai_quota_allowed()
+    return {fid: f for fid, f in FEATURES.items() if allow or not f.consumes_ai}
+
+
+def normalize_feature_id(fid: str | None) -> str | None:
+    if not fid:
+        return None
+    fid = ALIASES.get(fid.strip(), fid.strip())
+    return fid if fid in available_features() else None
 
 
 def resolve_feature_order(feature_ids: list[str] | None) -> list[str]:
     """
-    Valide et ordonne une liste d'ids choisie pour un reel : ids inconnus
-    ignores (silencieux -- un id perime dans un vieux scripts.json ne doit
-    pas faire echouer tout le pipeline), ordre = DEFAULT_FEATURE_ORDER,
-    "apercu_cv" toujours pousse en dernier (must_be_last).
+    Ids demandes -> ordre de capture valide : ids inconnus ignores (un vieux
+    scripts.json ne doit pas faire echouer le pipeline), doublons retires,
+    ordre = DEFAULT_FEATURE_ORDER, features must_be_last en dernier.
     """
+    available = available_features()
     if not feature_ids:
-        return list(DEFAULT_FEATURE_ORDER)
-    chosen = [fid for fid in DEFAULT_FEATURE_ORDER if fid in feature_ids and fid in FEATURES]
-    last = [fid for fid in chosen if FEATURES[fid].must_be_last]
+        chosen = [fid for fid in DEFAULT_FEATURE_ORDER if fid in available]
+    else:
+        wanted = {normalize_feature_id(f) for f in feature_ids} - {None}
+        chosen = [fid for fid in DEFAULT_FEATURE_ORDER if fid in wanted]
     rest = [fid for fid in chosen if not FEATURES[fid].must_be_last]
+    last = [fid for fid in chosen if FEATURES[fid].must_be_last]
     return rest + last
 
 
-async def run_features(page, out_dir: Path, shoot, form_panel, feature_ids: list[str] | None = None):
-    """Execute, dans l'ordre resolu, les features choisies pour ce reel."""
-    ctx = DemoContext(page=page, form_panel=form_panel, shoot=shoot)
+async def run_features(page, shoot, form_panel, feature_ids: list[str] | None = None):
+    """
+    Execute les fonctionnalites demandees (sauf "dashboard", deja capture a
+    la mise en place). `shoot(feature_id, name, element)` recoit l'id de la
+    fonctionnalite en cours, pour que le montage puisse retrouver ses
+    captures. Une fonctionnalite qui echoue est signalee et sautee, sans
+    faire tomber les autres (le montage retombe alors sur une autre capture).
+    """
     for fid in resolve_feature_order(feature_ids):
-        await FEATURES[fid].capture(ctx)
+        feature = FEATURES[fid]
+        if feature.capture is None:
+            continue
+
+        async def feature_shoot(name, element, _fid=fid):
+            await shoot(_fid, name, element)
+
+        ctx = DemoContext(page=page, form_panel=form_panel, shoot=feature_shoot)
+        try:
+            await feature.capture(ctx)
+        except Exception as exc:
+            print(f"ATTENTION: fonctionnalite '{fid}' en echec, sautee ({exc})", file=sys.stderr)
+            try:
+                await reset_state(page)
+            except Exception:
+                pass
+
+
+if __name__ == "__main__":
+    for fid, f in FEATURES.items():
+        flag = " [consomme du quota IA : ALLOW_AI_QUOTA_FEATURES=1]" if f.consumes_ai else ""
+        print(f"{fid:18} {f.label} -- {f.description}{flag}")

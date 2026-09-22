@@ -39,6 +39,10 @@ def main():
                               "screenshots = captures desktop animees en zoom in/out au montage ; "
                               "video_desktop = enregistrement desktop continu, recadre ensuite sur "
                               "chaque fonctionnalite montree (mouvement reel, pas un zoom artificiel)")
+    parser.add_argument("--duration", type=int, default=30, help="Duree cible de chaque reel, en secondes")
+    parser.add_argument("--angle", type=str, default=None, help="Angle marketing impose pour les scenarios")
+    parser.add_argument("--scenario", type=str, default=None,
+                         help="Scenario(s) ecrit(s) a la main (JSON, voir scenarios/exemple.json) ; remplace --n")
     parser.add_argument("--force", action="store_true",
                          help="Ignore les sorties existantes et regenere tout depuis zero (equivalent a --from-step script)")
     parser.add_argument("--from-step", type=str, choices=STEPS, default=None,
@@ -49,12 +53,28 @@ def main():
     out = Path("output")
     from_index = 0 if args.force else (STEPS.index(args.from_step) if args.from_step else None)
 
+    # Un scenario/angle impose ou une duree differente de l'existant : les
+    # sorties en cache ne correspondent plus a la demande -> tout regenerer,
+    # sinon la reprise ressortirait silencieusement l'ancien reel.
+    scripts_path = out / "scripts.json"
+    if from_index is None and scripts_path.exists():
+        existing = json.loads(scripts_path.read_text(encoding="utf-8"))
+        stale_duration = any(s.get("duree_cible_s") != args.duration for s in existing) and not args.scenario
+        if args.scenario or args.angle or stale_duration:
+            print("Parametres de scenario differents de la derniere execution -> regeneration complete")
+            from_index = 0
+
     def force_flag_for(step: str) -> list[str]:
         return ["--force"] if from_index is not None and STEPS.index(step) >= from_index else []
 
-    # 1. Scripts
+    # 1. Scenarios (scenes = fonctionnalite montree + texte dit pendant ce temps)
+    scenario_args = ["--duration", str(args.duration)]
+    if args.angle:
+        scenario_args += ["--angle", args.angle]
+    if args.scenario:
+        scenario_args += ["--scenario", args.scenario]
     run([sys.executable, str(ROOT / "1_generate_script.py"),
-         "--n", str(args.n), "--out", str(out / "scripts.json"), *force_flag_for("script")])
+         "--n", str(args.n), *scenario_args, "--out", str(scripts_path), *force_flag_for("script")])
 
     # 2. Voix
     run([sys.executable, str(ROOT / "2_generate_voice.py"),
@@ -80,38 +100,41 @@ def main():
              "--url", args.saas_url, "--out", str(video_dir),
              "--mode", args.capture_mode, *features_args, *force_flag_for("video")])
 
+        if args.capture_mode == "screenshots" and not list(video_dir.glob("*.png")):
+            print(f"[{i}] pas de captures generees, on saute")
+            continue
+        if args.capture_mode == "video_desktop" and not (video_dir / "segments.json").exists():
+            print(f"[{i}] pas d'enregistrement desktop genere, on saute")
+            continue
+
+        # 4. Sous-titres (alignes sur le texte exact du script) + timeline des
+        #    scenes : quand la voix commence a parler de chaque fonctionnalite.
+        subs_path = out / "subs" / f"reel_{i:02d}.json"
+        timeline_path = out / "subs" / f"reel_{i:02d}.timeline.json"
+        run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
+             "--audio", str(audio_path), "--scripts", str(scripts_path), "--index", str(i),
+             "--out", str(subs_path), "--timeline-out", str(timeline_path),
+             "--model", args.whisper_model, *force_flag_for("subs")])
+
+        # 3b/3c. Montage de la video muette, cale sur la timeline : apres les
+        #    sous-titres parce qu'il en a besoin. Force des que la capture ou
+        #    la timeline ont ete refaites (force_flag_for("subs") couvre les deux).
         if args.capture_mode == "screenshots":
-            if not list(video_dir.glob("*.png")):
-                print(f"[{i}] pas de captures generees, on saute")
-                continue
-            # 3b. Anime les captures fixes (zoom in/out) en une video muette,
-            #     consommee ensuite par 5_assemble.py comme n'importe quelle
-            #     autre video source.
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3b_build_video_from_screenshots.py"),
-                 "--screens", str(video_dir), "--out", str(video_path), *force_flag_for("video")])
+                 "--screens", str(video_dir), "--timeline", str(timeline_path),
+                 "--out", str(video_path), *force_flag_for("subs")])
         elif args.capture_mode == "video_desktop":
-            if not (video_dir / "segments.json").exists():
-                print(f"[{i}] pas d'enregistrement desktop genere, on saute")
-                continue
-            # 3c. Recadre l'enregistrement continu sur chaque fonctionnalite
-            #     montree (cf. 3_record_demo.py:capture_pc_video) plutot que
-            #     de garder le viewport desktop entier.
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3c_build_video_from_recording.py"),
-                 "--dir", str(video_dir), "--out", str(video_path), *force_flag_for("video")])
+                 "--dir", str(video_dir), "--timeline", str(timeline_path),
+                 "--out", str(video_path), *force_flag_for("subs")])
         else:
             videos = list(video_dir.glob("*.webm"))
             if not videos:
                 print(f"[{i}] pas de video generee, on saute")
                 continue
             video_path = videos[0]
-
-        # 4. Sous-titres (alignes sur le texte exact du script, cf. 4_generate_subtitles.py)
-        subs_path = out / "subs" / f"reel_{i:02d}.json"
-        run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
-             "--audio", str(audio_path), "--scripts", str(out / "scripts.json"), "--index", str(i),
-             "--out", str(subs_path), "--model", args.whisper_model, *force_flag_for("subs")])
 
         # 5. Assemblage final
         final_path = out / "final" / f"reel_{i:02d}.mp4"

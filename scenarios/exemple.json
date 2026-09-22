@@ -1,0 +1,13 @@
+{
+  "angle": "un CV par offre : adapter son CV a chaque candidature",
+  "titre": "Un CV par offre en 30 secondes",
+  "duree_cible_s": 30,
+  "scenes": [
+    {"feature": "dashboard", "texte": "Tu envoies le meme CV a toutes les offres ?"},
+    {"feature": "checklist"},
+    {"feature": "fonctions_ia"},
+    {"feature": "lettre_motivation"},
+    {"feature": "design"},
+    {"feature": "apercu_cv", "texte": "Essaie gratuitement, lien en bio."}
+  ]
+}

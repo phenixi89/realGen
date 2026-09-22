@@ -39,6 +39,29 @@ on:
           - assemble
         required: false
         default: ""
+      duration:
+        description: "Duree cible de chaque reel (secondes)"
+        type: choice
+        options:
+          - "15"
+          - "30"
+          - "45"
+          - "60"
+        required: false
+        default: "30"
+      angle:
+        description: "Angle marketing libre (optionnel, sinon rotation automatique)"
+        required: false
+        default: ""
+      scenario:
+        description: "Chemin d'un scenario ecrit a la main dans le repo (optionnel, ex: scenarios/exemple.json)"
+        required: false
+        default: ""
+      allow_ai_quota:
+        description: "Autoriser les parcours qui consomment le quota IA du compte demo (simulation d'entretien)"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   generate:
@@ -82,16 +105,27 @@ jobs:
             reels-output-
 
       - name: Run pipeline
+        shell: bash
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEMO_EMAIL: ${{ secrets.DEMO_EMAIL }}
           DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+          ALLOW_AI_QUOTA_FEATURES: ${{ github.event.inputs.allow_ai_quota == 'true' && '1' || '' }}
+          # Texte libre : passe par l'environnement, jamais interpole dans le
+          # script shell (sinon un angle contenant $(...) serait execute).
+          INPUT_ANGLE: ${{ github.event.inputs.angle }}
+          INPUT_SCENARIO: ${{ github.event.inputs.scenario }}
         run: |
+          extra=()
+          [ -n "$INPUT_ANGLE" ] && extra+=(--angle "$INPUT_ANGLE")
+          [ -n "$INPUT_SCENARIO" ] && extra+=(--scenario "$INPUT_SCENARIO")
           python scripts/run_pipeline.py \
             --n "${{ github.event.inputs.n || '3' }}" \
+            --duration "${{ github.event.inputs.duration || '30' }}" \
             --saas-url "${{ vars.SAAS_URL }}" \
             --voice "${{ github.event.inputs.voice || 'Kore' }}" \
             --capture-mode "${{ github.event.inputs.capture_mode || 'video' }}" \
+            "${extra[@]}" \
             ${{ github.event.inputs.from_step && format('--from-step {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }}
 
@@ -107,6 +141,7 @@ jobs:
             output/final/
             output/audio/
             output/scripts.json
+            output/subs/
             output/video/
             output/debug/
           if-no-files-found: ignore

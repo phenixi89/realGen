@@ -13,10 +13,13 @@ Usage:
                                                 --out output/video/reel_01/zoom.mp4
 """
 import argparse
+import json
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+
+from timeline import clip_lengths, concat_with_xfade, load_timeline, plan_items
 
 FPS = 25
 OUT_SIZE = (1080, 1920)
@@ -111,12 +114,37 @@ def build_video_from_screenshots(screens_dir: Path, out_path: Path, clip_seconds
         subprocess.run(cmd, check=True)
 
 
+def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict):
+    """
+    Montage cale sur la voix : chaque scene du scenario affiche les captures
+    de SA fonctionnalite (captures.json, ecrit par 3_record_demo.py) pendant
+    exactement le temps ou la voix en parle (timeline.json).
+    """
+    captures = json.loads((screens_dir / "captures.json").read_text(encoding="utf-8"))
+    media_by_feature: dict[str, list[Path]] = {}
+    for shot in captures:
+        media_by_feature.setdefault(shot["feature"], []).append(screens_dir / shot["file"])
+
+    plan = plan_items(timeline, media_by_feature)
+    durations = [d for _, d in plan]
+    with tempfile.TemporaryDirectory() as tmp:
+        clips = []
+        for i, ((image, _), length) in enumerate(zip(plan, clip_lengths(durations))):
+            clip = Path(tmp) / f"clip_{i:02d}.mp4"
+            build_clip(image, clip, length, zoom_out=(i % 2 == 1))
+            clips.append(clip)
+        concat_with_xfade(clips, durations, out_path)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--screens", type=str, required=True, help="Dossier contenant les .png")
     parser.add_argument("--out", type=str, required=True)
+    parser.add_argument("--timeline", type=str, default=None,
+                         help="timeline.json (4_generate_subtitles.py) : cale chaque scene sur la voix. "
+                              "Absent -> ancien montage, captures a duree fixe dans l'ordre de capture")
     parser.add_argument("--clip-seconds", type=float, default=3.5,
-                         help="Duree du zoom sur chaque capture")
+                         help="Duree du zoom sur chaque capture (sans timeline uniquement)")
     parser.add_argument("--force", action="store_true",
                          help="Reconstruit meme si --out existe deja")
     args = parser.parse_args()
@@ -126,7 +154,12 @@ def main():
         print(f"REPRISE: {out_path} existe deja, on saute (--force pour reconstruire)")
         return
 
-    build_video_from_screenshots(Path(args.screens), out_path, args.clip_seconds)
+    screens_dir = Path(args.screens)
+    timeline = load_timeline(args.timeline)
+    if timeline and (screens_dir / "captures.json").exists():
+        build_video_on_timeline(screens_dir, out_path, timeline)
+    else:
+        build_video_from_screenshots(screens_dir, out_path, args.clip_seconds)
     print(f"OK -> {out_path}")
 
 

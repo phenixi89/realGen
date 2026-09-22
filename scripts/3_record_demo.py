@@ -119,96 +119,81 @@ async def play_demo_steps(page):
     await page.wait_for_timeout(1500)
 
 
-async def capture_pc_screenshots(page, out_dir: Path, feature_ids: list[str] | None = None) -> list[Path]:
+async def walk_features(page, shoot, feature_ids: list[str] | None = None):
     """
-    Mode "PC" : au lieu d'enregistrer une video continue (fragile -- doit
-    rester stable pendant toute l'interaction), on capture chaque
-    fonctionnalite individuellement (liste des CVs, puis celles choisies
-    dans features.py) plutot qu'un plein-ecran unique. Chaque scene est
-    composee (fond floute + carte nette, voir scene_compose.py) et animee
-    au montage (zoom in/out).
-
-    feature_ids : ids de features.FEATURES a montrer pour ce reel (cf.
-    "features" dans scripts.json, choisi par 1_generate_script.py) ;
-    None = tout le catalogue, dans l'ordre par defaut.
+    Parcours desktop commun aux modes screenshots et video_desktop : tableau
+    de bord, ouverture de l'editeur, puis les fonctionnalites demandees
+    (features.py). `shoot(feature_id, name, element)` decide quoi faire a
+    chaque moment cle (photo figee, ou marqueur de segment video).
     """
-    shots: list[Path] = []
-    idx = 0
+    wanted = features_module.resolve_feature_order(feature_ids)
 
-    async def shoot(name: str, element):
-        nonlocal idx
-        idx += 1
-        shots.append(await features_module._capture_scene(page, out_dir, idx, name, element))
-
-    # Une fois connecte, App.jsx affiche directement Dashboard.jsx (pas de
-    # menu compte a ouvrir ni de modale) : "Mes CVs sauvegardés" y est deja
-    # la section principale de la page -- exactement ce que montre la
-    # capture. On attend la premiere ligne de CV (le fetch /api/cvs est
-    # asynchrone, precede d'un skeleton de chargement).
+    # Une fois connecte, App.jsx affiche directement Dashboard.jsx : on
+    # attend la premiere ligne de CV (fetch /api/cvs asynchrone, precede
+    # d'un skeleton de chargement).
     first_row = page.locator("li:visible", has=page.locator("button[title]")).first
     await first_row.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(800)
-    await shoot("mes_cvs", first_row)
-
-    # Survole la premiere ligne pour reveler ses icones d'action (Renommer,
-    # Dupliquer, Supprimer -- masquees hors survol) avant de capturer, puis
-    # ouvre ce CV dans l'editeur.
-    await first_row.hover()
-    await page.wait_for_timeout(400)
-    await shoot("mes_cvs_actions", first_row)
+    if "dashboard" in wanted:
+        await shoot("dashboard", "mes_cvs", first_row)
+        # Survol : revele les icones d'action (Renommer, Dupliquer, Supprimer).
+        await first_row.hover()
+        await page.wait_for_timeout(400)
+        await shoot("dashboard", "mes_cvs_actions", first_row)
 
     await first_row.click()
-    # Ouvre l'editeur (chunk charge en lazy) : attend son panneau de contenu
-    # (id stable, contrairement aux classes Tailwind qui changent souvent).
+    # Editeur charge en lazy : attend son panneau de contenu (id stable).
     form_panel = page.locator("#editor-form-panel")
     await form_panel.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(1000)
     await features_module.dismiss_onboarding_tooltip(page)
+    # La checklist s'ouvre seule une fois l'aide fermee, avec un calque qui
+    # intercepterait tous les clics suivants.
+    await page.wait_for_timeout(800)
+    await features_module.close_checklist_if_open(page)
 
-    await features_module.run_features(page, out_dir, shoot, form_panel, feature_ids)
+    await features_module.run_features(page, shoot, form_panel, wanted)
 
+
+async def capture_pc_screenshots(page, out_dir: Path, feature_ids: list[str] | None = None) -> list[dict]:
+    """
+    Mode screenshots : une image composee (fond floute + carte nette, cf.
+    scene_compose.py) par moment cle, etiquetee avec sa fonctionnalite dans
+    captures.json -- 3b_build_video_from_screenshots.py les replace dans
+    l'ordre du scenario, cale sur le timing de la voix.
+    """
+    shots: list[dict] = []
+
+    async def shoot(feature_id: str, name: str, element):
+        path = await features_module._capture_scene(page, out_dir, len(shots) + 1, name, element)
+        shots.append({"feature": feature_id, "name": name, "file": path.name})
+
+    await walk_features(page, shoot, feature_ids)
+    (out_dir / "captures.json").write_text(json.dumps(shots, ensure_ascii=False, indent=2), encoding="utf-8")
     return shots
 
 
 async def capture_pc_video(page, out_dir: Path, feature_ids: list[str] | None = None) -> list[dict]:
     """
-    Mode "video desktop" (--mode video_desktop) : le meme parcours que
-    capture_pc_screenshots(), mais sur l'enregistrement video continu deja
-    actif sur le context (cf. record()) plutot que des captures figees.
-    Chaque appel a shoot() ne prend pas de photo : il marque la frontiere
-    d'un segment (nom + position de l'element vise a cet instant), pour un
-    recadrage ulterieur par 3c_build_video_from_recording.py sur cette seule
-    zone -- pas le viewport desktop entier.
+    Mode video_desktop : le meme parcours, sur l'enregistrement video continu
+    deja actif sur le context (cf. record()). Chaque shoot() marque la fin
+    d'un segment (fonctionnalite + position de l'element vise a cet instant),
+    recadre ensuite par 3c_build_video_from_recording.py sur cette seule zone.
 
-    N'est jamais un point de non-retour : si ce mode echoue ou rend mal,
-    --mode screenshots reste un chemin totalement independant et inchange.
+    Chemin independant du mode screenshots : si celui-ci echoue ou rend mal,
+    --mode screenshots reste disponible et inchange.
     """
     segments: list[dict] = []
     t0 = time.monotonic()
 
-    async def shoot(name: str, element):
+    async def shoot(feature_id: str, name: str, element):
         try:
             bbox = await element.bounding_box()
         except Exception:
             bbox = None
-        segments.append({"name": name, "end": time.monotonic() - t0, "bbox": bbox})
+        segments.append({"feature": feature_id, "name": name, "end": time.monotonic() - t0, "bbox": bbox})
 
-    first_row = page.locator("li:visible", has=page.locator("button[title]")).first
-    await first_row.wait_for(state="visible", timeout=30000)
-    await page.wait_for_timeout(800)
-    await shoot("mes_cvs", first_row)
-
-    await first_row.hover()
-    await page.wait_for_timeout(400)
-    await shoot("mes_cvs_actions", first_row)
-
-    await first_row.click()
-    form_panel = page.locator("#editor-form-panel")
-    await form_panel.wait_for(state="visible", timeout=30000)
-    await page.wait_for_timeout(1000)
-    await features_module.dismiss_onboarding_tooltip(page)
-
-    await features_module.run_features(page, out_dir, shoot, form_panel, feature_ids)
+    await walk_features(page, shoot, feature_ids)
 
     starts = [0.0] + [s["end"] for s in segments[:-1]]
     for seg, start in zip(segments, starts):
@@ -344,7 +329,7 @@ def main():
             # sinon un vieux .webm (nomme par un hash Playwright, pas
             # deterministe) traine a cote du nouveau et un glob() ulterieur
             # peut en reprendre un au hasard.
-            stray = list(out_dir.glob("*.webm")) if args.mode == "video_desktop" else []
+            stray = list(out_dir.glob("*.webm")) if args.mode == "video_desktop" else list(out_dir.glob("captures.json"))
             for f in {*existing, *stray}:
                 f.unlink()
 
