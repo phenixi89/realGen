@@ -65,19 +65,23 @@ async def play_demo_steps(page):
     # Declenche le chargement du CV de demo (clic sur la zone de depot)
     await page.locator("div.border-dashed:visible").first.click()
 
-    # L'editeur (barreSuperieure) rend sa barre d'outils deux fois -- une
-    # version desktop ("hidden md:flex") et une mobile ("flex md:hidden") --
-    # donc ce bouton existe deux fois dans le DOM. Le viewport etant mobile,
-    # seule la copie mobile est visible : :visible ecarte l'autre.
-    apercu_pdf = page.locator("button[aria-label='Aperçu fidèle']:visible").first
+    # Sur mobile, l'editeur s'ouvre sur le panneau de formulaire ; le <main>
+    # qui contient le LivePreview (rendu stylise en direct du CV) reste
+    # `hidden` tant qu'on n'a pas bascule via le bouton "Aperçu" (icone oeil)
+    # de l'en-tete mobile -- c'etait la vraie cause du timeout precedent, pas
+    # un probleme de doublon DOM. aria-label="Aperçu" est un match EXACT
+    # (contrairement a "Aperçu fidèle", plus long), donc pas d'ambiguite.
+    show_preview = page.locator("button[aria-label='Aperçu']:visible").first
 
     # L'editeur est charge en lazy (chunk JS a part) : premier fetch parfois
     # lent sur Render free tier, d'ou une marge large ici.
-    await apercu_pdf.wait_for(state="visible", timeout=30000)
+    await show_preview.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(1000)
+    await show_preview.click()
 
-    # Bascule sur l'apercu PDF stylise -- le rendu final vendeur
-    await apercu_pdf.click()
+    # <main> passe en overlay plein ecran et affiche le LivePreview stylise --
+    # c'est deja le plan le plus vendeur, pas besoin d'ouvrir en plus la
+    # modale "Aperçu fidèle".
     await page.wait_for_timeout(2500)
     await page.mouse.wheel(0, 300)
     await page.wait_for_timeout(1500)
