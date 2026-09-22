@@ -17,17 +17,12 @@ from pathlib import Path
 from google import genai
 from google.genai import types
 
+from script_text import script_to_text
+
 # Voix disponibles cote Gemini TTS (exemples courants a adapter selon la doc a jour)
 VOICES = ["Kore", "Puck", "Enceladus", "Aoede", "Zephyr"]
 
 TTS_MODEL_NAME = os.environ.get("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
-
-
-def script_to_text(script: dict) -> str:
-    """Assemble hook/probleme/demo/cta en un seul texte a lire."""
-    parts = [script.get("hook", ""), script.get("probleme", ""),
-              script.get("demo", ""), script.get("cta", "")]
-    return " ".join(p for p in parts if p)
 
 
 def synthesize(client: genai.Client, text: str, voice: str, pcm_path: Path):

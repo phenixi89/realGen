@@ -91,11 +91,11 @@ def main():
                 continue
             video_path = videos[0]
 
-        # 4. Sous-titres
+        # 4. Sous-titres (alignes sur le texte exact du script, cf. 4_generate_subtitles.py)
         subs_path = out / "subs" / f"reel_{i:02d}.json"
         run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
-             "--audio", str(audio_path), "--out", str(subs_path),
-             "--model", args.whisper_model, *force_flag_for("subs")])
+             "--audio", str(audio_path), "--scripts", str(out / "scripts.json"), "--index", str(i),
+             "--out", str(subs_path), "--model", args.whisper_model, *force_flag_for("subs")])
 
         # 5. Assemblage final
         final_path = out / "final" / f"reel_{i:02d}.mp4"
