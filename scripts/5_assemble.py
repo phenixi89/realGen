@@ -47,7 +47,13 @@ def main():
     parser.add_argument("--audio", type=str, required=True)
     parser.add_argument("--subs", type=str, required=True)
     parser.add_argument("--out", type=str, required=True)
+    parser.add_argument("--force", action="store_true",
+                         help="Reassemble meme si --out existe deja")
     args = parser.parse_args()
+
+    if not args.force and Path(args.out).exists():
+        print(f"REPRISE: {args.out} existe deja, on saute (--force pour reassembler)")
+        return
 
     assemble(Path(args.video), Path(args.audio), Path(args.subs), Path(args.out))
     print(f"OK -> {args.out}")

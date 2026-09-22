@@ -107,9 +107,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", type=str, required=True, help="URL de ton SaaS (page de demo/app)")
     parser.add_argument("--out", type=str, default="output/video")
+    parser.add_argument("--force", action="store_true",
+                         help="Re-enregistre meme si une video existe deja dans --out")
     args = parser.parse_args()
 
     out_dir = Path(args.out)
+
+    if not args.force and out_dir.exists():
+        existing = list(out_dir.glob("*.webm"))
+        if existing:
+            print(f"REPRISE: {existing[0]} existe deja, on saute (--force pour re-enregistrer)")
+            return
+
     email = os.environ.get("DEMO_EMAIL")
     password = os.environ.get("DEMO_PASSWORD")
     asyncio.run(record(args.url, out_dir, email, password))

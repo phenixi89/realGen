@@ -66,6 +66,8 @@ def main():
     parser.add_argument("--scripts", type=str, default="output/scripts.json")
     parser.add_argument("--voice", type=str, default="Kore", choices=VOICES)
     parser.add_argument("--out", type=str, default="output/audio")
+    parser.add_argument("--force", action="store_true",
+                         help="Regenere meme si le mp3 existe deja pour un reel")
     args = parser.parse_args()
 
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -87,6 +89,10 @@ def main():
 
         wav_path = out_dir / f"reel_{i:02d}.wav"
         mp3_path = out_dir / f"reel_{i:02d}.mp3"
+
+        if not args.force and mp3_path.exists():
+            print(f"[{i}/{len(scripts)}] REPRISE: {mp3_path} existe deja, on saute")
+            continue
 
         print(f"[{i}/{len(scripts)}] Synthese voix ({args.voice})...")
         try:

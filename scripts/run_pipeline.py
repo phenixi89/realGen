@@ -28,18 +28,21 @@ def main():
     parser.add_argument("--saas-url", type=str, required=True, help="URL de demo de ton SaaS")
     parser.add_argument("--voice", type=str, default="Kore")
     parser.add_argument("--whisper-model", type=str, default="base")
+    parser.add_argument("--force", action="store_true",
+                         help="Ignore les sorties existantes et regenere tout depuis zero")
     args = parser.parse_args()
 
     out = Path("output")
+    force_flag = ["--force"] if args.force else []
 
     # 1. Scripts
     run([sys.executable, str(ROOT / "1_generate_script.py"),
-         "--n", str(args.n), "--out", str(out / "scripts.json")])
+         "--n", str(args.n), "--out", str(out / "scripts.json"), *force_flag])
 
     # 2. Voix
     run([sys.executable, str(ROOT / "2_generate_voice.py"),
          "--scripts", str(out / "scripts.json"), "--voice", args.voice,
-         "--out", str(out / "audio")])
+         "--out", str(out / "audio"), *force_flag])
 
     scripts = json.loads((out / "scripts.json").read_text(encoding="utf-8"))
 
@@ -53,7 +56,7 @@ def main():
         #    adapte play_demo_steps() dans 3_record_demo.py pour varier les parcours)
         video_dir = out / "video" / f"reel_{i:02d}"
         run([sys.executable, str(ROOT / "3_record_demo.py"),
-             "--url", args.saas_url, "--out", str(video_dir)])
+             "--url", args.saas_url, "--out", str(video_dir), *force_flag])
         videos = list(video_dir.glob("*.webm"))
         if not videos:
             print(f"[{i}] pas de video generee, on saute")
@@ -64,13 +67,13 @@ def main():
         subs_path = out / "subs" / f"reel_{i:02d}.srt"
         run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
              "--audio", str(audio_path), "--out", str(subs_path),
-             "--model", args.whisper_model])
+             "--model", args.whisper_model, *force_flag])
 
         # 5. Assemblage final
         final_path = out / "final" / f"reel_{i:02d}.mp4"
         run([sys.executable, str(ROOT / "5_assemble.py"),
              "--video", str(video_path), "--audio", str(audio_path),
-             "--subs", str(subs_path), "--out", str(final_path)])
+             "--subs", str(subs_path), "--out", str(final_path), *force_flag])
 
     print(f"\nTermine. {args.n} reel(s) dans output/final/")
 

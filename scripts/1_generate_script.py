@@ -68,7 +68,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, default=5, help="Nombre de scripts a generer")
     parser.add_argument("--out", type=str, default="output/scripts.json")
+    parser.add_argument("--force", action="store_true",
+                         help="Regenere meme si --out existe deja avec assez de scripts")
     args = parser.parse_args()
+
+    out_path = Path(args.out)
+    if not args.force and out_path.exists():
+        existing = json.loads(out_path.read_text(encoding="utf-8"))
+        if len(existing) >= args.n:
+            print(f"REPRISE: {out_path} existe deja avec {len(existing)} script(s), on saute (--force pour regenerer)")
+            return
 
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -83,7 +92,6 @@ def main():
         print(f"[{i}/{len(angles)}] Generation script pour angle: {angle}")
         scripts.append(generate_script(client, angle))
 
-    out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(scripts, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"OK -> {out_path} ({len(scripts)} scripts)")

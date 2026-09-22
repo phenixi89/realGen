@@ -13,6 +13,11 @@ on:
         description: "Voix TTS Gemini"
         required: false
         default: "Kore"
+      force:
+        description: "Ignorer toute reprise et tout regenerer depuis zero"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   generate:
@@ -34,6 +39,20 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
+      # Persiste output/ entre les runs : si le pipeline echoue en cours de
+      # route (ex: etape 3), le prochain run reprend la ou il s'est arrete
+      # au lieu de regenerer les scripts/voix (appels Gemini deja payes).
+      # restore-keys reprend le cache le plus recent disponible ; une cle
+      # unique par run_id est sauvegardee a la fin (meme si le job echoue).
+      - name: Restore pipeline output (reprise)
+        if: ${{ github.event.inputs.force != 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: output
+          key: reels-output-${{ github.run_id }}
+          restore-keys: |
+            reels-output-
+
       - name: Run pipeline
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -43,7 +62,8 @@ jobs:
           python scripts/run_pipeline.py \
             --n "${{ github.event.inputs.n || '3' }}" \
             --saas-url "${{ vars.SAAS_URL }}" \
-            --voice "${{ github.event.inputs.voice || 'Kore' }}"
+            --voice "${{ github.event.inputs.voice || 'Kore' }}" \
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }}
 
       - name: Upload reels
         uses: actions/upload-artifact@v4

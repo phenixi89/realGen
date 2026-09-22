@@ -34,7 +34,14 @@ def main():
     parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--model", type=str, default="base",
                          help="tiny/base/small (base = bon compromis vitesse/precision en CPU)")
+    parser.add_argument("--force", action="store_true",
+                         help="Regenere meme si --out existe deja")
     args = parser.parse_args()
+
+    out_path = Path(args.out)
+    if not args.force and out_path.exists():
+        print(f"REPRISE: {out_path} existe deja, on saute (--force pour regenerer)")
+        return
 
     print(f"Chargement du modele Whisper '{args.model}'...")
     model = whisper.load_model(args.model)
@@ -42,7 +49,6 @@ def main():
     print(f"Transcription de {args.audio}...")
     result = model.transcribe(args.audio, language="fr", word_timestamps=False)
 
-    out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     write_srt(result["segments"], out_path)
     print(f"OK -> {out_path}")
