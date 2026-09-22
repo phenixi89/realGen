@@ -1,107 +1,115 @@
 """
-Assemble video demo + voix off + sous-titres karaoke burn-in en un MP4 final
-pret pour TikTok/Reels : vignette, fondus d'ouverture/fermeture et watermark
-de marque, en plus du montage brut audio+video+sous-titres.
+Assemble video demo + voix off + sous-titres karaoke en un MP4 final pret
+pour TikTok/Reels : vignette, fondus d'ouverture/fermeture, watermark de
+marque -- via moviepy plutot qu'une chaine de filtres ffmpeg construite a la
+main. Les bugs recents (crop mal centre, police surdimensionnee, timing
+karaoke, video encodee dans un profil illisible sur mobile) venaient tous de
+la fragilite de ce genre de filtre -- moviepy orchestre des objets Python
+testables individuellement, et ne genere le ffmpeg final que pour le mux.
 
 Usage:
     python 5_assemble.py --video output/video/demo_raw.webm \
                           --audio output/audio/reel_01.mp3 \
-                          --subs output/subs/reel_01.ass \
+                          --subs output/subs/reel_01.json \
                           --out output/final/reel_01.mp4
 """
 import argparse
-import re
-import subprocess
+import json
 from pathlib import Path
 
-# Police du watermark. Chemin standard Debian/Ubuntu du paquet
-# fonts-dejavu-core (installe dans l'image Docker du pipeline).
-WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+import numpy as np
+from moviepy import AudioFileClip, CompositeVideoClip, ImageClip, VideoFileClip
+from moviepy.video.fx import FadeIn, FadeOut, Loop
+from moviepy.audio.fx import AudioFadeIn, AudioFadeOut
+from PIL import Image, ImageDraw, ImageFont
+
+from caption_render import render_caption
 
 FADE_DURATION = 0.4
+WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+WATERMARK_TEXT = "OpusCV"
 
-DURATION_RE = re.compile(r"Duration: (\d+):(\d+):(\d+\.\d+)")
+
+def make_vignette(size: tuple[int, int]):
+    """
+    Masque radial (blanc au centre, plus sombre aux bords) precalcule une
+    fois, applique a chaque frame par multiplication -- assombrit doucement
+    les bords sans assombrir le centre, evite le look "capture d'ecran brute".
+    """
+    w, h = size
+    yy, xx = np.mgrid[0:h, 0:w]
+    cx, cy = w / 2, h / 2
+    dist = np.sqrt(((xx - cx) / cx) ** 2 + ((yy - cy) / cy) ** 2)
+    strength = np.clip(1 - 0.35 * np.clip(dist - 0.6, 0, None), 0.55, 1.0)
+    return strength[:, :, None]  # (h, w, 1), broadcast sur les 3 canaux RGB
 
 
-def probe_duration(path: Path) -> float:
-    # ffmpeg seul (pas ffprobe) : evite de devoir garantir la presence des
-    # deux binaires -- `ffmpeg -i` sans sortie ecrit toujours la duree sur
-    # stderr, meme sans -show_entries dedie.
-    result = subprocess.run(
-        ["ffmpeg", "-i", str(path)], capture_output=True, text=True,
-    )
-    # Dernier match, pas le premier : sur un MP3 sans header Xing, ffmpeg
-    # peut d'abord estimer une duree a partir du bitrate avant d'afficher
-    # la duree reelle sur une ligne ulterieure.
-    matches = list(DURATION_RE.finditer(result.stderr))
-    if not matches:
-        raise RuntimeError(f"Impossible de lire la duree de {path}:\n{result.stderr}")
-    h, m, s = matches[-1].groups()
-    return int(h) * 3600 + int(m) * 60 + float(s)
+def make_watermark_clip(duration: float) -> ImageClip:
+    font = ImageFont.truetype(WATERMARK_FONT, 34)
+    dummy = Image.new("RGBA", (10, 10))
+    bbox = ImageDraw.Draw(dummy).textbbox((0, 0), WATERMARK_TEXT, font=font, stroke_width=2)
+    img = Image.new("RGBA", (bbox[2] - bbox[0] + 8, bbox[3] - bbox[1] + 8), (0, 0, 0, 0))
+    ImageDraw.Draw(img).text((4, 4), WATERMARK_TEXT, font=font, fill=(255, 255, 255, 150),
+                              stroke_width=2, stroke_fill=(0, 0, 0, 120))
+    return ImageClip(np.array(img), duration=duration).with_position((40, 40))
+
+
+def make_caption_clips(cues: list[dict]) -> list[ImageClip]:
+    clips = []
+    for cue in cues:
+        words = [w["text"] for w in cue["words"]]
+        for i, w in enumerate(cue["words"]):
+            img = render_caption(words, active_index=i)
+            dur = max(w["end"] - w["start"], 0.05)
+            clip = (
+                ImageClip(np.array(img), duration=dur)
+                .with_start(w["start"])
+                .with_position(("center", 0.82), relative=True)
+            )
+            clips.append(clip)
+    return clips
 
 
 def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path):
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    cues = json.loads(subs_path.read_text(encoding="utf-8"))
 
-    # Le style (police, surlignage karaoke par mot) est deja embarque dans le
-    # .ass genere par 4_generate_subtitles.py -- plus de force_style ici.
-    subs_escaped = str(subs_path).replace(":", r"\:")
-    duration = probe_duration(audio_path)
-    print(f"Duree audio detectee : {duration:.2f}s")
-    # Si la duree lue est anormalement courte (mauvais parsing, mp3 sans
-    # header fiable...), un fondu de sortie positionne pres de 0 noircirait
-    # quasiment tout le clip -- degrade en filet de securite plutot que de
-    # produire une video qui semble "ne pas se lire" (image noire du debut
-    # a la fin, son intact).
-    apply_fade_out = duration > FADE_DURATION * 3
-    fade_out_start = max(duration - FADE_DURATION, 0)
+    audio = AudioFileClip(str(audio_path))
+    duration = audio.duration
 
-    vf = (
-        f"subtitles='{subs_escaped}',"
-        # Vignette legere : assombrit doucement les bords, evite le look
-        # "capture d'ecran brute" plaquee telle quelle.
-        f"vignette=PI/6,"
-        f"drawtext=fontfile={WATERMARK_FONT}:text='OpusCV':"
-        f"fontcolor=white@0.6:fontsize=34:x=40:y=40,"
-        f"fade=t=in:st=0:d={FADE_DURATION}"
-    )
-    af = f"afade=t=in:st=0:d={FADE_DURATION}"
-    if apply_fade_out:
-        vf += f",fade=t=out:st={fade_out_start}:d={FADE_DURATION}"
-        af += f",afade=t=out:st={fade_out_start}:d={FADE_DURATION}"
+    video = VideoFileClip(str(video_path))
+    # La demo Playwright (souvent ~10s) est plus courte que la voix off
+    # (15-20s) : Loop(duration=...) boucle la video jusqu'a couvrir toute la
+    # narration au lieu de la tronquer.
+    if video.duration < duration:
+        video = video.with_effects([Loop(duration=duration)])
+    else:
+        video = video.subclipped(0, duration)
 
-    cmd = [
-        "ffmpeg", "-y",
-        # La demo Playwright (souvent ~10s) est plus courte que la voix off
-        # (15-20s) : sans boucler la video, -shortest tronquait l'audio (et
-        # les sous-titres) a la duree de la video. En bouclant indefiniment
-        # la video, c'est l'audio -- desormais le flux le plus court -- qui
-        # fixe la duree finale ; la video se repete pour combler le reste.
-        # genpts : le flux boucle (-stream_loop) peut arriver avec des PTS
-        # discontinus au point de bouclage (surtout pour une video issue
-        # d'un filter_complex xfade, mode screenshots) -- les regenerer
-        # evite des timestamps casses qui font planter le rendu video chez
-        # certains lecteurs (l'audio, decode independamment, reste correct).
-        "-fflags", "+genpts",
-        "-stream_loop", "-1", "-i", str(video_path),
-        "-i", str(audio_path),
-        "-vf", vf,
-        "-af", af,
-        "-map", "0:v:0",
-        "-map", "1:a:0",
-        "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-        # Sans ca, libx264 choisit son pix_fmt selon la chaine de filtres
-        # (vignette/drawtext peuvent le faire deriver vers yuv444p) --
-        # quasiment aucun lecteur mobile/natif ne decode le H.264 4:4:4,
-        # d'ou une video qui "ne se lit pas" (son seul) alors que le fichier
-        # est valide. yuv420p est le seul profil garanti compatible partout.
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-b:a", "192k",
-        "-shortest",
-        "-movflags", "+faststart",  # important pour la lecture instantanee sur mobile
+    vignette_mask = make_vignette(video.size)
+    video = video.image_transform(lambda frame: np.clip(frame * vignette_mask, 0, 255).astype("uint8"))
+
+    layers = [video, make_watermark_clip(duration), *make_caption_clips(cues)]
+    final = CompositeVideoClip(layers, size=video.size).with_duration(duration)
+
+    final = final.with_effects([FadeIn(FADE_DURATION), FadeOut(FADE_DURATION)])
+    audio = audio.with_effects([AudioFadeIn(FADE_DURATION), AudioFadeOut(FADE_DURATION)])
+    final = final.with_audio(audio)
+
+    final.write_videofile(
         str(out_path),
-    ]
-    subprocess.run(cmd, check=True)
+        fps=25,
+        codec="libx264",
+        audio_codec="aac",
+        preset="medium",
+        # pix_fmt yuv420p explicite : sans ca, un encodage derive du filtre
+        # precedent peut finir dans un profil (ex: yuv444p) que la plupart
+        # des lecteurs mobiles ne decodent pas -- video muette a l'usage.
+        ffmpeg_params=["-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart"],
+        logger=None,
+    )
+    video.close()
+    audio.close()
 
 
 def main():
