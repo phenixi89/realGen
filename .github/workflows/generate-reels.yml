@@ -26,6 +26,18 @@ on:
           - screenshots
         required: false
         default: video
+      from_step:
+        description: "Regenerer a partir de cette etape (et les suivantes), ignore le cache pour elles. Vide = reprise normale."
+        type: choice
+        options:
+          - ""
+          - script
+          - voice
+          - video
+          - subs
+          - assemble
+        required: false
+        default: ""
 
 jobs:
   generate:
@@ -75,6 +87,7 @@ jobs:
             --saas-url "${{ vars.SAAS_URL }}" \
             --voice "${{ github.event.inputs.voice || 'Kore' }}" \
             --capture-mode "${{ github.event.inputs.capture_mode || 'video' }}" \
+            ${{ github.event.inputs.from_step && format('--from-step {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }}
 
       # if: always() -- meme si le pipeline echoue en route (ex: etape 3),

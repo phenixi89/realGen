@@ -234,11 +234,18 @@ def main():
     out_dir = Path(args.out)
     pattern = "*.png" if args.mode == "screenshots" else "*.webm"
 
-    if not args.force and out_dir.exists():
+    if out_dir.exists():
         existing = sorted(out_dir.glob(pattern))
         if existing:
-            print(f"REPRISE: {len(existing)} fichier(s) existent deja dans {out_dir}, on saute (--force pour re-enregistrer)")
-            return
+            if not args.force:
+                print(f"REPRISE: {len(existing)} fichier(s) existent deja dans {out_dir}, on saute (--force pour re-enregistrer)")
+                return
+            # --force : supprime les anciennes sorties avant de re-enregistrer,
+            # sinon un vieux .webm (nomme par un hash Playwright, pas
+            # deterministe) traine a cote du nouveau et un glob() ulterieur
+            # peut en reprendre un au hasard.
+            for f in existing:
+                f.unlink()
 
     email = os.environ.get("DEMO_EMAIL")
     password = os.environ.get("DEMO_PASSWORD")

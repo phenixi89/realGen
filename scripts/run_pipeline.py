@@ -13,6 +13,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 
+# Ordre des etapes : forcer une etape force aussi celles d'apres, sinon un
+# sous-titre/assemblage "REPRISE" resterait construit sur une video ou un
+# audio perimes.
+STEPS = ["script", "voice", "video", "subs", "assemble"]
+
 
 def run(cmd: list[str]):
     print(f"\n$ {' '.join(cmd)}")
@@ -32,20 +37,26 @@ def main():
                          help="video = enregistrement mobile continu ; "
                               "screenshots = captures desktop animees en zoom in/out au montage")
     parser.add_argument("--force", action="store_true",
-                         help="Ignore les sorties existantes et regenere tout depuis zero")
+                         help="Ignore les sorties existantes et regenere tout depuis zero (equivalent a --from-step script)")
+    parser.add_argument("--from-step", type=str, choices=STEPS, default=None,
+                         help="Force la regeneration a partir de cette etape (et toutes celles d'apres) ; "
+                              "les etapes precedentes restent en reprise si deja presentes")
     args = parser.parse_args()
 
     out = Path("output")
-    force_flag = ["--force"] if args.force else []
+    from_index = 0 if args.force else (STEPS.index(args.from_step) if args.from_step else None)
+
+    def force_flag_for(step: str) -> list[str]:
+        return ["--force"] if from_index is not None and STEPS.index(step) >= from_index else []
 
     # 1. Scripts
     run([sys.executable, str(ROOT / "1_generate_script.py"),
-         "--n", str(args.n), "--out", str(out / "scripts.json"), *force_flag])
+         "--n", str(args.n), "--out", str(out / "scripts.json"), *force_flag_for("script")])
 
     # 2. Voix
     run([sys.executable, str(ROOT / "2_generate_voice.py"),
          "--scripts", str(out / "scripts.json"), "--voice", args.voice,
-         "--out", str(out / "audio"), *force_flag])
+         "--out", str(out / "audio"), *force_flag_for("voice")])
 
     scripts = json.loads((out / "scripts.json").read_text(encoding="utf-8"))
 
@@ -61,7 +72,7 @@ def main():
         video_dir = out / "video" / f"reel_{i:02d}"
         run([sys.executable, str(ROOT / "3_record_demo.py"),
              "--url", args.saas_url, "--out", str(video_dir),
-             "--mode", args.capture_mode, *force_flag])
+             "--mode", args.capture_mode, *force_flag_for("video")])
 
         if args.capture_mode == "screenshots":
             if not list(video_dir.glob("*.png")):
@@ -72,7 +83,7 @@ def main():
             #     autre video source.
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3b_build_video_from_screenshots.py"),
-                 "--screens", str(video_dir), "--out", str(video_path), *force_flag])
+                 "--screens", str(video_dir), "--out", str(video_path), *force_flag_for("video")])
         else:
             videos = list(video_dir.glob("*.webm"))
             if not videos:
@@ -84,13 +95,13 @@ def main():
         subs_path = out / "subs" / f"reel_{i:02d}.srt"
         run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
              "--audio", str(audio_path), "--out", str(subs_path),
-             "--model", args.whisper_model, *force_flag])
+             "--model", args.whisper_model, *force_flag_for("subs")])
 
         # 5. Assemblage final
         final_path = out / "final" / f"reel_{i:02d}.mp4"
         run([sys.executable, str(ROOT / "5_assemble.py"),
              "--video", str(video_path), "--audio", str(audio_path),
-             "--subs", str(subs_path), "--out", str(final_path), *force_flag])
+             "--subs", str(subs_path), "--out", str(final_path), *force_flag_for("assemble")])
 
     print(f"\nTermine. {args.n} reel(s) dans output/final/")
 
