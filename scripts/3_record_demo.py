@@ -115,31 +115,27 @@ async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
         await page.screenshot(path=str(path))
         shots.append(path)
 
-    # Le compte est deja connecte : ouvre le menu (icone User, coin haut
-    # droit de la barre desktop) puis "Mes CVs" (FolderOpen), qui liste les
-    # CVs sauvegardes du compte demo -- exactement l'ecran "Mes CVs
-    # sauvegardés" vise pour la premiere capture.
-    account_button = page.locator("button:visible").filter(has=page.locator("svg.lucide-user")).first
-    await account_button.wait_for(state="visible", timeout=30000)
-    await account_button.click()
-    await page.wait_for_timeout(400)
-
-    my_cvs_item = page.locator("button:visible").filter(has_text=re.compile("mes cv", re.I)).first
-    await my_cvs_item.click()
-    await page.wait_for_selector("div[role='dialog']", timeout=10000)
+    # Une fois connecte, App.jsx affiche directement Dashboard.jsx (pas de
+    # menu compte a ouvrir ni de modale) : "Mes CVs sauvegardés" y est deja
+    # la section principale de la page -- exactement ce que montre la
+    # capture. On attend la premiere ligne de CV (le fetch /api/cvs est
+    # asynchrone, precede d'un skeleton de chargement).
+    first_row = page.locator("li:visible", has=page.locator("button[title]")).first
+    await first_row.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(800)
     await shoot("mes_cvs")
 
     # Survole la premiere ligne pour reveler ses icones d'action (Renommer,
     # Dupliquer, Supprimer -- masquees hors survol) avant de capturer, puis
     # ouvre ce CV dans l'editeur.
-    first_row = page.locator("li:visible", has=page.locator("button[title]")).first
     await first_row.hover()
     await page.wait_for_timeout(400)
     await shoot("mes_cvs_actions")
 
     await first_row.click()
-    await page.wait_for_selector("div[role='dialog']", state="detached", timeout=15000)
+    # Ouvre l'editeur (chunk charge en lazy) : attend son dock lateral
+    # desktop plutot qu'une modale, absente de ce parcours.
+    await page.wait_for_selector("aside nav", timeout=30000)
     await page.wait_for_timeout(1500)
     await shoot("editeur")
 
