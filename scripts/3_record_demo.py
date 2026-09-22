@@ -1,9 +1,7 @@
 """
-Enregistre un parcours utilisateur sur ton SaaS via Playwright (headless Chromium).
-
-A ADAPTER : la fonction `play_demo_steps` doit correspondre au vrai parcours
-de ton produit (selecteurs CSS/texte reels). Ce fichier fournit un squelette
-fonctionnel avec un exemple generique d'upload + generation de CV.
+Enregistre un parcours utilisateur sur OpusCV via Playwright (headless Chromium) :
+connexion, ouverture de la modale d'analyse, mode demo (profil fictif local),
+puis apercu PDF fidele du CV genere.
 
 Usage:
     python 3_record_demo.py --url https://tonapp.com --out output/video/demo_raw.webm
@@ -38,21 +36,33 @@ async def login(page, email: str, password: str):
 
 async def play_demo_steps(page):
     """
-    ICI : la sequence d'actions a rejouer sur ton SaaS, une fois connecte.
-    Exemple generique -- remplace les selecteurs par les tiens (upload de CV,
-    lancement de l'analyse IA, apercu du PDF optimise, etc.).
+    Parcours OpusCV, une fois connecte : ouvre la modale d'analyse, bascule
+    en mode demo (profil fictif genere localement, sans appel IA ni upload --
+    rapide et deterministe pour un enregistrement automatise), puis affiche
+    l'apercu PDF fidele du CV genere.
     """
-    # Exemple : cliquer sur "Analyser un CV" / "Essayer gratuitement"
-    # await page.click("text=Analyser mon CV")
-    # await page.wait_for_timeout(2000)
+    # Ouvre la modale "Analyser un CV"
+    await page.get_by_role("button", name="Essayer gratuitement", exact=False).first.click()
+    await page.wait_for_selector("text=Analyser un CV", timeout=10000)
+    await page.wait_for_timeout(600)
 
-    # Exemple : uploader un fichier de demo
-    # await page.set_input_files("input[type='file']", "assets/cv_demo.pdf")
-    # await page.wait_for_selector(".analysis-result", timeout=30000)
+    # Bascule en mode demo (profil fictif local, pas d'appel serveur) --
+    # ce bouton est un toggle, son libelle change une fois actif, ne pas
+    # recliquer dessus sous peine de repasser en mode import.
+    await page.click("text=Essayer avec un profil de démonstration")
+    await page.wait_for_timeout(500)
 
-    # Placeholder : juste un scroll pour avoir un enregistrement non vide
-    await page.wait_for_timeout(1500)
-    await page.mouse.wheel(0, 400)
+    # Declenche le chargement du CV de demo (clic sur la zone de depot)
+    await page.locator("div.border-dashed").click()
+
+    # Attend l'ouverture de l'editeur avec le CV genere
+    await page.wait_for_selector("button[aria-label='Aperçu fidèle']", timeout=15000)
+    await page.wait_for_timeout(1000)
+
+    # Bascule sur l'apercu PDF stylise -- le rendu final vendeur
+    await page.click("button[aria-label='Aperçu fidèle']")
+    await page.wait_for_timeout(2500)
+    await page.mouse.wheel(0, 300)
     await page.wait_for_timeout(1500)
 
 
