@@ -29,7 +29,7 @@ async def login(page, email: str, password: str):
     et nav mobile ("Connexion") -- on tourne en format vertical (mobile), donc
     la regex couvre les deux.
     """
-    await page.get_by_role("button", name=re.compile("connexion|se connecter", re.I)).locator(":visible").first.click()
+    await page.locator("button:visible").filter(has_text=re.compile("connexion|se connecter", re.I)).first.click()
     await page.wait_for_selector("input[type='email']", timeout=10000)
     await page.fill("input[type='email']", email)
     await page.fill("input[type='password']", password)
@@ -49,7 +49,7 @@ async def play_demo_steps(page):
     # Une fois connecte, l'accueil (Home) laisse place au Dashboard : le CTA
     # n'est plus "Essayer (gratuitement)" mais le bouton "Analyser" de la nav
     # du bas (mobileNav.analyze), qui ouvre la meme AnalyzeModal.
-    await page.get_by_role("button", name=re.compile("analyser", re.I)).locator(":visible").first.click()
+    await page.locator("button:visible").filter(has_text=re.compile("analyser", re.I)).first.click()
     # "Analyser un CV" apparait deux fois sur la page (le libelle responsive
     # du Dashboard, cache sur mobile, et le titre de la modale) -- on cible
     # le dialog par role, seul element garanti unique et visible.
@@ -59,7 +59,7 @@ async def play_demo_steps(page):
     # Bascule en mode demo (profil fictif local, pas d'appel serveur) --
     # ce bouton est un toggle, son libelle change une fois actif, ne pas
     # recliquer dessus sous peine de repasser en mode import.
-    await page.get_by_text("Essayer avec un profil de démonstration").locator(":visible").first.click()
+    await page.locator("button:visible").filter(has_text="Essayer avec un profil de démonstration").first.click()
     await page.wait_for_timeout(500)
 
     # Declenche le chargement du CV de demo (clic sur la zone de depot)
@@ -71,8 +71,9 @@ async def play_demo_steps(page):
     # seule la copie mobile est visible : :visible ecarte l'autre.
     apercu_pdf = page.locator("button[aria-label='Aperçu fidèle']:visible").first
 
-    # Attend l'ouverture de l'editeur avec le CV genere
-    await apercu_pdf.wait_for(state="visible", timeout=15000)
+    # L'editeur est charge en lazy (chunk JS a part) : premier fetch parfois
+    # lent sur Render free tier, d'ou une marge large ici.
+    await apercu_pdf.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(1000)
 
     # Bascule sur l'apercu PDF stylise -- le rendu final vendeur
