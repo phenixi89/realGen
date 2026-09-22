@@ -61,8 +61,10 @@ jobs:
       # bloquant en plein milieu du run, a l'etape 3 (Playwright).
       - name: Warm-up du service de demo (arriere-plan)
         run: |
-          ( curl -sS --max-time 90 -o /dev/null "${{ vars.SAAS_URL }}" || true ) &
-          disown
+          # `disown` est un builtin bash absent du shell minimal de l'image
+          # (`sh`/dash) et de toute facon inutile ici : un `&` simple suffit
+          # a detacher la commande sans qu'elle bloque cette etape.
+          curl -sS --max-time 90 -o /dev/null "${{ vars.SAAS_URL }}" &
 
       # Persiste output/ entre les runs : si le pipeline echoue en cours de
       # route (ex: etape 3), le prochain run reprend la ou il s'est arrete
