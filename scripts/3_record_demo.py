@@ -50,7 +50,10 @@ async def play_demo_steps(page):
     # n'est plus "Essayer (gratuitement)" mais le bouton "Analyser" de la nav
     # du bas (mobileNav.analyze), qui ouvre la meme AnalyzeModal.
     await page.get_by_role("button", name=re.compile("analyser", re.I)).first.click()
-    await page.wait_for_selector("text=Analyser un CV", timeout=10000)
+    # "Analyser un CV" apparait deux fois sur la page (le libelle responsive
+    # du Dashboard, cache sur mobile, et le titre de la modale) -- on cible
+    # le dialog par role, seul element garanti unique et visible.
+    await page.wait_for_selector("div[role='dialog']", timeout=10000)
     await page.wait_for_timeout(600)
 
     # Bascule en mode demo (profil fictif local, pas d'appel serveur) --
