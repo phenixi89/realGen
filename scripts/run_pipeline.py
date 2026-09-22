@@ -92,7 +92,7 @@ def main():
             video_path = videos[0]
 
         # 4. Sous-titres
-        subs_path = out / "subs" / f"reel_{i:02d}.srt"
+        subs_path = out / "subs" / f"reel_{i:02d}.ass"
         run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
              "--audio", str(audio_path), "--out", str(subs_path),
              "--model", args.whisper_model, *force_flag_for("subs")])

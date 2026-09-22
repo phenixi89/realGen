@@ -4,19 +4,26 @@ Transforme une serie de captures d'ecran (mode --mode screenshots de
 consommable par 5_assemble.py exactement comme la video Playwright classique.
 
 Chaque image devient un clip de --clip-seconds avec un zoom progressif
-(ffmpeg zoompan), puis tous les clips sont concatenes.
+(ffmpeg zoompan), les clips s'enchainent ensuite en fondus (xfade) au lieu
+de coupes franches -- un montage a la coupe entre des captures fixes se
+voit immediatement comme un diaporama, pas une video.
 
 Usage:
     python 3b_build_video_from_screenshots.py --screens output/video/reel_01 \
                                                 --out output/video/reel_01/zoom.mp4
 """
 import argparse
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 
 FPS = 25
 OUT_SIZE = (1080, 1920)
+XFADE_DURATION = 0.5
+# Alterne quelques transitions xfade standard (toutes supportees nativement
+# par ffmpeg) pour eviter que l'assemblage entier ait le meme fondu repete.
+XFADE_TRANSITIONS = ["fade", "slideleft", "fade", "slideright"]
 
 
 def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool):
@@ -68,14 +75,38 @@ def build_video_from_screenshots(screens_dir: Path, out_path: Path, clip_seconds
             build_clip(image_path, clip_path, clip_seconds, zoom_out=(i % 2 == 1))
             clip_paths.append(clip_path)
 
-        concat_list = tmp_dir / "concat.txt"
-        concat_list.write_text(
-            "\n".join(f"file '{p.as_posix()}'" for p in clip_paths), encoding="utf-8"
-        )
+        if len(clip_paths) == 1:
+            shutil.copy(clip_paths[0], out_path)
+            return
+
+        inputs = []
+        for p in clip_paths:
+            inputs += ["-i", str(p)]
+
+        # Chaine de xfade : chaque transition demarre "offset" secondes dans
+        # le flux cumule precedent (proche de sa fin), et le resultat perd
+        # xfade_duration a chaque jointure (les deux clips se chevauchent
+        # brievement au lieu de se succeder).
+        filter_parts = []
+        cum_duration = clip_seconds
+        prev_label = "0:v"
+        for i in range(1, len(clip_paths)):
+            transition = XFADE_TRANSITIONS[(i - 1) % len(XFADE_TRANSITIONS)]
+            offset = max(cum_duration - XFADE_DURATION, 0)
+            out_label = f"v{i}"
+            filter_parts.append(
+                f"[{prev_label}][{i}:v]xfade=transition={transition}:"
+                f"duration={XFADE_DURATION}:offset={offset:.3f}[{out_label}]"
+            )
+            prev_label = out_label
+            cum_duration = cum_duration + clip_seconds - XFADE_DURATION
 
         cmd = [
-            "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list),
-            "-c", "copy", str(out_path),
+            "ffmpeg", "-y", *inputs,
+            "-filter_complex", ";".join(filter_parts),
+            "-map", f"[{prev_label}]",
+            "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+            str(out_path),
         ]
         subprocess.run(cmd, check=True)
 
