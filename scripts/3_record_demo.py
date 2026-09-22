@@ -15,8 +15,15 @@ from pathlib import Path
 
 from playwright.async_api import async_playwright
 
-# Format vertical pour Reels/TikTok/Shorts
+# Taille CSS de la page (garde le point de rupture mobile de l'app -- c'est
+# ce qui determine quelle version de l'UI (responsive) s'affiche).
 VIEWPORT = {"width": 405, "height": 720}
+
+# Resolution d'encodage de la video, independante du viewport CSS : Playwright
+# redimensionne les frames captures vers cette taille. 1080x1920 est le
+# standard recommande pour Reels/TikTok/Shorts -- enregistrer directement a
+# la taille du viewport (405x720) produisait une image ~2.7x trop petite.
+RECORD_SIZE = {"width": 1080, "height": 1920}
 
 
 async def login(page, email: str, password: str):
@@ -94,8 +101,12 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
         browser = await p.chromium.launch()
         context = await browser.new_context(
             viewport=VIEWPORT,
+            # Rendu a densite de pixels plus elevee (equivalent "Retina") avant
+            # que Playwright ne redimensionne vers RECORD_SIZE : sans ca, le
+            # texte/l'UI captures restent flous meme une fois la video agrandie.
+            device_scale_factor=3,
             record_video_dir=str(out_dir),
-            record_video_size=VIEWPORT,
+            record_video_size=RECORD_SIZE,
         )
         page = await context.new_page()
         # Capture la console/les erreurs JS de la page : en cas d'echec, ca

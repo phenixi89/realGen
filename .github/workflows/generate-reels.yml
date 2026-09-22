@@ -36,8 +36,11 @@ jobs:
       - name: Install Playwright browsers
         run: playwright install --with-deps chromium
 
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # fonts-dejavu-core : la police des sous-titres brules (5_assemble.py).
+      # Sans elle, fontconfig substitue silencieusement une police par
+      # defaut differente de celle configuree, rendu moins net/coherent.
+      - name: Install ffmpeg + fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
 
       # Persiste output/ entre les runs : si le pipeline echoue en cours de
       # route (ex: etape 3), le prochain run reprend la ou il s'est arrete

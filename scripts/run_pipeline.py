@@ -27,7 +27,7 @@ def main():
     parser.add_argument("--n", type=int, default=3, help="Nombre de reels a generer")
     parser.add_argument("--saas-url", type=str, required=True, help="URL de demo de ton SaaS")
     parser.add_argument("--voice", type=str, default="Kore")
-    parser.add_argument("--whisper-model", type=str, default="base")
+    parser.add_argument("--whisper-model", type=str, default="small")
     parser.add_argument("--force", action="store_true",
                          help="Ignore les sorties existantes et regenere tout depuis zero")
     args = parser.parse_args()

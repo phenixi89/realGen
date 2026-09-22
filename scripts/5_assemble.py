@@ -11,11 +11,17 @@ import argparse
 import subprocess
 from pathlib import Path
 
-# Style des sous-titres brulés dans l'image (police, taille, contour, position)
+# Style des sous-titres brulés dans l'image (police, taille, contour, position).
+# "Arial Black" n'existe quasiment jamais sur un runner Linux/CI -- fontconfig
+# la remplace alors silencieusement par une police par defaut, souvent moins
+# nette. DejaVu Sans (paquet fonts-dejavu-core, installe en CI) est fiable
+# partout ; Bold=-1 force la graisse grasse en ASS/libass sans dependre d'une
+# variante "Black" specifique. Tailles recalculees pour du 1080x1920 (avant :
+# calibrees pour l'ancien rendu 405x720, facteur d'echelle ~2.67).
 SUBTITLE_STYLE = (
-    "FontName=Arial Black,FontSize=14,PrimaryColour=&H00FFFFFF,"
-    "OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,"
-    "Alignment=2,MarginV=80"
+    "FontName=DejaVu Sans,Bold=-1,FontSize=40,PrimaryColour=&H00FFFFFF,"
+    "OutlineColour=&H00000000,BorderStyle=1,Outline=5,Shadow=0,"
+    "Alignment=2,MarginV=210"
 )
 
 
@@ -37,7 +43,7 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
         "-vf", f"subtitles='{subs_escaped}':force_style='{SUBTITLE_STYLE}'",
         "-map", "0:v:0",
         "-map", "1:a:0",
-        "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18",
         "-c:a", "aac", "-b:a", "192k",
         "-shortest",
         "-movflags", "+faststart",  # important pour la lecture instantanee sur mobile

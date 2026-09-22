@@ -32,8 +32,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--audio", type=str, required=True)
     parser.add_argument("--out", type=str, required=True)
-    parser.add_argument("--model", type=str, default="base",
-                         help="tiny/base/small (base = bon compromis vitesse/precision en CPU)")
+    parser.add_argument("--model", type=str, default="small",
+                         help="tiny/base/small (small = nettement plus precis que base, "
+                              "reste rapide en CPU sur un clip de 15-20s)")
     parser.add_argument("--force", action="store_true",
                          help="Regenere meme si --out existe deja")
     args = parser.parse_args()
