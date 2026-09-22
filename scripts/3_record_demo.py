@@ -29,7 +29,7 @@ async def login(page, email: str, password: str):
     et nav mobile ("Connexion") -- on tourne en format vertical (mobile), donc
     la regex couvre les deux.
     """
-    await page.get_by_role("button", name=re.compile("connexion|se connecter", re.I)).first.click()
+    await page.get_by_role("button", name=re.compile("connexion|se connecter", re.I)).locator(":visible").first.click()
     await page.wait_for_selector("input[type='email']", timeout=10000)
     await page.fill("input[type='email']", email)
     await page.fill("input[type='password']", password)
@@ -49,7 +49,7 @@ async def play_demo_steps(page):
     # Une fois connecte, l'accueil (Home) laisse place au Dashboard : le CTA
     # n'est plus "Essayer (gratuitement)" mais le bouton "Analyser" de la nav
     # du bas (mobileNav.analyze), qui ouvre la meme AnalyzeModal.
-    await page.get_by_role("button", name=re.compile("analyser", re.I)).first.click()
+    await page.get_by_role("button", name=re.compile("analyser", re.I)).locator(":visible").first.click()
     # "Analyser un CV" apparait deux fois sur la page (le libelle responsive
     # du Dashboard, cache sur mobile, et le titre de la modale) -- on cible
     # le dialog par role, seul element garanti unique et visible.
@@ -59,11 +59,11 @@ async def play_demo_steps(page):
     # Bascule en mode demo (profil fictif local, pas d'appel serveur) --
     # ce bouton est un toggle, son libelle change une fois actif, ne pas
     # recliquer dessus sous peine de repasser en mode import.
-    await page.click("text=Essayer avec un profil de démonstration")
+    await page.get_by_text("Essayer avec un profil de démonstration").locator(":visible").first.click()
     await page.wait_for_timeout(500)
 
     # Declenche le chargement du CV de demo (clic sur la zone de depot)
-    await page.locator("div.border-dashed").click()
+    await page.locator("div.border-dashed:visible").first.click()
 
     # L'editeur (barreSuperieure) rend sa barre d'outils deux fois -- une
     # version desktop ("hidden md:flex") et une mobile ("flex md:hidden") --
