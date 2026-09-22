@@ -9,6 +9,7 @@ Usage:
 import argparse
 import asyncio
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -23,8 +24,12 @@ async def login(page, email: str, password: str):
     Connexion via le formulaire email/mot de passe (modale AuthModal d'OpusCV).
     Les champs n'ont pas de `name`/`data-testid` -- on cible par `type`, plus
     stable ici que le texte (qui passe par i18n).
+
+    Le libelle du bouton de connexion differe entre nav desktop ("Se connecter")
+    et nav mobile ("Connexion") -- on tourne en format vertical (mobile), donc
+    la regex couvre les deux.
     """
-    await page.get_by_role("button", name="Se connecter", exact=False).first.click()
+    await page.get_by_role("button", name=re.compile("connexion|se connecter", re.I)).first.click()
     await page.wait_for_selector("input[type='email']", timeout=10000)
     await page.fill("input[type='email']", email)
     await page.fill("input[type='password']", password)
@@ -41,8 +46,10 @@ async def play_demo_steps(page):
     rapide et deterministe pour un enregistrement automatise), puis affiche
     l'apercu PDF fidele du CV genere.
     """
-    # Ouvre la modale "Analyser un CV"
-    await page.get_by_role("button", name="Essayer gratuitement", exact=False).first.click()
+    # Une fois connecte, l'accueil (Home) laisse place au Dashboard : le CTA
+    # n'est plus "Essayer (gratuitement)" mais le bouton "Analyser" de la nav
+    # du bas (mobileNav.analyze), qui ouvre la meme AnalyzeModal.
+    await page.get_by_role("button", name=re.compile("analyser", re.I)).first.click()
     await page.wait_for_selector("text=Analyser un CV", timeout=10000)
     await page.wait_for_timeout(600)
 
@@ -77,7 +84,10 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
             record_video_size=VIEWPORT,
         )
         page = await context.new_page()
-        await page.goto(url, wait_until="networkidle")
+        # Render free tier met le service en veille apres inactivite : le
+        # premier chargement peut prendre 30-60s (cold start).
+        page.set_default_timeout(60000)
+        await page.goto(url, wait_until="networkidle", timeout=60000)
 
         if email and password:
             await login(page, email, password)
