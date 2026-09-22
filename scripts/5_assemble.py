@@ -30,10 +30,13 @@ def probe_duration(path: Path) -> float:
     result = subprocess.run(
         ["ffmpeg", "-i", str(path)], capture_output=True, text=True,
     )
-    match = DURATION_RE.search(result.stderr)
-    if not match:
+    # Dernier match, pas le premier : sur un MP3 sans header Xing, ffmpeg
+    # peut d'abord estimer une duree a partir du bitrate avant d'afficher
+    # la duree reelle sur une ligne ulterieure.
+    matches = list(DURATION_RE.finditer(result.stderr))
+    if not matches:
         raise RuntimeError(f"Impossible de lire la duree de {path}:\n{result.stderr}")
-    h, m, s = match.groups()
+    h, m, s = matches[-1].groups()
     return int(h) * 3600 + int(m) * 60 + float(s)
 
 
@@ -44,6 +47,13 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     # .ass genere par 4_generate_subtitles.py -- plus de force_style ici.
     subs_escaped = str(subs_path).replace(":", r"\:")
     duration = probe_duration(audio_path)
+    print(f"Duree audio detectee : {duration:.2f}s")
+    # Si la duree lue est anormalement courte (mauvais parsing, mp3 sans
+    # header fiable...), un fondu de sortie positionne pres de 0 noircirait
+    # quasiment tout le clip -- degrade en filet de securite plutot que de
+    # produire une video qui semble "ne pas se lire" (image noire du debut
+    # a la fin, son intact).
+    apply_fade_out = duration > FADE_DURATION * 3
     fade_out_start = max(duration - FADE_DURATION, 0)
 
     vf = (
@@ -53,13 +63,12 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
         f"vignette=PI/6,"
         f"drawtext=fontfile={WATERMARK_FONT}:text='OpusCV':"
         f"fontcolor=white@0.6:fontsize=34:x=40:y=40,"
-        f"fade=t=in:st=0:d={FADE_DURATION},"
-        f"fade=t=out:st={fade_out_start}:d={FADE_DURATION}"
+        f"fade=t=in:st=0:d={FADE_DURATION}"
     )
-    af = (
-        f"afade=t=in:st=0:d={FADE_DURATION},"
-        f"afade=t=out:st={fade_out_start}:d={FADE_DURATION}"
-    )
+    af = f"afade=t=in:st=0:d={FADE_DURATION}"
+    if apply_fade_out:
+        vf += f",fade=t=out:st={fade_out_start}:d={FADE_DURATION}"
+        af += f",afade=t=out:st={fade_out_start}:d={FADE_DURATION}"
 
     cmd = [
         "ffmpeg", "-y",
@@ -68,6 +77,12 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
         # les sous-titres) a la duree de la video. En bouclant indefiniment
         # la video, c'est l'audio -- desormais le flux le plus court -- qui
         # fixe la duree finale ; la video se repete pour combler le reste.
+        # genpts : le flux boucle (-stream_loop) peut arriver avec des PTS
+        # discontinus au point de bouclage (surtout pour une video issue
+        # d'un filter_complex xfade, mode screenshots) -- les regenerer
+        # evite des timestamps casses qui font planter le rendu video chez
+        # certains lecteurs (l'audio, decode independamment, reste correct).
+        "-fflags", "+genpts",
         "-stream_loop", "-1", "-i", str(video_path),
         "-i", str(audio_path),
         "-vf", vf,
