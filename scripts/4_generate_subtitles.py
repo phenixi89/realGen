@@ -18,13 +18,35 @@ def format_timestamp(seconds: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
-def write_srt(segments, out_path: Path):
+MAX_WORDS_PER_CUE = 4
+
+
+def chunk_words(segments, max_words: int = MAX_WORDS_PER_CUE) -> list[dict]:
+    """
+    Regroupe les mots (word_timestamps=True) en cues courtes -- une phrase
+    entiere en une seule cue (comportement precedent) forcait soit un texte
+    minuscule pour tenir dans la largeur du cadre, soit un debordement hors
+    ecran a taille lisible. 3-4 mots par cue est le style standard des
+    sous-titres Reels/TikTok, et reste lisible a une taille de police normale.
+    """
+    words = [w for seg in segments for w in seg.get("words", [])]
+    cues = []
+    for i in range(0, len(words), max_words):
+        group = words[i:i + max_words]
+        cues.append({
+            "start": group[0]["start"],
+            "end": group[-1]["end"],
+            "text": "".join(w["word"] for w in group).strip(),
+        })
+    return cues
+
+
+def write_srt(cues, out_path: Path):
     lines = []
-    for i, seg in enumerate(segments, 1):
-        start = format_timestamp(seg["start"])
-        end = format_timestamp(seg["end"])
-        text = seg["text"].strip()
-        lines.append(f"{i}\n{start} --> {end}\n{text}\n")
+    for i, cue in enumerate(cues, 1):
+        start = format_timestamp(cue["start"])
+        end = format_timestamp(cue["end"])
+        lines.append(f"{i}\n{start} --> {end}\n{cue['text']}\n")
     out_path.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -48,10 +70,10 @@ def main():
     model = whisper.load_model(args.model)
 
     print(f"Transcription de {args.audio}...")
-    result = model.transcribe(args.audio, language="fr", word_timestamps=False)
+    result = model.transcribe(args.audio, language="fr", word_timestamps=True)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    write_srt(result["segments"], out_path)
+    write_srt(chunk_words(result["segments"]), out_path)
     print(f"OK -> {out_path}")
 
 

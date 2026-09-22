@@ -16,12 +16,14 @@ from pathlib import Path
 # la remplace alors silencieusement par une police par defaut, souvent moins
 # nette. DejaVu Sans (paquet fonts-dejavu-core, installe en CI) est fiable
 # partout ; Bold=-1 force la graisse grasse en ASS/libass sans dependre d'une
-# variante "Black" specifique. Tailles recalculees pour du 1080x1920 (avant :
-# calibrees pour l'ancien rendu 405x720, facteur d'echelle ~2.67).
+# variante "Black" specifique. FontSize=40 (calibre pour 1080x1920) debordait
+# du cadre sur des cues d'un seul mot un peu long -- 28 reste bien lisible en
+# vertical sans jamais toucher les bords, combine aux cues courtes
+# (MAX_WORDS_PER_CUE dans 4_generate_subtitles.py) plutot qu'une phrase entiere.
 SUBTITLE_STYLE = (
-    "FontName=DejaVu Sans,Bold=-1,FontSize=40,PrimaryColour=&H00FFFFFF,"
-    "OutlineColour=&H00000000,BorderStyle=1,Outline=5,Shadow=0,"
-    "Alignment=2,MarginV=210"
+    "FontName=DejaVu Sans,Bold=-1,FontSize=28,PrimaryColour=&H00FFFFFF,"
+    "OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=0,"
+    "Alignment=2,MarginV=160,MarginL=60,MarginR=60"
 )
 
 
