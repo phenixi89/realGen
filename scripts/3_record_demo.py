@@ -11,9 +11,13 @@ import asyncio
 import os
 import re
 import sys
+from io import BytesIO
 from pathlib import Path
 
+from PIL import Image
 from playwright.async_api import async_playwright
+
+from scene_compose import compose_scene
 
 # Taille CSS de la page (garde le point de rupture mobile de l'app -- c'est
 # ce qui determine quelle version de l'UI (responsive) s'affiche).
@@ -114,20 +118,44 @@ async def play_demo_steps(page):
     await page.wait_for_timeout(1500)
 
 
+# Sections du dock lateral (EditorDock.jsx, SECTIONS + le bouton Design juste
+# en dessous) : aria-label = libelle FR exact (common:sections.*), plus fiable
+# qu'un index de position si l'app ajoute/retire un onglet.
+DOCK_SECTIONS = ["Identité", "Expériences", "Formation", "Compétences", "Langues"]
+DESIGN_TAB_LABEL = "Design"  # editor.topBar.designTab
+
+
+async def _capture_scene(page, out_dir: Path, index: int, name: str, element) -> Path:
+    """
+    Capture une "scene" : le viewport entier (fond, pour le flou) + l'element
+    precis (carte nette) -- composes en une seule image verticale prete a
+    animer par scene_compose.compose_scene(). Remplace l'ancien plein-ecran
+    recadre en paysage->portrait, qui perdait du contenu sur les bords.
+    """
+    bg_bytes = await page.screenshot()
+    fg_bytes = await element.screenshot()
+    scene = compose_scene(Image.open(BytesIO(bg_bytes)), Image.open(BytesIO(fg_bytes)))
+    path = out_dir / f"{index:02d}_{name}.png"
+    scene.save(path)
+    return path
+
+
 async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
     """
     Mode "PC" : au lieu d'enregistrer une video continue (fragile -- doit
-    rester stable pendant toute l'interaction), on prend des captures d'ecran
-    nettes a des etapes cles. 5_assemble.py (via build_video_from_screenshots)
-    anime chacune avec un zoom in/out (ffmpeg zoompan) pour donner du mouvement
-    a l'assemblage final, sans dependre du timing d'un enregistrement live.
+    rester stable pendant toute l'interaction), on capture chaque section de
+    l'app individuellement (liste des CVs, chaque onglet d'edition -- y
+    compris Experiences --, Design, fonctions IA, apercu du CV) plutot qu'un
+    plein-ecran unique. Chaque scene est composee (fond floute + carte nette,
+    voir scene_compose.py) et animee au montage (zoom in/out).
     """
     shots: list[Path] = []
+    idx = 0
 
-    async def shoot(name: str):
-        path = out_dir / f"{len(shots) + 1:02d}_{name}.png"
-        await page.screenshot(path=str(path))
-        shots.append(path)
+    async def shoot(name: str, element):
+        nonlocal idx
+        idx += 1
+        shots.append(await _capture_scene(page, out_dir, idx, name, element))
 
     # Une fois connecte, App.jsx affiche directement Dashboard.jsx (pas de
     # menu compte a ouvrir ni de modale) : "Mes CVs sauvegardés" y est deja
@@ -137,30 +165,54 @@ async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
     first_row = page.locator("li:visible", has=page.locator("button[title]")).first
     await first_row.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(800)
-    await shoot("mes_cvs")
+    await shoot("mes_cvs", first_row)
 
     # Survole la premiere ligne pour reveler ses icones d'action (Renommer,
     # Dupliquer, Supprimer -- masquees hors survol) avant de capturer, puis
     # ouvre ce CV dans l'editeur.
     await first_row.hover()
     await page.wait_for_timeout(400)
-    await shoot("mes_cvs_actions")
+    await shoot("mes_cvs_actions", first_row)
 
     await first_row.click()
-    # Ouvre l'editeur (chunk charge en lazy) : attend son dock lateral
-    # desktop plutot qu'une modale, absente de ce parcours.
-    await page.wait_for_selector("aside nav", timeout=30000)
-    await page.wait_for_timeout(1500)
-    await shoot("editeur")
+    # Ouvre l'editeur (chunk charge en lazy) : attend son panneau de contenu
+    # (id stable, contrairement aux classes Tailwind qui changent souvent).
+    form_panel = page.locator("#editor-form-panel")
+    await form_panel.wait_for(state="visible", timeout=30000)
+    await page.wait_for_timeout(1000)
 
-    # Bascule sur quelques onglets du dock lateral (EditorDock, colonne
-    # d'icones a gauche) pour montrer differentes sections en cours d'edition.
-    dock_tabs = page.locator("aside nav button:visible")
-    tab_count = await dock_tabs.count()
-    for i in range(min(tab_count, 2)):
-        await dock_tabs.nth(i).click()
-        await page.wait_for_timeout(900)
-        await shoot(f"section_{i + 1}")
+    # Chaque onglet de contenu (Identite, Experiences -- en mode edition --,
+    # Formation, Competences, Langues) : le panneau de gauche est capture a
+    # chaque fois, avec le contenu de l'onglet actif.
+    for label in DOCK_SECTIONS:
+        tab = page.locator(f"aside nav button[aria-label='{label}']").first
+        if await tab.count() == 0:
+            continue
+        await tab.click()
+        await page.wait_for_timeout(700)
+        await shoot(f"section_{label.lower()}", form_panel)
+
+    # Onglet Design (theme/personnalisation) : meme panneau, contenu differe.
+    design_tab = page.locator(f"aside nav button[aria-label='{DESIGN_TAB_LABEL}']").first
+    if await design_tab.count():
+        await design_tab.click()
+        await page.wait_for_timeout(700)
+        await shoot("design", form_panel)
+
+    # Fonctions IA : le bouton "Adapter a une offre" ouvre une modale dediee
+    # (dialog) -- une des fonctionnalites phares du produit.
+    adapt_button = page.locator("button:visible").filter(has=page.locator("svg.lucide-zap")).first
+    if await adapt_button.count():
+        await adapt_button.click()
+        dialog = page.locator("div[role='dialog']").first
+        try:
+            await dialog.wait_for(state="visible", timeout=8000)
+            await page.wait_for_timeout(600)
+            await shoot("fonctions_ia", dialog)
+            await page.keyboard.press("Escape")
+            await page.wait_for_timeout(400)
+        except Exception:
+            print("ATTENTION: modale IA introuvable, capture ignoree", file=sys.stderr)
 
     # Mode focus (icone agrandir de la barre superieure) : affiche l'apercu
     # stylise en plein ecran, le plan le plus "vendeur" du produit.
@@ -168,7 +220,8 @@ async def capture_pc_screenshots(page, out_dir: Path) -> list[Path]:
     if await focus_button.count():
         await focus_button.click()
         await page.wait_for_timeout(1200)
-        await shoot("apercu_focus")
+        preview = page.locator("main").first
+        await shoot("apercu_cv", preview)
 
     return shots
 
