@@ -90,6 +90,12 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
         "-map", "0:v:0",
         "-map", "1:a:0",
         "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        # Sans ca, libx264 choisit son pix_fmt selon la chaine de filtres
+        # (vignette/drawtext peuvent le faire deriver vers yuv444p) --
+        # quasiment aucun lecteur mobile/natif ne decode le H.264 4:4:4,
+        # d'ou une video qui "ne se lit pas" (son seul) alors que le fichier
+        # est valide. yuv420p est le seul profil garanti compatible partout.
+        "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "192k",
         "-shortest",
         "-movflags", "+faststart",  # important pour la lecture instantanee sur mobile
