@@ -27,7 +27,12 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
 
     cmd = [
         "ffmpeg", "-y",
-        "-i", str(video_path),
+        # La demo Playwright (souvent ~10s) est plus courte que la voix off
+        # (15-20s) : sans boucler la video, -shortest tronquait l'audio (et
+        # les sous-titres) a la duree de la video. En bouclant indefiniment
+        # la video, c'est l'audio -- desormais le flux le plus court -- qui
+        # fixe la duree finale ; la video se repete pour combler le reste.
+        "-stream_loop", "-1", "-i", str(video_path),
         "-i", str(audio_path),
         "-vf", f"subtitles='{subs_escaped}':force_style='{SUBTITLE_STYLE}'",
         "-map", "0:v:0",
