@@ -196,7 +196,11 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
         cards_rule = f"""Pour {need}, ajoute une "carte" : un écran texte animé affiché à la place de la
 capture, qui résume visuellement ce que dit la voix :
   "carte": {{"surtitre": "2 à 4 mots", "titre": "2 à 8 mots, l'idée clé", "texte": "une phrase courte, optionnelle",
-             "style": "normal" | "mythe" | "realite" | "avant" | "apres"}}
+             "style": "normal" | "mythe" | "realite" | "avant" | "apres",
+             "effet": "standard" | "frappe" | "suspense"}}
+Effets d'apparition du titre : "frappe" (tapé au clavier, idéal pour une citation, une formulation
+de CV ou une phrase d'offre), "suspense" (titre caché puis révélé avec un impact : UNE SEULE fois
+par reel, pour la révélation la plus forte, jamais sur deux cartes), sinon "standard". Varie-les.
 Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus) ni sur la dernière (CTA).
 Le texte de la carte ne recopie PAS la voix : il la résume. Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée)."""
@@ -275,7 +279,9 @@ def clean_card(raw) -> dict | None:
     if not isinstance(raw, dict) or not str(raw.get("titre") or "").strip():
         return None
     style = str(raw.get("style") or "normal").strip().lower()
+    effet = str(raw.get("effet") or "standard").strip().lower()
     return {
+        "effet": effet if effet in catalog.CARD_EFFECTS else "standard",
         "surtitre": str(raw.get("surtitre") or "").strip(),
         "titre": str(raw["titre"]).strip(),
         "texte": str(raw.get("texte") or "").strip(),
@@ -319,6 +325,11 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
                 if imposed.get("carte"):
                     scene["carte"] = imposed["carte"]
                 scene.update({k: imposed[k] for k in ANIM_KEYS if imposed.get(k)})
+
+    # Suspense = effet de revelation : un seul par reel, sinon il s'use.
+    suspense = [s for s in scenes if s.get("carte", {}).get("effet") == "suspense"]
+    for extra in suspense[1:]:
+        extra["carte"]["effet"] = "standard"
 
     words = sum(len(s["texte"].split()) for s in scenes)
     _, lo_w, hi_w = word_budget(duration)

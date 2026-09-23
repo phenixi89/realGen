@@ -20,29 +20,23 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import numpy as np
-from moviepy import (AudioArrayClip, AudioFileClip, CompositeAudioClip, CompositeVideoClip, ImageClip,
+from moviepy import (AudioArrayClip, AudioFileClip, CompositeVideoClip, ImageClip,
                      ImageSequenceClip, VideoFileClip)
 from moviepy.video.fx import FadeOut, Loop
 from moviepy.audio.fx import AudioFadeIn, AudioFadeOut
 from PIL import Image, ImageDraw, ImageFont
 
+import audio_gen
 import catalog
 from caption_render import render_caption
 from render_js_anim import FPS as ANIM_FPS, parse_spec, render_frames
 
 FADE_DURATION = 0.4
+VOICE_TARGET_RMS = 0.12
 # Duree d'affichage de l'accroche par defaut (sinon : duree de la 1re scene).
 HOOK_DEFAULT_S = 2.6
 WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 WATERMARK_TEXT = "opuscv.fr"
-
-# Fond musical genere (pas de fichier externe -> aucune question de licence).
-# Nappe Am7 (A2/C3/E3/G3) : neutre et pro, ne tire l'attention sur aucune
-# note en particulier -- reste discret sous la voix.
-MUSIC_SAMPLE_RATE = 44100
-MUSIC_FREQS = [110.00, 130.81, 164.81, 196.00]
-MUSIC_GAIN = 0.10  # sous la voix : presence audible mais jamais genante
-
 
 def make_vignette(size: tuple[int, int]):
     """
@@ -68,24 +62,31 @@ def make_watermark_clip(duration: float, theme: dict | None = None) -> ImageClip
     return ImageClip(np.array(img), duration=duration).with_position((40, 40))
 
 
-def make_background_music(duration: float, freqs: list[float] | None = None) -> AudioArrayClip:
+def make_soundtrack(voice: AudioFileClip, duration: float, ambiance_id: str | None,
+                    sfx_cues: list[dict]) -> AudioArrayClip:
     """
-    Nappe synthetisee (4 oscillateurs detunes + vibrato lent + swell
-    d'amplitude), volume fixe et bas : juste de quoi eviter un silence
-    "capture d'ecran" sans jamais concurrencer la voix off.
+    Voix + musique d'ambiance (catalog/audio.json, baissee quand la voix parle)
+    + effets sonores cales sur le montage (sound_design.py), mixes en numpy.
     """
-    n_samples = int(duration * MUSIC_SAMPLE_RATE)
-    t = np.linspace(0, duration, n_samples, endpoint=False)
-    signal = np.zeros(n_samples)
-    freqs = freqs or MUSIC_FREQS
-    for freq in freqs:
-        vibrato = 1 + 0.002 * np.sin(2 * np.pi * 0.15 * t)
-        signal += np.sin(2 * np.pi * freq * vibrato * t)
-    signal /= len(freqs)
-    swell = 0.6 + 0.4 * np.sin(2 * np.pi * t / 8.0 - np.pi / 2) ** 2  # respire sur ~8s, pas statique
-    signal = signal * swell * MUSIC_GAIN
-    stereo = np.column_stack([signal, signal]).astype(np.float32)
-    return AudioArrayClip(stereo, fps=MUSIC_SAMPLE_RATE)
+    cfg = audio_gen.audio_config()["musique"]
+    n = int(duration * audio_gen.SR)
+    voice_arr = voice.to_soundarray(fps=audio_gen.SR)
+    voice_mono = voice_arr.mean(axis=1) if voice_arr.ndim == 2 else voice_arr
+    voice_mono = np.pad(voice_mono, (0, max(0, n - len(voice_mono))))[:n]
+    # Niveau de voix constant d'un reel a l'autre (le TTS varie) : la musique
+    # et les effets sont regles par rapport a lui.
+    speech = voice_mono[np.abs(voice_mono) > 0.01]
+    if speech.size:
+        rms = float(np.sqrt(np.mean(speech ** 2)))
+        voice_mono = voice_mono * min(max(VOICE_TARGET_RMS / rms, 0.5), 4.0)
+    music = audio_gen.load_music(duration, ambiance_id) * cfg["volume"]
+    music = audio_gen.duck(music, voice_mono, cfg["baisse_sous_voix"])[:n]
+    effects = audio_gen.render_sfx_track(sfx_cues, duration)[:n]
+    mix = voice_mono + music + effects
+    peak = np.max(np.abs(mix)) or 1.0
+    if peak > 0.98:  # jamais de saturation, meme si un effet tombe sur un pic de voix
+        mix = mix * (0.98 / peak)
+    return AudioArrayClip(np.column_stack([mix, mix]).astype(np.float32), fps=audio_gen.SR)
 
 
 def make_caption_clips(cues: list[dict], theme: dict | None = None) -> list[ImageClip]:
@@ -142,10 +143,13 @@ def make_overlay_clips(overlays: list[tuple[float, str]], duration: float, tmp_d
 
 def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path,
              overlays: list[tuple[float, str]] | None = None, theme: dict | None = None,
-             hook_text: str = "", hook_duration: float = HOOK_DEFAULT_S):
+             hook_text: str = "", hook_duration: float = HOOK_DEFAULT_S,
+             ambiance_id: str | None = None, sfx_cues: list[dict] | None = None):
     """
     theme : catalog/themes.json (sous-titres, animations, watermark, musique).
     hook_text : accroche affichee en grand des la premiere image (assets/anim/hook.html).
+    ambiance_id : musique (catalog/audio.json), sinon celle du theme.
+    sfx_cues : effets sonores [{"t", "name", ...}] (sound_design.plan_cues).
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cues = json.loads(subs_path.read_text(encoding="utf-8"))
@@ -176,8 +180,8 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     # Pas de fondu d'ouverture : la premiere image est celle qui s'affiche
     # dans le flux et decide du scroll -- elle doit etre pleine, pas noire.
     final = final.with_effects([FadeOut(FADE_DURATION)])
-    music = make_background_music(duration, (theme or {}).get("musique"))
-    mixed_audio = CompositeAudioClip([music, audio]).with_duration(duration).with_effects(
+    ambiance = ambiance_id or (theme or {}).get("ambiance")
+    mixed_audio = make_soundtrack(audio, duration, ambiance, sfx_cues or []).with_duration(duration).with_effects(
         # Fondu d'entree minimal (anti-clic) : la voix demarre des la 1re image.
         [AudioFadeIn(0.05), AudioFadeOut(FADE_DURATION)]
     )
@@ -214,6 +218,10 @@ def main():
                          help="Accroche affichee en grand des la premiere image (vide = aucune)")
     parser.add_argument("--hook-duration", type=float, default=HOOK_DEFAULT_S,
                          help="Duree d'affichage de l'accroche, en s")
+    parser.add_argument("--ambiance", type=str, default=None,
+                         help="Ambiance musicale (catalog/audio.json), sinon celle du theme")
+    parser.add_argument("--sfx", type=str, default=None,
+                         help="Fichier JSON des effets sonores (ecrit par run_pipeline.py)")
     parser.add_argument("--force", action="store_true",
                          help="Reassemble meme si --out existe deja")
     args = parser.parse_args()
@@ -225,7 +233,8 @@ def main():
     assemble(Path(args.video), Path(args.audio), Path(args.subs), Path(args.out),
              overlays=[parse_overlay(v) for v in args.overlay],
              theme=catalog.get_theme(args.theme) if args.theme else None,
-             hook_text=args.hook_text, hook_duration=args.hook_duration)
+             hook_text=args.hook_text, hook_duration=args.hook_duration, ambiance_id=args.ambiance,
+             sfx_cues=json.loads(Path(args.sfx).read_text(encoding="utf-8")) if args.sfx else [])
     print(f"OK -> {args.out}")
 
 

@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlencode
 
+import sound_design
 from script_text import script_to_text
 
 ROOT = Path(__file__).parent
@@ -66,9 +67,9 @@ def anim_spec(value, default_template: str) -> str:
 
 
 def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
-                 hook: bool) -> tuple[list[str], list[str]]:
+                 hook: bool) -> tuple[list[str], list[str], list[dict]]:
     """
-    -> (arguments 3b, arguments 5_assemble) pour un reel.
+    -> (arguments 3b, arguments 5_assemble, effets sonores) pour un reel.
 
     - cards : scenes "carte" du scenario (formats conseil) -> plans animes
       assets/anim/carte.html, toujours (independant de --anims) ;
@@ -89,7 +90,11 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         assemble_args += ["--theme", script["theme"]]
 
     card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
-    scene_anims = {i: "carte?" + urlencode(scenes[i]["carte"]) for i in card_scenes}
+    # dur = duree de la scene : cadence de la frappe au clavier (carte.html),
+    # reprise telle quelle par sound_design pour caler les clics.
+    scene_anims = {i: "carte?" + urlencode({**scenes[i]["carte"],
+                                            "dur": f"{t_scenes[i]['end'] - t_scenes[i]['start']:.2f}"})
+                   for i in card_scenes}
     last = len(t_scenes) - 1
     chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
     # Fin de reel "conseil" : toujours un CTA anime plein cadre (une capture
@@ -124,11 +129,14 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         for i in overlays:
             video_args += ["--highlight-skip", str(i)]
 
-    if hook and script.get("accroche_ecran") and t_scenes:
+    show_hook = bool(hook and script.get("accroche_ecran") and t_scenes)
+    if show_hook:
         first_scene = t_scenes[0]["end"] - t_scenes[0]["start"]
         assemble_args += ["--hook-text", script["accroche_ecran"],
                           "--hook-duration", f"{min(max(first_scene, HOOK_MIN_S), HOOK_MAX_S):.2f}"]
-    return video_args, assemble_args
+    # Plans animes effectivement montes (cartes/CTA : mode screenshots seulement).
+    sfx_cues = sound_design.plan_cues(timeline, scene_anims if cards else {}, show_hook)
+    return video_args, assemble_args, sfx_cues
 
 
 def write_caption_file(script: dict, path: Path):
@@ -321,9 +329,9 @@ def main():
         # Animations : placees d'apres la timeline (debut de chaque scene).
         #    Un choix d'animations different du dernier montage de ce reel
         #    force 3b et l'assemblage (pas la capture, couteuse).
-        anim_video_args, anim_assemble_args = [], []
+        anim_video_args, anim_assemble_args, sfx_cues = [], [], []
         if timeline_path.exists():
-            anim_video_args, anim_assemble_args = plan_montage(
+            anim_video_args, anim_assemble_args, sfx_cues = plan_montage(
                 scripts[i - 1], json.loads(timeline_path.read_text(encoding="utf-8")), args.anims,
                 cards=args.capture_mode == "screenshots", hook=not args.no_hook_overlay)
             if args.capture_mode != "screenshots" and any(s.get("carte") for s in scripts[i - 1].get("scenes", [])):
@@ -331,8 +339,12 @@ def main():
         if args.capture_mode != "screenshots":
             # 3c / video mobile : pas de --scene-anim/--highlight/--theme cote montage.
             anim_video_args = []
+        if sfx_cues:
+            sfx_path = video_dir / "sfx.json"
+            sfx_path.write_text(json.dumps(sfx_cues), encoding="utf-8")
+            anim_assemble_args += ["--sfx", str(sfx_path)]
         anims_marker = video_dir / ".anims"
-        anims_signature = json.dumps([anim_video_args, anim_assemble_args])
+        anims_signature = json.dumps([anim_video_args, anim_assemble_args, sfx_cues])
         previous_signature = anims_marker.read_text(encoding="utf-8") if anims_marker.exists() else json.dumps([[], []])
         anims_force = ["--force"] if previous_signature != anims_signature else []
         if anims_force:

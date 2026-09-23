@@ -161,6 +161,22 @@ Ajouter par exemple un format : une entrée dans `formats.json` avec `id`, `nom`
 `poids`, `cartes` (`aucune`/`autorisees`/`majoritaires`), `sujets` (tags) et `structure` (consigne
 donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"serie": true`).
 
+## Son et effets (`catalog/audio.json`)
+
+- **Musique** synthétisée (aucun droit à gérer) : 5 ambiances (lo-fi, pop énergique, corporate,
+  tension tech, minimal pulsé) avec accords, basse et batterie. Chaque thème choisit son ambiance
+  (`"ambiance"` dans `themes.json`). La musique baisse automatiquement quand la voix parle.
+  Pour utiliser de vrais morceaux libres de droits, dépose-les dans `assets/music/<id_ambiance>/`.
+- **Effets sonores** calés sur le montage (`scripts/sound_design.py`) : impact sur l'accroche,
+  whoosh aux changements de scène, pop à l'apparition d'une carte, clics de clavier, montée de
+  tension + impact pour le suspense, ding (réalité/après), buzz (idée reçue/avant), scintillement
+  sur le CTA. Garde-fous dans `audio.json` : volumes par effet, écart minimal, maximum par 10 s,
+  liste `bannis` pour désactiver un effet.
+- **Effets de carte** (`"effet"`, choisi par Gemini) : `standard`, `frappe` (texte tapé au clavier)
+  et `suspense` (titre caché puis révélé, un seul par reel).
+
+Écouter : `python scripts/audio_gen.py --ambiance pop_energie --out /tmp/a.wav` ou `--sfx whoosh`.
+
 ## Catalogue des fonctionnalités capturables
 
 ```bash

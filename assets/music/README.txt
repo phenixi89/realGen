@@ -1,0 +1,3 @@
+Deposer ici des morceaux LIBRES DE DROITS (licence compatible usage commercial sur les reseaux),
+un dossier par ambiance de catalog/audio.json : assets/music/lofi_chill/*.mp3, assets/music/pop_energie/*.mp3...
+Sans fichier, la musique est synthetisee.

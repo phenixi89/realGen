@@ -1,5 +1,5 @@
 {
-  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et musique de fond. Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb.",
+  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb.",
   "themes": [
     {
       "id": "violet_nuit",
@@ -21,12 +21,7 @@
         "majuscules": false,
         "contour": 4
       },
-      "musique": [
-        110.0,
-        130.81,
-        164.81,
-        196.0
-      ]
+      "ambiance": "lofi_chill"
     },
     {
       "id": "corail_energie",
@@ -48,12 +43,7 @@
         "majuscules": true,
         "contour": 5
       },
-      "musique": [
-        146.83,
-        185.0,
-        220.0,
-        277.18
-      ]
+      "ambiance": "pop_energie"
     },
     {
       "id": "vert_confiance",
@@ -75,12 +65,7 @@
         "majuscules": false,
         "contour": 4
       },
-      "musique": [
-        130.81,
-        164.81,
-        196.0,
-        246.94
-      ]
+      "ambiance": "corporate_positif"
     },
     {
       "id": "bleu_corporate",
@@ -102,12 +87,7 @@
         "majuscules": true,
         "contour": 4
       },
-      "musique": [
-        98.0,
-        123.47,
-        146.83,
-        185.0
-      ]
+      "ambiance": "minimal_pulse"
     },
     {
       "id": "noir_or",
@@ -129,12 +109,7 @@
         "majuscules": true,
         "contour": 4
       },
-      "musique": [
-        103.83,
-        130.81,
-        155.56,
-        196.0
-      ]
+      "ambiance": "tension_tech"
     },
     {
       "id": "rose_pop",
@@ -156,12 +131,7 @@
         "majuscules": false,
         "contour": 5
       },
-      "musique": [
-        174.61,
-        220.0,
-        261.63,
-        329.63
-      ]
+      "ambiance": "pop_energie"
     },
     {
       "id": "ardoise_indigo",
@@ -183,12 +153,7 @@
         "majuscules": false,
         "contour": 3
       },
-      "musique": [
-        123.47,
-        155.56,
-        185.0,
-        233.08
-      ]
+      "ambiance": "lofi_chill"
     },
     {
       "id": "orange_sunset",
@@ -210,12 +175,7 @@
         "majuscules": true,
         "contour": 5
       },
-      "musique": [
-        110.0,
-        138.59,
-        164.81,
-        207.65
-      ]
+      "ambiance": "pop_energie"
     }
   ]
 }

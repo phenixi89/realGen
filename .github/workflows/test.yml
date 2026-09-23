@@ -37,7 +37,7 @@ jobs:
 
       - name: Vérifie chaque étape --help
         run: |
-          for f in scripts/1_generate_script.py scripts/2_generate_voice.py scripts/3_record_demo.py scripts/3b_build_video_from_screenshots.py scripts/3c_build_video_from_recording.py scripts/4_generate_subtitles.py scripts/5_assemble.py scripts/render_js_anim.py; do
+          for f in scripts/1_generate_script.py scripts/2_generate_voice.py scripts/3_record_demo.py scripts/3b_build_video_from_screenshots.py scripts/3c_build_video_from_recording.py scripts/4_generate_subtitles.py scripts/5_assemble.py scripts/render_js_anim.py scripts/audio_gen.py; do
             echo "== $f =="
             python "$f" --help
           done

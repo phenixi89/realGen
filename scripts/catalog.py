@@ -4,7 +4,8 @@ Catalogue editorial et visuel des reels (dossier catalog/ a la racine) :
     formats.json  structure des videos (liste d'erreurs, mythe/realite, demo...)
     sujets.json   de quoi parle la video (conseil ou produit)
     hooks.json    styles d'accroche des 2 premieres secondes
-    themes.json   couleurs, polices, style des sous-titres, musique
+    themes.json   couleurs, polices, style des sous-titres, ambiance musicale
+    audio.json    ambiances musicales et effets sonores (scripts/audio_gen.py)
     config.json   mix conseil/produit, anti-redondance
 
 Tout s'enrichit en editant ces JSON, sans toucher au code : ce module les
@@ -27,6 +28,7 @@ FONTS_DIR = ROOT / "assets" / "fonts"
 DEFAULT_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 CARD_MODES = ("aucune", "autorisees", "majoritaires")
 CARD_STYLES = ("normal", "mythe", "realite", "avant", "apres")
+CARD_EFFECTS = ("standard", "frappe", "suspense")
 # Fenetre sur laquelle on mesure le mix conseil/produit deja publie.
 MIX_WINDOW = 10
 
@@ -211,6 +213,9 @@ def validate_catalog() -> list[str]:
         for key in ("primaire", "secondaire", "fond", "texte", "surligne", "contour", "pastille"):
             if not re.fullmatch(r"#[0-9a-fA-F]{6}", t.get("couleurs", {}).get(key, "")):
                 errors.append(f"theme {t['id']} : couleur '{key}' absente ou pas au format #rrggbb")
+        ambiances = {a["id"] for a in _load("audio")["ambiances"]}
+        if t.get("ambiance") and t["ambiance"] not in ambiances:
+            errors.append(f"theme {t['id']} : ambiance '{t['ambiance']}' absente de audio.json")
         for role in ("titre", "texte"):
             name = t.get(f"police_{role}")
             if name and not (FONTS_DIR / name).exists():
