@@ -33,15 +33,18 @@ ZOOM_STEP = 0.0015
 ZOOM_MAX = 1.18
 # Le souligne attend la fin du fondu d'entree du clip (timeline.XFADE_DURATION).
 HIGHLIGHT_DELAY_S = 0.45
+CURSOR_CLICK_AT = 1.0  # assets/anim/cursor.html CLICK_AT
 
 
 def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool,
-               overlay_frames: Path | None = None):
+               overlay_frames: Path | None = None, focus: tuple[float, float] | None = None):
     """
-    overlay_frames : dossier de PNG transparents (souligne anime, cf.
+    focus : point vise par le zoom (fractions du cadre, captures.json "focus"),
+    sinon le centre. overlay_frames : dossier de PNG transparents (souligne anime, cf.
     render_js_anim.py) incrustes par-dessus le zoom, image par image.
     """
     frames = int(seconds * FPS)
+    fx, fy = focus or (0.5, 0.5)
     # Zoom alterne in/out d'une image a l'autre pour eviter un mouvement
     # repetitif identique sur tout l'assemblage. Modifier ces expressions ?
     # assets/anim/highlight.html (zoomAt) les reproduit pour suivre la carte.
@@ -64,7 +67,10 @@ def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool
         # x/y depassaient la borne max et zoompan les ramenait au bord :
         # le zoom partait vers le coin bas-droit au lieu du centre.
         f"zoompan=z='{z_expr}':d={frames}:s={OUT_SIZE[0]}x{OUT_SIZE[1]}:"
-        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':fps={FPS}"
+        # Zoom cible (focus) : fenetre centree sur le point, clampee au cadre
+        # -- meme calcul que common.js zoomCss pour les surimpressions.
+        f"x='max(0,min(iw-iw/zoom,iw*{fx:.4f}-iw/zoom/2))':"
+        f"y='max(0,min(ih-ih/zoom,ih*{fy:.4f}-ih/zoom/2))':fps={FPS}"
     )
     inputs = ["-loop", "1", "-i", str(image_path)]
     if overlay_frames is not None:
@@ -134,7 +140,8 @@ def build_video_from_screenshots(screens_dir: Path, out_path: Path, clip_seconds
 
 def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                             scene_anims: dict[int, str] | None = None, highlight: bool = False,
-                            highlight_skip: set[int] | None = None, theme: dict | None = None):
+                            highlight_skip: set[int] | None = None, theme: dict | None = None,
+                            cursor: bool = False) -> list[float]:
     """
     Montage cale sur la voix : chaque scene du scenario affiche les captures
     de SA fonctionnalite (captures.json, ecrit par 3_record_demo.py) pendant
@@ -147,15 +154,23 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
     premiere capture de chaque scene (captures.json "card"), sauf les
     scenes de highlight_skip (ex: celles qui ont une surimpression).
     theme : couleurs/polices des animations (catalog/themes.json).
+    cursor : curseur anime qui clique sur le bouton d'action (captures.json
+    "focus") ; avec highlight, les deux alternent d'une scene a l'autre.
+    Chaque capture avec "focus" est zoomee vers ce point.
+    -> instants des clics du curseur (effet sonore, cf. run_pipeline.py).
     """
+    clicks: list[float] = []
     theme_params = catalog.anim_params(theme)
     captures = json.loads((screens_dir / "captures.json").read_text(encoding="utf-8"))
     media_by_feature: dict[str, list[Path]] = {}
     card_by_file: dict[str, list[int]] = {}
+    focus_by_file: dict[str, list[int]] = {}
     for shot in captures:
         media_by_feature.setdefault(shot["feature"], []).append(screens_dir / shot["file"])
         if shot.get("card"):
             card_by_file[shot["file"]] = shot["card"]
+        if shot.get("focus"):
+            focus_by_file[shot["file"]] = shot["focus"]
     if highlight and not card_by_file:
         print("ATTENTION: captures.json sans position de carte (captures anterieures a --anims highlight) "
               "-> pas de souligne ; relancer la capture (--from-step video) pour l'activer")
@@ -194,18 +209,28 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
             else:
                 overlay = None
                 card = card_by_file.get(media.name)
-                if (highlight and card and scene_index != previous_scene
-                        and scene_index not in (highlight_skip or set())):
+                focus = focus_by_file.get(media.name)
+                fxy = (focus[0] / OUT_SIZE[0], focus[1] / OUT_SIZE[1]) if focus else None
+                zoom_params = {"zoom": "out" if zoom_out else "in", "step": ZOOM_STEP, "zmax": ZOOM_MAX,
+                               "fps": FPS, "fx": (fxy or (0.5, 0.5))[0], "fy": (fxy or (0.5, 0.5))[1]}
+                first_of_scene = scene_index != previous_scene and scene_index not in (highlight_skip or set())
+                # Curseur si possible ; avec le souligne aussi actif, une scene sur deux.
+                use_cursor = cursor and focus and first_of_scene and (not highlight or scene_index % 2 == 0)
+                if use_cursor:
+                    overlay = Path(tmp) / f"cur_{i:02d}"
+                    render_frames("cursor", {**theme_params, **zoom_params, "x": focus[0], "y": focus[1],
+                                             "delay": HIGHLIGHT_DELAY_S}, overlay)
+                    clicks.append(sum(durations[:i]) + HIGHLIGHT_DELAY_S + CURSOR_CLICK_AT)
+                elif highlight and card and first_of_scene:
                     overlay = Path(tmp) / f"hl_{i:02d}"
                     x, y, w, h = card
-                    render_frames("highlight", {
-                        **theme_params, "x": x, "y": y, "w": w, "h": h, "zoom": "out" if zoom_out else "in",
-                        "step": ZOOM_STEP, "zmax": ZOOM_MAX, "fps": FPS, "delay": HIGHLIGHT_DELAY_S,
-                    }, overlay)
-                build_clip(media, clip, length, zoom_out=zoom_out, overlay_frames=overlay)
+                    render_frames("highlight", {**theme_params, **zoom_params, "x": x, "y": y, "w": w, "h": h,
+                                                "delay": HIGHLIGHT_DELAY_S}, overlay)
+                build_clip(media, clip, length, zoom_out=zoom_out, overlay_frames=overlay, focus=fxy)
             previous_scene = scene_index
             clips.append(clip)
-        concat_with_xfade(clips, durations, out_path)
+        concat_with_xfade(clips, durations, out_path, (theme or {}).get("transitions"))
+    return clicks
 
 
 def parse_scene_anims(values: list[str]) -> dict[int, str]:
@@ -234,6 +259,8 @@ def main():
     parser.add_argument("--highlight", action="store_true",
                          help="Cadre anime autour de la zone montree, au debut de chaque scene (avec --timeline)")
     parser.add_argument("--theme", type=str, default=None, help="Theme visuel des animations (catalog/themes.json)")
+    parser.add_argument("--cursor", action="store_true",
+                         help="Curseur anime qui clique sur le bouton d'action des captures (avec --timeline)")
     parser.add_argument("--highlight-skip", action="append", type=int, default=[], metavar="INDEX",
                          help="Scene sans cadre anime (--highlight) ; repetable")
     parser.add_argument("--force", action="store_true",
@@ -248,10 +275,12 @@ def main():
     screens_dir = Path(args.screens)
     timeline = load_timeline(args.timeline)
     if timeline and (screens_dir / "captures.json").exists():
-        build_video_on_timeline(screens_dir, out_path, timeline,
+        clicks = build_video_on_timeline(screens_dir, out_path, timeline, cursor=args.cursor,
                                 scene_anims=parse_scene_anims(args.scene_anim), highlight=args.highlight,
                                 highlight_skip=set(args.highlight_skip),
                                 theme=catalog.get_theme(args.theme) if args.theme else None)
+        # Instants des clics du curseur, pour l'effet sonore (run_pipeline.py -> 5_assemble.py).
+        out_path.with_suffix(".events.json").write_text(json.dumps({"clics": clicks}), encoding="utf-8")
     else:
         build_video_from_screenshots(screens_dir, out_path, args.clip_seconds)
     print(f"OK -> {out_path}")

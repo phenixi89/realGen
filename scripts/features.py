@@ -157,6 +157,44 @@ async def _click_dock(ctx: DemoContext, label: str) -> bool:
     return True
 
 
+# Bouton "d'action" d'une capture : c'est la que le curseur anime clique et
+# que la camera zoome (3b_build_video_from_screenshots.py).
+ACTION_RE = re.compile(r"corriger|appliquer|adapter|g[ée]n[ée]rer|analyser|comparer|valider|relancer|"
+                       r"t[ée]l[ée]charger|enregistrer|ajouter|reformuler|modifier|essayer", re.I)
+
+
+async def _focus_point(element, rect: tuple[int, int, int, int]) -> list[int] | None:
+    """
+    -> [x, y] (px de la scene 1080x1920) du bouton d'action le plus parlant de
+    l'element capture, sinon de son dernier bouton visible ; None si aucun.
+    """
+    try:
+        box = await element.bounding_box()
+        buttons = element.locator("button:visible")
+        count = min(await buttons.count(), 40)
+        best = None
+        for k in range(count):
+            b = buttons.nth(k)
+            label = (await b.inner_text(timeout=500)).strip()
+            bb = await b.bounding_box()
+            if not bb or bb["width"] < 8:
+                continue
+            if ACTION_RE.search(label):
+                best = bb
+                break
+            best = bb
+        if not box or not best:
+            return None
+        rx = (best["x"] + best["width"] / 2 - box["x"]) / box["width"]
+        ry = (best["y"] + best["height"] / 2 - box["y"]) / box["height"]
+        if not (0 <= rx <= 1 and 0 <= ry <= 1):
+            return None
+        x, y, w, h = rect
+        return [round(x + rx * w), round(y + ry * h)]
+    except Exception:
+        return None
+
+
 async def _capture_scene(page, out_dir: Path, index: int, name: str, element,
                          meta: dict | None = None) -> Path:
     """
@@ -173,7 +211,11 @@ async def _capture_scene(page, out_dir: Path, index: int, name: str, element,
     fg = Image.open(BytesIO(fg_bytes))
     scene = compose_scene(Image.open(BytesIO(bg_bytes)), fg)
     if meta is not None:
-        meta["card"] = list(card_rect(fg.size))
+        rect = card_rect(fg.size)
+        meta["card"] = list(rect)
+        focus = await _focus_point(element, rect)
+        if focus:
+            meta["focus"] = focus
     path = out_dir / f"{index:02d}_{name}.png"
     scene.save(path)
     return path

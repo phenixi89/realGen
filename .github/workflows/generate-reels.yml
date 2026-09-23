@@ -10,9 +10,14 @@ on:
         required: false
         default: "3"
       voice:
-        description: "Voix TTS Gemini"
+        description: "Voix TTS Gemini (auto = rotation par reel, catalog/voix.json ; ou Kore, Puck...)"
         required: false
-        default: "Kore"
+        default: "auto"
+      sans_voix:
+        description: "Sans voix off : texte a l'ecran + musique uniquement"
+        type: boolean
+        required: false
+        default: false
       force:
         description: "Ignorer toute reprise et tout regenerer depuis zero"
         type: boolean
@@ -39,6 +44,9 @@ on:
           - overlay,scene
           - overlay,highlight
           - scene,highlight
+          - cursor
+          - overlay,cursor
+          - scene,cursor
         required: false
         default: none
       sfx:
@@ -160,13 +168,14 @@ jobs:
             --n "${{ github.event.inputs.n || '3' }}" \
             --duration "${{ github.event.inputs.duration || '30' }}" \
             --saas-url "${{ vars.SAAS_URL }}" \
-            --voice "${{ github.event.inputs.voice || 'Kore' }}" \
+            --voice "${{ github.event.inputs.voice || 'auto' }}" \
             --capture-mode "${{ github.event.inputs.capture_mode || 'video' }}" \
             --anims "${{ github.event.inputs.anims || 'none' }}" \
             "${extra[@]}" \
             ${{ github.event.inputs.from_step && format('--from-step {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
-            ${{ github.event.inputs.sfx == 'false' && '--no-sfx' || '' }}
+            ${{ github.event.inputs.sfx == 'false' && '--no-sfx' || '' }} \
+            ${{ github.event.inputs.sans_voix == 'true' && '--sans-voix' || '' }}
 
       # if: always() -- meme si le pipeline echoue en route (ex: etape 3),
       # on veut recuperer ce qui a deja ete genere (scripts, audio, video,

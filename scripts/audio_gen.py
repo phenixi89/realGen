@@ -98,6 +98,13 @@ def sfx(name: str, seed: int = 0, **kw) -> np.ndarray:
             y[i] = acc
         shape = np.sin(np.linspace(0, np.pi, n)) ** 1.5
         return _norm(y * shape)
+    if name == "mouse":  # clic de souris (curseur anime) : deux petits "tac" rapproches
+        n = int(0.07 * SR)
+        y = np.zeros(n)
+        for k, off in enumerate((0, int(0.035 * SR))):
+            m = int(0.012 * SR)
+            y[off:off + m] += _lowpass_fast(_noise(m, seed + k), 4000) * env(m, 0.0003, 0.003)
+        return _norm(y)
     if name == "tick":  # transition discrete : petit "tap" boise, feutre
         t = _t(0.09)
         body = np.sin(2 * np.pi * 740 * t) + 0.4 * np.sin(2 * np.pi * 1480 * t)

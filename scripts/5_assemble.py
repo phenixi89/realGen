@@ -22,17 +22,19 @@ from urllib.parse import urlencode
 import numpy as np
 from moviepy import (AudioArrayClip, AudioFileClip, CompositeVideoClip, ImageClip,
                      ImageSequenceClip, VideoFileClip)
-from moviepy.video.fx import FadeOut, Loop
+from moviepy.video.fx import CrossFadeIn, FadeOut, Loop
 from moviepy.audio.fx import AudioFadeIn, AudioFadeOut
 from PIL import Image, ImageDraw, ImageFont
 
 import audio_gen
 import catalog
-from caption_render import render_caption
+from caption_render import norm_word, render_caption
 from render_js_anim import FPS as ANIM_FPS, parse_spec, render_frames
 
 FADE_DURATION = 0.4
 VOICE_TARGET_RMS = 0.12
+PROGRESS_HEIGHT = 10
+LOOP_S = 0.45
 # Duree d'affichage de l'accroche par defaut (sinon : duree de la 1re scene).
 HOOK_DEFAULT_S = 2.6
 WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -89,7 +91,22 @@ def make_soundtrack(voice: AudioFileClip, duration: float, ambiance_id: str | No
     return AudioArrayClip(np.column_stack([mix, mix]).astype(np.float32), fps=audio_gen.SR)
 
 
-def make_caption_clips(cues: list[dict], theme: dict | None = None) -> list[ImageClip]:
+def make_progress_bar(duration: float, width: int, theme: dict | None) -> ImageClip:
+    """
+    Fine barre en haut de l'ecran qui se remplit sur toute la duree : on
+    voit que la video avance (et qu'elle finit bientot) -> meilleure retention.
+    Une barre pleine largeur glisse depuis la gauche : pas de masque a calculer.
+    """
+    c = (theme or catalog.get_theme(None))["couleurs"]
+    left, right = np.array(catalog.hex_to_rgba(c["primaire"])[:3]), np.array(catalog.hex_to_rgba(c["secondaire"])[:3])
+    ramp = np.linspace(0, 1, width)[:, None]
+    row = (left * (1 - ramp) + right * ramp).astype("uint8")
+    bar = np.repeat(row[None, :, :], PROGRESS_HEIGHT, axis=0)
+    return ImageClip(bar, duration=duration).with_position(lambda t: (int(-width * (1 - t / duration)), 0))
+
+
+def make_caption_clips(cues: list[dict], theme: dict | None = None,
+                       keywords: set[str] | None = None) -> list[ImageClip]:
     clips = []
     for cue_index, cue in enumerate(cues):
         words = [w["text"] for w in cue["words"]]
@@ -99,7 +116,7 @@ def make_caption_clips(cues: list[dict], theme: dict | None = None) -> list[Imag
         # sous-titres pour qu'elle ne se noie pas dans le flux.
         emphasize = cue_index == len(cues) - 1
         for i, w in enumerate(cue["words"]):
-            img = render_caption(words, active_index=i, emphasize=emphasize, theme=theme)
+            img = render_caption(words, active_index=i, emphasize=emphasize, theme=theme, keywords=keywords)
             dur = max(w["end"] - w["start"], 0.05)
             clip = (
                 ImageClip(np.array(img), duration=dur)
@@ -144,12 +161,15 @@ def make_overlay_clips(overlays: list[tuple[float, str]], duration: float, tmp_d
 def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path,
              overlays: list[tuple[float, str]] | None = None, theme: dict | None = None,
              hook_text: str = "", hook_duration: float = HOOK_DEFAULT_S,
-             ambiance_id: str | None = None, sfx_cues: list[dict] | None = None):
+             ambiance_id: str | None = None, sfx_cues: list[dict] | None = None,
+             keywords: list[str] | None = None, progress_bar: bool = True, loop_ending: bool = True):
     """
     theme : catalog/themes.json (sous-titres, animations, watermark, musique).
     hook_text : accroche affichee en grand des la premiere image (assets/anim/hook.html).
     ambiance_id : musique (catalog/audio.json), sinon celle du theme.
     sfx_cues : effets sonores [{"t", "name", ...}] (sound_design.plan_cues).
+    keywords : mots-cles colores dans les sous-titres.
+    progress_bar / loop_ending : barre de progression, fin raccordee au debut.
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cues = json.loads(subs_path.read_text(encoding="utf-8"))
@@ -174,12 +194,23 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     if hook_text:
         overlays.insert(0, (0.0, "hook?" + urlencode({"text": hook_text, "dur": f"{min(hook_duration, duration):.2f}"})))
     overlay_clips = make_overlay_clips(overlays, duration, Path(tmp.name), theme)
-    layers = [video, make_watermark_clip(duration, theme), *overlay_clips, *make_caption_clips(cues, theme)]
+    layers = [video, make_watermark_clip(duration, theme), *overlay_clips,
+              *make_caption_clips(cues, theme, {norm_word(k) for k in keywords or []})]
+    if progress_bar:
+        layers.append(make_progress_bar(duration, video.size[0], theme))
     final = CompositeVideoClip(layers, size=video.size).with_duration(duration)
 
     # Pas de fondu d'ouverture : la premiere image est celle qui s'affiche
     # dans le flux et decide du scroll -- elle doit etre pleine, pas noire.
-    final = final.with_effects([FadeOut(FADE_DURATION)])
+    # Pas de fondu au noir a la fin non plus : les dernieres images se fondent
+    # dans la toute premiere (accroche comprise), la video "boucle" sans
+    # coupure visible -> revisionnages, que les algorithmes valorisent.
+    if loop_ending and duration > LOOP_S * 4:
+        first = ImageClip(final.get_frame(0.1)).with_start(duration - LOOP_S).with_duration(LOOP_S)
+        final = CompositeVideoClip([final, first.with_effects([CrossFadeIn(LOOP_S)])],
+                                   size=video.size).with_duration(duration)
+    else:
+        final = final.with_effects([FadeOut(FADE_DURATION)])
     ambiance = ambiance_id or (theme or {}).get("ambiance")
     mixed_audio = make_soundtrack(audio, duration, ambiance, sfx_cues or []).with_duration(duration).with_effects(
         # Fondu d'entree minimal (anti-clic) : la voix demarre des la 1re image.
@@ -222,6 +253,11 @@ def main():
                          help="Ambiance musicale (catalog/audio.json), sinon celle du theme")
     parser.add_argument("--sfx", type=str, default=None,
                          help="Fichier JSON des effets sonores (ecrit par run_pipeline.py)")
+    parser.add_argument("--keywords", type=str, default="",
+                         help="Mots-cles colores dans les sous-titres, separes par |")
+    parser.add_argument("--no-progress-bar", action="store_true", help="Sans barre de progression")
+    parser.add_argument("--no-loop", action="store_true",
+                         help="Fin en fondu au noir au lieu d'un raccord avec la premiere image")
     parser.add_argument("--force", action="store_true",
                          help="Reassemble meme si --out existe deja")
     args = parser.parse_args()
@@ -234,7 +270,9 @@ def main():
              overlays=[parse_overlay(v) for v in args.overlay],
              theme=catalog.get_theme(args.theme) if args.theme else None,
              hook_text=args.hook_text, hook_duration=args.hook_duration, ambiance_id=args.ambiance,
-             sfx_cues=json.loads(Path(args.sfx).read_text(encoding="utf-8")) if args.sfx else [])
+             sfx_cues=json.loads(Path(args.sfx).read_text(encoding="utf-8")) if args.sfx else [],
+             keywords=[k for k in args.keywords.split("|") if k.strip()],
+             progress_bar=not args.no_progress_bar, loop_ending=not args.no_loop)
     print(f"OK -> {args.out}")
 
 

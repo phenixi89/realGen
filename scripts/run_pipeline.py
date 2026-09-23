@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlencode
 
+import catalog
 import sound_design
 from script_text import script_to_text
 
@@ -28,7 +29,8 @@ STEPS = ["script", "voice", "video", "subs", "assemble"]
 #   overlay   -> surimpression sur une scene (5_assemble.py, tous modes)
 #   scene     -> une scene devient un plan anime plein cadre (3b, screenshots)
 #   highlight -> cadre anime autour de la zone montree (3b, screenshots)
-ANIM_KINDS = ["overlay", "scene", "highlight"]
+#   cursor    -> curseur anime qui clique sur le bouton d'action (3b, screenshots)
+ANIM_KINDS = ["overlay", "scene", "highlight", "cursor"]
 DEFAULT_OVERLAY = "score_ats"
 DEFAULT_SCENE_ANIM = "cta"
 CONSEIL_CTA = "cta?" + urlencode({"title": "Teste ton CV gratuitement", "sub": "Lien en bio · abonne-toi pour la suite",
@@ -92,8 +94,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
     # dur = duree de la scene : cadence de la frappe au clavier (carte.html),
     # reprise telle quelle par sound_design pour caler les clics.
-    scene_anims = {i: "carte?" + urlencode({**scenes[i]["carte"],
-                                            "dur": f"{t_scenes[i]['end'] - t_scenes[i]['start']:.2f}"})
+    scene_anims = {i: card_spec(scenes[i]["carte"], t_scenes[i]["end"] - t_scenes[i]["start"])
                    for i in card_scenes}
     last = len(t_scenes) - 1
     chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
@@ -123,12 +124,16 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
             spec += ("&" if "?" in spec else "?") + f"fit={fit:.2f}"
             assemble_args += ["--overlay", f"{start:.2f}:{spec}"]
 
+    if "cursor" in kinds:
+        video_args.append("--cursor")
     if "highlight" in kinds:
         video_args.append("--highlight")
         # Pas de cadre sous une surimpression : les deux se disputeraient l'ecran.
         for i in overlays:
             video_args += ["--highlight-skip", str(i)]
 
+    if script.get("mots_cles"):
+        assemble_args += ["--keywords", "|".join(script["mots_cles"])]
     show_hook = bool(hook and script.get("accroche_ecran") and t_scenes)
     if show_hook:
         first_scene = t_scenes[0]["end"] - t_scenes[0]["start"]
@@ -137,6 +142,13 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     # Plans animes effectivement montes (cartes/CTA : mode screenshots seulement).
     sfx_cues = sound_design.plan_cues(timeline, scene_anims if cards else {}, show_hook)
     return video_args, assemble_args, sfx_cues
+
+
+def card_spec(card: dict, duration: float) -> str:
+    """Carte du scenario -> "gabarit?params" (type -> gabarit, listes en a|b|c)."""
+    template = catalog.CARD_TYPES.get(card.get("type", "texte"), "carte")
+    params = {k: "|".join(v) if isinstance(v, list) else v for k, v in card.items() if k != "type"}
+    return f"{template}?" + urlencode({**params, "dur": f"{duration:.2f}"})
 
 
 def write_caption_file(script: dict, path: Path):
@@ -157,7 +169,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, default=3, help="Nombre de reels a generer")
     parser.add_argument("--saas-url", type=str, required=True, help="URL de demo de ton SaaS")
-    parser.add_argument("--voice", type=str, default="Kore")
+    parser.add_argument("--voice", type=str, default="auto",
+                         help="Voix Gemini ; 'auto' = rotation par reel (catalog/voix.json)")
+    parser.add_argument("--sans-voix", action="store_true",
+                         help="Sans voix off : texte a l'ecran (sous-titres) + musique uniquement")
     parser.add_argument("--whisper-model", type=str, default="small")
     parser.add_argument("--capture-mode", type=str, default="video",
                          choices=["video", "screenshots", "video_desktop"],
@@ -177,8 +192,9 @@ def main():
     parser.add_argument("--anims", type=parse_anims, default=[],
                          help="Animations HTML/JS a integrer, separees par des virgules : "
                               "overlay (surimpression score ATS), scene (scene CTA animee), "
-                              "highlight (cadre anime sur la zone montree) ; ou all / none (defaut). "
-                              "scene/highlight : --capture-mode screenshots uniquement")
+                              "highlight (cadre anime sur la zone montree), cursor (curseur qui clique sur "
+                              "le bouton d'action) ; ou all / none (defaut). "
+                              "scene/highlight/cursor : --capture-mode screenshots uniquement")
     parser.add_argument("--format", type=str, default=None,
                          help="Format impose (catalog/formats.json) ; sinon choix automatique (mix conseil/produit)")
     parser.add_argument("--theme", type=str, default=None,
@@ -191,7 +207,7 @@ def main():
                          help="N'affiche pas l'accroche en grand au debut de la video")
     args = parser.parse_args()
 
-    screen_only = [k for k in args.anims if k in ("scene", "highlight")]
+    screen_only = [k for k in args.anims if k in ("scene", "highlight", "cursor")]
     if screen_only and args.capture_mode != "screenshots":
         print(f"ATTENTION: --anims {','.join(screen_only)} ne s'applique qu'en --capture-mode screenshots -> ignore")
         args.anims = [k for k in args.anims if k not in screen_only]
@@ -246,7 +262,7 @@ def main():
     # 2. Voix
     run([sys.executable, str(ROOT / "2_generate_voice.py"),
          "--scripts", str(out / "scripts.json"), "--voice", args.voice,
-         "--out", str(out / "audio"), *force_flag_for("voice")])
+         "--out", str(out / "audio"), *(["--silent"] if args.sans_voix else []), *force_flag_for("voice")])
 
     scripts = json.loads((out / "scripts.json").read_text(encoding="utf-8"))
 
@@ -326,7 +342,7 @@ def main():
         run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
              "--audio", str(audio_path), "--scripts", str(scripts_path), "--index", str(i),
              "--out", str(subs_path), "--timeline-out", str(timeline_path),
-             "--model", args.whisper_model, *subs_force])
+             "--model", args.whisper_model, *(["--synthetic"] if args.sans_voix else []), *subs_force])
 
         # Animations : placees d'apres la timeline (debut de chaque scene).
         #    Un choix d'animations different du dernier montage de ce reel
@@ -343,10 +359,7 @@ def main():
             anim_video_args = []
         if args.no_sfx:
             sfx_cues = []
-        if sfx_cues:
-            sfx_path = video_dir / "sfx.json"
-            sfx_path.write_text(json.dumps(sfx_cues), encoding="utf-8")
-            anim_assemble_args += ["--sfx", str(sfx_path)]
+        sfx_path = video_dir / "sfx.json"
         anims_marker = video_dir / ".anims"
         anims_signature = json.dumps([anim_video_args, anim_assemble_args, sfx_cues])
         previous_signature = anims_marker.read_text(encoding="utf-8") if anims_marker.exists() else json.dumps([[], []])
@@ -373,6 +386,15 @@ def main():
                 print(f"[{i}] pas de video generee, on saute")
                 continue
             video_path = videos[0]
+
+        # Effets sonores : plan + clics du curseur anime (connus apres 3b).
+        events_path = video_path.with_suffix(".events.json")
+        if sfx_cues and events_path.exists():
+            sfx_cues = sfx_cues + [{"t": t, "name": "mouse"}
+                                   for t in json.loads(events_path.read_text(encoding="utf-8")).get("clics", [])]
+        if sfx_cues:
+            sfx_path.write_text(json.dumps(sfx_cues), encoding="utf-8")
+            anim_assemble_args += ["--sfx", str(sfx_path)]
 
         # 5. Assemblage final -- force des que la video ou les sous-titres
         #    (donc l'audio, cf. subs_force ci-dessus) ont change.

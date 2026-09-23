@@ -22,6 +22,25 @@ window.READY = false;
   window.FONTS_READY = Promise.all(fonts);
 }
 
+// Reproduction du zoom ffmpeg zoompan de 3b_build_video_from_screenshots.py,
+// image par image, pour qu'une surimpression reste collee a la capture qui
+// zoome : ?zoom=in|out|none, ?step, ?zmax, ?fps, ?fx/?fy (point vise, en
+// fraction du cadre ; 0.5/0.5 = centre). Fenetre visible clampee au cadre,
+// exactement comme zoompan.
+window.zoomAt = (t) => {
+  const n = Math.round(t * num("fps", 25)), step = num("step", 0.0015), zmax = num("zmax", 1.18);
+  const mode = param("zoom", "none");
+  if (mode === "out") return n === 0 ? 1 : Math.max(zmax - step * (n - 1), 1);
+  if (mode === "in") return Math.min(1 + step * (n + 1), zmax);
+  return 1;
+};
+window.zoomCss = (t, W = 1080, H = 1920) => {
+  const z = zoomAt(t), fx = num("fx", 0.5), fy = num("fy", 0.5);
+  const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+  const wx = clamp(fx * W - W / z / 2, 0, W - W / z), wy = clamp(fy * H - H / z / 2, 0, H - H / z);
+  return `translate(${-wx * z}px, ${-wy * z}px) scale(${z})`;
+};
+
 //   - ?fit=S : si l'animation dure plus de S secondes, elle est acceleree
 //     pour tenir dans S (surimpression calee sur la duree de sa scene).
 window.expose = (tl, extraReady) => {
@@ -42,4 +61,32 @@ window.expose = (tl, extraReady) => {
     };
     requestAnimationFrame(loop);
   }
+};
+
+// Texture des plans plein cadre (cartes, CTA) : grain de film leger qui
+// "vibre" + quelques particules floues qui derivent lentement -- evite le
+// rendu d'aplat numerique. Trajectoires calculees (pas de hasard) : rendu
+// reproductible. A appeler avant expose(tl), une fois la timeline creee.
+window.addAmbient = (tl, count = 14) => {
+  const layer = document.createElement("div");
+  layer.style.cssText = "position:absolute;inset:0;pointer-events:none;overflow:hidden";
+  document.body.insertBefore(layer, document.body.children[3] || null);
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement("div"), size = 10 + ((i * 37) % 28);
+    d.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:50%;filter:blur(${2 + (i % 4)}px);` +
+      `left:${(i * 173) % 1080}px;top:${(i * 311) % 1920}px;opacity:${0.12 + (i % 5) * 0.05};` +
+      `background:${i % 2 ? "var(--c1)" : "var(--c2)"}`;
+    layer.appendChild(d);
+    tl.to(d, { y: -140 - (i % 6) * 40, x: ((i % 3) - 1) * 60, duration: 12, ease: "none" }, 0);
+  }
+  const grain = document.createElement("div");
+  grain.style.cssText = "position:absolute;inset:-60px;pointer-events:none;opacity:.10;mix-blend-mode:overlay;" +
+    "background-image:url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'>" +
+    "<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter>" +
+    "<rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
+  document.body.appendChild(grain);
+  // Le grain saute de place a chaque image (effet pellicule), sans hasard.
+  const jitter = { k: 0 };
+  tl.to(jitter, { k: 300, duration: 12, ease: "none",
+    onUpdate: () => { const k = Math.floor(jitter.k); grain.style.transform = `translate(${(k * 37) % 60 - 30}px, ${(k * 53) % 60 - 30}px)`; } }, 0);
 };

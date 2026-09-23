@@ -6,6 +6,7 @@ Catalogue editorial et visuel des reels (dossier catalog/ a la racine) :
     hooks.json    styles d'accroche des 2 premieres secondes
     themes.json   couleurs, polices, style des sous-titres, ambiance musicale
     audio.json    ambiances musicales et effets sonores (scripts/audio_gen.py)
+    voix.json     voix TTS en rotation et ton de lecture par defaut
     config.json   mix conseil/produit, anti-redondance
 
 Tout s'enrichit en editant ces JSON, sans toucher au code : ce module les
@@ -29,6 +30,8 @@ DEFAULT_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 CARD_MODES = ("aucune", "autorisees", "majoritaires")
 CARD_STYLES = ("normal", "mythe", "realite", "avant", "apres")
 CARD_EFFECTS = ("standard", "frappe", "suspense")
+# Type de carte -> gabarit assets/anim/<gabarit>.html
+CARD_TYPES = {"texte": "carte", "chiffre": "chiffre", "comparaison": "comparaison", "liste": "liste"}
 # Fenetre sur laquelle on mesure le mix conseil/produit deja publie.
 MIX_WINDOW = 10
 
@@ -63,6 +66,18 @@ def _by_id(items: list[dict], item_id: str, kind: str) -> dict:
         if item["id"] == item_id:
             return item
     raise KeyError(f"{kind} inconnu '{item_id}' (disponibles : {', '.join(i['id'] for i in items)})")
+
+
+def voices() -> list[dict]:
+    return _load("voix")["voix"]
+
+
+def default_tone() -> str:
+    return _load("voix")["ton_par_defaut"]
+
+
+def pick_voice(history: list[dict], rng: random.Random) -> dict:
+    return weighted_pick(voices(), _recent(history, "voix", config().get("historique_voix", 2)), rng)
 
 
 def get_format(fid: str) -> dict:
@@ -220,6 +235,12 @@ def validate_catalog() -> list[str]:
             name = t.get(f"police_{role}")
             if name and not (FONTS_DIR / name).exists():
                 errors.append(f"theme {t['id']} : police {name} absente de assets/fonts/")
+    for t in themes():
+        tr = t.get("transitions", [])
+        if not isinstance(tr, list) or not all(isinstance(x, str) and x for x in tr):
+            errors.append(f"theme {t['id']} : transitions doit etre une liste de noms xfade")
+    if not voices():
+        errors.append("voix.json : aucune voix")
     if set(config()["mix"]) - {f["categorie"] for f in formats()}:
         errors.append("config.json : mix cite une categorie sans aucun format")
     return errors

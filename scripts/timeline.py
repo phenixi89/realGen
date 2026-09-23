@@ -73,10 +73,12 @@ def clip_lengths(durations: list[float]) -> list[float]:
     return [d + (XFADE_DURATION if i < len(durations) - 1 else TAIL_S) for i, d in enumerate(durations)]
 
 
-def concat_with_xfade(clip_paths: list[Path], durations: list[float], out_path: Path):
+def concat_with_xfade(clip_paths: list[Path], durations: list[float], out_path: Path,
+                      transitions: list[str] | None = None):
     """
     Clip i (de longueur clip_lengths()[i]) commence a sum(durations[:i]) :
     la transition i demarre exactement au debut de la scene/plan i.
+    transitions : noms ffmpeg xfade a enchainer (theme), sinon XFADE_TRANSITIONS.
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if len(clip_paths) == 1:
@@ -91,7 +93,8 @@ def concat_with_xfade(clip_paths: list[Path], durations: list[float], out_path: 
     offset = 0.0
     for i in range(1, len(clip_paths)):
         offset += durations[i - 1]
-        transition = XFADE_TRANSITIONS[(i - 1) % len(XFADE_TRANSITIONS)]
+        pool = transitions or XFADE_TRANSITIONS
+        transition = pool[(i - 1) % len(pool)]
         parts.append(f"[{prev}][{i}:v]xfade=transition={transition}:"
                      f"duration={XFADE_DURATION}:offset={offset:.3f}[v{i}]")
         prev = f"v{i}"

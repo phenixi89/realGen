@@ -1,11 +1,15 @@
 {
   "_doc": "Reglages de la selection de contenu. mix = part cible de chaque categorie de format sur les reels generes (conseil = contenu utile, produit = demo). historique_* = nombre d'elements recents evites. similarite_max = au-dela (0-1), une accroche trop proche d'une ancienne est refusee et l'IA recommence.",
-  "mix": {"conseil": 0.7, "produit": 0.3},
+  "mix": {
+    "conseil": 0.7,
+    "produit": 0.3
+  },
   "historique_formats": 3,
   "historique_hooks": 4,
   "historique_themes": 2,
   "historique_accroches": 30,
   "similarite_max": 0.72,
   "cta_produit": "Essaie gratuitement, lien en bio.",
-  "cta_conseil": "Abonne-toi pour la suite, et teste ton CV gratuitement avec le lien en bio."
+  "cta_conseil": "Abonne-toi pour la suite, et teste ton CV gratuitement avec le lien en bio.",
+  "historique_voix": 2
 }

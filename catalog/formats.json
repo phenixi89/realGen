@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes texte animees, assets/anim/carte.html -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher.",
+  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes texte animees, assets/anim/carte.html -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS).",
   "formats": [
     {
       "id": "demo_produit",
@@ -10,7 +10,8 @@
       "sujets": [
         "produit"
       ],
-      "structure": "Accroche, puis chaque scene montre une fonctionnalite reelle d'OpusCV a l'ecran en expliquant le benefice concret, puis CTA."
+      "structure": "Accroche, puis chaque scene montre une fonctionnalite reelle d'OpusCV a l'ecran en expliquant le benefice concret, puis CTA.",
+      "ton": "chaleureux, dynamique, rythme rapide pour réseaux sociaux"
     },
     {
       "id": "liste_erreurs",
@@ -24,7 +25,8 @@
         "lettre",
         "candidature"
       ],
-      "structure": "Accroche annoncant le nombre d'erreurs (3 a 5 selon la duree). Une scene-carte par erreur : surtitre 'Erreur n°X', titre = l'erreur en 2 a 5 mots, texte = la correction en une phrase courte ; la voix explique pourquoi c'est une erreur et quoi faire a la place. Avant-derniere scene (sans carte) : montrer la fonctionnalite d'OpusCV qui detecte ou corrige ces erreurs. Derniere scene : CTA."
+      "structure": "Accroche annoncant le nombre d'erreurs (3 a 5 selon la duree). Une scene-carte par erreur : surtitre 'Erreur n°X', titre = l'erreur en 2 a 5 mots, texte = la correction en une phrase courte ; la voix explique pourquoi c'est une erreur et quoi faire a la place. Avant-derniere scene (sans carte) : montrer la fonctionnalite d'OpusCV qui detecte ou corrige ces erreurs. Derniere scene : CTA. Si une donnée chiffrée plausible appuie le propos, une carte type 'chiffre' peut ouvrir la liste.",
+      "ton": "énergique et direct, rythme rapide, comme un créateur TikTok qui interpelle"
     },
     {
       "id": "mythe_realite",
@@ -38,7 +40,8 @@
         "entretien",
         "candidature"
       ],
-      "structure": "Accroche. Puis 2 ou 3 paires de scenes-cartes : une carte style 'mythe' (surtitre 'Idée reçue', titre = l'idee fausse) suivie d'une carte style 'realite' (surtitre 'Réalité', titre = la verite, texte = le conseil concret). Une scene sans carte montre OpusCV qui applique le bon reflexe. Derniere scene : CTA."
+      "structure": "Accroche. Puis 2 ou 3 paires de scenes-cartes : une carte style 'mythe' (surtitre 'Idée reçue', titre = l'idee fausse) suivie d'une carte style 'realite' (surtitre 'Réalité', titre = la verite, texte = le conseil concret). Une scene sans carte montre OpusCV qui applique le bon reflexe. Derniere scene : CTA.",
+      "ton": "complice puis affirmé sur la réalité, rythme rapide"
     },
     {
       "id": "avant_apres",
@@ -50,7 +53,8 @@
         "cv",
         "ats"
       ],
-      "structure": "Accroche. Puis 2 ou 3 exemples : une carte style 'avant' (surtitre 'Avant', titre = une formulation faible typique d'un CV, entre guillemets) puis une carte style 'apres' (surtitre 'Après', titre = la meme ligne reecrite, chiffree et orientee resultat) ; la voix explique ce qui change. Une scene sans carte montre OpusCV qui propose ce type de reecriture. Derniere scene : CTA."
+      "structure": "Accroche. Puis 2 ou 3 exemples : une carte style 'avant' (surtitre 'Avant', titre = une formulation faible typique d'un CV, entre guillemets) puis une carte style 'apres' (surtitre 'Après', titre = la meme ligne reecrite, chiffree et orientee resultat) ; la voix explique ce qui change. Une scene sans carte montre OpusCV qui propose ce type de reecriture. Derniere scene : CTA. Au moins un exemple peut utiliser une carte type 'comparaison' (avant et après sur le même écran).",
+      "ton": "pédagogue et enthousiaste, rythme soutenu"
     },
     {
       "id": "astuce_express",
@@ -66,7 +70,8 @@
         "linkedin",
         "candidature"
       ],
-      "structure": "Accroche. Une seule astuce expliquee en etapes : une scene-carte par etape (surtitre 'Étape X', titre = l'action). Une scene sans carte montre la fonctionnalite d'OpusCV liee. Derniere scene : CTA."
+      "structure": "Accroche. Une seule astuce expliquee en etapes : une scene-carte par etape (surtitre 'Étape X', titre = l'action). Une scene sans carte montre la fonctionnalite d'OpusCV liee. Derniere scene : CTA.",
+      "ton": "complice, comme un conseil entre amis, rythme vif"
     },
     {
       "id": "decryptage_offre",
@@ -78,7 +83,8 @@
         "candidature",
         "ats"
       ],
-      "structure": "Accroche. On decortique l'offre_emploi fournie : une scene-carte par expression de l'offre (surtitre 'Dans l'offre', titre = l'expression entre guillemets, texte = ce qu'elle veut vraiment dire et le mot-cle a reprendre dans son CV). Une scene sans carte montre OpusCV qui adapte le CV a cette offre. Derniere scene : CTA."
+      "structure": "Accroche. On decortique l'offre_emploi fournie : une scene-carte par expression de l'offre (surtitre 'Dans l'offre', titre = l'expression entre guillemets, texte = ce qu'elle veut vraiment dire et le mot-cle a reprendre dans son CV). Une scene sans carte montre OpusCV qui adapte le CV a cette offre. Derniere scene : CTA.",
+      "ton": "posé et analytique, sûr de lui"
     },
     {
       "id": "serie_30_jours",
@@ -95,7 +101,8 @@
         "linkedin",
         "candidature"
       ],
-      "structure": "Episode d'une serie quotidienne. Premiere scene-carte : surtitre 'Jour {episode}/30', titre = l'objectif du jour. Puis le conseil du jour en 2 ou 3 scenes (cartes ou demo OpusCV si pertinent). Derniere scene : 'Demain : ...' (teaser du prochain episode) + invitation a s'abonner."
+      "structure": "Episode d'une serie quotidienne. Premiere scene-carte : surtitre 'Jour {episode}/30', titre = l'objectif du jour. Puis le conseil du jour en 2 ou 3 scenes (cartes ou demo OpusCV si pertinent). Derniere scene : 'Demain : ...' (teaser du prochain episode) + invitation a s'abonner.",
+      "ton": "motivant et chaleureux, comme un coach"
     },
     {
       "id": "question_recruteur",
@@ -108,7 +115,8 @@
         "entretien",
         "candidature"
       ],
-      "structure": "Accroche. Pour 3 éléments d'une candidature, une scène-carte surtitre 'Ce que tu écris' (titre = formulation du candidat, style 'avant') suivie d'une scène-carte surtitre 'Ce que le recruteur lit' (titre = sa perception réelle, style 'realite'). Une scène sans carte montre OpusCV qui aide à corriger. Dernière scène : CTA."
+      "structure": "Accroche. Pour 3 éléments d'une candidature, une scène-carte surtitre 'Ce que tu écris' (titre = formulation du candidat, style 'avant') suivie d'une scène-carte surtitre 'Ce que le recruteur lit' (titre = sa perception réelle, style 'realite'). Une scène sans carte montre OpusCV qui aide à corriger. Dernière scène : CTA.",
+      "ton": "confidentiel, comme un recruteur qui révèle un secret"
     },
     {
       "id": "checklist_express",
@@ -122,7 +130,8 @@
         "lettre",
         "candidature"
       ],
-      "structure": "Accroche du type 'Avant d'envoyer ton CV, vérifie ces N points'. Une scène-carte par point (surtitre 'Point X', titre = la vérification en 2 à 5 mots, texte = comment la faire, style 'normal'). Avant-dernière scène sans carte : la checklist OpusCV qui fait ces vérifications automatiquement. Dernière scène : CTA."
+      "structure": "Accroche du type 'Avant d'envoyer ton CV, vérifie ces N points'. Une scène-carte type 'liste' qui récapitule les points à la fin, et une scène-carte par point (surtitre 'Point X', titre = la vérification en 2 à 5 mots, texte = comment la faire, style 'normal'). Avant-dernière scène sans carte : la checklist OpusCV qui fait ces vérifications automatiquement. Dernière scène : CTA.",
+      "ton": "net et efficace, rythme rapide"
     },
     {
       "id": "top_bottom",
@@ -136,7 +145,8 @@
         "entretien",
         "linkedin"
       ],
-      "structure": "Accroche. Alternance de scènes-cartes : style 'mythe' (surtitre 'À ne jamais faire', titre = la mauvaise pratique) puis style 'realite' (surtitre 'À faire', titre = la bonne pratique), 2 ou 3 paires. Une scène sans carte montre OpusCV. Dernière scène : CTA."
+      "structure": "Accroche. Alternance de scènes-cartes : style 'mythe' (surtitre 'À ne jamais faire', titre = la mauvaise pratique) puis style 'realite' (surtitre 'À faire', titre = la bonne pratique), 2 ou 3 paires. Une scène sans carte montre OpusCV. Dernière scène : CTA.",
+      "ton": "tranché et dynamique"
     },
     {
       "id": "cas_pratique",
@@ -149,7 +159,8 @@
         "cv",
         "candidature"
       ],
-      "structure": "Accroche présentant un persona fictif précis (prénom, métier, situation). La voix raconte son problème de CV, puis 2 ou 3 corrections concrètes (cartes style 'avant'/'apres' possibles), dont au moins une scène sans carte montrant OpusCV appliquée à son cas. Dernière scène : résultat obtenu et CTA."
+      "structure": "Accroche présentant un persona fictif précis (prénom, métier, situation). La voix raconte son problème de CV, puis 2 ou 3 corrections concrètes (cartes style 'avant'/'apres' possibles), dont au moins une scène sans carte montrant OpusCV appliquée à son cas. Dernière scène : résultat obtenu et CTA.",
+      "ton": "narratif et empathique, rythme naturel"
     },
     {
       "id": "temoignage_produit",
@@ -160,7 +171,8 @@
       "sujets": [
         "produit"
       ],
-      "structure": "Récit à la première personne d'un utilisateur type ('J'ai envoyé 40 candidatures sans réponse...'), présenté comme un exemple et non comme un vrai client. Chaque scène montre la fonctionnalité d'OpusCV qui a changé la donne. Dernière scène : CTA."
+      "structure": "Récit à la première personne d'un utilisateur type ('J'ai envoyé 40 candidatures sans réponse...'), présenté comme un exemple et non comme un vrai client. Chaque scène montre la fonctionnalité d'OpusCV qui a changé la donne. Dernière scène : CTA.",
+      "ton": "sincère et naturel, à la première personne"
     }
   ]
 }

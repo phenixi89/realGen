@@ -55,7 +55,8 @@ Principales options de `run_pipeline.py` :
 | `--n` | 3 | Nombre de reels à générer (ignoré avec `--scenario`) |
 | `--duration` | 30 | Durée cible de chaque reel, en secondes |
 | `--capture-mode` | `video` | `screenshots` (captures nettes composées, recommandé — voir ci-dessous), `video` (enregistrement mobile continu), `video_desktop` (enregistrement desktop recadré par fonctionnalité) |
-| `--voice` | Kore | Voix TTS Gemini |
+| `--voice` | auto | Voix TTS Gemini (`auto` = rotation par reel, `catalog/voix.json`) |
+| `--sans-voix` | — | Sans voix off : texte à l'écran + musique |
 | `--angle` | — | Impose un angle marketing (sinon choisi stratégiquement, voir plus bas) |
 | `--scenario` | — | Fichier JSON de scénario écrit à la main (voir `scenarios/exemple.json`) |
 | `--format` / `--theme` / `--hook` | auto | Impose un élément du catalogue (voir « Ligne éditoriale ») |
@@ -177,6 +178,27 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
   et `suspense` (titre caché puis révélé, un seul par reel).
 
 Écouter : `python scripts/audio_gen.py --ambiance pop_energie --out /tmp/a.wav` ou `--sfx whoosh`.
+
+## Effets visuels et voix
+
+- **Sous-titres** : le mot prononcé « pop » (légèrement agrandi) et les **mots-clés** choisis par
+  Gemini (`mots_cles`) s'affichent dans la couleur d'accent du thème (`couleurs.mot_cle`).
+- **Barre de progression** fine en haut de l'écran, aux couleurs du thème (`--no-progress-bar` dans
+  `5_assemble.py` pour la retirer).
+- **Fin en boucle** : les dernières images se fondent dans la première (accroche comprise), la
+  vidéo s'enchaîne sans coupure → revisionnages (`--no-loop` pour un fondu au noir).
+- **Zoom ciblé** : chaque capture zoome vers son bouton d'action (repéré à la capture, `focus`
+  dans `captures.json`) au lieu du centre.
+- **Curseur animé** (`--anims cursor`) : une flèche vient cliquer sur ce bouton, avec un son de
+  clic de souris. Avec `highlight`, les deux alternent d'une scène à l'autre.
+- **Transitions par thème** (`transitions` dans `themes.json`, transitions ffmpeg xfade).
+- **Nouvelles cartes** (choisies par Gemini) : `chiffre` (nombre qui compte), `comparaison`
+  (avant/après sur le même écran), `liste` (points qui se cochent), en plus des cartes texte.
+- **Texture** : grain de film léger et particules lentes sur les cartes et le CTA.
+- **Voix en rotation** (`--voice auto`, `catalog/voix.json`) et **ton de lecture par format**
+  (`ton` dans `formats.json`).
+- **Mode sans voix** (`--sans-voix`, case « sans_voix » du workflow) : texte à l'écran + musique,
+  pour le public qui regarde sans le son.
 
 ## Catalogue des fonctionnalités capturables
 

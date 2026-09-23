@@ -119,6 +119,7 @@
                            .to("#title span", { opacity: 0.55, duration: 0.3 }, "<");
   // Respiration legere : la carte ne reste jamais figee meme sur une longue scene.
   tl.to("#box", { y: -14, duration: 2.2, repeat: 4, yoyo: true, ease: "sine.inOut" }, 1.6);
+  addAmbient(tl);
   expose(tl, bgReady);
   window.DURATION = 2.4;
 </script></body></html>

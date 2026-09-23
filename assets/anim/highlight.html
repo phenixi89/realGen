@@ -9,7 +9,7 @@
 <html lang="fr"><head><meta charset="utf-8">
 <style>
   html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden}
-  #layer{position:absolute;inset:0;transform-origin:540px 960px}
+  #layer{position:absolute;inset:0;transform-origin:0 0}
   #box{position:absolute}
   #box svg{position:absolute;inset:-14px;width:calc(100% + 28px);height:calc(100% + 28px);overflow:visible}
   #glow{position:absolute;inset:-14px;border-radius:40px;box-shadow:0 0 50px 10px color-mix(in srgb,var(--c1) 75%,transparent),inset 0 0 30px color-mix(in srgb,var(--c1) 35%,transparent)}
@@ -34,21 +34,14 @@
 <script src="common.js"></script>
 <script>
   const X = num("x", 70), Y = num("y", 500), W = num("w", 940), H = num("h", 900);
-  const DELAY = num("delay", 0), FPS = num("fps", 25), STEP = num("step", 0.0015), ZMAX = num("zmax", 1.18), ZOOM = param("zoom", "in");
+  const DELAY = num("delay", 0);
   Object.assign(document.getElementById("box").style, { left: X + "px", top: Y + "px", width: W + "px", height: H + "px" });
   const rect = document.getElementById("rect");
   rect.setAttribute("width", W + 20); rect.setAttribute("height", H + 20);
   const per = 2 * (W + H + 40);
   rect.style.strokeDasharray = per; rect.style.strokeDashoffset = per;
 
-  // Meme zoom que ffmpeg zoompan, image n : in = min(1+STEP*(n+1), ZMAX) ;
-  // out = 1 a l'image 0 (zoom initial de zoompan), ZMAX a l'image 1, puis -STEP.
-  const zoomAt = (t) => {
-    const n = Math.round(t * FPS);
-    if (ZOOM === "out") return n === 0 ? 1 : Math.max(ZMAX - STEP * (n - 1), 1);
-    if (ZOOM === "in") return Math.min(1 + STEP * (n + 1), ZMAX);
-    return 1;
-  };
+  // Zoom de la capture sous-jacente : common.js zoomCss (meme calcul que zoompan).
   const layer = document.getElementById("layer");
 
   const tl = gsap.timeline({ paused: true })
@@ -62,7 +55,7 @@
   // ?delay= : le cadre attend la fin du fondu d'entree du clip, mais le zoom
   // suit le temps du clip des l'image 0.
   const baseSeek = window.seek;
-  window.seek = (t) => { baseSeek(t - DELAY); layer.style.transform = `scale(${zoomAt(t)})`; };
+  window.seek = (t) => { baseSeek(t - DELAY); layer.style.transform = zoomCss(t); };
   window.DURATION = DELAY + tl.duration();
   window.seek(0);
 </script></body></html>

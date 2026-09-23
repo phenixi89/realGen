@@ -1,0 +1,49 @@
+<!doctype html>
+<!--
+  Carte "comparaison" : Avant et Apres empiles, un rideau qui glisse revele
+  la version corrigee. Parametres : avant, apres, surtitre, bg, dur + theme.
+  Instants partages avec scripts/sound_design.py : AVANT_AT, APRES_AT.
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card_base.css">
+<style>
+  #box{position:absolute;left:80px;right:80px;top:470px}
+  .panel{position:relative;margin-top:40px;padding:44px 48px;border-radius:36px;overflow:hidden;
+    background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.14)}
+  .tag{display:inline-block;font-weight:800;font-size:36px;letter-spacing:.08em;text-transform:uppercase;padding:8px 22px;border-radius:99px;color:#fff}
+  #pa .tag{background:#e5484d} #pb .tag{background:#10b981}
+  .txt{margin-top:24px;font-size:66px}
+  #pa .txt{opacity:.75;text-decoration:line-through;text-decoration-color:#e5484d;text-decoration-thickness:8px}
+  #pb{border-color:#10b981;box-shadow:0 0 60px rgba(16,185,129,.35)}
+  #curtain{position:absolute;inset:0;background:var(--cbg);transform-origin:right center}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="grid"></div>
+<div id="box">
+  <div class="kicker" id="kicker"></div>
+  <div class="panel" id="pa"><span class="tag">✕ Avant</span><div class="txt title" id="ta"></div></div>
+  <div class="panel" id="pb"><span class="tag">✓ Après</span><div class="txt title" id="tb"></div><div id="curtain"></div></div>
+</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>
+  const AVANT_AT = 0.3, APRES_AT = 1.4;
+  const q = (t) => `« ${String(t).replace(/^[«"“\s]+|[»"”\s]+$/g, "")} »`;
+  document.getElementById("ta").textContent = q(param("avant", "Gestion des réseaux sociaux"));
+  document.getElementById("tb").textContent = q(param("apres", "+45 % d'engagement en 6 mois"));
+  const kicker = param("surtitre", ""); document.getElementById("kicker").textContent = kicker;
+  if (!kicker) document.getElementById("kicker").style.display = "none";
+  const bg = param("bg", ""); let bgReady = null;
+  if (bg) { document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
+  const tl = gsap.timeline({ paused: true })
+    .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
+    .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2.2)" }, 0.05)
+    .from("#pa", { x: -120, opacity: 0, duration: 0.45, ease: "power3.out" }, AVANT_AT)
+    .from("#pb", { x: 120, opacity: 0, duration: 0.45, ease: "power3.out" }, AVANT_AT + 0.3)
+    .to("#curtain", { scaleX: 0, duration: 0.55, ease: "power3.inOut" }, APRES_AT)
+    .fromTo("#pb", { scale: 1 }, { scale: 1.04, duration: 0.18, yoyo: true, repeat: 1, immediateRender: false }, APRES_AT + 0.5)
+    .to("#box", { y: -12, duration: 2.2, repeat: 4, yoyo: true, ease: "sine.inOut" }, 2.4);
+  addAmbient(tl);
+  expose(tl, bgReady);
+  window.DURATION = 2.6;
+</script></body></html>

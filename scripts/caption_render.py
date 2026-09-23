@@ -8,6 +8,9 @@ construit comme une chaine de caracteres. Rendre chaque cue en image PNG
 avec Pillow est verifiable directement (on peut ouvrir l'image et regarder),
 et 5_assemble.py se contente de la positionner/composer via moviepy.
 """
+import re
+import unicodedata
+
 from PIL import Image, ImageDraw, ImageFont
 
 import catalog
@@ -24,6 +27,8 @@ WORD_GAP = 18
 CTA_PILL_COLOR = (17, 24, 39, 235)     # navy fonce : pastille derriere le CTA final
 CTA_PILL_PADDING = 24
 CTA_PILL_RADIUS = 32
+ACTIVE_SCALE = 1.14  # mot prononce legerement agrandi ("pop")
+KEYWORD_COLOR = (125, 211, 252, 255)  # mots-cles sans theme : bleu clair
 
 
 def _font(size: int = FONT_SIZE):
@@ -35,27 +40,40 @@ def caption_style(theme: dict | None) -> dict:
     if not theme:
         return {"font": FONT_PATH, "size": FONT_SIZE, "cta_size": CTA_FONT_SIZE, "upper": False,
                 "outline": OUTLINE_WIDTH, "fg": DEFAULT_COLOR, "hl": HIGHLIGHT_COLOR,
-                "stroke": OUTLINE_COLOR, "pill": CTA_PILL_COLOR}
+                "stroke": OUTLINE_COLOR, "pill": CTA_PILL_COLOR, "kw": KEYWORD_COLOR}
     st, c = theme.get("sous_titres", {}), theme["couleurs"]
     size = int(st.get("taille", FONT_SIZE))
     return {"font": catalog.font_path(theme, "texte"), "size": size, "cta_size": round(size * CTA_FONT_SIZE / FONT_SIZE),
             "upper": bool(st.get("majuscules")), "outline": int(st.get("contour", OUTLINE_WIDTH)),
             "fg": catalog.hex_to_rgba(c["texte"]), "hl": catalog.hex_to_rgba(c["surligne"]),
-            "stroke": catalog.hex_to_rgba(c["contour"]), "pill": catalog.hex_to_rgba(c["pastille"], 235)}
+            "stroke": catalog.hex_to_rgba(c["contour"]), "pill": catalog.hex_to_rgba(c["pastille"], 235),
+            "kw": catalog.hex_to_rgba(c.get("mot_cle") or c["secondaire"])}
+
+
+def norm_word(word: str) -> str:
+    """Mot compare sans casse, accents ni ponctuation (mots-cles du scenario)."""
+    word = re.sub(r"^(?:qu|[cdjlmnst])['’]", "", word.lower())  # l'ATS -> ats
+    word = unicodedata.normalize("NFKD", word)
+    return re.sub(r"[^a-z0-9%]+", "", "".join(ch for ch in word if not unicodedata.combining(ch)))
 
 
 def render_caption(words: list[str], active_index: int, emphasize: bool = False,
-                   theme: dict | None = None) -> Image.Image:
+                   theme: dict | None = None, keywords: set[str] | None = None) -> Image.Image:
     """
     words: mots de la cue (deja nettoyes, sans espaces superflus).
     active_index: index du mot actuellement prononce (surligne).
     emphasize: True pour la derniere cue du reel (l'appel a l'action) --
     police plus grande sur une pastille de fond, pour qu'elle se distingue
     nettement des sous-titres precedents au lieu de se fondre dans le reste.
+    keywords: mots-cles (norm_word) affiches dans la couleur d'accent du theme.
+    Le mot prononce "pop" : trace ACTIVE_SCALE fois plus grand, centre sur
+    son emplacement (la mise en page ne bouge pas d'un mot a l'autre).
     Retourne une image RGBA rognee au texte, prete a composer par-dessus
     la video (fond transparent).
     """
     style = caption_style(theme)
+    keywords = keywords or set()
+    is_keyword = [norm_word(w) in keywords for w in words]
     font = ImageFont.truetype(style["font"], style["cta_size"] if emphasize else style["size"])
     outline = style["outline"]
     if style["upper"]:
@@ -97,7 +115,9 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
         for line in lines
     )
 
-    pad = outline * 2 + (CTA_PILL_PADDING if emphasize else 0)
+    # Marge pour le mot actif agrandi, qui deborde de son emplacement.
+    pad = outline * 2 + (CTA_PILL_PADDING if emphasize else 0) + int(font.size * (ACTIVE_SCALE - 1))
+    active_font = ImageFont.truetype(style["font"], round(font.size * ACTIVE_SCALE))
     img = Image.new("RGBA", (total_width + pad * 2, total_height + pad * 2), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
@@ -111,9 +131,16 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
         line_w = sum(word_sizes[i][0] for i in line) + WORD_GAP * (len(line) - 1)
         x = pad + (total_width - line_w) // 2
         for i in line:
-            color = style["hl"] if i == active_index else style["fg"]
-            draw.text((x - word_offsets[i][0], y - line_top), words[i], font=font, fill=color,
-                      stroke_width=outline, stroke_fill=style["stroke"])
+            if i == active_index:
+                # Centre du mot a sa place normale, trace plus grand.
+                cx = x + word_sizes[i][0] / 2
+                cy = y + (word_offsets[i][1] + word_offsets[i][2]) / 2 - line_top
+                draw.text((cx, cy), words[i], font=active_font, fill=style["hl"], anchor="mm",
+                          stroke_width=outline + 1, stroke_fill=style["stroke"])
+            else:
+                color = style["kw"] if is_keyword[i] else style["fg"]
+                draw.text((x - word_offsets[i][0], y - line_top), words[i], font=font, fill=color,
+                          stroke_width=outline, stroke_fill=style["stroke"])
             x += word_sizes[i][0] + WORD_GAP
         y += line_h + WORD_GAP
 

@@ -25,8 +25,6 @@ import json
 import re
 from pathlib import Path
 
-import whisper
-
 from script_text import scene_texts, script_to_text
 
 MAX_WORDS_PER_CUE = 4
@@ -99,6 +97,23 @@ def chunk_words(words: list[dict], max_words: int = MAX_WORDS_PER_CUE) -> list[d
     return cues
 
 
+def synthetic_timing(reference_words: list[str], audio_duration: float) -> list[dict]:
+    """
+    Mode sans voix : pas de Whisper, chaque mot recoit une duree de lecture
+    proportionnelle a sa longueur (+ pause apres la ponctuation), etalee sur
+    toute la piste -- meme format que align_to_reference().
+    """
+    weights = [0.6 + len(w) * 0.07 + (0.35 if w[-1:] in ".!?:;," else 0) for w in reference_words]
+    usable = max(audio_duration - 0.8, 0.5)
+    scale = usable / sum(weights)
+    words, t = [], 0.3
+    for w, weight in zip(reference_words, weights):
+        d = weight * scale
+        words.append({"text": w, "start": round(t, 3), "end": round(t + d * 0.92, 3)})
+        t += d
+    return words
+
+
 def scene_ranges(scene_word_counts: list[int]) -> list[tuple[int, int]]:
     ranges, pos = [], 0
     for count in scene_word_counts:
@@ -140,6 +155,8 @@ def main():
     parser.add_argument("--timeline-out", type=str, default=None,
                          help="Ecrit aussi la timeline des scenes (debut/fin de chaque scene dans l'audio), "
                               "utilisee par le montage pour caler l'image sur la voix")
+    parser.add_argument("--synthetic", action="store_true",
+                         help="Mode sans voix : timing calcule (lecture a l'ecran), sans Whisper")
     parser.add_argument("--force", action="store_true",
                          help="Regenere meme si --out existe deja")
     args = parser.parse_args()
@@ -156,16 +173,25 @@ def main():
               if s.get("texte", "").strip()] or [{"feature": None, "texte": t} for t in scene_texts(script)]
     reference_words = script_to_text(script).split()
 
-    print(f"Chargement du modele Whisper '{args.model}'...")
-    model = whisper.load_model(args.model)
+    if args.synthetic:
+        from moviepy import AudioFileClip
+        clip = AudioFileClip(args.audio)
+        audio_duration = clip.duration
+        clip.close()
+        aligned = synthetic_timing(reference_words, audio_duration)
+    else:
+        import whisper
 
-    print(f"Transcription de {args.audio} (mesure du timing uniquement)...")
-    audio = whisper.load_audio(args.audio)
-    audio_duration = len(audio) / whisper.audio.SAMPLE_RATE
-    result = model.transcribe(audio, language="fr", word_timestamps=True)
-    whisper_words = [w for seg in result["segments"] for w in seg.get("words", [])]
+        print(f"Chargement du modele Whisper '{args.model}'...")
+        model = whisper.load_model(args.model)
 
-    aligned = align_to_reference(whisper_words, reference_words)
+        print(f"Transcription de {args.audio} (mesure du timing uniquement)...")
+        audio = whisper.load_audio(args.audio)
+        audio_duration = len(audio) / whisper.audio.SAMPLE_RATE
+        result = model.transcribe(audio, language="fr", word_timestamps=True)
+        whisper_words = [w for seg in result["segments"] for w in seg.get("words", [])]
+
+        aligned = align_to_reference(whisper_words, reference_words)
 
     # Cues decoupees scene par scene : un sous-titre ne chevauche jamais une
     # coupe d'image, il change en meme temps que la fonctionnalite montree.

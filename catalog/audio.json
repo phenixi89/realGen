@@ -112,7 +112,8 @@
       "riser": 0.2,
       "impact": 0.35,
       "sparkle": 0.2,
-      "tick": 0.14
+      "tick": 0.14,
+      "mouse": 0.3
     },
     "transition": "tick"
   }

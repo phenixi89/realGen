@@ -157,11 +157,12 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
             sujet = choose_sujet(client, fmt, catalog.recent_sujets(working), rng)
         hook = catalog.get_hook(hook_id) if hook_id else catalog.pick_hook(working, rng)
         theme = catalog.get_theme(theme_id) if theme_id else catalog.pick_theme(working, rng)
-        plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme,
+        voice = catalog.pick_voice(working, rng)
+        plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice,
                 "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None}
         plans.append(plan)
         working.append({"format": fmt["id"], "categorie": fmt["categorie"], "sujet": sujet["id"],
-                        "hook": hook["id"], "theme": theme["id"]})
+                        "hook": hook["id"], "theme": theme["id"], "voix": voice["id"]})
     return plans
 
 
@@ -195,10 +196,20 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
         need = "la MAJORITÉ des scènes" if fmt["cartes"] == "majoritaires" else "les scènes où c'est utile"
         cards_rule = f"""Pour {need}, ajoute une "carte" : un écran texte animé affiché à la place de la
 capture, qui résume visuellement ce que dit la voix :
-  "carte": {{"surtitre": "2 à 4 mots", "titre": "2 à 8 mots, l'idée clé", "texte": "une phrase courte, optionnelle",
-             "style": "normal" | "mythe" | "realite" | "avant" | "apres",
-             "effet": "standard" | "frappe" | "suspense"}}
-Effets d'apparition du titre : "frappe" (tapé au clavier, idéal pour une citation, une formulation
+  - carte texte (par défaut) :
+    "carte": {{"type": "texte", "surtitre": "2 à 4 mots", "titre": "2 à 8 mots, l'idée clé",
+               "texte": "une phrase courte, optionnelle",
+               "style": "normal" | "mythe" | "realite" | "avant" | "apres",
+               "effet": "standard" | "frappe" | "suspense"}}
+  - carte chiffre (un grand nombre qui compte, pour une donnée marquante et PLAUSIBLE, jamais
+    une statistique inventée sur OpusCV) :
+    "carte": {{"type": "chiffre", "surtitre": "...", "valeur": "75", "unite": "%", "titre": "légende courte"}}
+  - carte comparaison (avant/après côte à côte, idéale pour une ligne de CV réécrite) :
+    "carte": {{"type": "comparaison", "surtitre": "...", "avant": "formulation faible", "apres": "formulation forte"}}
+  - carte liste (2 à 5 points qui se cochent un par un, pour une checklist ou un récapitulatif) :
+    "carte": {{"type": "liste", "surtitre": "...", "titre": "...", "points": ["...", "..."]}}
+Varie les types de cartes dans un même reel quand le contenu s'y prête.
+Effets d'apparition du titre (cartes texte) : "frappe" (tapé au clavier, idéal pour une citation, une formulation
 de CV ou une phrase d'offre), "suspense" (titre caché puis révélé avec un impact : UNE SEULE fois
 par reel, pour la révélation la plus forte, jamais sur deux cartes), sinon "standard". Varie-les.
 Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus) ni sur la dernière (CTA).
@@ -246,6 +257,8 @@ Contraintes :
 Fournis aussi :
 - "accroche_ecran" : le texte affiché en GRAND à l'écran dès la première image ({ACCROCHE_MAX_WORDS} mots max),
   complémentaire de la voix (pas forcément identique), qui donne envie de rester ;
+- "mots_cles" : 3 à 6 mots-clés du texte dit (mots isolés, tels qu'écrits dans les textes des scènes),
+  mis en couleur dans les sous-titres — les mots qui portent le message (ex : "ATS", "chiffrés", "recruteur") ;
 - "legende" : la description de la publication (1 à 2 phrases + une question pour faire commenter) ;
 - "hashtags" : 4 à 6 hashtags pertinents (ex : #cv, #emploi, #recherchedemploi) ;
 - "offre_emploi" : une offre d'emploi fictive courte (2 à 4 phrases : intitulé, missions, exigences clés)
@@ -269,22 +282,49 @@ Recopie à l'identique les textes imposés ; écris uniquement les textes manqua
 
     prompt += """
 Réponds UNIQUEMENT en JSON valide :
-{"titre": "...", "accroche_ecran": "...", "legende": "...", "hashtags": ["#..."], "offre_emploi": "...",
+{"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."], "offre_emploi": "...",
  "theme_style": "...", "scenes": [{"feature": "<id>", "texte": "...", "carte": {...} (optionnel)}]}
 """
     return prompt
 
 
 def clean_card(raw) -> dict | None:
-    if not isinstance(raw, dict) or not str(raw.get("titre") or "").strip():
+    """
+    Carte normalisee selon son type (catalog.CARD_TYPES) :
+      texte       : surtitre, titre, texte, style, effet   (assets/anim/carte.html)
+      chiffre     : surtitre, valeur, unite, titre         (chiffre.html)
+      comparaison : surtitre, avant, apres                 (comparaison.html)
+      liste       : surtitre, titre, points[2-5]           (liste.html)
+    Champs obligatoires absents -> None (scene sans carte).
+    """
+    if not isinstance(raw, dict):
         return None
-    style = str(raw.get("style") or "normal").strip().lower()
-    effet = str(raw.get("effet") or "standard").strip().lower()
+    kind = str(raw.get("type") or "texte").strip().lower()
+    txt = lambda k: str(raw.get(k) or "").strip()
+    if kind == "chiffre":
+        valeur = re.sub(r"[^0-9,.]", "", txt("valeur"))
+        if not valeur or not txt("titre"):
+            return None
+        return {"type": "chiffre", "surtitre": txt("surtitre"), "valeur": valeur,
+                "unite": txt("unite")[:6], "titre": txt("titre")}
+    if kind == "comparaison":
+        if not txt("avant") or not txt("apres"):
+            return None
+        return {"type": "comparaison", "surtitre": txt("surtitre"), "avant": txt("avant"), "apres": txt("apres")}
+    if kind == "liste":
+        points = [str(p).strip() for p in raw.get("points") or [] if str(p).strip()][:5]
+        if len(points) < 2:
+            return None
+        return {"type": "liste", "surtitre": txt("surtitre"), "titre": txt("titre"), "points": points}
+    if not txt("titre"):
+        return None
+    style, effet = txt("style").lower() or "normal", txt("effet").lower() or "standard"
     return {
+        "type": "texte",
         "effet": effet if effet in catalog.CARD_EFFECTS else "standard",
-        "surtitre": str(raw.get("surtitre") or "").strip(),
-        "titre": str(raw["titre"]).strip(),
-        "texte": str(raw.get("texte") or "").strip(),
+        "surtitre": txt("surtitre"),
+        "titre": txt("titre"),
+        "texte": txt("texte"),
         "style": style if style in catalog.CARD_STYLES else "normal",
     }
 
@@ -327,7 +367,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
                 scene.update({k: imposed[k] for k in ANIM_KEYS if imposed.get(k)})
 
     # Suspense = effet de revelation : un seul par reel, sinon il s'use.
-    suspense = [s for s in scenes if s.get("carte", {}).get("effet") == "suspense"]
+    suspense = [s for s in scenes if s.get("carte", {}).get("effet") == "suspense"]  # noqa: E501
     for extra in suspense[1:]:
         extra["carte"]["effet"] = "standard"
 
@@ -390,6 +430,8 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         "accroche_ecran": str(best_data.get("accroche_ecran") or "").strip(),
         "legende": str(best_data.get("legende") or "").strip(),
         "hashtags": [str(h).strip() for h in hashtags if str(h).strip()] if isinstance(hashtags, list) else [],
+        "mots_cles": [str(k).strip() for k in best_data.get("mots_cles") or [] if str(k).strip()][:6]
+        if isinstance(best_data.get("mots_cles"), list) else [],
         "offre_emploi": str(best_data.get("offre_emploi") or "").strip(),
         "theme_style": str(best_data.get("theme_style") or "").strip(),
         **plan_fields(plan),
@@ -399,7 +441,8 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
 def plan_fields(plan: dict) -> dict:
     return {"format": plan["format"]["id"], "categorie": plan["format"]["categorie"],
             "sujet": plan["sujet"]["id"], "hook": plan["hook"]["id"], "theme": plan["theme"]["id"],
-            "episode": plan["episode"]}
+            "episode": plan["episode"], "voix": plan["voix"]["id"],
+            "ton": plan["format"].get("ton") or catalog.default_tone()}
 
 
 def finalize(scenario: dict) -> dict:
@@ -416,6 +459,7 @@ def finalize(scenario: dict) -> dict:
     for key in ("offre_emploi", "theme_style", "accroche_ecran", "legende"):
         scenario.setdefault(key, "")
     scenario.setdefault("hashtags", [])
+    scenario.setdefault("mots_cles", [])
     return scenario
 
 
@@ -449,7 +493,8 @@ def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
             "titre": item.get("titre", ""),
             "duree_cible_s": int(item.get("duree_cible_s") or default_duration),
             "scenes": scenes,
-            **{k: item[k] for k in ("format", "theme", "hook", "accroche_ecran", "legende", "hashtags") if item.get(k)},
+            **{k: item[k] for k in ("format", "theme", "hook", "accroche_ecran", "legende", "hashtags", "mots_cles")
+               if item.get(k)},
         })
     return scenarios
 
@@ -541,7 +586,7 @@ def main():
     # Historique : ce qui a ete genere nourrit l'anti-redondance des prochains runs.
     catalog.save_history(history_path, history + [
         {"format": s.get("format"), "categorie": s.get("categorie"), "sujet": s.get("sujet"),
-         "hook": s.get("hook"), "theme": s.get("theme"), "titre": s.get("titre"),
+         "hook": s.get("hook"), "theme": s.get("theme"), "voix": s.get("voix"), "titre": s.get("titre"),
          "accroche": s.get("accroche_ecran") or (s["scenes"][0]["texte"] if s["scenes"] else "")}
         for s in scenarios])
     print(f"OK -> {out_path} ({len(scenarios)} scenarios)")

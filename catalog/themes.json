@@ -1,5 +1,5 @@
 {
-  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb.",
+  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans.",
   "themes": [
     {
       "id": "violet_nuit",
@@ -12,7 +12,8 @@
         "texte": "#ffffff",
         "surligne": "#ffd700",
         "contour": "#000000",
-        "pastille": "#111827"
+        "pastille": "#111827",
+        "mot_cle": "#a78bfa"
       },
       "police_titre": "Poppins-ExtraBold.ttf",
       "police_texte": "Poppins-Bold.ttf",
@@ -21,7 +22,13 @@
         "majuscules": false,
         "contour": 4
       },
-      "ambiance": "lofi_chill"
+      "ambiance": "lofi_chill",
+      "transitions": [
+        "fade",
+        "smoothup",
+        "circleopen",
+        "slideleft"
+      ]
     },
     {
       "id": "corail_energie",
@@ -34,7 +41,8 @@
         "texte": "#ffffff",
         "surligne": "#ffe066",
         "contour": "#000000",
-        "pastille": "#2b1320"
+        "pastille": "#2b1320",
+        "mot_cle": "#ffb86b"
       },
       "police_titre": "Anton-Regular.ttf",
       "police_texte": "Poppins-ExtraBold.ttf",
@@ -43,7 +51,13 @@
         "majuscules": true,
         "contour": 5
       },
-      "ambiance": "pop_energie"
+      "ambiance": "pop_energie",
+      "transitions": [
+        "slideleft",
+        "zoomin",
+        "slideright",
+        "fadewhite"
+      ]
     },
     {
       "id": "vert_confiance",
@@ -56,7 +70,8 @@
         "texte": "#ffffff",
         "surligne": "#bef264",
         "contour": "#000000",
-        "pastille": "#0b2e25"
+        "pastille": "#0b2e25",
+        "mot_cle": "#5eead4"
       },
       "police_titre": "Poppins-ExtraBold.ttf",
       "police_texte": "Poppins-Bold.ttf",
@@ -65,7 +80,13 @@
         "majuscules": false,
         "contour": 4
       },
-      "ambiance": "corporate_positif"
+      "ambiance": "corporate_positif",
+      "transitions": [
+        "fade",
+        "smoothleft",
+        "dissolve",
+        "smoothup"
+      ]
     },
     {
       "id": "bleu_corporate",
@@ -78,7 +99,8 @@
         "texte": "#ffffff",
         "surligne": "#fde047",
         "contour": "#000000",
-        "pastille": "#0f1d3d"
+        "pastille": "#0f1d3d",
+        "mot_cle": "#7dd3fc"
       },
       "police_titre": "Anton-Regular.ttf",
       "police_texte": "Poppins-Bold.ttf",
@@ -87,7 +109,13 @@
         "majuscules": true,
         "contour": 4
       },
-      "ambiance": "minimal_pulse"
+      "ambiance": "minimal_pulse",
+      "transitions": [
+        "wipeleft",
+        "slideup",
+        "wiperight",
+        "fade"
+      ]
     },
     {
       "id": "noir_or",
@@ -100,7 +128,8 @@
         "texte": "#ffffff",
         "surligne": "#f5d06f",
         "contour": "#000000",
-        "pastille": "#1a1a22"
+        "pastille": "#1a1a22",
+        "mot_cle": "#38bdf8"
       },
       "police_titre": "Anton-Regular.ttf",
       "police_texte": "Poppins-Bold.ttf",
@@ -109,7 +138,13 @@
         "majuscules": true,
         "contour": 4
       },
-      "ambiance": "tension_tech"
+      "ambiance": "tension_tech",
+      "transitions": [
+        "fadeblack",
+        "pixelize",
+        "hblur",
+        "fadewhite"
+      ]
     },
     {
       "id": "rose_pop",
@@ -122,7 +157,8 @@
         "texte": "#ffffff",
         "surligne": "#fde047",
         "contour": "#000000",
-        "pastille": "#2a1028"
+        "pastille": "#2a1028",
+        "mot_cle": "#f0abfc"
       },
       "police_titre": "Poppins-ExtraBold.ttf",
       "police_texte": "Poppins-ExtraBold.ttf",
@@ -131,7 +167,13 @@
         "majuscules": false,
         "contour": 5
       },
-      "ambiance": "pop_energie"
+      "ambiance": "pop_energie",
+      "transitions": [
+        "circleopen",
+        "zoomin",
+        "radial",
+        "slideleft"
+      ]
     },
     {
       "id": "ardoise_indigo",
@@ -144,7 +186,8 @@
         "texte": "#ffffff",
         "surligne": "#facc15",
         "contour": "#000000",
-        "pastille": "#1f2937"
+        "pastille": "#1f2937",
+        "mot_cle": "#67e8f9"
       },
       "police_titre": "Poppins-ExtraBold.ttf",
       "police_texte": "Poppins-Bold.ttf",
@@ -153,7 +196,13 @@
         "majuscules": false,
         "contour": 3
       },
-      "ambiance": "lofi_chill"
+      "ambiance": "lofi_chill",
+      "transitions": [
+        "hblur",
+        "smoothup",
+        "fade",
+        "diagtl"
+      ]
     },
     {
       "id": "orange_sunset",
@@ -166,7 +215,8 @@
         "texte": "#ffffff",
         "surligne": "#fef08a",
         "contour": "#000000",
-        "pastille": "#2a150c"
+        "pastille": "#2a150c",
+        "mot_cle": "#fdba74"
       },
       "police_titre": "Anton-Regular.ttf",
       "police_texte": "Poppins-ExtraBold.ttf",
@@ -175,7 +225,13 @@
         "majuscules": true,
         "contour": 5
       },
-      "ambiance": "pop_energie"
+      "ambiance": "pop_energie",
+      "transitions": [
+        "slideright",
+        "zoomin",
+        "fadewhite",
+        "squeezeh"
+      ]
     }
   ]
 }

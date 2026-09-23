@@ -14,8 +14,6 @@ import sys
 import wave
 from pathlib import Path
 
-from google import genai
-from google.genai import types
 
 from script_text import script_to_text
 
@@ -25,11 +23,18 @@ VOICES = ["Kore", "Puck", "Enceladus", "Aoede", "Zephyr"]
 TTS_MODEL_NAME = os.environ.get("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
 
 
-def synthesize(client: genai.Client, text: str, voice: str, pcm_path: Path):
+DEFAULT_TONE = "chaleureux, dynamique, rythme rapide pour réseaux sociaux"
+# Mode sans voix : duree de lecture du texte a l'ecran (mots par seconde).
+SILENT_WPS = 3.0
+
+
+def synthesize(client, text: str, voice: str, pcm_path: Path, tone: str = DEFAULT_TONE):
     """Appelle l'API Gemini TTS et ecrit le flux audio en wav (PCM 24kHz 16-bit mono)."""
+    from google.genai import types
+
     response = client.models.generate_content(
         model=TTS_MODEL_NAME,
-        contents=f"[style: chaleureux, dynamique, rythme rapide pour reseaux sociaux] {text}",
+        contents=f"[style: {tone}] {text}",
         config=types.GenerateContentConfig(
             response_modalities=["AUDIO"],
             speech_config=types.SpeechConfig(
@@ -56,21 +61,35 @@ def convert_to_mp3(wav_path: Path, mp3_path: Path):
     )
 
 
+def write_silence(text: str, mp3_path: Path):
+    """Mode sans voix : piste muette de la duree de lecture du texte (sous-titres seuls)."""
+    duration = len(text.split()) / SILENT_WPS + 1.0
+    subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", f"{duration:.2f}",
+                    "-codec:a", "libmp3lame", "-qscale:a", "2", str(mp3_path)], check=True, capture_output=True)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scripts", type=str, default="output/scripts.json")
-    parser.add_argument("--voice", type=str, default="Kore", choices=VOICES)
+    parser.add_argument("--voice", type=str, default="auto",
+                         help="Voix Gemini (ex: Kore, Puck...) ; 'auto' = celle choisie pour chaque reel "
+                              "(catalog/voix.json), Kore a defaut")
+    parser.add_argument("--silent", action="store_true",
+                         help="Sans voix : piste muette de la duree de lecture (texte a l'ecran uniquement)")
     parser.add_argument("--out", type=str, default="output/audio")
     parser.add_argument("--force", action="store_true",
                          help="Regenere meme si le mp3 existe deja pour un reel")
     args = parser.parse_args()
 
     api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
+    if not api_key and not args.silent:
         print("ERREUR: variable d'environnement GEMINI_API_KEY manquante", file=sys.stderr)
         sys.exit(1)
 
-    client = genai.Client(api_key=api_key)
+    client = None
+    if not args.silent:  # import tardif : le mode sans voix n'a pas besoin du SDK Gemini
+        from google import genai
+        client = genai.Client(api_key=api_key)
 
     scripts = json.loads(Path(args.scripts).read_text(encoding="utf-8"))
     out_dir = Path(args.out)
@@ -81,6 +100,10 @@ def main():
         if not text:
             print(f"[{i}] script vide, ignore")
             continue
+        voice = script.get("voix") or "Kore" if args.voice == "auto" else args.voice
+        tone = script.get("ton") or DEFAULT_TONE
+        # Empreinte = tout ce qui change le son : texte, voix, ton (ou silence).
+        fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone}]\n{text}"
 
         wav_path = out_dir / f"reel_{i:02d}.wav"
         mp3_path = out_dir / f"reel_{i:02d}.mp3"
@@ -90,7 +113,7 @@ def main():
         # reutilise tel quel (sous-titres corrects, mais voix qui dit autre
         # chose), un bug de sync bien pire qu'un simple decalage de timing.
         text_path = out_dir / f"reel_{i:02d}.txt"
-        up_to_date = mp3_path.exists() and text_path.exists() and text_path.read_text(encoding="utf-8") == text
+        up_to_date = mp3_path.exists() and text_path.exists() and text_path.read_text(encoding="utf-8") == fingerprint
 
         if not args.force and up_to_date:
             print(f"[{i}/{len(scripts)}] REPRISE: {mp3_path} existe deja, on saute")
@@ -98,11 +121,15 @@ def main():
         if not args.force and mp3_path.exists() and not up_to_date:
             print(f"[{i}/{len(scripts)}] texte modifie depuis la derniere synthese -> regeneration")
 
-        print(f"[{i}/{len(scripts)}] Synthese voix ({args.voice})...")
         try:
-            synthesize(client, text, args.voice, wav_path)
-            convert_to_mp3(wav_path, mp3_path)
-            text_path.write_text(text, encoding="utf-8")
+            if args.silent:
+                print(f"[{i}/{len(scripts)}] Mode sans voix : piste muette")
+                write_silence(text, mp3_path)
+            else:
+                print(f"[{i}/{len(scripts)}] Synthese voix ({voice}, ton : {tone})...")
+                synthesize(client, text, voice, wav_path, tone)
+                convert_to_mp3(wav_path, mp3_path)
+            text_path.write_text(fingerprint, encoding="utf-8")
             print(f"    -> {mp3_path}")
         except Exception as e:
             print(f"    ERREUR sur le script {i}: {e}", file=sys.stderr)

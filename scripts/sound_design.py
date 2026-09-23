@@ -16,6 +16,10 @@ typeInterval) et cta.html :
     carte "mythe"            -> buzz quand le titre se barre
     carte "avant"            -> buzz discret
     scene CTA animee         -> sparkle a l'apparition du bouton
+    carte chiffre            -> clics pendant le comptage, impact a l'arrivee
+    carte comparaison        -> buzz sur l'Avant, ding sur l'Apres
+    carte liste              -> pop a chaque point coche
+    curseur anime            -> clic de souris (ajoute par run_pipeline.py)
 """
 from urllib.parse import parse_qsl
 
@@ -96,6 +100,20 @@ def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[d
         params = dict(parse_qsl(query))
         if name == "carte":
             cues += card_cues(params, start, float(params.get("dur", dur)))
+        elif name == "chiffre":
+            # chiffre.html : comptage COUNT_START -> +COUNT_DUR, puis onde + legende.
+            cues += [{"t": start + 0.08, "name": "pop"}]
+            cues += [{"t": start + 0.3 + k * 0.1, "name": "click", "gain": 0.7} for k in range(10)]
+            cues.append({"t": start + 1.4, "name": "impact", "gain": 0.6})
+        elif name == "comparaison":
+            # comparaison.html : Avant a AVANT_AT, rideau de l'Apres a APRES_AT.
+            cues += [{"t": start + 0.3, "name": "buzz", "gain": 0.6}, {"t": start + 1.45, "name": "ding"}]
+        elif name == "liste":
+            # liste.html : un point toutes les itemGap(n) s a partir de FIRST_AT, coche +0.2 s.
+            n = max(len([p for p in params.get("points", "").split("|") if p]), 1)
+            d = float(params.get("dur", dur))
+            gap = min(0.7, max(0.3, (d - 0.6 - 0.8) / n))
+            cues += [{"t": start + 0.6 + k * gap + 0.2, "name": "pop"} for k in range(n)]
         elif name == "cta":
             cues.append({"t": start + CTA_BUTTON_AT, "name": "sparkle"})
     return cues
