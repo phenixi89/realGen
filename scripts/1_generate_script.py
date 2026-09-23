@@ -231,7 +231,8 @@ Fonctionnalités filmables (utilise UNIQUEMENT ces ids, champ "feature") :
 Contraintes :
 - entre {lo_s} et {hi_s} scènes ;
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
-- scène 1 = l'accroche (12 mots max) ; dernière scène = CTA court, dans l'esprit : « {cta} » ;
+- scène 1 = l'accroche (12 mots max), sur une fonctionnalité visuellement riche (pas "dashboard",
+  dont la capture est une simple ligne) ; dernière scène = CTA court, dans l'esprit : « {cta} » ;
 - 1 à 2 phrases par scène, ton oral et naturel, tutoiement, pas publicitaire ;
 - {variety_rule}
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est

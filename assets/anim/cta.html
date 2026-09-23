@@ -14,7 +14,8 @@
     background:radial-gradient(circle,color-mix(in srgb,var(--c2) 55%,transparent),transparent 65%)}
   #brand{position:absolute;top:470px;width:100%;text-align:center;font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:150px;letter-spacing:-.02em}
   #brand b{display:inline-block}
-  #brand i{font-style:normal;background:linear-gradient(90deg,var(--c1),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  /* Couleur pleine (pas de texte en degrade via background-clip : illisible selon la police/le theme). */
+  #brand i{font-style:normal;color:var(--c2);text-shadow:0 6px 30px color-mix(in srgb,var(--c2) 60%,transparent)}
   #title{position:absolute;top:720px;font-family:TitleFont,"DejaVu Sans",sans-serif;left:90px;right:90px;text-align:center;font-weight:800;font-size:72px;line-height:1.15}
   #title span{display:inline-block;margin:0 .14em}
   #sub{position:absolute;top:980px;width:100%;text-align:center;font-size:44px;opacity:.8}
