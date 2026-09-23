@@ -1,5 +1,5 @@
 {
-  "_doc": "Audio des reels (scripts/audio_gen.py). ambiances : musiques synthetisees (bpm, accords en notes MIDI, motifs de batterie 16 pas 'x' = coup). Chaque theme (themes.json) choisit son ambiance via 'ambiance'. Deposer des morceaux libres de droits dans assets/music/<id_ambiance>/ pour les utiliser a la place de la synthese. effets : volumes par effet, regles anti-abus (ecart minimal, maximum par 10 s, effets bannis).",
+  "_doc": "Audio des reels (scripts/audio_gen.py). ambiances : musiques synthetisees (bpm, accords en notes MIDI, motifs de batterie 16 pas 'x' = coup). Chaque theme (themes.json) choisit son ambiance via 'ambiance'. Deposer des morceaux libres de droits dans assets/music/<id_ambiance>/ pour les utiliser a la place de la synthese. effets : transition = son des changements de scene (tick, whoosh, pop...), volumes par effet, regles anti-abus (ecart minimal, maximum par 10 s, effets bannis).",
   "musique": {
     "volume": 0.16,
     "baisse_sous_voix": 0.55
@@ -10,30 +10,10 @@
       "nom": "Lo-fi détendu",
       "bpm": 84,
       "accords": [
-        [
-          57,
-          60,
-          64,
-          67
-        ],
-        [
-          53,
-          57,
-          60,
-          64
-        ],
-        [
-          55,
-          59,
-          62,
-          65
-        ],
-        [
-          52,
-          55,
-          59,
-          62
-        ]
+        [57, 60, 64, 67],
+        [53, 57, 60, 64],
+        [55, 59, 62, 65],
+        [52, 55, 59, 62]
       ],
       "basse": 0.22,
       "filtre_hz": 3500,
@@ -48,26 +28,10 @@
       "nom": "Pop énergique",
       "bpm": 112,
       "accords": [
-        [
-          60,
-          64,
-          67
-        ],
-        [
-          55,
-          59,
-          62
-        ],
-        [
-          57,
-          60,
-          64
-        ],
-        [
-          53,
-          57,
-          60
-        ]
+        [60, 64, 67],
+        [55, 59, 62],
+        [57, 60, 64],
+        [53, 57, 60]
       ],
       "basse": 0.3,
       "filtre_hz": 7000,
@@ -82,26 +46,10 @@
       "nom": "Corporate positif",
       "bpm": 100,
       "accords": [
-        [
-          62,
-          66,
-          69
-        ],
-        [
-          59,
-          62,
-          66
-        ],
-        [
-          55,
-          59,
-          62
-        ],
-        [
-          57,
-          61,
-          64
-        ]
+        [62, 66, 69],
+        [59, 62, 66],
+        [55, 59, 62],
+        [57, 61, 64]
       ],
       "basse": 0.25,
       "filtre_hz": 6000,
@@ -116,26 +64,10 @@
       "nom": "Tension tech",
       "bpm": 96,
       "accords": [
-        [
-          57,
-          60,
-          64
-        ],
-        [
-          57,
-          60,
-          65
-        ],
-        [
-          55,
-          58,
-          62
-        ],
-        [
-          56,
-          60,
-          63
-        ]
+        [57, 60, 64],
+        [57, 60, 65],
+        [55, 58, 62],
+        [56, 60, 63]
       ],
       "basse": 0.35,
       "filtre_hz": 4000,
@@ -150,26 +82,10 @@
       "nom": "Minimal pulsé",
       "bpm": 120,
       "accords": [
-        [
-          60,
-          63,
-          67
-        ],
-        [
-          58,
-          62,
-          65
-        ],
-        [
-          56,
-          60,
-          63
-        ],
-        [
-          55,
-          58,
-          62
-        ]
+        [60, 63, 67],
+        [58, 62, 65],
+        [56, 60, 63],
+        [55, 58, 62]
       ],
       "basse": 0.3,
       "filtre_hz": 5000,
@@ -195,7 +111,9 @@
       "buzz": 0.18,
       "riser": 0.2,
       "impact": 0.35,
-      "sparkle": 0.2
-    }
+      "sparkle": 0.2,
+      "tick": 0.14
+    },
+    "transition": "tick"
   }
 }

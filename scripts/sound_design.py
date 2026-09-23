@@ -8,7 +8,7 @@ synchronises avec assets/anim/carte.html (TYPE_START, SUSPENSE_REVEAL,
 typeInterval) et cta.html :
 
     accroche (1re image)     -> impact
-    changement de scene      -> whoosh, juste avant la coupe
+    changement de scene      -> effet "transition" d'audio.json (tick par defaut)
     carte : surtitre         -> pop
     carte "frappe"           -> un clic par caractere tape
     carte "suspense"         -> riser pendant la jauge, impact a la revelation
@@ -25,6 +25,12 @@ STANDARD_TITLE_END = 0.7
 CTA_BUTTON_AT = 1.45
 WHOOSH_LEAD = 0.12
 QUOTES = ' «»"“”'
+
+
+def transition_sound() -> str:
+    """Effet des changements de scene (catalog/audio.json "effets.transition")."""
+    import audio_gen
+    return audio_gen.audio_config()["effets"].get("transition", "tick")
 
 
 def type_interval(n_chars: int, dur: float) -> float:
@@ -82,7 +88,7 @@ def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[d
     for i, scene in enumerate(scenes):
         start, dur = scene["start"], scene["end"] - scene["start"]
         if i > 0:
-            cues.append({"t": max(start - WHOOSH_LEAD, 0), "name": "whoosh"})
+            cues.append({"t": max(start - WHOOSH_LEAD, 0), "name": transition_sound()})
         spec = scene_anims.get(i)
         if not spec:
             continue

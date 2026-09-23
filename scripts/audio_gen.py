@@ -98,6 +98,11 @@ def sfx(name: str, seed: int = 0, **kw) -> np.ndarray:
             y[i] = acc
         shape = np.sin(np.linspace(0, np.pi, n)) ** 1.5
         return _norm(y * shape)
+    if name == "tick":  # transition discrete : petit "tap" boise, feutre
+        t = _t(0.09)
+        body = np.sin(2 * np.pi * 740 * t) + 0.4 * np.sin(2 * np.pi * 1480 * t)
+        tap = _lowpass_fast(_noise(len(t), seed), 2500)
+        return _norm((0.8 * body + 0.3 * tap) * env(len(t), 0.001, 0.018))
     if name == "pop":  # petit "bloop" : apparition d'une carte / d'un titre
         t = _t(0.12)
         f = np.linspace(900, 380, len(t))
