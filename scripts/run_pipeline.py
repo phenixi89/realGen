@@ -7,6 +7,7 @@ Usage:
 """
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -67,6 +68,22 @@ def main():
     def force_flag_for(step: str) -> list[str]:
         return ["--force"] if from_index is not None and STEPS.index(step) >= from_index else []
 
+    # Un dossier video garde le marqueur du --capture-mode qui l'a rempli :
+    # video/screenshots/video_desktop produisent des fichiers de natures
+    # differentes (*.webm, *.png, segments.json/zoom.mp4) que rien ne purge
+    # entre deux executions -- sans ca, changer de mode laisse les fichiers
+    # de l'ancien traîner a cote (glob() de la mauvaise etape, ou simplement
+    # des .png/.webm perimes dans l'artefact final).
+    mode_marker_name = ".capture_mode"
+    video_root = out / "video"
+    if video_root.exists() and from_index is None:
+        for video_dir in video_root.iterdir():
+            marker = video_dir / mode_marker_name
+            if marker.exists() and marker.read_text(encoding="utf-8").strip() != args.capture_mode:
+                print(f"Mode de capture different de {video_dir.name} -> etape video (et suivantes) regenerees")
+                from_index = STEPS.index("video")
+                break
+
     # 1. Scenarios (scenes = fonctionnalite montree + texte dit pendant ce temps)
     scenario_args = ["--duration", str(args.duration)]
     if args.angle:
@@ -83,6 +100,23 @@ def main():
 
     scripts = json.loads((out / "scripts.json").read_text(encoding="utf-8"))
 
+    # Un run precedent avec un --n plus grand (ou un --scenario a plus de
+    # scenarios) laisse ses reels excedentaires dans output/ indefiniment --
+    # ils ne correspondent plus a rien de ce qui est demande maintenant.
+    for sub, pattern in ((out / "video", "reel_*"), (out / "audio", "reel_*.mp3"),
+                         (out / "subs", "reel_*.*"), (out / "final", "reel_*.mp4")):
+        if not sub.exists():
+            continue
+        for path in sub.glob(pattern):
+            stem = path.stem.split(".")[0]  # reel_04.timeline -> reel_04
+            try:
+                idx = int(stem.removeprefix("reel_"))
+            except ValueError:
+                continue
+            if idx > len(scripts):
+                print(f"Reel {idx} excedentaire (n={len(scripts)}) -> suppression de {path}")
+                shutil.rmtree(path) if path.is_dir() else path.unlink()
+
     for i in range(1, len(scripts) + 1):
         audio_path = out / "audio" / f"reel_{i:02d}.mp3"
         if not audio_path.exists():
@@ -94,11 +128,19 @@ def main():
         #    fixe quelles fonctionnalites capturer pour CE reel -- garde le
         #    texte et les captures synchronises sur les memes fonctionnalites.
         video_dir = out / "video" / f"reel_{i:02d}"
+        if force_flag_for("video") and video_dir.exists():
+            # Purge complete plutot que le nettoyage partiel (par pattern du
+            # mode courant) de 3_record_demo.py : sinon les fichiers d'un
+            # --capture-mode precedent (png/webm/zoom.mp4/segments.json)
+            # restent a cote des nouveaux.
+            shutil.rmtree(video_dir)
         feature_ids = scripts[i - 1].get("features") or []
         features_args = ["--features", ",".join(feature_ids)] if feature_ids else []
         run([sys.executable, str(ROOT / "3_record_demo.py"),
              "--url", args.saas_url, "--out", str(video_dir),
              "--mode", args.capture_mode, *features_args, *force_flag_for("video")])
+        if video_dir.exists():
+            (video_dir / ".capture_mode").write_text(args.capture_mode, encoding="utf-8")
 
         if args.capture_mode == "screenshots" and not list(video_dir.glob("*.png")):
             print(f"[{i}] pas de captures generees, on saute")
