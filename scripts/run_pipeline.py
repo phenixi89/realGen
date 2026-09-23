@@ -252,7 +252,7 @@ def main():
     # scenarios) laisse ses reels excedentaires dans output/ indefiniment --
     # ils ne correspondent plus a rien de ce qui est demande maintenant.
     for sub, pattern in ((out / "video", "reel_*"), (out / "audio", "reel_*.*"),
-                         (out / "subs", "reel_*.*"), (out / "final", "reel_*.mp4")):
+                         (out / "subs", "reel_*.*"), (out / "final", "reel_*.*")):
         if not sub.exists():
             continue
         for path in sub.glob(pattern):

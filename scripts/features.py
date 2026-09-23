@@ -363,10 +363,19 @@ async def _capture_entretien(ctx: DemoContext):
     if button is None:
         return
     dialog = await _open_dialog(ctx.page, button)
+    # "networkidle" ne suffit pas : la generation IA peut repondre apres. On
+    # attend que le loader "Préparation des questions..." ait disparu --
+    # sinon la capture montre un spinner sur fond vide. Toujours la apres
+    # 60 s : pas de capture (le montage reprend la scene precedente).
+    loader = ctx.page.get_by_text(re.compile(r"préparation des questions", re.I))
     try:
         await ctx.page.wait_for_load_state("networkidle", timeout=45000)
+        await loader.first.wait_for(state="hidden", timeout=60000)
     except Exception:
-        pass
+        if await loader.count() and await loader.first.is_visible():
+            print("ATTENTION: questions d'entretien toujours en preparation, capture ignoree")
+            await reset_state(ctx.page)
+            return
     await ctx.page.wait_for_timeout(1000)
     await ctx.shoot("entretien", dialog)
     await reset_state(ctx.page)
