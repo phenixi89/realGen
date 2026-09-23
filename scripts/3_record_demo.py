@@ -229,7 +229,7 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        browser = await p.chromium.launch(executable_path=os.environ.get("PLAYWRIGHT_CHROMIUM_EXECUTABLE") or None)
         context_kwargs = dict(
             # Rendu a densite de pixels plus elevee (equivalent "Retina") --
             # sans ca, le texte/l'UI captures restent flous une fois agrandis.
