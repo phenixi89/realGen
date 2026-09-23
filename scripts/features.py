@@ -79,9 +79,19 @@ async def close_checklist_if_open(page):
     suivants -- a refermer avant toute autre interaction.
     """
     button = _checklist_button(page)
-    if await button.count() and await button.get_attribute("aria-expanded") == "true":
-        await button.click()
-        await page.wait_for_timeout(400)
+    if not (await button.count() and await button.get_attribute("aria-expanded") == "true"):
+        return
+    # Le calque "clic a l'exterieur" (fixed inset-0) recouvre le bouton lui-meme :
+    # on ferme par Echap, sinon par un clic sur ce calque, en dernier recours force.
+    await page.keyboard.press("Escape")
+    await page.wait_for_timeout(300)
+    if await button.get_attribute("aria-expanded") == "true":
+        backdrop = page.locator("div.fixed.inset-0.z-40").first
+        if await backdrop.count():
+            await backdrop.click(position={"x": 5, "y": 5}, timeout=3000)
+        else:
+            await button.click(force=True, timeout=3000)
+    await page.wait_for_timeout(400)
 
 
 async def reset_state(page):
@@ -114,6 +124,20 @@ async def _open_dialog(page, button, timeout: int = 8000):
     dialog = page.locator("div[role='dialog']:visible").last
     await dialog.wait_for(state="visible", timeout=timeout)
     await page.wait_for_timeout(600)
+    return await _dialog_panel(dialog)
+
+
+async def _dialog_panel(dialog):
+    """
+    Modal.jsx pose role=dialog sur le fond noir plein ecran : la carte
+    utile est son premier enfant. La capturer plutot que le fond, sinon la
+    fenetre ne fait qu'un petit rectangle illisible au milieu du plan.
+    """
+    panel = dialog.locator(":scope > div").first
+    if await panel.count():
+        box, full = await panel.bounding_box(), await dialog.bounding_box()
+        if box and full and box["width"] * box["height"] < 0.8 * full["width"] * full["height"]:
+            return panel
     return dialog
 
 
@@ -196,7 +220,10 @@ async def _capture_design_themes(ctx: DemoContext):
     themes = ctx.form_panel.locator("button.border-2[title]")
     count = await themes.count()
     preview = ctx.page.locator("main").first
-    for n, idx in enumerate(i for i in (3, 7) if i < count):
+    # Seuls les themes mis en avant sont affiches (4 a 12 selon la palette) :
+    # deux themes repartis dans ce qui est visible, jamais le theme actif (0).
+    picks = sorted({i for i in (count // 2, count - 1) if 0 < i < count})
+    for n, idx in enumerate(picks):
         theme = themes.nth(idx)
         await theme.scroll_into_view_if_needed()
         await theme.click()
@@ -272,9 +299,13 @@ async def _capture_apercu_pdf(ctx: DemoContext):
     # Le PDF est genere cote serveur (lent sur Render free tier).
     try:
         await dialog.locator("iframe").first.wait_for(state="visible", timeout=40000)
-    except Exception:
-        print("ATTENTION: apercu PDF non charge a temps, capture de la modale telle quelle", file=sys.stderr)
-    await ctx.page.wait_for_timeout(1500)
+    except Exception as exc:
+        print(f"ATTENTION: apercu PDF non charge a temps, capture de la modale telle quelle ({exc})", file=sys.stderr)
+    # Le viewer PDF integre de chromium (PDFium) peint dans un processus a
+    # part, sans element DOM observable depuis Playwright (pas d'"embed"/
+    # "canvas" accessible) : une pause fixe genereuse est le seul signal
+    # disponible pour laisser la premiere page se dessiner.
+    await ctx.page.wait_for_timeout(3000)
     await ctx.shoot("apercu_pdf", dialog)
     await reset_state(ctx.page)
 

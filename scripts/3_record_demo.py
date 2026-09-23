@@ -119,6 +119,21 @@ async def play_demo_steps(page):
     await page.wait_for_timeout(1500)
 
 
+async def create_demo_cv(page):
+    """Ouvre l'editeur sur le profil de demonstration, l'enregistre, revient au tableau de bord."""
+    await page.locator("button:visible").filter(has_text=re.compile("analyser", re.I)).first.click()
+    await page.wait_for_selector("div[role='dialog']", timeout=10000)
+    await page.wait_for_timeout(600)
+    await page.locator("button:visible").filter(has_text="Essayer avec un profil de démonstration").first.click()
+    await page.wait_for_timeout(500)
+    await page.locator("div.border-dashed:visible").first.click()
+    await page.locator("#editor-form-panel").wait_for(state="visible", timeout=30000)
+    await page.wait_for_timeout(1500)
+    await page.keyboard.press("Control+s")
+    await page.wait_for_timeout(2000)
+    await page.goto(page.url.split("#")[0])
+
+
 async def walk_features(page, shoot, feature_ids: list[str] | None = None):
     """
     Parcours desktop commun aux modes screenshots et video_desktop : tableau
@@ -132,8 +147,16 @@ async def walk_features(page, shoot, feature_ids: list[str] | None = None):
     # attend la premiere ligne de CV (fetch /api/cvs asynchrone, precede
     # d'un skeleton de chargement).
     first_row = page.locator("li:visible", has=page.locator("button[title]")).first
-    await first_row.wait_for(state="visible", timeout=30000)
+    empty_state = page.locator("button:visible").filter(has_text=re.compile("créer de zéro", re.I)).first
+    await first_row.or_(empty_state).first.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(800)
+    if not await first_row.is_visible():
+        # Compte sans aucun CV (compte demo neuf ou vide) : on cree le CV de
+        # demonstration, puis on revient au tableau de bord qui le liste.
+        print("Compte sans CV : creation du CV de demonstration")
+        await create_demo_cv(page)
+        await first_row.wait_for(state="visible", timeout=30000)
+        await page.wait_for_timeout(800)
     if "dashboard" in wanted:
         await shoot("dashboard", "mes_cvs", first_row)
         # Survol : revele les icones d'action (Renommer, Dupliquer, Supprimer).
