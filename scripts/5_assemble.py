@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 
 import numpy as np
-from moviepy import AudioFileClip, CompositeVideoClip, ImageClip, VideoFileClip
+from moviepy import AudioArrayClip, AudioFileClip, CompositeAudioClip, CompositeVideoClip, ImageClip, VideoFileClip
 from moviepy.video.fx import FadeIn, FadeOut, Loop
 from moviepy.audio.fx import AudioFadeIn, AudioFadeOut
 from PIL import Image, ImageDraw, ImageFont
@@ -28,6 +28,13 @@ from caption_render import render_caption
 FADE_DURATION = 0.4
 WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 WATERMARK_TEXT = "OpusCV"
+
+# Fond musical genere (pas de fichier externe -> aucune question de licence).
+# Nappe Am7 (A2/C3/E3/G3) : neutre et pro, ne tire l'attention sur aucune
+# note en particulier -- reste discret sous la voix.
+MUSIC_SAMPLE_RATE = 44100
+MUSIC_FREQS = [110.00, 130.81, 164.81, 196.00]
+MUSIC_GAIN = 0.10  # sous la voix : presence audible mais jamais genante
 
 
 def make_vignette(size: tuple[int, int]):
@@ -54,12 +61,36 @@ def make_watermark_clip(duration: float) -> ImageClip:
     return ImageClip(np.array(img), duration=duration).with_position((40, 40))
 
 
+def make_background_music(duration: float) -> AudioArrayClip:
+    """
+    Nappe synthetisee (4 oscillateurs detunes + vibrato lent + swell
+    d'amplitude), volume fixe et bas : juste de quoi eviter un silence
+    "capture d'ecran" sans jamais concurrencer la voix off.
+    """
+    n_samples = int(duration * MUSIC_SAMPLE_RATE)
+    t = np.linspace(0, duration, n_samples, endpoint=False)
+    signal = np.zeros(n_samples)
+    for freq in MUSIC_FREQS:
+        vibrato = 1 + 0.002 * np.sin(2 * np.pi * 0.15 * t)
+        signal += np.sin(2 * np.pi * freq * vibrato * t)
+    signal /= len(MUSIC_FREQS)
+    swell = 0.6 + 0.4 * np.sin(2 * np.pi * t / 8.0 - np.pi / 2) ** 2  # respire sur ~8s, pas statique
+    signal = signal * swell * MUSIC_GAIN
+    stereo = np.column_stack([signal, signal]).astype(np.float32)
+    return AudioArrayClip(stereo, fps=MUSIC_SAMPLE_RATE)
+
+
 def make_caption_clips(cues: list[dict]) -> list[ImageClip]:
     clips = []
-    for cue in cues:
+    for cue_index, cue in enumerate(cues):
         words = [w["text"] for w in cue["words"]]
+        # Derniere cue du reel = l'appel a l'action (cf. prompt de
+        # 1_generate_script.py, qui termine toujours sur l'incitation a
+        # essayer le produit) : mise en avant distincte du reste des
+        # sous-titres pour qu'elle ne se noie pas dans le flux.
+        emphasize = cue_index == len(cues) - 1
         for i, w in enumerate(cue["words"]):
-            img = render_caption(words, active_index=i)
+            img = render_caption(words, active_index=i, emphasize=emphasize)
             dur = max(w["end"] - w["start"], 0.05)
             clip = (
                 ImageClip(np.array(img), duration=dur)
@@ -93,8 +124,11 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     final = CompositeVideoClip(layers, size=video.size).with_duration(duration)
 
     final = final.with_effects([FadeIn(FADE_DURATION), FadeOut(FADE_DURATION)])
-    audio = audio.with_effects([AudioFadeIn(FADE_DURATION), AudioFadeOut(FADE_DURATION)])
-    final = final.with_audio(audio)
+    music = make_background_music(duration)
+    mixed_audio = CompositeAudioClip([music, audio]).with_duration(duration).with_effects(
+        [AudioFadeIn(FADE_DURATION), AudioFadeOut(FADE_DURATION)]
+    )
+    final = final.with_audio(mixed_audio)
 
     final.write_videofile(
         str(out_path),

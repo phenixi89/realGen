@@ -215,6 +215,15 @@ async def _capture_design_themes(ctx: DemoContext):
     """
     if not await _click_dock(ctx, "Design"):
         return
+    # Le filtre de palette (bouton "Tous"/"Finance"/"Senior Auto"/...) est
+    # persiste par compte : un run precedent (manuel ou automatise) peut
+    # laisser un filtre sans theme correspondant selectionne, et la capture
+    # tomberait alors sur "Aucun theme pour ce filtre" au lieu du panneau
+    # normal. On revient explicitement sur "Tous" avant de shooter.
+    tous_filter = ctx.form_panel.locator("button:visible").filter(has_text=re.compile(r"^\s*Tous\s*$", re.I)).first
+    if await tous_filter.count() > 0:
+        await tous_filter.click()
+        await ctx.page.wait_for_timeout(300)
     await ctx.shoot("design_panneau", ctx.form_panel)
 
     themes = ctx.form_panel.locator("button.border-2[title]")

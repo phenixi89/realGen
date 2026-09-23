@@ -12,26 +12,33 @@ from PIL import Image, ImageDraw, ImageFont
 
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FONT_SIZE = 58
+CTA_FONT_SIZE = 68  # derniere cue (appel a l'action) : plus grande, plus visible
 HIGHLIGHT_COLOR = (255, 215, 0, 255)   # ambre/doré : mot en cours
 DEFAULT_COLOR = (255, 255, 255, 255)   # blanc : mots pas encore prononces
 OUTLINE_COLOR = (0, 0, 0, 255)
 OUTLINE_WIDTH = 4
 MAX_WIDTH = 900  # marge de securite des deux cotes d'un cadre 1080px de large
 WORD_GAP = 18
+CTA_PILL_COLOR = (17, 24, 39, 235)     # navy fonce : pastille derriere le CTA final
+CTA_PILL_PADDING = 24
+CTA_PILL_RADIUS = 32
 
 
-def _font():
-    return ImageFont.truetype(FONT_PATH, FONT_SIZE)
+def _font(size: int = FONT_SIZE):
+    return ImageFont.truetype(FONT_PATH, size)
 
 
-def render_caption(words: list[str], active_index: int) -> Image.Image:
+def render_caption(words: list[str], active_index: int, emphasize: bool = False) -> Image.Image:
     """
     words: mots de la cue (deja nettoyes, sans espaces superflus).
     active_index: index du mot actuellement prononce (surligne).
+    emphasize: True pour la derniere cue du reel (l'appel a l'action) --
+    police plus grande sur une pastille de fond, pour qu'elle se distingue
+    nettement des sous-titres precedents au lieu de se fondre dans le reste.
     Retourne une image RGBA rognee au texte, prete a composer par-dessus
     la video (fond transparent).
     """
-    font = _font()
+    font = _font(CTA_FONT_SIZE if emphasize else FONT_SIZE)
     dummy = Image.new("RGBA", (10, 10))
     draw = ImageDraw.Draw(dummy)
 
@@ -60,9 +67,14 @@ def render_caption(words: list[str], active_index: int) -> Image.Image:
         for line in lines
     )
 
-    pad = OUTLINE_WIDTH * 2
+    pad = OUTLINE_WIDTH * 2 + (CTA_PILL_PADDING if emphasize else 0)
     img = Image.new("RGBA", (total_width + pad * 2, total_height + pad * 2), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
+
+    if emphasize:
+        draw.rounded_rectangle(
+            [0, 0, img.width - 1, img.height - 1], radius=CTA_PILL_RADIUS, fill=CTA_PILL_COLOR
+        )
 
     y = pad
     for line, line_h in zip(lines, line_heights):
