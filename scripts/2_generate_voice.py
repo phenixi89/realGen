@@ -84,15 +84,25 @@ def main():
 
         wav_path = out_dir / f"reel_{i:02d}.wav"
         mp3_path = out_dir / f"reel_{i:02d}.mp3"
+        # Sidecar avec le texte exact ayant produit ce mp3 : 1_generate_script.py
+        # peut regenerer scripts.json (ex: --n augmente) sans qu'on force ce
+        # script-ci -- sans ce fingerprint, un mp3 d'un texte perime serait
+        # reutilise tel quel (sous-titres corrects, mais voix qui dit autre
+        # chose), un bug de sync bien pire qu'un simple decalage de timing.
+        text_path = out_dir / f"reel_{i:02d}.txt"
+        up_to_date = mp3_path.exists() and text_path.exists() and text_path.read_text(encoding="utf-8") == text
 
-        if not args.force and mp3_path.exists():
+        if not args.force and up_to_date:
             print(f"[{i}/{len(scripts)}] REPRISE: {mp3_path} existe deja, on saute")
             continue
+        if not args.force and mp3_path.exists() and not up_to_date:
+            print(f"[{i}/{len(scripts)}] texte modifie depuis la derniere synthese -> regeneration")
 
         print(f"[{i}/{len(scripts)}] Synthese voix ({args.voice})...")
         try:
             synthesize(client, text, args.voice, wav_path)
             convert_to_mp3(wav_path, mp3_path)
+            text_path.write_text(text, encoding="utf-8")
             print(f"    -> {mp3_path}")
         except Exception as e:
             print(f"    ERREUR sur le script {i}: {e}", file=sys.stderr)

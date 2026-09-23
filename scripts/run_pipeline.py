@@ -12,6 +12,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from script_text import script_to_text
+
 ROOT = Path(__file__).parent
 
 # Ordre des etapes : forcer une etape force aussi celles d'apres, sinon un
@@ -153,24 +155,35 @@ def main():
         #    scenes : quand la voix commence a parler de chaque fonctionnalite.
         subs_path = out / "subs" / f"reel_{i:02d}.json"
         timeline_path = out / "subs" / f"reel_{i:02d}.timeline.json"
+        # Un audio plus recent que ses sous-titres n'a pas ete synthetise pour
+        # le meme texte que celui deja transcrit (ex: 1_generate_script.py a
+        # regenere scripts.json avec un --n plus grand sans qu'on force cette
+        # etape-ci : 2_generate_voice.py a alors resynthetise CE reel tout
+        # seul, cf. son propre fingerprint de texte) -- sans cette detection,
+        # les sous-titres perimes afficheraient un texte que la voix ne dit
+        # plus du tout.
+        audio_regenerated = subs_path.exists() and audio_path.stat().st_mtime > subs_path.stat().st_mtime
+        subs_force = force_flag_for("subs") or (["--force"] if audio_regenerated else [])
+        if audio_regenerated and not force_flag_for("subs"):
+            print(f"[{i}] audio plus recent que les sous-titres existants -> regeneration")
         run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
              "--audio", str(audio_path), "--scripts", str(scripts_path), "--index", str(i),
              "--out", str(subs_path), "--timeline-out", str(timeline_path),
-             "--model", args.whisper_model, *force_flag_for("subs")])
+             "--model", args.whisper_model, *subs_force])
 
         # 3b/3c. Montage de la video muette, cale sur la timeline : apres les
         #    sous-titres parce qu'il en a besoin. Force des que la capture ou
-        #    la timeline ont ete refaites (force_flag_for("subs") couvre les deux).
+        #    la timeline ont ete refaites (subs_force couvre les deux cas).
         if args.capture_mode == "screenshots":
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3b_build_video_from_screenshots.py"),
                  "--screens", str(video_dir), "--timeline", str(timeline_path),
-                 "--out", str(video_path), *force_flag_for("subs")])
+                 "--out", str(video_path), *subs_force])
         elif args.capture_mode == "video_desktop":
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3c_build_video_from_recording.py"),
                  "--dir", str(video_dir), "--timeline", str(timeline_path),
-                 "--out", str(video_path), *force_flag_for("subs")])
+                 "--out", str(video_path), *subs_force])
         else:
             videos = list(video_dir.glob("*.webm"))
             if not videos:
@@ -178,11 +191,13 @@ def main():
                 continue
             video_path = videos[0]
 
-        # 5. Assemblage final
+        # 5. Assemblage final -- force des que la video ou les sous-titres
+        #    (donc l'audio, cf. subs_force ci-dessus) ont change.
         final_path = out / "final" / f"reel_{i:02d}.mp4"
         run([sys.executable, str(ROOT / "5_assemble.py"),
              "--video", str(video_path), "--audio", str(audio_path),
-             "--subs", str(subs_path), "--out", str(final_path), *force_flag_for("assemble")])
+             "--subs", str(subs_path), "--out", str(final_path),
+             *(force_flag_for("assemble") or subs_force)])
 
     print(f"\nTermine. {args.n} reel(s) dans output/final/")
 
