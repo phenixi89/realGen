@@ -103,7 +103,7 @@ def main():
     # Un run precedent avec un --n plus grand (ou un --scenario a plus de
     # scenarios) laisse ses reels excedentaires dans output/ indefiniment --
     # ils ne correspondent plus a rien de ce qui est demande maintenant.
-    for sub, pattern in ((out / "video", "reel_*"), (out / "audio", "reel_*.mp3"),
+    for sub, pattern in ((out / "video", "reel_*"), (out / "audio", "reel_*.*"),
                          (out / "subs", "reel_*.*"), (out / "final", "reel_*.mp4")):
         if not sub.exists():
             continue
