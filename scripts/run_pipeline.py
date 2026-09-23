@@ -138,9 +138,18 @@ def main():
             shutil.rmtree(video_dir)
         feature_ids = scripts[i - 1].get("features") or []
         features_args = ["--features", ",".join(feature_ids)] if feature_ids else []
+        # offre_emploi/theme_style : generes par 1_generate_script.py (Gemini)
+        # pour ce scenario precis, cf. sa docstring -- rendent la demo
+        # coherente avec l'angle plutot que de toujours montrer le meme
+        # exemple fige, quel que soit le reel.
+        demo_args = []
+        if scripts[i - 1].get("offre_emploi"):
+            demo_args += ["--job-offer", scripts[i - 1]["offre_emploi"]]
+        if scripts[i - 1].get("theme_style"):
+            demo_args += ["--theme-style", scripts[i - 1]["theme_style"]]
         run([sys.executable, str(ROOT / "3_record_demo.py"),
              "--url", args.saas_url, "--out", str(video_dir),
-             "--mode", args.capture_mode, *features_args, *force_flag_for("video")])
+             "--mode", args.capture_mode, *features_args, *demo_args, *force_flag_for("video")])
         if video_dir.exists():
             (video_dir / ".capture_mode").write_text(args.capture_mode, encoding="utf-8")
 

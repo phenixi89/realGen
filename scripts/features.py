@@ -47,6 +47,12 @@ class DemoContext:
     page: object
     form_panel: object
     shoot: Callable[[str, object], Awaitable[None]]
+    # Generes par 1_generate_script.py (Gemini) pour ce scenario precis --
+    # vide/None si non fournis (scenario impose sans IA, appel direct de
+    # features.py) : les fonctions ci-dessous retombent alors sur les
+    # valeurs par defaut (SAMPLE_JOB_OFFER, choix d'index actuel).
+    job_offer: str = ""
+    theme_style: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -229,9 +235,23 @@ async def _capture_design_themes(ctx: DemoContext):
     themes = ctx.form_panel.locator("button.border-2[title]")
     count = await themes.count()
     preview = ctx.page.locator("main").first
+
+    picks = None
+    if ctx.theme_style and count > 2:
+        # theme_style vient de 1_generate_script.py (Gemini), ex. "sobre et
+        # corporate" -- matching texte simple contre les titres REELS des
+        # themes affiches (donnee live, jamais invente), jamais le theme
+        # actif (index 0). Retombe sur le choix par index si rien ne matche.
+        style_words = {w for w in re.split(r"\W+", ctx.theme_style.lower()) if len(w) > 2}
+        titles = [(await themes.nth(i).get_attribute("title") or "").lower() for i in range(count)]
+        matched = [i for i in range(1, count) if any(w in titles[i] for w in style_words)]
+        if matched:
+            picks = sorted(dict.fromkeys(matched + [count - 1]))[:2] if len(matched) < 2 else sorted(matched[:2])
+
     # Seuls les themes mis en avant sont affiches (4 a 12 selon la palette) :
-    # deux themes repartis dans ce qui est visible, jamais le theme actif (0).
-    picks = sorted({i for i in (count // 2, count - 1) if 0 < i < count})
+    # a defaut de correspondance avec theme_style, deux themes repartis dans
+    # ce qui est visible, jamais le theme actif (0).
+    picks = picks or sorted({i for i in (count // 2, count - 1) if 0 < i < count})
     for n, idx in enumerate(picks):
         theme = themes.nth(idx)
         await theme.scroll_into_view_if_needed()
@@ -266,7 +286,7 @@ def _make_offer_modal_capture(title: str, icon: str, name: str):
         textarea = dialog.locator("textarea").first
         if await textarea.count():
             await textarea.click()
-            await textarea.press_sequentially(SAMPLE_JOB_OFFER, delay=12)
+            await textarea.press_sequentially(ctx.job_offer or SAMPLE_JOB_OFFER, delay=12)
             await ctx.page.wait_for_timeout(400)
             await ctx.shoot(f"{name}_offre", dialog)
             await textarea.fill("")  # evite la confirmation "abandonner ?" a la fermeture
@@ -455,7 +475,8 @@ def resolve_feature_order(feature_ids: list[str] | None) -> list[str]:
     return rest + last
 
 
-async def run_features(page, shoot, form_panel, feature_ids: list[str] | None = None):
+async def run_features(page, shoot, form_panel, feature_ids: list[str] | None = None,
+                        job_offer: str = "", theme_style: str = ""):
     """
     Execute les fonctionnalites demandees (sauf "dashboard", deja capture a
     la mise en place). `shoot(feature_id, name, element)` recoit l'id de la
@@ -471,7 +492,8 @@ async def run_features(page, shoot, form_panel, feature_ids: list[str] | None = 
         async def feature_shoot(name, element, _fid=fid):
             await shoot(_fid, name, element)
 
-        ctx = DemoContext(page=page, form_panel=form_panel, shoot=feature_shoot)
+        ctx = DemoContext(page=page, form_panel=form_panel, shoot=feature_shoot,
+                           job_offer=job_offer, theme_style=theme_style)
         try:
             await feature.capture(ctx)
         except Exception as exc:

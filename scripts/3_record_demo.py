@@ -134,7 +134,8 @@ async def create_demo_cv(page):
     await page.goto(page.url.split("#")[0])
 
 
-async def walk_features(page, shoot, feature_ids: list[str] | None = None):
+async def walk_features(page, shoot, feature_ids: list[str] | None = None,
+                         job_offer: str = "", theme_style: str = ""):
     """
     Parcours desktop commun aux modes screenshots et video_desktop : tableau
     de bord, ouverture de l'editeur, puis les fonctionnalites demandees
@@ -175,10 +176,12 @@ async def walk_features(page, shoot, feature_ids: list[str] | None = None):
     await page.wait_for_timeout(800)
     await features_module.close_checklist_if_open(page)
 
-    await features_module.run_features(page, shoot, form_panel, wanted)
+    await features_module.run_features(page, shoot, form_panel, wanted,
+                                        job_offer=job_offer, theme_style=theme_style)
 
 
-async def capture_pc_screenshots(page, out_dir: Path, feature_ids: list[str] | None = None) -> list[dict]:
+async def capture_pc_screenshots(page, out_dir: Path, feature_ids: list[str] | None = None,
+                                  job_offer: str = "", theme_style: str = "") -> list[dict]:
     """
     Mode screenshots : une image composee (fond floute + carte nette, cf.
     scene_compose.py) par moment cle, etiquetee avec sa fonctionnalite dans
@@ -191,12 +194,13 @@ async def capture_pc_screenshots(page, out_dir: Path, feature_ids: list[str] | N
         path = await features_module._capture_scene(page, out_dir, len(shots) + 1, name, element)
         shots.append({"feature": feature_id, "name": name, "file": path.name})
 
-    await walk_features(page, shoot, feature_ids)
+    await walk_features(page, shoot, feature_ids, job_offer=job_offer, theme_style=theme_style)
     (out_dir / "captures.json").write_text(json.dumps(shots, ensure_ascii=False, indent=2), encoding="utf-8")
     return shots
 
 
-async def capture_pc_video(page, out_dir: Path, feature_ids: list[str] | None = None) -> list[dict]:
+async def capture_pc_video(page, out_dir: Path, feature_ids: list[str] | None = None,
+                            job_offer: str = "", theme_style: str = "") -> list[dict]:
     """
     Mode video_desktop : le meme parcours, sur l'enregistrement video continu
     deja actif sur le context (cf. record()). Chaque shoot() marque la fin
@@ -216,7 +220,7 @@ async def capture_pc_video(page, out_dir: Path, feature_ids: list[str] | None = 
             bbox = None
         segments.append({"feature": feature_id, "name": name, "end": time.monotonic() - t0, "bbox": bbox})
 
-    await walk_features(page, shoot, feature_ids)
+    await walk_features(page, shoot, feature_ids, job_offer=job_offer, theme_style=theme_style)
 
     starts = [0.0] + [s["end"] for s in segments[:-1]]
     for seg, start in zip(segments, starts):
@@ -225,7 +229,7 @@ async def capture_pc_video(page, out_dir: Path, feature_ids: list[str] | None = 
 
 
 async def record(url: str, out_dir: Path, email: str | None, password: str | None, mode: str = "video",
-                  feature_ids: list[str] | None = None):
+                  feature_ids: list[str] | None = None, job_offer: str = "", theme_style: str = ""):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async with async_playwright() as p:
@@ -297,9 +301,9 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
                 # (contrairement au mode video, qui genere un profil fictif
                 # local a la volee) -- la liste "Mes CVs" a capturer suppose
                 # qu'il y en a au moins un.
-                await capture_pc_screenshots(page, out_dir, feature_ids)
+                await capture_pc_screenshots(page, out_dir, feature_ids, job_offer=job_offer, theme_style=theme_style)
             elif mode == "video_desktop":
-                segments = await capture_pc_video(page, out_dir, feature_ids)
+                segments = await capture_pc_video(page, out_dir, feature_ids, job_offer=job_offer, theme_style=theme_style)
             else:
                 await play_demo_steps(page)
         except Exception:
@@ -346,6 +350,12 @@ def main():
     parser.add_argument("--features", type=str, default=None,
                          help="Ids de features.FEATURES separes par des virgules (modes screenshots/"
                               "video_desktop uniquement) ; omis = tout le catalogue dans l'ordre par defaut")
+    parser.add_argument("--job-offer", type=str, default="",
+                         help="Offre d'emploi a coller dans les modales IA (Adapter/Lettre) -- "
+                              "generee par 1_generate_script.py ; a defaut, exemple fixe de features.py")
+    parser.add_argument("--theme-style", type=str, default="",
+                         help="Style visuel a privilegier pour le choix des themes CV en demo "
+                              "(ex: 'sobre et corporate') -- genere par 1_generate_script.py")
     args = parser.parse_args()
     feature_ids = [f.strip() for f in args.features.split(",") if f.strip()] if args.features else None
 
@@ -373,7 +383,8 @@ def main():
 
     email = os.environ.get("DEMO_EMAIL")
     password = os.environ.get("DEMO_PASSWORD")
-    asyncio.run(record(args.url, out_dir, email, password, mode=args.mode, feature_ids=feature_ids))
+    asyncio.run(record(args.url, out_dir, email, password, mode=args.mode, feature_ids=feature_ids,
+                        job_offer=args.job_offer, theme_style=args.theme_style))
 
     outputs = sorted(out_dir.glob(pattern))
     if outputs:

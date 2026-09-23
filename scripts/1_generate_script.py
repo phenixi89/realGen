@@ -91,6 +91,71 @@ def scene_bounds(duration: int) -> tuple[int, int]:
     return lo, hi
 
 
+def choose_angles(client, n: int, history_path: Path) -> list[str]:
+    """
+    Reflexion strategique en amont du texte : au lieu de toujours reprendre
+    les n premiers angles de ANGLES dans le meme ordre (aucune variete d'un
+    run a l'autre), demande a Gemini lesquels tester maintenant, en evitant
+    ceux recemment utilises (historique persiste entre les runs).
+    """
+    from google.genai import types
+
+    history = []
+    if history_path.exists():
+        try:
+            history = json.loads(history_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            history = []
+    recent = history[-20:]
+
+    catalog = "\n".join(f'{i}. {a}' for i, a in enumerate(ANGLES, 1))
+    recent_block = ("\n".join(f"- {a}" for a in recent) if recent else "(aucun -- premiere execution)")
+    prompt = f"""Tu es strategiste marketing pour OpusCV (SaaS opuscv.tech, optimisation de CV par IA).
+
+{PRODUCT_CONTEXT}
+
+Voici le catalogue d'angles marketing disponibles pour les reels TikTok/Instagram :
+{catalog}
+
+Angles utilises lors des dernieres executions (a EVITER si possible, pour varier le contenu) :
+{recent_block}
+
+Choisis les {n} angles les plus prometteurs a tester maintenant, dans l'ordre de priorite.
+Varie les registres (temoignage, comparatif, killer feature isolee, tour d'horizon) plutot que
+de choisir {n} angles trop proches les uns des autres. Recopie le texte EXACT de l'angle choisi
+(ne le reformule pas), pris dans le catalogue ci-dessus uniquement.
+
+Reponds UNIQUEMENT en JSON valide : {{"angles": ["...", ...], "raisons": ["...", ...]}}
+(un "raisons" bref par angle choisi, une phrase)."""
+
+    try:
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.8),
+        )
+        text = response.text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        data = json.loads(text)
+        chosen = [a for a in data.get("angles") or [] if a in ANGLES]
+        for angle, raison in zip(chosen, data.get("raisons") or []):
+            print(f"  angle retenu : {angle}\n    -> {raison}")
+    except Exception as e:
+        print(f"ATTENTION: choix d'angle strategique indisponible ({e}), rotation simple utilisee", file=sys.stderr)
+        chosen = []
+
+    # Complete si Gemini en propose moins que n (ou a echoue) : rotation simple
+    # sur les angles non repris, en excluant l'historique recent en priorite.
+    if len(chosen) < n:
+        pool = [a for a in ANGLES if a not in chosen and a not in recent] or \
+               [a for a in ANGLES if a not in chosen]
+        chosen += (pool * (n // max(len(pool), 1) + 1))[: n - len(chosen)]
+    chosen = chosen[:n]
+
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    history_path.write_text(json.dumps((history + chosen)[-50:], ensure_ascii=False, indent=2), encoding="utf-8")
+    return chosen
+
+
 def build_prompt(angle: str, duration: int, forced: list[dict] | None, feedback: str | None) -> str:
     catalog = "\n".join(f'- "{fid}" : {f.description}' for fid, f in available_features().items())
     target, lo_w, hi_w = word_budget(duration)
@@ -130,6 +195,16 @@ Contraintes :
 - pas d'emoji, pas de hashtag, pas d'indication de mise en scene dans les textes.
 
 Angle du reel : {angle}
+
+En plus du scenario, fournis deux elements utilises pour rendre la demo capturee
+coherente avec cet angle (memes contraintes : n'invente rien qui contredise le produit) :
+- "offre_emploi" : une offre d'emploi fictive courte (2 a 4 phrases : intitule du poste,
+  responsabilites/exigences cles) plausible pour le persona de cet angle -- utilisee dans
+  les demos "adapter le CV a une offre" et "lettre de motivation". Varie le metier/secteur
+  d'un scenario a l'autre plutot que de toujours reprendre le meme exemple.
+- "theme_style" : 2 a 4 mots decrivant le style visuel de CV le plus adapte a cet angle/
+  persona (ex : "sobre et corporate", "moderne et colore", "minimaliste noir et blanc") --
+  utilise pour choisir un theme parmi ceux proposes par l'application lors de la demo design.
 """
     if forced:
         sequence = "\n".join(
@@ -145,7 +220,8 @@ Recopie a l'identique les textes imposes ; ecris uniquement les textes manquants
 
     prompt += """
 Reponds UNIQUEMENT en JSON valide :
-{"titre": "...", "scenes": [{"feature": "<id>", "texte": "..."}]}
+{"titre": "...", "offre_emploi": "...", "theme_style": "...",
+ "scenes": [{"feature": "<id>", "texte": "..."}]}
 """
     return prompt
 
@@ -193,6 +269,8 @@ def generate_scenario(client, angle: str, duration: int, forced: list[dict] | No
     feedback = None
     best: list[dict] = []
     titre = ""
+    offre_emploi = ""
+    theme_style = ""
     for attempt in range(1, MAX_ATTEMPTS + 1):
         response = client.models.generate_content(
             model=MODEL_NAME,
@@ -209,6 +287,8 @@ def generate_scenario(client, angle: str, duration: int, forced: list[dict] | No
         if scenes:
             best = scenes
             titre = data.get("titre", "")
+            offre_emploi = str(data.get("offre_emploi") or "").strip()
+            theme_style = str(data.get("theme_style") or "").strip()
         if not problems:
             break
         feedback = " ; ".join(problems)
@@ -216,7 +296,8 @@ def generate_scenario(client, angle: str, duration: int, forced: list[dict] | No
 
     if not best:
         raise RuntimeError(f"Scenario inexploitable apres {MAX_ATTEMPTS} tentatives (angle : {angle})")
-    return finalize({"angle": angle, "titre": titre, "duree_cible_s": duration, "scenes": best})
+    return finalize({"angle": angle, "titre": titre, "duree_cible_s": duration, "scenes": best,
+                      "offre_emploi": offre_emploi, "theme_style": theme_style})
 
 
 def finalize(scenario: dict) -> dict:
@@ -228,6 +309,10 @@ def finalize(scenario: dict) -> dict:
     scenario["features"] = seen
     words = sum(len(s["texte"].split()) for s in scenario["scenes"])
     scenario["duree_estimee_s"] = round(words / WORDS_PER_SECOND, 1)
+    # Absents (scenario impose sans appel IA, ou champ vide renvoye) : la
+    # demo retombe alors sur les valeurs par defaut cote features.py.
+    scenario.setdefault("offre_emploi", "")
+    scenario.setdefault("theme_style", "")
     return scenario
 
 
@@ -302,7 +387,11 @@ def main():
                 scenarios.append(done)
     else:
         client = get_client()
-        angles = [args.angle] * args.n if args.angle else (ANGLES * (args.n // len(ANGLES) + 1))[: args.n]
+        if args.angle:
+            angles = [args.angle] * args.n
+        else:
+            print(f"Choix strategique de {args.n} angle(s) parmi {len(ANGLES)}...")
+            angles = choose_angles(client, args.n, out_path.parent / "angle_history.json")
         for i, angle in enumerate(angles, 1):
             print(f"[{i}/{len(angles)}] Scenario {args.duration}s, angle : {angle}")
             scenarios.append(generate_scenario(client, angle, args.duration))
