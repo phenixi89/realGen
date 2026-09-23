@@ -226,6 +226,9 @@ Reponds UNIQUEMENT en JSON valide :
     return prompt
 
 
+ANIM_KEYS = ("anim", "overlay")
+
+
 def validate(data: dict, duration: int, forced: list[dict] | None) -> tuple[list[dict], list[str]]:
     """Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA)."""
     problems = []
@@ -240,7 +243,11 @@ def validate(data: dict, duration: int, forced: list[dict] | None) -> tuple[list
             if not forced:
                 problems.append(f'feature inconnue "{raw.get("feature")}" (remplacee par apercu_cv)')
             fid = "apercu_cv"
-        scenes.append({"feature": fid, "texte": texte})
+        scene = {"feature": fid, "texte": texte}
+        # Animations demandees par le scenario (run_pipeline.py --anims) :
+        # conservees telles quelles, interpretees au montage.
+        scene.update({k: raw[k] for k in ANIM_KEYS if raw.get(k)})
+        scenes.append(scene)
 
     if forced:
         if len(scenes) != len(forced):
@@ -250,6 +257,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None) -> tuple[list
                 scene["feature"] = imposed["feature"]
                 if imposed.get("texte"):
                     scene["texte"] = imposed["texte"]
+                scene.update({k: imposed[k] for k in ANIM_KEYS if imposed.get(k)})
 
     words = sum(len(s["texte"].split()) for s in scenes)
     _, lo_w, hi_w = word_budget(duration)
@@ -331,7 +339,8 @@ def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
             if fid is None:
                 raise ValueError(f"{path} scenario {n} : feature inconnue ou non autorisee '{s.get('feature')}' "
                                  f"(liste : python scripts/features.py)")
-            scenes.append({"feature": fid, "texte": str(s.get("texte") or "").strip()})
+            scenes.append({"feature": fid, "texte": str(s.get("texte") or "").strip(),
+                           **{k: s[k] for k in ANIM_KEYS if s.get(k)}})
         if not scenes:
             raise ValueError(f"{path} scenario {n} : aucune scene")
         scenarios.append({

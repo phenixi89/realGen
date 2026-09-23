@@ -1,0 +1,68 @@
+<!doctype html>
+<!--
+  Scene d'appel a l'action (mode scene) : remplace les captures d'une scene
+  par un plan anime plein cadre. Fond = derniere capture de la scene (?bg=),
+  floutee et assombrie, en lent zoom continu pour ne jamais figer l'image.
+  Parametres : bg, brand, title, sub, button.
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#140f2e;font-family:"DejaVu Sans",system-ui,sans-serif;color:#fff}
+  #bg{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(26px) brightness(.45) saturate(1.2)}
+  #grad{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(108,71,255,.45),rgba(20,15,46,.2) 55%,rgba(10,8,24,.85))}
+  #glow{position:absolute;left:50%;top:640px;width:900px;height:900px;margin:-450px 0 0 -450px;border-radius:50%;
+    background:radial-gradient(circle,rgba(181,71,255,.55),transparent 65%)}
+  #brand{position:absolute;top:470px;width:100%;text-align:center;font-weight:800;font-size:150px;letter-spacing:-.02em}
+  #brand b{display:inline-block}
+  #brand i{font-style:normal;background:linear-gradient(90deg,#8f6bff,#e07bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #title{position:absolute;top:720px;left:90px;right:90px;text-align:center;font-weight:800;font-size:72px;line-height:1.15}
+  #title span{display:inline-block;margin:0 .14em}
+  #sub{position:absolute;top:980px;width:100%;text-align:center;font-size:44px;opacity:.8}
+  #btn{position:absolute;top:1120px;width:100%;text-align:center}
+  #btn span{position:relative;overflow:hidden;display:inline-block;font-weight:800;font-size:62px;padding:36px 90px;border-radius:99px;
+    background:linear-gradient(90deg,#6c47ff,#b547ff);box-shadow:0 20px 60px rgba(108,71,255,.7)}
+  #shine{position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%)}
+  #arrow{position:absolute;top:1330px;width:100%;text-align:center;font-size:70px}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="glow"></div>
+<div id="brand"></div>
+<div id="title"></div>
+<div id="sub"></div>
+<div id="btn"><span><b id="btntxt"></b><div id="shine"></div></span></div>
+<div id="arrow">↓</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>
+  const bg = param("bg", "");
+  let bgReady = null;
+  if (bg) {
+    document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; });
+  }
+  const brand = param("brand", "OpusCV");
+  // "Opus" + "CV" en degrade : met en valeur la fin du nom de marque.
+  document.getElementById("brand").innerHTML = brand.split("").map((c) => `<b>${c}</b>`).join("");
+  document.querySelectorAll("#brand b").forEach((b, i) => { if (i >= brand.length - 2) b.innerHTML = `<i>${b.textContent}</i>`; });
+  const title = param("title", "Le CV qui passe les filtres ATS");
+  document.getElementById("title").innerHTML = title.split(" ").map(() => "<span></span>").join("");
+  document.querySelectorAll("#title span").forEach((s, i) => (s.textContent = title.split(" ")[i]));
+  document.getElementById("sub").textContent = param("sub", "Gratuit · lien en bio");
+  document.getElementById("btntxt").textContent = param("button", "Essaie OpusCV");
+
+  const tl = gsap.timeline({ paused: true })
+    // Positions relatives en ">" (fin de l'animation precedente), jamais
+    // "-=" : la fin de la timeline est celle du zoom de fond (12 s).
+    // Mouvements lents sur toute la duree (la scene peut durer plus que l'intro) :
+    .fromTo("#bg", { scale: 1.12 }, { scale: 1, duration: 12, ease: "none" }, 0)
+    .fromTo("#glow", { scale: 0.8, opacity: 0.6 }, { scale: 1.15, opacity: 1, duration: 3, repeat: 3, yoyo: true, ease: "sine.inOut" }, 0)
+    .from("#brand b", { y: 120, opacity: 0, rotateX: -90, duration: 0.55, stagger: 0.05, ease: "back.out(2)" }, 0.15)
+    .from("#title span", { y: 50, opacity: 0, duration: 0.4, stagger: 0.06, ease: "power3.out" }, 0.6)
+    .from("#sub", { opacity: 0, y: 20, duration: 0.4 }, ">-.1")
+    .from("#btn span", { scale: 0.4, opacity: 0, duration: 0.6, ease: "elastic.out(1,.55)" }, ">-.15")
+    .fromTo("#shine", { x: "-120%" }, { x: "120%", duration: 0.9, repeat: 5, repeatDelay: 1.1, ease: "power1.inOut" }, ">-.1")
+    .fromTo("#arrow", { y: 0, opacity: 0 }, { y: 30, opacity: 1, duration: 0.5, repeat: 13, yoyo: true, ease: "sine.inOut" }, "<");
+  expose(tl, bgReady);
+  // Duree "naturelle" = fin de l'intro : le rendu prolonge jusqu'a la
+  // longueur de la scene (les boucles ci-dessus continuent jusqu'a ~12 s).
+  window.DURATION = 3.2;
+</script></body></html>

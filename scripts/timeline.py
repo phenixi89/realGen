@@ -33,9 +33,11 @@ def load_timeline(path: str | Path | None) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
-def plan_items(timeline: dict, media_by_feature: dict[str, list]) -> list[tuple[object, float]]:
+def plan_items(timeline: dict, media_by_feature: dict[str, list],
+               with_scene: bool = False) -> list[tuple]:
     """
-    -> [(media, duree)] dans l'ordre d'affichage ; la somme des durees vaut
+    -> [(media, duree)] dans l'ordre d'affichage (with_scene : [(media,
+    duree, index de la scene)]) ; la somme des durees vaut
     exactement la duree de l'audio. Fonctionnalite sans capture (selecteur
     casse, feature sautee) : on reprend les captures de la scene precedente,
     sinon l'apercu final, sinon n'importe quelle capture -- jamais d'ecran noir.
@@ -46,7 +48,7 @@ def plan_items(timeline: dict, media_by_feature: dict[str, list]) -> list[tuple[
 
     plan = []
     previous = None
-    for scene in timeline["scenes"]:
+    for scene_index, scene in enumerate(timeline["scenes"]):
         duration = max(scene["end"] - scene["start"], MIN_SCENE_S)
         items = media_by_feature.get(scene.get("feature") or "")
         if not items:
@@ -56,7 +58,7 @@ def plan_items(timeline: dict, media_by_feature: dict[str, list]) -> list[tuple[
         count = max(1, min(len(items), int(duration / MIN_ITEM_S + 1e-6)))
         chosen = items[-count:]
         for media in chosen:
-            plan.append((media, duration / count))
+            plan.append((media, duration / count, scene_index) if with_scene else (media, duration / count))
         previous = items
     return plan
 

@@ -15,15 +15,18 @@ Usage:
 """
 import argparse
 import json
+import tempfile
 from pathlib import Path
 
 import numpy as np
-from moviepy import AudioArrayClip, AudioFileClip, CompositeAudioClip, CompositeVideoClip, ImageClip, VideoFileClip
+from moviepy import (AudioArrayClip, AudioFileClip, CompositeAudioClip, CompositeVideoClip, ImageClip,
+                     ImageSequenceClip, VideoFileClip)
 from moviepy.video.fx import FadeIn, FadeOut, Loop
 from moviepy.audio.fx import AudioFadeIn, AudioFadeOut
 from PIL import Image, ImageDraw, ImageFont
 
 from caption_render import render_caption
+from render_js_anim import FPS as ANIM_FPS, parse_spec, render_frames
 
 FADE_DURATION = 0.4
 WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -101,7 +104,38 @@ def make_caption_clips(cues: list[dict]) -> list[ImageClip]:
     return clips
 
 
-def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path):
+def parse_overlay(value: str) -> tuple[float, str]:
+    """ "3.2:score_ats?from=35&to=92" -> (3.2, "score_ats?from=35&to=92") """
+    start, sep, spec = value.partition(":")
+    if not sep or not spec:
+        raise ValueError(f"--overlay attend DEBUT_S:gabarit[?params], recu '{value}'")
+    return float(start), spec
+
+
+def make_overlay_clips(overlays: list[tuple[float, str]], duration: float, tmp_dir: Path) -> list:
+    """
+    Animations HTML/JS (assets/anim/) rendues en PNG transparents et posees
+    par-dessus la video a leur instant de debut -- sous les sous-titres,
+    pour que ceux-ci restent lisibles.
+    """
+    clips = []
+    for k, (start, spec) in enumerate(overlays):
+        if start >= duration:
+            print(f"ATTENTION: surimpression '{spec}' a {start}s, apres la fin ({duration:.1f}s) -> ignoree")
+            continue
+        name, params = parse_spec(spec)
+        frames_dir = tmp_dir / f"overlay_{k:02d}"
+        render_frames(name, params, frames_dir)
+        clip = ImageSequenceClip(sorted(str(f) for f in frames_dir.glob("*.png")), fps=ANIM_FPS, with_mask=True)
+        clip = clip.with_start(start)
+        if start + clip.duration > duration:
+            clip = clip.with_duration(duration - start)
+        clips.append(clip)
+    return clips
+
+
+def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path,
+             overlays: list[tuple[float, str]] | None = None):
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cues = json.loads(subs_path.read_text(encoding="utf-8"))
 
@@ -120,7 +154,9 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     vignette_mask = make_vignette(video.size)
     video = video.image_transform(lambda frame: np.clip(frame * vignette_mask, 0, 255).astype("uint8"))
 
-    layers = [video, make_watermark_clip(duration), *make_caption_clips(cues)]
+    tmp = tempfile.TemporaryDirectory()
+    overlay_clips = make_overlay_clips(overlays or [], duration, Path(tmp.name))
+    layers = [video, make_watermark_clip(duration), *overlay_clips, *make_caption_clips(cues)]
     final = CompositeVideoClip(layers, size=video.size).with_duration(duration)
 
     final = final.with_effects([FadeIn(FADE_DURATION), FadeOut(FADE_DURATION)])
@@ -144,6 +180,7 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     )
     video.close()
     audio.close()
+    tmp.cleanup()
 
 
 def main():
@@ -152,6 +189,9 @@ def main():
     parser.add_argument("--audio", type=str, required=True)
     parser.add_argument("--subs", type=str, required=True)
     parser.add_argument("--out", type=str, required=True)
+    parser.add_argument("--overlay", action="append", default=[], metavar="DEBUT_S:GABARIT[?PARAMS]",
+                         help="Animation HTML/JS (assets/anim/) en surimpression a partir de DEBUT_S, "
+                              "ex: 3.2:score_ats?from=35&to=92 ; repetable")
     parser.add_argument("--force", action="store_true",
                          help="Reassemble meme si --out existe deja")
     args = parser.parse_args()
@@ -160,7 +200,8 @@ def main():
         print(f"REPRISE: {args.out} existe deja, on saute (--force pour reassembler)")
         return
 
-    assemble(Path(args.video), Path(args.audio), Path(args.subs), Path(args.out))
+    assemble(Path(args.video), Path(args.audio), Path(args.subs), Path(args.out),
+             overlays=[parse_overlay(v) for v in args.overlay])
     print(f"OK -> {args.out}")
 
 

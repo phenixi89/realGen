@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import urlencode
 
 from script_text import script_to_text
 
@@ -20,6 +21,82 @@ ROOT = Path(__file__).parent
 # sous-titre/assemblage "REPRISE" resterait construit sur une video ou un
 # audio perimes.
 STEPS = ["script", "voice", "video", "subs", "assemble"]
+
+
+# Animations HTML/JS (assets/anim/, rendues par render_js_anim.py) :
+#   overlay   -> surimpression sur une scene (5_assemble.py, tous modes)
+#   scene     -> une scene devient un plan anime plein cadre (3b, screenshots)
+#   highlight -> cadre anime autour de la zone montree (3b, screenshots)
+ANIM_KINDS = ["overlay", "scene", "highlight"]
+DEFAULT_OVERLAY = "score_ats"
+DEFAULT_SCENE_ANIM = "cta"
+# Scene qui recoit la surimpression par defaut : la premiere qui parle de
+# ces fonctionnalites (ATS/optimisation), sinon la 2e scene.
+OVERLAY_FEATURES = ("checklist", "relecture", "adapter", "fonctions_ia")
+# Laisse passer le fondu d'entree de la scene avant la surimpression.
+OVERLAY_DELAY_S = 0.3
+
+
+def parse_anims(value: str) -> list[str]:
+    kinds = [k.strip() for k in value.split(",") if k.strip()]
+    if kinds in (["none"], []):
+        return []
+    if kinds == ["all"]:
+        return list(ANIM_KINDS)
+    unknown = [k for k in kinds if k not in ANIM_KINDS]
+    if unknown:
+        raise argparse.ArgumentTypeError(f"animation(s) inconnue(s) {unknown} ; choix : {', '.join(ANIM_KINDS)}, all, none")
+    return kinds
+
+
+def anim_spec(value, default_template: str) -> str:
+    """Champ de scene "anim"/"overlay" : true, "gabarit?params" ou {"template": ..., params}."""
+    if isinstance(value, dict):
+        params = {k: v for k, v in value.items() if k != "template"}
+        template = value.get("template", default_template)
+        return f"{template}?{urlencode(params)}" if params else template
+    if isinstance(value, str):
+        return value
+    return default_template
+
+
+def plan_anims(script: dict, timeline: dict, kinds: list[str]) -> tuple[list[str], list[str]]:
+    """
+    -> (arguments 3b, arguments 5_assemble). Le scenario peut placer les
+    animations lui-meme (champs "anim"/"overlay" d'une scene, cf.
+    scenarios/exemple.json) ; sinon placement par defaut : CTA anime sur la
+    derniere scene, score ATS sur la scene ATS/optimisation.
+    """
+    scenes = [s for s in script.get("scenes", []) if s.get("texte", "").strip()]
+    t_scenes = timeline["scenes"]
+    if len(scenes) != len(t_scenes):
+        scenes = [{}] * len(t_scenes)  # timeline sans scenario (ancien format) : placement par defaut
+    video_args, assemble_args = [], []
+
+    if "scene" in kinds and t_scenes:
+        chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
+        for i, spec in (chosen or {len(t_scenes) - 1: DEFAULT_SCENE_ANIM}).items():
+            video_args += ["--scene-anim", f"{i}={spec}"]
+    overlays = {}
+    if "overlay" in kinds and t_scenes:
+        overlays = {i: anim_spec(s["overlay"], DEFAULT_OVERLAY) for i, s in enumerate(scenes) if s.get("overlay")}
+        if not overlays:
+            default = next((i for i, s in enumerate(t_scenes) if s.get("feature") in OVERLAY_FEATURES),
+                           min(1, len(t_scenes) - 1))
+            overlays = {default: DEFAULT_OVERLAY}
+        for i, spec in overlays.items():
+            start = t_scenes[i]["start"] + OVERLAY_DELAY_S
+            # fit : l'animation accelere si besoin pour finir avec sa scene.
+            fit = max(t_scenes[i]["end"] - start, 1.0)
+            spec += ("&" if "?" in spec else "?") + f"fit={fit:.2f}"
+            assemble_args += ["--overlay", f"{start:.2f}:{spec}"]
+
+    if "highlight" in kinds:
+        video_args.append("--highlight")
+        # Pas de cadre sous une surimpression : les deux se disputeraient l'ecran.
+        for i in overlays:
+            video_args += ["--highlight-skip", str(i)]
+    return video_args, assemble_args
 
 
 def run(cmd: list[str]):
@@ -51,7 +128,17 @@ def main():
     parser.add_argument("--from-step", type=str, choices=STEPS, default=None,
                          help="Force la regeneration a partir de cette etape (et toutes celles d'apres) ; "
                               "les etapes precedentes restent en reprise si deja presentes")
+    parser.add_argument("--anims", type=parse_anims, default=[],
+                         help="Animations HTML/JS a integrer, separees par des virgules : "
+                              "overlay (surimpression score ATS), scene (scene CTA animee), "
+                              "highlight (cadre anime sur la zone montree) ; ou all / none (defaut). "
+                              "scene/highlight : --capture-mode screenshots uniquement")
     args = parser.parse_args()
+
+    screen_only = [k for k in args.anims if k in ("scene", "highlight")]
+    if screen_only and args.capture_mode != "screenshots":
+        print(f"ATTENTION: --anims {','.join(screen_only)} ne s'applique qu'en --capture-mode screenshots -> ignore")
+        args.anims = [k for k in args.anims if k not in screen_only]
 
     out = Path("output")
     from_index = 0 if args.force else (STEPS.index(args.from_step) if args.from_step else None)
@@ -180,6 +267,20 @@ def main():
              "--out", str(subs_path), "--timeline-out", str(timeline_path),
              "--model", args.whisper_model, *subs_force])
 
+        # Animations : placees d'apres la timeline (debut de chaque scene).
+        #    Un choix d'animations different du dernier montage de ce reel
+        #    force 3b et l'assemblage (pas la capture, couteuse).
+        anim_video_args, anim_assemble_args = [], []
+        if args.anims and timeline_path.exists():
+            anim_video_args, anim_assemble_args = plan_anims(
+                scripts[i - 1], json.loads(timeline_path.read_text(encoding="utf-8")), args.anims)
+        anims_marker = video_dir / ".anims"
+        anims_signature = json.dumps([anim_video_args, anim_assemble_args])
+        previous_signature = anims_marker.read_text(encoding="utf-8") if anims_marker.exists() else json.dumps([[], []])
+        anims_force = ["--force"] if previous_signature != anims_signature else []
+        if anims_force:
+            print(f"[{i}] animations modifiees -> montage et assemblage refaits")
+
         # 3b/3c. Montage de la video muette, cale sur la timeline : apres les
         #    sous-titres parce qu'il en a besoin. Force des que la capture ou
         #    la timeline ont ete refaites (subs_force couvre les deux cas).
@@ -187,7 +288,7 @@ def main():
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3b_build_video_from_screenshots.py"),
                  "--screens", str(video_dir), "--timeline", str(timeline_path),
-                 "--out", str(video_path), *subs_force])
+                 "--out", str(video_path), *anim_video_args, *(subs_force or anims_force)])
         elif args.capture_mode == "video_desktop":
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3c_build_video_from_recording.py"),
@@ -205,8 +306,9 @@ def main():
         final_path = out / "final" / f"reel_{i:02d}.mp4"
         run([sys.executable, str(ROOT / "5_assemble.py"),
              "--video", str(video_path), "--audio", str(audio_path),
-             "--subs", str(subs_path), "--out", str(final_path),
-             *(force_flag_for("assemble") or subs_force)])
+             "--subs", str(subs_path), "--out", str(final_path), *anim_assemble_args,
+             *(force_flag_for("assemble") or subs_force or anims_force)])
+        anims_marker.write_text(anims_signature, encoding="utf-8")
 
     print(f"\nTermine. {args.n} reel(s) dans output/final/")
 

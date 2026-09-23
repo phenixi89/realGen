@@ -1,0 +1,68 @@
+<!doctype html>
+<!--
+  Souligne (mode highlight) : cadre lumineux qui se dessine autour de la
+  carte nette d'une capture (?x=&y=&w=&h=, en px du cadre 1080x1920, cf.
+  scene_compose.card_rect), coins qui claquent, reflet qui balaie, puis
+  fondu. ?zoom=in|out reproduit le zoompan de 3b_build_video_from_screenshots
+  image par image pour rester colle a la carte pendant qu'elle grossit.
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden}
+  #layer{position:absolute;inset:0;transform-origin:540px 960px}
+  #box{position:absolute}
+  #box svg{position:absolute;inset:-14px;width:calc(100% + 28px);height:calc(100% + 28px);overflow:visible}
+  #glow{position:absolute;inset:-14px;border-radius:40px;box-shadow:0 0 50px 10px rgba(143,107,255,.75),inset 0 0 30px rgba(143,107,255,.35)}
+  .c{position:absolute;width:70px;height:70px;border:9px solid #fff;filter:drop-shadow(0 0 10px rgba(143,107,255,.9))}
+  .tl{left:-34px;top:-34px;border-right:0;border-bottom:0;border-top-left-radius:30px}
+  .tr{right:-34px;top:-34px;border-left:0;border-bottom:0;border-top-right-radius:30px}
+  .bl{left:-34px;bottom:-34px;border-right:0;border-top:0;border-bottom-left-radius:30px}
+  .br{right:-34px;bottom:-34px;border-left:0;border-top:0;border-bottom-right-radius:30px}
+  #sweep{position:absolute;inset:0;border-radius:28px;overflow:hidden}
+  #sweep div{position:absolute;top:-20%;bottom:-20%;width:35%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent)}
+</style></head><body>
+<div id="layer">
+  <div id="box">
+    <div id="glow"></div>
+    <svg><rect id="rect" x="4" y="4" rx="36" fill="none" stroke="url(#hg)" stroke-width="8"/>
+      <defs><linearGradient id="hg"><stop offset="0" stop-color="#8f6bff"/><stop offset="1" stop-color="#e07bff"/></linearGradient></defs></svg>
+    <div id="sweep"><div></div></div>
+    <div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div>
+  </div>
+</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>
+  const X = num("x", 70), Y = num("y", 500), W = num("w", 940), H = num("h", 900);
+  const DELAY = num("delay", 0), FPS = num("fps", 25), STEP = num("step", 0.0015), ZMAX = num("zmax", 1.18), ZOOM = param("zoom", "in");
+  Object.assign(document.getElementById("box").style, { left: X + "px", top: Y + "px", width: W + "px", height: H + "px" });
+  const rect = document.getElementById("rect");
+  rect.setAttribute("width", W + 20); rect.setAttribute("height", H + 20);
+  const per = 2 * (W + H + 40);
+  rect.style.strokeDasharray = per; rect.style.strokeDashoffset = per;
+
+  // Meme zoom que ffmpeg zoompan, image n : in = min(1+STEP*(n+1), ZMAX) ;
+  // out = 1 a l'image 0 (zoom initial de zoompan), ZMAX a l'image 1, puis -STEP.
+  const zoomAt = (t) => {
+    const n = Math.round(t * FPS);
+    if (ZOOM === "out") return n === 0 ? 1 : Math.max(ZMAX - STEP * (n - 1), 1);
+    if (ZOOM === "in") return Math.min(1 + STEP * (n + 1), ZMAX);
+    return 1;
+  };
+  const layer = document.getElementById("layer");
+
+  const tl = gsap.timeline({ paused: true })
+    .fromTo(rect, { strokeDashoffset: per }, { strokeDashoffset: 0, duration: 0.7, ease: "power2.inOut" }, 0)
+    .from("#glow", { opacity: 0, duration: 0.5 }, 0.3)
+    .from(".c", { scale: 0.2, opacity: 0, duration: 0.35, stagger: 0.06, ease: "back.out(3)" }, 0.45)
+    .fromTo("#sweep div", { left: "-40%" }, { left: "110%", duration: 0.8, ease: "power2.inOut" }, 0.6)
+    .to("#glow", { opacity: 0.4, duration: 0.3, yoyo: true, repeat: 1 }, 1.0)
+    .to("#box", { opacity: 0, scale: 1.04, duration: 0.4, ease: "power2.in" }, 1.9);
+  expose(tl);
+  // ?delay= : le cadre attend la fin du fondu d'entree du clip, mais le zoom
+  // suit le temps du clip des l'image 0.
+  const baseSeek = window.seek;
+  window.seek = (t) => { baseSeek(t - DELAY); layer.style.transform = `scale(${zoomAt(t)})`; };
+  window.DURATION = DELAY + tl.duration();
+  window.seek(0);
+</script></body></html>

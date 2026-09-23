@@ -19,6 +19,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from render_js_anim import file_uri, parse_spec, render_clip, render_frames
 from timeline import clip_lengths, concat_with_xfade, load_timeline, plan_items
 
 FPS = 25
@@ -27,16 +28,26 @@ XFADE_DURATION = 0.5
 # Alterne quelques transitions xfade standard (toutes supportees nativement
 # par ffmpeg) pour eviter que l'assemblage entier ait le meme fondu repete.
 XFADE_TRANSITIONS = ["fade", "slideleft", "fade", "slideright"]
+ZOOM_STEP = 0.0015
+ZOOM_MAX = 1.18
+# Le souligne attend la fin du fondu d'entree du clip (timeline.XFADE_DURATION).
+HIGHLIGHT_DELAY_S = 0.45
 
 
-def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool):
+def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool,
+               overlay_frames: Path | None = None):
+    """
+    overlay_frames : dossier de PNG transparents (souligne anime, cf.
+    render_js_anim.py) incrustes par-dessus le zoom, image par image.
+    """
     frames = int(seconds * FPS)
     # Zoom alterne in/out d'une image a l'autre pour eviter un mouvement
-    # repetitif identique sur tout l'assemblage.
+    # repetitif identique sur tout l'assemblage. Modifier ces expressions ?
+    # assets/anim/highlight.html (zoomAt) les reproduit pour suivre la carte.
     if zoom_out:
-        z_expr = f"if(eq(on,1),1.18,max(zoom-0.0015,1.0))"
+        z_expr = f"if(eq(on,1),{ZOOM_MAX},max(zoom-{ZOOM_STEP},1.0))"
     else:
-        z_expr = f"min(zoom+0.0015,1.18)"
+        z_expr = f"min(zoom+{ZOOM_STEP},{ZOOM_MAX})"
 
     vf = (
         # Les captures desktop (mode screenshots) sont en paysage (1440x900) ;
@@ -47,16 +58,22 @@ def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool
         # basse du cadre vide.
         f"scale=-2:{OUT_SIZE[1] * 3}:force_original_aspect_ratio=increase,"
         f"crop={OUT_SIZE[0] * 3}:{OUT_SIZE[1] * 3},"
-        # x/y : formule centree standard de zoompan -- utilise ow/oh (taille
-        # de sortie), pas iw/ih (taille source), sinon le cadrage part du
-        # coin haut-gauche au lieu du centre a zoom=1.
+        # x/y : zoom centre -- la fenetre visible fait iw/zoom de large (en
+        # pixels SOURCE). Avec ow/oh (taille de sortie, 3x plus petite ici),
+        # x/y depassaient la borne max et zoompan les ramenait au bord :
+        # le zoom partait vers le coin bas-droit au lieu du centre.
         f"zoompan=z='{z_expr}':d={frames}:s={OUT_SIZE[0]}x{OUT_SIZE[1]}:"
-        f"x='iw/2-(ow/zoom/2)':y='ih/2-(oh/zoom/2)':fps={FPS},"
-        f"format=yuv420p"
+        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':fps={FPS}"
     )
+    inputs = ["-loop", "1", "-i", str(image_path)]
+    if overlay_frames is not None:
+        inputs += ["-framerate", str(FPS), "-i", str(overlay_frames / "%05d.png")]
+        filters = ["-filter_complex", f"[0:v]{vf}[bg];[bg][1:v]overlay=eof_action=pass,format=yuv420p[v]",
+                   "-map", "[v]"]
+    else:
+        filters = ["-vf", f"{vf},format=yuv420p"]
     cmd = [
-        "ffmpeg", "-y", "-loop", "1", "-i", str(image_path),
-        "-vf", vf, "-t", str(seconds),
+        "ffmpeg", "-y", *inputs, *filters, "-t", str(seconds),
         "-c:v", "libx264", "-preset", "medium", "-crf", "18",
         str(clip_path),
     ]
@@ -114,26 +131,89 @@ def build_video_from_screenshots(screens_dir: Path, out_path: Path, clip_seconds
         subprocess.run(cmd, check=True)
 
 
-def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict):
+def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
+                            scene_anims: dict[int, str] | None = None, highlight: bool = False,
+                            highlight_skip: set[int] | None = None):
     """
     Montage cale sur la voix : chaque scene du scenario affiche les captures
     de SA fonctionnalite (captures.json, ecrit par 3_record_demo.py) pendant
     exactement le temps ou la voix en parle (timeline.json).
+
+    scene_anims : {index de scene (negatif = depuis la fin): "gabarit?params"}
+    -- ces scenes montrent un plan anime plein cadre (assets/anim/) a la place
+    de leurs captures ; sans ?bg=, le fond est la derniere capture qu'elles
+    auraient montree. highlight : cadre anime autour de la carte nette de la
+    premiere capture de chaque scene (captures.json "card"), sauf les
+    scenes de highlight_skip (ex: celles qui ont une surimpression).
     """
     captures = json.loads((screens_dir / "captures.json").read_text(encoding="utf-8"))
     media_by_feature: dict[str, list[Path]] = {}
+    card_by_file: dict[str, list[int]] = {}
     for shot in captures:
         media_by_feature.setdefault(shot["feature"], []).append(screens_dir / shot["file"])
+        if shot.get("card"):
+            card_by_file[shot["file"]] = shot["card"]
+    if highlight and not card_by_file:
+        print("ATTENTION: captures.json sans position de carte (captures anterieures a --anims highlight) "
+              "-> pas de souligne ; relancer la capture (--from-step video) pour l'activer")
 
-    plan = plan_items(timeline, media_by_feature)
-    durations = [d for _, d in plan]
+    # Scene animee : feature remplacee par une cle a part, dont l'unique
+    # "media" est la spec d'animation -- plan_items() lui donne alors toute
+    # la duree de la scene, et le reste du montage (xfade) ne change pas.
+    timeline = {**timeline, "scenes": [dict(sc) for sc in timeline["scenes"]]}
+    all_media = [m for items in media_by_feature.values() for m in items]
+    for index, spec in (scene_anims or {}).items():
+        if not -len(timeline["scenes"]) <= index < len(timeline["scenes"]):
+            print(f"ATTENTION: scene {index} inexistante ({len(timeline['scenes'])} scenes), animation ignoree")
+            continue
+        scene = timeline["scenes"][index]
+        name, params = parse_spec(spec)
+        if "bg" not in params:
+            own = media_by_feature.get(scene.get("feature") or "") or all_media[-1:]
+            if own:
+                params["bg"] = file_uri(own[-1])
+        key = f"__anim_{index % len(timeline['scenes'])}"
+        media_by_feature[key] = [(name, params)]
+        scene["feature"] = key
+
+    plan = plan_items(timeline, media_by_feature, with_scene=True)
+    durations = [d for _, d, _ in plan]
     with tempfile.TemporaryDirectory() as tmp:
         clips = []
-        for i, ((image, _), length) in enumerate(zip(plan, clip_lengths(durations))):
+        previous_scene = None
+        for i, ((media, _, scene_index), length) in enumerate(zip(plan, clip_lengths(durations))):
             clip = Path(tmp) / f"clip_{i:02d}.mp4"
-            build_clip(image, clip, length, zoom_out=(i % 2 == 1))
+            zoom_out = i % 2 == 1
+            if isinstance(media, tuple):
+                name, params = media
+                print(f"Scene {scene_index} : animation '{name}' ({length:.1f}s)")
+                render_clip(name, params, clip, length)
+            else:
+                overlay = None
+                card = card_by_file.get(media.name)
+                if (highlight and card and scene_index != previous_scene
+                        and scene_index not in (highlight_skip or set())):
+                    overlay = Path(tmp) / f"hl_{i:02d}"
+                    x, y, w, h = card
+                    render_frames("highlight", {
+                        "x": x, "y": y, "w": w, "h": h, "zoom": "out" if zoom_out else "in",
+                        "step": ZOOM_STEP, "zmax": ZOOM_MAX, "fps": FPS, "delay": HIGHLIGHT_DELAY_S,
+                    }, overlay)
+                build_clip(media, clip, length, zoom_out=zoom_out, overlay_frames=overlay)
+            previous_scene = scene_index
             clips.append(clip)
         concat_with_xfade(clips, durations, out_path)
+
+
+def parse_scene_anims(values: list[str]) -> dict[int, str]:
+    """["-1=cta?title=...", "0=cta"] -> {-1: "cta?title=...", 0: "cta"}"""
+    anims = {}
+    for value in values:
+        index, sep, spec = value.partition("=")
+        if not sep or not spec:
+            raise ValueError(f"--scene-anim attend INDEX=gabarit[?params], recu '{value}'")
+        anims[int(index)] = spec
+    return anims
 
 
 def main():
@@ -145,6 +225,13 @@ def main():
                               "Absent -> ancien montage, captures a duree fixe dans l'ordre de capture")
     parser.add_argument("--clip-seconds", type=float, default=3.5,
                          help="Duree du zoom sur chaque capture (sans timeline uniquement)")
+    parser.add_argument("--scene-anim", action="append", default=[], metavar="INDEX=GABARIT[?PARAMS]",
+                         help="Remplace les captures d'une scene par une animation plein cadre "
+                              "(assets/anim/), ex: -1=cta ; repetable (avec --timeline)")
+    parser.add_argument("--highlight", action="store_true",
+                         help="Cadre anime autour de la zone montree, au debut de chaque scene (avec --timeline)")
+    parser.add_argument("--highlight-skip", action="append", type=int, default=[], metavar="INDEX",
+                         help="Scene sans cadre anime (--highlight) ; repetable")
     parser.add_argument("--force", action="store_true",
                          help="Reconstruit meme si --out existe deja")
     args = parser.parse_args()
@@ -157,7 +244,9 @@ def main():
     screens_dir = Path(args.screens)
     timeline = load_timeline(args.timeline)
     if timeline and (screens_dir / "captures.json").exists():
-        build_video_on_timeline(screens_dir, out_path, timeline)
+        build_video_on_timeline(screens_dir, out_path, timeline,
+                                scene_anims=parse_scene_anims(args.scene_anim), highlight=args.highlight,
+                                highlight_skip=set(args.highlight_skip))
     else:
         build_video_from_screenshots(screens_dir, out_path, args.clip_seconds)
     print(f"OK -> {out_path}")

@@ -58,6 +58,7 @@ Principales options de `run_pipeline.py` :
 | `--voice` | Kore | Voix TTS Gemini |
 | `--angle` | — | Impose un angle marketing (sinon choisi stratégiquement, voir plus bas) |
 | `--scenario` | — | Fichier JSON de scénario écrit à la main (voir `scenarios/exemple.json`) |
+| `--anims` | `none` | Animations HTML/JS intégrées au montage : `overlay`, `scene`, `highlight` (séparées par des virgules), `all` ou `none` — voir ci-dessous |
 | `--from-step` | — | Reprend à partir d'une étape (`script`/`voice`/`video`/`subs`/`assemble`) sans tout regénérer |
 | `--force` | — | Régénère tout depuis zéro |
 
@@ -82,6 +83,46 @@ sous-titres karaoké brûlés, musique de fond, CTA final mis en avant, audio sy
 Entre deux exécutions, `run_pipeline.py` nettoie automatiquement ce qui ne correspond plus à la
 demande courante : reels excédentaires d'un run précédent avec un `--n` plus grand, fichiers d'un
 `--capture-mode` différent, audio/sous-titres périmés si le texte a changé.
+
+## Animations HTML/JS (`--anims`)
+
+Des gabarits d'animation (`assets/anim/*.html`, GSAP embarqué dans `assets/anim/vendor/`) sont
+rendus image par image par Playwright (`scripts/render_js_anim.py`), puis intégrés au montage.
+Trois modes, cumulables :
+
+| Mode | Gabarit par défaut | Effet | Capture |
+|---|---|---|---|
+| `overlay` | `score_ats` | Surimpression (jauge du score ATS qui monte de 42 à 94, coches) sur la scène qui parle d'ATS/optimisation, accélérée si besoin pour tenir dans sa scène | tous modes |
+| `scene` | `cta` | La dernière scène devient un plan animé plein cadre (logo, titre, bouton), sur fond de sa capture floutée | `screenshots` |
+| `highlight` | `highlight` | Cadre lumineux animé autour de la zone montrée, au début de chaque scène (suit le zoom) | `screenshots` |
+
+```bash
+python scripts/run_pipeline.py --n 3 --saas-url https://tonapp.com/demo --capture-mode screenshots --anims all
+python scripts/run_pipeline.py ... --anims overlay,highlight
+```
+
+Le scénario peut placer lui-même les animations et régler leurs textes et valeurs, via les champs
+`overlay` et `anim` d'une scène (`true`, `"gabarit?param=valeur"` ou un objet) :
+
+```json
+{"feature": "checklist", "texte": "...", "overlay": {"template": "score_ats", "from": 35, "to": 92}},
+{"feature": "apercu_cv", "texte": "...", "anim": {"template": "cta", "title": "Ton CV en 2 minutes", "button": "Essaie OpusCV"}}
+```
+
+Paramètres des gabarits : `score_ats` (`from`, `to`, `label`, `lines` séparées par `|`, `cta`),
+`cta` (`brand`, `title`, `sub`, `button`, `bg`). Pour prévisualiser un gabarit, ouvre simplement le
+fichier `.html` dans un navigateur (lecture en boucle) ; pour le rendre à part :
+
+```bash
+python scripts/render_js_anim.py --spec "score_ats?from=35&to=92" --out /tmp/frames   # PNG transparents
+python scripts/render_js_anim.py --spec cta --duration 4 --out /tmp/cta.mp4
+```
+
+Nouveau gabarit : une page 1080×1920 qui charge `vendor/gsap.min.js` et `common.js`, construit une
+timeline GSAP en pause et appelle `expose(tl)` (voir `common.js` pour le contrat).
+
+`highlight` a besoin de la position des cartes, enregistrée dans `captures.json` par les captures
+récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
 ## Ce que génère l'IA (Gemini)
 

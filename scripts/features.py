@@ -157,18 +157,23 @@ async def _click_dock(ctx: DemoContext, label: str) -> bool:
     return True
 
 
-async def _capture_scene(page, out_dir: Path, index: int, name: str, element) -> Path:
+async def _capture_scene(page, out_dir: Path, index: int, name: str, element,
+                         meta: dict | None = None) -> Path:
     """
     Capture une "scene" : le viewport entier (fond, pour le flou) + l'element
     precis (carte nette) -- composes en une seule image verticale prete a
-    animer par scene_compose.compose_scene().
+    animer par scene_compose.compose_scene(). meta (optionnel) recoit
+    "card" = [x, y, w, h] de la carte dans l'image, pour le souligne anime.
     """
     from PIL import Image
-    from scene_compose import compose_scene
+    from scene_compose import card_rect, compose_scene
 
     bg_bytes = await page.screenshot()
     fg_bytes = await element.screenshot()
-    scene = compose_scene(Image.open(BytesIO(bg_bytes)), Image.open(BytesIO(fg_bytes)))
+    fg = Image.open(BytesIO(fg_bytes))
+    scene = compose_scene(Image.open(BytesIO(bg_bytes)), fg)
+    if meta is not None:
+        meta["card"] = list(card_rect(fg.size))
     path = out_dir / f"{index:02d}_{name}.png"
     scene.save(path)
     return path

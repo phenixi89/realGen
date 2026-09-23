@@ -191,8 +191,9 @@ async def capture_pc_screenshots(page, out_dir: Path, feature_ids: list[str] | N
     shots: list[dict] = []
 
     async def shoot(feature_id: str, name: str, element):
-        path = await features_module._capture_scene(page, out_dir, len(shots) + 1, name, element)
-        shots.append({"feature": feature_id, "name": name, "file": path.name})
+        meta: dict = {}
+        path = await features_module._capture_scene(page, out_dir, len(shots) + 1, name, element, meta)
+        shots.append({"feature": feature_id, "name": name, "file": path.name, **meta})
 
     await walk_features(page, shoot, feature_ids, job_offer=job_offer, theme_style=theme_style)
     (out_dir / "captures.json").write_text(json.dumps(shots, ensure_ascii=False, indent=2), encoding="utf-8")
