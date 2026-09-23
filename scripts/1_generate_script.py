@@ -51,6 +51,14 @@ ANGLES = [
     "comparatif : reecrire son CV a la main (long, stressant) vs l'optimiser avec l'IA (rapide)",
     "33 themes de mise en page : un CV qui sort du lot sans sacrifier la lisibilite ATS",
     "de l'edition a l'envoi : relecture, apercu PDF fidele, partage par lien",
+    # Angles "un seul killer feature, a fond" : message unique plutot qu'un
+    # tour d'horizon, pour tester chaque fonctionnalite forte independamment
+    # (retention/conversion se comparent alors reel a reel, feature a feature).
+    "killer feature : la lettre de motivation generee par l'IA, calee sur l'offre et le CV, en quelques secondes",
+    "killer feature : la simulation d'entretien IA, qui anticipe les questions du recruteur avant le grand jour",
+    "killer feature : partager son CV par un simple lien, sans piece jointe ni compte cote recruteur",
+    "killer feature : reorganiser tout son CV par glisser-deposer, sans mise en page a refaire a la main",
+    "killer feature : l'apercu PDF fidele en un clic, zero surprise a l'impression ou a l'envoi",
 ]
 
 PRODUCT_CONTEXT = """Produit : OpusCV (SaaS opuscv.tech), une application qui analyse un CV existant
@@ -88,6 +96,17 @@ def build_prompt(angle: str, duration: int, forced: list[dict] | None, feedback:
     target, lo_w, hi_w = word_budget(duration)
     lo_s, hi_s = scene_bounds(duration)
 
+    # Un angle "killer feature : ..." vise UNE fonctionnalite en profondeur
+    # (plusieurs scenes peuvent la montrer sous differents etats/ecrans) --
+    # a l'oppose d'un tour d'horizon, ou changer de fonctionnalite a chaque
+    # scene evite justement de s'attarder sur un seul aspect du produit.
+    if angle.startswith("killer feature"):
+        variety_rule = ("concentre-toi sur UNE SEULE fonctionnalite (celle de l'angle) : plusieurs "
+                         "scenes peuvent la montrer sous des etats/angles differents, la feature peut "
+                         "donc se repeter d'une scene a l'autre ;")
+    else:
+        variety_rule = "varie les fonctionnalites, jamais la meme dans deux scenes consecutives ;"
+
     prompt = f"""Tu es copywriter specialise en contenu court viral (TikTok/Instagram Reels).
 Base-toi UNIQUEMENT sur ces informations produit reelles, n'invente aucune fonctionnalite :
 
@@ -107,7 +126,7 @@ Contraintes :
 - scene 1 = HOOK qui arrete le scroll (12 mots max) ; derniere scene = CTA court
   (ex : "Essaie gratuitement, lien en bio.") ;
 - 1 a 2 phrases par scene, ton oral et naturel, pas publicitaire ;
-- varie les fonctionnalites, jamais la meme dans deux scenes consecutives ;
+- {variety_rule}
 - pas d'emoji, pas de hashtag, pas d'indication de mise en scene dans les textes.
 
 Angle du reel : {angle}
