@@ -27,6 +27,20 @@ on:
           - video_desktop
         required: false
         default: video
+      anims:
+        description: "Animations HTML/JS (scene/highlight : capture_mode screenshots uniquement)"
+        type: choice
+        options:
+          - none
+          - all
+          - overlay
+          - scene
+          - highlight
+          - overlay,scene
+          - overlay,highlight
+          - scene,highlight
+        required: false
+        default: none
       from_step:
         description: "Regenerer a partir de cette etape (et les suivantes), ignore le cache pour elles. Vide = reprise normale."
         type: choice
@@ -131,6 +145,7 @@ jobs:
             --saas-url "${{ vars.SAAS_URL }}" \
             --voice "${{ github.event.inputs.voice || 'Kore' }}" \
             --capture-mode "${{ github.event.inputs.capture_mode || 'video' }}" \
+            --anims "${{ github.event.inputs.anims || 'none' }}" \
             "${extra[@]}" \
             ${{ github.event.inputs.from_step && format('--from-step {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }}
