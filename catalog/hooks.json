@@ -1,12 +1,65 @@
 {
   "_doc": "Styles d'accroche (2 premieres secondes). Un style est tire par reel en evitant les plus recents, et impose a Gemini pour la scene 1 et le texte affiche a l'ecran (accroche_ecran). Ajouter un style = ajouter une entree.",
   "hooks": [
-    {"id": "question_choc", "consigne": "Une question directe qui touche une peur ou une frustration du chercheur d'emploi.", "exemple": "Pourquoi personne ne répond à tes candidatures ?"},
-    {"id": "chiffre", "consigne": "Un chiffre marquant et plausible (sans inventer de statistique précise sur OpusCV), présenté comme un constat.", "exemple": "75 % des CV ne sont jamais lus par un humain."},
-    {"id": "erreur", "consigne": "Pointer une erreur que le spectateur fait probablement sans le savoir.", "exemple": "Tu fais sûrement cette erreur sur ton CV."},
-    {"id": "contre_intuitif", "consigne": "Une affirmation qui contredit une idée reçue, pour créer la surprise.", "exemple": "Un beau CV peut te coûter l'entretien."},
-    {"id": "pov", "consigne": "Format 'POV :' qui met le spectateur dans une situation vécue.", "exemple": "POV : tu as postulé à 50 offres et zéro réponse."},
-    {"id": "promesse", "consigne": "Une promesse concrète et limitée dans le temps, crédible.", "exemple": "En 2 minutes, ton CV passe les filtres ATS."},
-    {"id": "secret", "consigne": "Révéler un fonctionnement caché du recrutement.", "exemple": "Ce que les recruteurs ne te disent jamais sur ton CV."}
+    {
+      "id": "question_choc",
+      "consigne": "Une question directe qui touche une peur ou une frustration du chercheur d'emploi.",
+      "exemple": "Pourquoi personne ne répond à tes candidatures ?"
+    },
+    {
+      "id": "chiffre",
+      "consigne": "Un chiffre marquant et plausible (sans inventer de statistique précise sur OpusCV), présenté comme un constat.",
+      "exemple": "75 % des CV ne sont jamais lus par un humain."
+    },
+    {
+      "id": "erreur",
+      "consigne": "Pointer une erreur que le spectateur fait probablement sans le savoir.",
+      "exemple": "Tu fais sûrement cette erreur sur ton CV."
+    },
+    {
+      "id": "contre_intuitif",
+      "consigne": "Une affirmation qui contredit une idée reçue, pour créer la surprise.",
+      "exemple": "Un beau CV peut te coûter l'entretien."
+    },
+    {
+      "id": "pov",
+      "consigne": "Format 'POV :' qui met le spectateur dans une situation vécue.",
+      "exemple": "POV : tu as postulé à 50 offres et zéro réponse."
+    },
+    {
+      "id": "promesse",
+      "consigne": "Une promesse concrète et limitée dans le temps, crédible.",
+      "exemple": "En 2 minutes, ton CV passe les filtres ATS."
+    },
+    {
+      "id": "secret",
+      "consigne": "Révéler un fonctionnement caché du recrutement.",
+      "exemple": "Ce que les recruteurs ne te disent jamais sur ton CV."
+    },
+    {
+      "id": "liste_numerotee",
+      "consigne": "Annoncer un nombre précis d'éléments, pour promettre une vidéo structurée et courte.",
+      "exemple": "3 phrases à supprimer de ton CV aujourd'hui."
+    },
+    {
+      "id": "interpellation_metier",
+      "consigne": "Interpeller directement un profil précis (métier, situation) pour qu'il se sente visé.",
+      "exemple": "Tu es en reconversion ? Écoute bien ça."
+    },
+    {
+      "id": "avant_apres_express",
+      "consigne": "Montrer d'entrée le contraste avant/après en une phrase.",
+      "exemple": "Même expérience, deux CV : un seul décroche l'entretien."
+    },
+    {
+      "id": "confidence_recruteur",
+      "consigne": "Parler comme un recruteur qui fait une confidence.",
+      "exemple": "En tant que recruteur, voilà ce que je regarde en premier."
+    },
+    {
+      "id": "defi",
+      "consigne": "Lancer un défi ou un test au spectateur.",
+      "exemple": "Ouvre ton CV. Si tu vois ce mot, supprime-le."
+    }
   ]
 }

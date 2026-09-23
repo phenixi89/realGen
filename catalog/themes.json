@@ -5,41 +5,217 @@
       "id": "violet_nuit",
       "nom": "Violet nuit (couleurs OpusCV)",
       "poids": 3,
-      "couleurs": {"primaire": "#6c47ff", "secondaire": "#b547ff", "fond": "#140f2e", "texte": "#ffffff", "surligne": "#ffd700", "contour": "#000000", "pastille": "#111827"},
+      "couleurs": {
+        "primaire": "#6c47ff",
+        "secondaire": "#b547ff",
+        "fond": "#140f2e",
+        "texte": "#ffffff",
+        "surligne": "#ffd700",
+        "contour": "#000000",
+        "pastille": "#111827"
+      },
       "police_titre": "Poppins-ExtraBold.ttf",
       "police_texte": "Poppins-Bold.ttf",
-      "sous_titres": {"taille": 60, "majuscules": false, "contour": 4},
-      "musique": [110.00, 130.81, 164.81, 196.00]
+      "sous_titres": {
+        "taille": 60,
+        "majuscules": false,
+        "contour": 4
+      },
+      "musique": [
+        110.0,
+        130.81,
+        164.81,
+        196.0
+      ]
     },
     {
       "id": "corail_energie",
       "nom": "Corail energique",
       "poids": 2,
-      "couleurs": {"primaire": "#ff5a5f", "secondaire": "#ff9f43", "fond": "#1f1020", "texte": "#ffffff", "surligne": "#ffe066", "contour": "#000000", "pastille": "#2b1320"},
+      "couleurs": {
+        "primaire": "#ff5a5f",
+        "secondaire": "#ff9f43",
+        "fond": "#1f1020",
+        "texte": "#ffffff",
+        "surligne": "#ffe066",
+        "contour": "#000000",
+        "pastille": "#2b1320"
+      },
       "police_titre": "Anton-Regular.ttf",
       "police_texte": "Poppins-ExtraBold.ttf",
-      "sous_titres": {"taille": 62, "majuscules": true, "contour": 5},
-      "musique": [146.83, 185.00, 220.00, 277.18]
+      "sous_titres": {
+        "taille": 62,
+        "majuscules": true,
+        "contour": 5
+      },
+      "musique": [
+        146.83,
+        185.0,
+        220.0,
+        277.18
+      ]
     },
     {
       "id": "vert_confiance",
       "nom": "Vert confiance",
       "poids": 2,
-      "couleurs": {"primaire": "#10b981", "secondaire": "#06b6d4", "fond": "#06201a", "texte": "#ffffff", "surligne": "#bef264", "contour": "#000000", "pastille": "#0b2e25"},
+      "couleurs": {
+        "primaire": "#10b981",
+        "secondaire": "#06b6d4",
+        "fond": "#06201a",
+        "texte": "#ffffff",
+        "surligne": "#bef264",
+        "contour": "#000000",
+        "pastille": "#0b2e25"
+      },
       "police_titre": "Poppins-ExtraBold.ttf",
       "police_texte": "Poppins-Bold.ttf",
-      "sous_titres": {"taille": 58, "majuscules": false, "contour": 4},
-      "musique": [130.81, 164.81, 196.00, 246.94]
+      "sous_titres": {
+        "taille": 58,
+        "majuscules": false,
+        "contour": 4
+      },
+      "musique": [
+        130.81,
+        164.81,
+        196.0,
+        246.94
+      ]
     },
     {
       "id": "bleu_corporate",
       "nom": "Bleu corporate",
       "poids": 2,
-      "couleurs": {"primaire": "#2563eb", "secondaire": "#38bdf8", "fond": "#0b1530", "texte": "#ffffff", "surligne": "#fde047", "contour": "#000000", "pastille": "#0f1d3d"},
+      "couleurs": {
+        "primaire": "#2563eb",
+        "secondaire": "#38bdf8",
+        "fond": "#0b1530",
+        "texte": "#ffffff",
+        "surligne": "#fde047",
+        "contour": "#000000",
+        "pastille": "#0f1d3d"
+      },
       "police_titre": "Anton-Regular.ttf",
       "police_texte": "Poppins-Bold.ttf",
-      "sous_titres": {"taille": 60, "majuscules": true, "contour": 4},
-      "musique": [98.00, 123.47, 146.83, 185.00]
+      "sous_titres": {
+        "taille": 60,
+        "majuscules": true,
+        "contour": 4
+      },
+      "musique": [
+        98.0,
+        123.47,
+        146.83,
+        185.0
+      ]
+    },
+    {
+      "id": "noir_or",
+      "nom": "Noir et or premium",
+      "poids": 1,
+      "couleurs": {
+        "primaire": "#d4a017",
+        "secondaire": "#f5d06f",
+        "fond": "#0b0b0f",
+        "texte": "#ffffff",
+        "surligne": "#f5d06f",
+        "contour": "#000000",
+        "pastille": "#1a1a22"
+      },
+      "police_titre": "Anton-Regular.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {
+        "taille": 60,
+        "majuscules": true,
+        "contour": 4
+      },
+      "musique": [
+        103.83,
+        130.81,
+        155.56,
+        196.0
+      ]
+    },
+    {
+      "id": "rose_pop",
+      "nom": "Rose pop",
+      "poids": 1,
+      "couleurs": {
+        "primaire": "#ec4899",
+        "secondaire": "#a855f7",
+        "fond": "#1d0b1c",
+        "texte": "#ffffff",
+        "surligne": "#fde047",
+        "contour": "#000000",
+        "pastille": "#2a1028"
+      },
+      "police_titre": "Poppins-ExtraBold.ttf",
+      "police_texte": "Poppins-ExtraBold.ttf",
+      "sous_titres": {
+        "taille": 62,
+        "majuscules": false,
+        "contour": 5
+      },
+      "musique": [
+        174.61,
+        220.0,
+        261.63,
+        329.63
+      ]
+    },
+    {
+      "id": "ardoise_indigo",
+      "nom": "Ardoise et indigo",
+      "poids": 1,
+      "couleurs": {
+        "primaire": "#6366f1",
+        "secondaire": "#22d3ee",
+        "fond": "#111827",
+        "texte": "#ffffff",
+        "surligne": "#facc15",
+        "contour": "#000000",
+        "pastille": "#1f2937"
+      },
+      "police_titre": "Poppins-ExtraBold.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {
+        "taille": 56,
+        "majuscules": false,
+        "contour": 3
+      },
+      "musique": [
+        123.47,
+        155.56,
+        185.0,
+        233.08
+      ]
+    },
+    {
+      "id": "orange_sunset",
+      "nom": "Orange sunset",
+      "poids": 1,
+      "couleurs": {
+        "primaire": "#f97316",
+        "secondaire": "#e11d48",
+        "fond": "#1c0f0a",
+        "texte": "#ffffff",
+        "surligne": "#fef08a",
+        "contour": "#000000",
+        "pastille": "#2a150c"
+      },
+      "police_titre": "Anton-Regular.ttf",
+      "police_texte": "Poppins-ExtraBold.ttf",
+      "sous_titres": {
+        "taille": 62,
+        "majuscules": true,
+        "contour": 5
+      },
+      "musique": [
+        110.0,
+        138.59,
+        164.81,
+        207.65
+      ]
     }
   ]
 }

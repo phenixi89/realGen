@@ -1,35 +1,416 @@
 {
   "_doc": "Sujets des reels. categorie : 'conseil' ou 'produit' (doit correspondre a la categorie du format). tags : croises avec formats.json 'sujets'. Un sujet est choisi par Gemini parmi ceux compatibles avec le format, en evitant les plus recents. Ajouter un sujet = ajouter une entree (id unique).",
   "sujets": [
-    {"id": "avant_apres_produit", "categorie": "produit", "tags": ["produit"], "texte": "avant/après : CV mal fait vs CV optimisé par l'outil (points à corriger, relecture, aperçu final)"},
-    {"id": "trois_erreurs_produit", "categorie": "produit", "tags": ["produit"], "texte": "3 erreurs de CV que les recruteurs détestent, + comment l'outil les corrige"},
-    {"id": "un_cv_par_offre", "categorie": "produit", "tags": ["produit"], "texte": "un CV par offre : adapter son CV et sa lettre de motivation à chaque candidature en quelques secondes"},
-    {"id": "temoignage_ats", "categorie": "produit", "tags": ["produit"], "texte": "témoignage type : 'mon CV était invisible pour les ATS, maintenant je décroche des entretiens'"},
-    {"id": "comparatif_main_ia", "categorie": "produit", "tags": ["produit"], "texte": "comparatif : réécrire son CV à la main (long, stressant) vs l'optimiser avec l'IA (rapide)"},
-    {"id": "themes_design", "categorie": "produit", "tags": ["produit"], "texte": "33 thèmes de mise en page : un CV qui sort du lot sans sacrifier la lisibilité ATS"},
-    {"id": "edition_envoi", "categorie": "produit", "tags": ["produit"], "texte": "de l'édition à l'envoi : relecture, aperçu PDF fidèle, partage par lien"},
-    {"id": "kf_lettre", "categorie": "produit", "tags": ["produit"], "texte": "killer feature : la lettre de motivation générée par l'IA, calée sur l'offre et le CV, en quelques secondes"},
-    {"id": "kf_entretien", "categorie": "produit", "tags": ["produit"], "texte": "killer feature : la simulation d'entretien IA, qui anticipe les questions du recruteur avant le grand jour"},
-    {"id": "kf_partage", "categorie": "produit", "tags": ["produit"], "texte": "killer feature : partager son CV par un simple lien, sans pièce jointe ni compte côté recruteur"},
-    {"id": "kf_glisser_deposer", "categorie": "produit", "tags": ["produit"], "texte": "killer feature : réorganiser tout son CV par glisser-déposer, sans mise en page à refaire à la main"},
-    {"id": "kf_apercu_pdf", "categorie": "produit", "tags": ["produit"], "texte": "killer feature : l'aperçu PDF fidèle en un clic, zéro surprise à l'impression ou à l'envoi"},
-
-    {"id": "ats_fonctionnement", "categorie": "conseil", "tags": ["ats"], "texte": "comment un logiciel ATS lit (et rejette) un CV avant qu'un humain le voie"},
-    {"id": "ats_mise_en_page", "categorie": "conseil", "tags": ["ats", "cv"], "texte": "les mises en page qui cassent la lecture ATS : colonnes, tableaux, icônes, texte dans des images"},
-    {"id": "mots_cles_offre", "categorie": "conseil", "tags": ["ats", "candidature"], "texte": "reprendre les bons mots-clés de l'offre dans son CV sans faire de copier-coller"},
-    {"id": "titre_cv", "categorie": "conseil", "tags": ["cv"], "texte": "le titre du CV : la ligne la plus lue, et la plus souvent ratée"},
-    {"id": "resultats_chiffres", "categorie": "conseil", "tags": ["cv"], "texte": "transformer ses missions en résultats chiffrés (verbes d'action, impact, chiffres)"},
-    {"id": "verbes_faibles", "categorie": "conseil", "tags": ["cv", "lettre"], "texte": "les mots et formules creuses à bannir d'un CV (dynamique, motivé, force de proposition...)"},
-    {"id": "photo_cv", "categorie": "conseil", "tags": ["cv"], "texte": "photo sur le CV en France : quand la mettre, quand l'enlever"},
-    {"id": "longueur_cv", "categorie": "conseil", "tags": ["cv"], "texte": "une ou deux pages : la vraie règle selon l'expérience"},
-    {"id": "trous_cv", "categorie": "conseil", "tags": ["cv", "entretien"], "texte": "expliquer un trou dans son CV sans se justifier"},
-    {"id": "reconversion", "categorie": "conseil", "tags": ["cv", "candidature"], "texte": "faire un CV de reconversion : mettre en avant les compétences transférables"},
-    {"id": "competences", "categorie": "conseil", "tags": ["cv", "ats"], "texte": "la section compétences : hard skills, soft skills et ce que les recruteurs cherchent vraiment"},
-    {"id": "lettre_structure", "categorie": "conseil", "tags": ["lettre"], "texte": "une lettre de motivation courte qui se fait lire : la structure vous / moi / nous"},
-    {"id": "entretien_defauts", "categorie": "conseil", "tags": ["entretien"], "texte": "répondre à 'quels sont vos défauts ?' sans réponse bateau"},
-    {"id": "entretien_presentez_vous", "categorie": "conseil", "tags": ["entretien"], "texte": "'présentez-vous' : le pitch de 60 secondes qui donne envie"},
-    {"id": "relance", "categorie": "conseil", "tags": ["candidature"], "texte": "relancer après une candidature sans réponse : quand et comment"},
-    {"id": "linkedin_coherence", "categorie": "conseil", "tags": ["linkedin", "cv"], "texte": "rendre son profil LinkedIn cohérent avec son CV (titre, résumé, expériences)"},
-    {"id": "candidature_masse", "categorie": "conseil", "tags": ["candidature"], "texte": "pourquoi envoyer le même CV à 50 offres ne marche pas"}
+    {
+      "id": "avant_apres_produit",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "avant/après : CV mal fait vs CV optimisé par l'outil (points à corriger, relecture, aperçu final)"
+    },
+    {
+      "id": "trois_erreurs_produit",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "3 erreurs de CV que les recruteurs détestent, + comment l'outil les corrige"
+    },
+    {
+      "id": "un_cv_par_offre",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "un CV par offre : adapter son CV et sa lettre de motivation à chaque candidature en quelques secondes"
+    },
+    {
+      "id": "temoignage_ats",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "témoignage type : 'mon CV était invisible pour les ATS, maintenant je décroche des entretiens'"
+    },
+    {
+      "id": "comparatif_main_ia",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "comparatif : réécrire son CV à la main (long, stressant) vs l'optimiser avec l'IA (rapide)"
+    },
+    {
+      "id": "themes_design",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "33 thèmes de mise en page : un CV qui sort du lot sans sacrifier la lisibilité ATS"
+    },
+    {
+      "id": "edition_envoi",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "de l'édition à l'envoi : relecture, aperçu PDF fidèle, partage par lien"
+    },
+    {
+      "id": "kf_lettre",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : la lettre de motivation générée par l'IA, calée sur l'offre et le CV, en quelques secondes"
+    },
+    {
+      "id": "kf_entretien",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : la simulation d'entretien IA, qui anticipe les questions du recruteur avant le grand jour"
+    },
+    {
+      "id": "kf_partage",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : partager son CV par un simple lien, sans pièce jointe ni compte côté recruteur"
+    },
+    {
+      "id": "kf_glisser_deposer",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : réorganiser tout son CV par glisser-déposer, sans mise en page à refaire à la main"
+    },
+    {
+      "id": "kf_apercu_pdf",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : l'aperçu PDF fidèle en un clic, zéro surprise à l'impression ou à l'envoi"
+    },
+    {
+      "id": "ats_fonctionnement",
+      "categorie": "conseil",
+      "tags": [
+        "ats"
+      ],
+      "texte": "comment un logiciel ATS lit (et rejette) un CV avant qu'un humain le voie"
+    },
+    {
+      "id": "ats_mise_en_page",
+      "categorie": "conseil",
+      "tags": [
+        "ats",
+        "cv"
+      ],
+      "texte": "les mises en page qui cassent la lecture ATS : colonnes, tableaux, icônes, texte dans des images"
+    },
+    {
+      "id": "mots_cles_offre",
+      "categorie": "conseil",
+      "tags": [
+        "ats",
+        "candidature"
+      ],
+      "texte": "reprendre les bons mots-clés de l'offre dans son CV sans faire de copier-coller"
+    },
+    {
+      "id": "titre_cv",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "le titre du CV : la ligne la plus lue, et la plus souvent ratée"
+    },
+    {
+      "id": "resultats_chiffres",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "transformer ses missions en résultats chiffrés (verbes d'action, impact, chiffres)"
+    },
+    {
+      "id": "verbes_faibles",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "lettre"
+      ],
+      "texte": "les mots et formules creuses à bannir d'un CV (dynamique, motivé, force de proposition...)"
+    },
+    {
+      "id": "photo_cv",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "photo sur le CV en France : quand la mettre, quand l'enlever"
+    },
+    {
+      "id": "longueur_cv",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "une ou deux pages : la vraie règle selon l'expérience"
+    },
+    {
+      "id": "trous_cv",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "entretien"
+      ],
+      "texte": "expliquer un trou dans son CV sans se justifier"
+    },
+    {
+      "id": "reconversion",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "faire un CV de reconversion : mettre en avant les compétences transférables"
+    },
+    {
+      "id": "competences",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "ats"
+      ],
+      "texte": "la section compétences : hard skills, soft skills et ce que les recruteurs cherchent vraiment"
+    },
+    {
+      "id": "lettre_structure",
+      "categorie": "conseil",
+      "tags": [
+        "lettre"
+      ],
+      "texte": "une lettre de motivation courte qui se fait lire : la structure vous / moi / nous"
+    },
+    {
+      "id": "entretien_defauts",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "répondre à 'quels sont vos défauts ?' sans réponse bateau"
+    },
+    {
+      "id": "entretien_presentez_vous",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "'présentez-vous' : le pitch de 60 secondes qui donne envie"
+    },
+    {
+      "id": "relance",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "relancer après une candidature sans réponse : quand et comment"
+    },
+    {
+      "id": "linkedin_coherence",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin",
+        "cv"
+      ],
+      "texte": "rendre son profil LinkedIn cohérent avec son CV (titre, résumé, expériences)"
+    },
+    {
+      "id": "candidature_masse",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "pourquoi envoyer le même CV à 50 offres ne marche pas"
+    },
+    {
+      "id": "premier_emploi",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "premier emploi ou stage : remplir un CV quand on n'a (presque) pas d'expérience"
+    },
+    {
+      "id": "alternance",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV et candidature pour une alternance : ce que les écoles et entreprises attendent"
+    },
+    {
+      "id": "senior",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV après 45 ans : valoriser l'expérience sans paraître dépassé"
+    },
+    {
+      "id": "freelance_vers_cdi",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "reconversion"
+      ],
+      "texte": "passer de freelance à CDI : présenter ses missions sans effrayer le recruteur"
+    },
+    {
+      "id": "soft_skills_preuves",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "entretien"
+      ],
+      "texte": "prouver ses soft skills avec des exemples concrets au lieu de les lister"
+    },
+    {
+      "id": "centres_interet",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "la rubrique centres d'intérêt : utile ou à supprimer ?"
+    },
+    {
+      "id": "email_candidature",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "lettre"
+      ],
+      "texte": "le mail d'envoi de candidature : objet, corps et pièce jointe qui donnent envie d'ouvrir"
+    },
+    {
+      "id": "nom_fichier",
+      "categorie": "conseil",
+      "tags": [
+        "ats",
+        "candidature"
+      ],
+      "texte": "le nom du fichier et le format PDF : le détail qui fait pro (ou pas)"
+    },
+    {
+      "id": "candidature_spontanee",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "lettre"
+      ],
+      "texte": "réussir une candidature spontanée qui obtient une réponse"
+    },
+    {
+      "id": "entretien_pretentions",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "répondre à la question des prétentions salariales sans se sous-vendre"
+    },
+    {
+      "id": "entretien_questions_fin",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "les questions à poser en fin d'entretien pour marquer des points"
+    },
+    {
+      "id": "entretien_visio",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "entretien en visio : les erreurs techniques et de posture qui coûtent cher"
+    },
+    {
+      "id": "linkedin_titre",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin"
+      ],
+      "texte": "le titre LinkedIn qui attire les recruteurs (et les mots-clés à y mettre)"
+    },
+    {
+      "id": "linkedin_recommandations",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin",
+        "candidature"
+      ],
+      "texte": "obtenir des recommandations LinkedIn qui pèsent vraiment"
+    },
+    {
+      "id": "orthographe",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "lettre"
+      ],
+      "texte": "les fautes d'orthographe qui éliminent un CV, et comment les éviter"
+    },
+    {
+      "id": "dates_format",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "ats"
+      ],
+      "texte": "dates, intitulés de poste et ordre chronologique : les conventions que les ATS comprennent"
+    },
+    {
+      "id": "cv_ia_detecte",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "lettre"
+      ],
+      "texte": "CV et lettre écrits par IA : ce qui se voit et comment garder ta voix"
+    },
+    {
+      "id": "kf_relecture",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : la relecture orthographique et de style en un clic"
+    },
+    {
+      "id": "kf_checklist",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : la checklist qui liste par priorité tout ce qui bloque ton CV"
+    },
+    {
+      "id": "kf_adapter_offre",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : coller une offre et obtenir un CV adapté à ses mots-clés"
+    }
   ]
 }
