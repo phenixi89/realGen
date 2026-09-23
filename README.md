@@ -228,3 +228,11 @@ si le premier chargement dépasse le délai habituel.
 - Whisper tourne en CPU (`--model small` par défaut) ; largement suffisant pour des reels de 15-30s.
 - Aucun GPU nécessaire pour ce pipeline (pas d'avatar animé, juste du screen-record + montage).
 - La musique de fond est synthétisée localement (pas de fichier audio externe) : aucune question de droits.
+
+## Console web (docs/index.html)
+
+Interface pour lancer le workflow, suivre les runs et regarder/télécharger les
+reels avec leur légende. Page statique : activer GitHub Pages (Settings → Pages →
+branche `main`, dossier `/docs`) ou ouvrir le fichier en local. Au premier
+accès, coller un token GitHub *fine-grained* limité à ce dépôt (Actions :
+lecture/écriture, Contents : lecture) ; il reste dans le navigateur.

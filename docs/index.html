@@ -1,0 +1,243 @@
+<!doctype html>
+<!--
+  Console realGen : lance le workflow "Generate Reels", suit les runs et
+  affiche les reels produits (artefact "output"). Page statique, sans serveur :
+  elle parle directement a l'API GitHub avec un token fine-grained stocke
+  dans le navigateur (localStorage) -- droits requis sur le depot :
+  Actions (lecture/ecriture) + Contents (lecture).
+  Publiable via GitHub Pages (dossier docs/) ou ouvrable en local.
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Console realGen</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--bg:#f6f5fb;--card:#fff;--fg:#1b1733;--muted:#6b6785;--line:#e3e0f0;--acc:#6c47ff;--acc2:#b547ff;--ok:#16a34a;--ko:#dc2626;--run:#d97706}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#110d24;--card:#1b1636;--fg:#f1efff;--muted:#a09bc0;--line:#2e2852;--acc:#8b6cff;--acc2:#c77dff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:18px 16px;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff}
+header h1{margin:0;font-size:20px}header p{margin:2px 0 0;opacity:.85;font-size:13px}
+main{max-width:980px;margin:0 auto;padding:16px}
+nav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+nav button{flex:1;min-width:90px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 12px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+small,.muted{color:var(--muted);font-size:12px;font-weight:400}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);font:inherit}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 16px}
+.chk{display:flex;align-items:center;gap:8px;font-weight:500}.chk input{width:auto}
+button{padding:9px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
+button.primary,nav button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+.run{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.run:first-child{border-top:0}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.run .info{flex:1;min-width:180px}
+.steps{font-size:12px;color:var(--muted);margin-top:3px}
+.reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.reel video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}
+.reel pre{white-space:pre-wrap;font:12px/1.4 inherit;background:var(--bg);padding:8px;border-radius:8px;max-height:160px;overflow:auto}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.hidden{display:none}
+#msg{position:fixed;left:16px;right:16px;bottom:16px;max-width:560px;margin:auto;padding:12px 14px;border-radius:10px;background:var(--fg);color:var(--bg);display:none}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:12px;margin:2px}
+</style></head><body>
+<header><h1>Console realGen</h1><p>Reels OpusCV : lancer, suivre, récupérer</p></header>
+<main>
+<section id="login" class="card hidden">
+  <h2>Connexion GitHub</h2>
+  <p class="muted">Crée un token <b>fine-grained</b> (GitHub → Settings → Developer settings → Fine-grained tokens), limité au dépôt <b>realGen</b>, permissions <b>Actions : Read and write</b> et <b>Contents : Read-only</b>. Il reste dans ce navigateur uniquement.</p>
+  <label>Dépôt</label><input id="repo" value="phenixi89/realGen">
+  <label>Token</label><input id="token" type="password" placeholder="github_pat_...">
+  <div class="row" style="margin-top:12px"><button class="primary" onclick="saveLogin()">Se connecter</button></div>
+</section>
+
+<div id="app" class="hidden">
+<nav><button data-tab="launch" class="on">🚀 Lancer</button><button data-tab="runs">⏱ Runs</button><button data-tab="reels">🎬 Reels</button><button data-tab="catalog">📚 Catalogue</button><button onclick="logout()">Déconnexion</button></nav>
+
+<section id="tab-launch" class="card">
+  <h2>Nouveau lot de reels</h2>
+  <div class="grid">
+    <div><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
+    <div><label>Durée</label><select id="f_duration"><option>15</option><option selected>30</option><option>45</option><option>60</option></select></div>
+    <div><label>Format <small>vide = auto</small></label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
+    <div><label>Thème visuel <small>vide = rotation</small></label><select id="f_theme"><option value="">Rotation automatique</option></select></div>
+    <div><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
+    <div><label>Capture</label><select id="f_capture_mode">
+      <option value="video">Vidéo mobile</option><option value="screenshots">Captures desktop + zoom (animations complètes)</option><option value="video_desktop">Vidéo desktop recadrée</option></select></div>
+    <div><label>Animations <small>scene/highlight : mode captures</small></label><select id="f_anims">
+      <option value="none">Aucune</option><option value="all">Toutes</option><option>overlay</option><option>scene</option><option>highlight</option><option>cursor</option>
+      <option>overlay,scene</option><option>overlay,highlight</option><option>scene,highlight</option><option>overlay,cursor</option><option>scene,cursor</option></select></div>
+    <div><label>Reprendre à partir de</label><select id="f_from_step">
+      <option value="">Reprise normale (cache)</option>
+      <option value="script">script : tout nouveau (texte + voix Gemini)</option>
+      <option value="voice">voice : même texte, nouvelle voix</option>
+      <option value="video">video : même texte et voix, captures refaites</option>
+      <option value="subs">subs : sous-titres + montage</option>
+      <option value="assemble">assemble : montage final seul</option></select></div>
+  </div>
+  <label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS">
+  <label>Scénario manuel <small>optionnel, chemin dans le dépôt</small></label><input id="f_scenario" placeholder="scenarios/exemple.json">
+  <div class="grid" style="margin-top:8px">
+    <label class="chk"><input id="f_sfx" type="checkbox" checked> Effets sonores</label>
+    <label class="chk"><input id="f_sans_voix" type="checkbox"> Sans voix off</label>
+    <label class="chk"><input id="f_force" type="checkbox"> Tout regénérer (ignorer le cache)</label>
+    <label class="chk"><input id="f_allow_ai_quota" type="checkbox"> Autoriser quota IA (entretien)</label>
+  </div>
+  <div class="row" style="margin-top:14px"><button class="primary" id="go" onclick="launch()">Lancer le workflow</button></div>
+</section>
+
+<section id="tab-runs" class="card hidden"><h2>Derniers runs <small id="refresh"></small></h2><div id="runs">Chargement…</div></section>
+
+<section id="tab-reels" class="card hidden">
+  <h2>Reels</h2>
+  <div class="row"><select id="runPick" style="flex:1"></select><button class="primary" onclick="loadReels()">Afficher</button></div>
+  <p id="reelsState" class="muted"></p>
+  <div id="reels" class="reels"></div>
+</section>
+
+<section id="tab-catalog" class="card hidden"><h2>Catalogue</h2><div id="catalog">Chargement…</div></section>
+</div>
+</main>
+<div id="msg"></div>
+<script>
+const WF = "generate-reels.yml";
+const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} }, del(k){ try{localStorage.removeItem(k)}catch{} } };
+let TOKEN = store.get("rg_token"), REPO = store.get("rg_repo") || "phenixi89/realGen", CAT = {}, timer = null, blobUrls = [];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(t, ms = 4000){ const m = $("msg"); m.textContent = t; m.style.display = "block"; clearTimeout(m._t); m._t = setTimeout(() => m.style.display = "none", ms); }
+
+async function gh(path, opt = {}){
+  const r = await fetch(`https://api.github.com/repos/${REPO}${path}`, { ...opt,
+    headers: { Authorization: `Bearer ${TOKEN}`, Accept: "application/vnd.github+json", ...(opt.headers || {}) } });
+  if (r.status === 401){ logout(); throw new Error("Token invalide ou expiré"); }
+  if (!r.ok) throw new Error(`GitHub ${r.status} : ${(await r.text()).slice(0, 200)}`);
+  return r.status === 204 ? null : r;
+}
+const ghJson = async p => (await gh(p)).json();
+
+function saveLogin(){ TOKEN = $("token").value.trim(); REPO = $("repo").value.trim(); store.set("rg_token", TOKEN); store.set("rg_repo", REPO); start(); }
+function logout(){ store.del("rg_token"); TOKEN = null; clearInterval(timer); $("app").classList.add("hidden"); $("login").classList.remove("hidden"); }
+
+document.querySelectorAll("nav button[data-tab]").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+function showTab(t){
+  document.querySelectorAll("nav button[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  ["launch","runs","reels","catalog"].forEach(x => $("tab-" + x).classList.toggle("hidden", x !== t));
+  store.set("rg_tab", t);
+  if (t === "runs") loadRuns();
+}
+
+async function catFile(name){
+  const r = await gh(`/contents/catalog/${name}.json`, { headers: { Accept: "application/vnd.github.raw+json" } });
+  return r.json();
+}
+async function loadCatalog(){
+  const [f, t, v, s, h] = await Promise.all(["formats","themes","voix","sujets","hooks"].map(n => catFile(n).catch(() => ({}))));
+  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [] };
+  for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie})`, x.id));
+  for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
+  for (const x of CAT.voix) $("f_voice").add(new Option(`${x.id} : ${x.description}`, x.id));
+  const sw = c => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:middle;background:${esc(c)}"></span>`;
+  $("catalog").innerHTML =
+    `<h3>Formats (${CAT.formats.length})</h3>` + CAT.formats.map(x => `<p><b>${esc(x.nom)}</b> <span class="tag">${esc(x.categorie)}</span> <span class="tag">cartes : ${esc(x.cartes)}</span><br><span class="muted">${esc(x.structure)}</span></p>`).join("") +
+    `<h3>Thèmes (${CAT.themes.length})</h3>` + CAT.themes.map(x => `<p>${Object.values(x.couleurs || {}).slice(0, 5).map(sw).join(" ")} <b>${esc(x.nom)}</b> <span class="tag">${esc(x.ambiance || "")}</span></p>`).join("") +
+    `<h3>Sujets (${CAT.sujets.length})</h3><p>` + CAT.sujets.map(x => `<span class="tag" title="${esc(x.texte)}">${esc(x.id)}</span>`).join("") + `</p>` +
+    `<h3>Hooks (${CAT.hooks.length})</h3><p>` + CAT.hooks.map(x => `<span class="tag" title="${esc(x.consigne)}">${esc(x.id)}</span>`).join("") + `</p>`;
+}
+
+async function launch(){
+  const inputs = { n: String($("f_n").value || 3) };
+  for (const k of ["duration","format","theme","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
+  for (const k of ["sfx","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
+  if (inputs.from_step === "script" && !confirm("from_step = script : nouveaux textes ET nouvelles voix (appels Gemini). Continuer ?")) return;
+  $("go").disabled = true;
+  try {
+    await gh(`/actions/workflows/${WF}/dispatches`, { method: "POST", body: JSON.stringify({ ref: "main", inputs }) });
+    toast("Workflow lancé ✔ (il apparaît dans Runs sous quelques secondes)");
+    setTimeout(() => showTab("runs"), 2500);
+  } catch (e) { toast(e.message, 8000); }
+  $("go").disabled = false;
+}
+
+const COLOR = r => r.status !== "completed" ? "var(--run)" : r.conclusion === "success" ? "var(--ok)" : "var(--ko)";
+const LABEL = r => r.status !== "completed" ? (r.status === "queued" ? "En attente" : "En cours") : ({success:"Réussi",failure:"Échec",cancelled:"Annulé"}[r.conclusion] || r.conclusion);
+async function loadRuns(){
+  clearInterval(timer);
+  try {
+    const { workflow_runs: runs } = await ghJson(`/actions/workflows/${WF}/runs?per_page=10`);
+    fillRunPick(runs);
+    const html = await Promise.all(runs.map(async r => {
+      let steps = "";
+      if (r.status !== "completed") {
+        try {
+          const { jobs } = await ghJson(`/actions/runs/${r.id}/jobs`);
+          const st = (jobs[0]?.steps || []), cur = st.find(s => s.status === "in_progress");
+          steps = `Étape ${st.filter(s => s.status === "completed").length}/${st.length}${cur ? " : " + esc(cur.name) : ""}`;
+        } catch {}
+      }
+      const mins = Math.round(((r.status === "completed" ? new Date(r.updated_at) : new Date()) - new Date(r.run_started_at)) / 60000);
+      return `<div class="run"><span class="dot" style="background:${COLOR(r)}"></span>
+        <div class="info"><b>#${r.run_number}</b> · ${LABEL(r)} · ${mins} min <span class="muted">· ${new Date(r.created_at).toLocaleString("fr-FR")} · ${esc(r.event)}</span>
+        <div class="steps">${steps}</div></div>
+        ${r.conclusion === "success" ? `<button onclick="openReels(${r.id})">🎬 Reels</button>` : ""}
+        ${r.status !== "completed" ? `<button onclick="cancelRun(${r.id})">Annuler</button>` : ""}
+        <a href="${r.html_url}" target="_blank" rel="noopener"><button>GitHub ↗</button></a></div>`;
+    }));
+    $("runs").innerHTML = html.join("") || "Aucun run.";
+    const active = runs.some(r => r.status !== "completed");
+    $("refresh").textContent = active ? "· actualisation auto toutes les 15 s" : "";
+    if (active) timer = setInterval(() => !$("tab-runs").classList.contains("hidden") && loadRuns(), 15000);
+  } catch (e) { $("runs").textContent = e.message; }
+}
+async function cancelRun(id){ if (!confirm("Annuler ce run ?")) return; try { await gh(`/actions/runs/${id}/cancel`, { method: "POST" }); toast("Annulation demandée"); loadRuns(); } catch (e) { toast(e.message); } }
+
+function fillRunPick(runs){
+  const cur = $("runPick").value;
+  $("runPick").innerHTML = runs.filter(r => r.conclusion === "success")
+    .map(r => `<option value="${r.id}">#${r.run_number} · ${new Date(r.created_at).toLocaleString("fr-FR")}</option>`).join("");
+  if (cur) $("runPick").value = cur;
+}
+function openReels(id){ showTab("reels"); $("runPick").value = id; loadReels(); }
+
+async function loadReels(){
+  const id = $("runPick").value; if (!id) return;
+  blobUrls.forEach(URL.revokeObjectURL); blobUrls = [];
+  $("reels").innerHTML = ""; const st = $("reelsState");
+  try {
+    st.textContent = "Recherche de l'artefact…";
+    const { artifacts } = await ghJson(`/actions/runs/${id}/artifacts`);
+    const art = artifacts.find(a => a.name === "output");
+    if (!art) return st.textContent = "Pas d'artefact « output » pour ce run.";
+    if (art.expired) return st.textContent = "Artefact expiré.";
+    st.textContent = `Téléchargement (${(art.size_in_bytes / 1e6).toFixed(0)} Mo)…`;
+    const zip = await JSZip.loadAsync(await (await gh(`/actions/artifacts/${art.id}/zip`)).blob());
+    const vids = Object.keys(zip.files).filter(p => /final\/reel_\d+\.mp4$/.test(p)).sort();
+    st.textContent = `${vids.length} reel(s)`;
+    for (const p of vids) {
+      const url = URL.createObjectURL(new Blob([await zip.file(p).async("arraybuffer")], { type: "video/mp4" })); blobUrls.push(url);
+      const txtF = zip.file(p.replace(/\.mp4$/, ".txt")), txt = txtF ? await txtF.async("string") : "";
+      const name = p.split("/").pop(), div = document.createElement("div");
+      div.className = "reel card";
+      div.innerHTML = `<b>${esc(name)}</b><video src="${url}" controls playsinline preload="metadata"></video>
+        <pre>${esc(txt) || "<i>pas de légende</i>"}</pre>
+        <div class="row"><button class="copy">📋 Copier la légende</button><a href="${url}" download="${esc(name)}"><button>⬇ Télécharger</button></a></div>`;
+      div.querySelector(".copy").onclick = () => navigator.clipboard.writeText(txt).then(() => toast("Légende copiée"));
+      $("reels").appendChild(div);
+    }
+  } catch (e) {
+    st.innerHTML = `Impossible de lire l'artefact ici (${esc(e.message)}). <a target="_blank" rel="noopener" href="https://github.com/${REPO}/actions/runs/${id}">Le télécharger depuis GitHub ↗</a>`;
+  }
+}
+
+async function start(){
+  if (!TOKEN) { $("login").classList.remove("hidden"); return; }
+  $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+  try { await loadCatalog(); } catch (e) { toast(e.message, 8000); $("catalog").textContent = e.message; }
+  loadRuns();
+  showTab(store.get("rg_tab") || "launch");
+}
+$("repo").value = REPO; start();
+</script></body></html>
