@@ -88,7 +88,13 @@ jobs:
           # `disown` est un builtin bash absent du shell minimal de l'image
           # (`sh`/dash) et de toute facon inutile ici : un `&` simple suffit
           # a detacher la commande sans qu'elle bloque cette etape.
-          curl -sS --max-time 90 -o /dev/null "${{ vars.SAAS_URL }}" &
+          # Boucle plutot qu'un essai unique : un cold start peut depasser
+          # le --max-time d'une seule requete (ex. instance qui vient tout
+          # juste de recevoir un premier ping) -- 3_record_demo.py retente
+          # aussi de son cote, ceci n'est qu'un coup de pouce en parallele.
+          ( for i in 1 2 3; do
+              curl -sS --max-time 90 -o /dev/null "${{ vars.SAAS_URL }}" && break
+            done ) &
 
       # Persiste output/ entre les runs : si le pipeline echoue en cours de
       # route (ex: etape 3), le prochain run reprend la ou il s'est arrete
