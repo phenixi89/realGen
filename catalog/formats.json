@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes texte animees, assets/anim/carte.html -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS).",
+  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes texte animees, assets/anim/carte.html -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params).",
   "formats": [
     {
       "id": "demo_produit",
@@ -173,6 +173,123 @@
       ],
       "structure": "Récit à la première personne d'un utilisateur type ('J'ai envoyé 40 candidatures sans réponse...'), présenté comme un exemple et non comme un vrai client. Chaque scène montre la fonctionnalité d'OpusCV qui a changé la donne. Dernière scène : CTA.",
       "ton": "sincère et naturel, à la première personne"
+    },
+    {
+      "id": "split_avant_apres",
+      "nom": "Avant / Après avec OpusCV",
+      "categorie": "produit",
+      "poids": 2,
+      "cartes": "autorisees",
+      "sujets": [
+        "produit"
+      ],
+      "structure": "Accroche sur un CV qui ne passe pas. Puis une carte comparaison (type comparaison) montre une ligne de CV faible puis sa version réécrite ; les scènes suivantes montrent dans OpusCV comment on obtient ce résultat (analyse, points à corriger, aperçu final). Dernière scène : CTA.",
+      "ton": "énergique, contraste marqué entre l'avant (déçu) et l'après (fier)"
+    },
+    {
+      "id": "defi_chrono",
+      "nom": "Défi : un CV corrigé en 30 secondes",
+      "categorie": "produit",
+      "poids": 2,
+      "cartes": "aucune",
+      "sujets": [
+        "produit"
+      ],
+      "habillage": "chrono",
+      "habillage_params": {
+        "label": "DÉFI"
+      },
+      "structure": "Accroche sous forme de défi (« Je corrige ce CV en 30 secondes chrono »). Un chronomètre tourne à l'écran pendant tout le reel. Chaque scène est une étape rapide dans OpusCV (import, analyse, correction, aperçu), racontée au présent, rythme haletant. Dernière scène : le défi est relevé, puis CTA.",
+      "ton": "haletant, rythme très rapide, comme un défi chronométré"
+    },
+    {
+      "id": "reaction_recruteur",
+      "nom": "Le recruteur a 6 secondes",
+      "categorie": "produit",
+      "poids": 1,
+      "cartes": "autorisees",
+      "sujets": [
+        "produit"
+      ],
+      "habillage": "chrono",
+      "habillage_params": {
+        "label": "RECRUTEUR",
+        "from": "6",
+        "down": "1"
+      },
+      "structure": "Accroche : un recruteur passe en moyenne quelques secondes sur un CV (sans chiffre inventé précis). Une scène montre ce qu'il remarque en premier (erreur visible), puis les scènes suivantes montrent comment OpusCV le repère et le corrige. Dernière scène : CTA.",
+      "ton": "tendu puis soulagé, voix de recruteur qui juge vite"
+    },
+    {
+      "id": "pov_situation",
+      "nom": "POV",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "autorisees",
+      "sujets": [
+        "cv",
+        "candidature",
+        "entretien"
+      ],
+      "structure": "Accroche « POV : ... » qui plonge le spectateur dans une situation vécue (ex : tu envoies ta 50e candidature). Les scènes racontent la situation puis révèlent la vraie cause et la solution concrète. Dernière scène : CTA.",
+      "ton": "immersif et complice, comme une histoire qu'on vit ensemble"
+    },
+    {
+      "id": "vu_par_recruteur",
+      "nom": "Ce que le recruteur voit vraiment",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "sujets": [
+        "cv",
+        "ats",
+        "candidature"
+      ],
+      "structure": "Accroche : « Voilà ce que le recruteur voit vraiment sur ton CV ». Chaque scène oppose ce que le candidat croit montrer et ce que le recruteur (ou l'ATS) comprend réellement (cartes avant/apres ou comparaison). Dernière scène : CTA.",
+      "ton": "révélateur, un peu malicieux"
+    },
+    {
+      "id": "tier_list",
+      "nom": "Tier list des erreurs de CV",
+      "categorie": "conseil",
+      "poids": 1,
+      "cartes": "majoritaires",
+      "sujets": [
+        "cv",
+        "lettre",
+        "candidature"
+      ],
+      "structure": "Accroche : tier list des erreurs, de la moins grave à la pire. Chaque scène classe une erreur (surtitre « Rang C », « Rang B », « Rang A », « Rang S ») avec une explication courte ; la pire à la fin avec l'effet suspense. Dernière scène : CTA.",
+      "ton": "tranché, drôle et assumé"
+    },
+    {
+      "id": "red_green_flag",
+      "nom": "Red flag / Green flag",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "sujets": [
+        "cv",
+        "entretien",
+        "linkedin",
+        "candidature"
+      ],
+      "structure": "Accroche : red flags et green flags pour les recruteurs. Les scènes alternent un red flag (carte style mythe, surtitre « Red flag ») et un green flag (carte style realite, surtitre « Green flag »), chacun concret. Dernière scène : CTA.",
+      "ton": "vif et tranché, verdicts rapides"
+    },
+    {
+      "id": "trouve_erreur",
+      "nom": "Quiz : trouve l'erreur",
+      "categorie": "conseil",
+      "poids": 1,
+      "cartes": "majoritaires",
+      "sujets": [
+        "cv",
+        "lettre",
+        "candidature"
+      ],
+      "structure": "Accroche : « Trouve l'erreur dans ce CV en 3 secondes ». Une carte frappe montre une ligne de CV ou de lettre qui contient une erreur ; la voix laisse un instant de réflexion ; la scène suivante révèle l'erreur (effet suspense) et la correction. Deux ou trois manches. Dernière scène : CTA.",
+      "ton": "joueur, comme un animateur de quiz"
     }
   ]
 }

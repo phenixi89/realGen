@@ -411,6 +411,187 @@
         "produit"
       ],
       "texte": "killer feature : coller une offre et obtenir un CV adapté à ses mots-clés"
+    },
+    {
+      "id": "accroche_cv",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "la phrase d'accroche (profil) en haut du CV : la transformer en promesse concrète pour le poste"
+    },
+    {
+      "id": "competences_techniques",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "ats"
+      ],
+      "texte": "présenter ses compétences techniques : niveaux, preuves, mots exacts de l'offre"
+    },
+    {
+      "id": "interim_missions_courtes",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "valoriser des missions courtes, de l'intérim ou des CDD sans avoir l'air instable"
+    },
+    {
+      "id": "benevolat",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "faire compter le bénévolat et les projets perso comme de la vraie expérience"
+    },
+    {
+      "id": "acronymes_jargon",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "ats"
+      ],
+      "texte": "acronymes et jargon interne : ce que l'ATS et le recruteur ne comprennent pas"
+    },
+    {
+      "id": "langues_niveaux",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "indiquer ses niveaux de langue de façon crédible (CECRL, usages concrets)"
+    },
+    {
+      "id": "diplome_place",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "où placer la formation selon son expérience, et quand l'alléger"
+    },
+    {
+      "id": "objet_mail",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "l'objet et les deux premières lignes du mail de candidature"
+    },
+    {
+      "id": "reseau_cooptation",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "passer par le réseau et la cooptation plutôt que postuler à froid"
+    },
+    {
+      "id": "jobboards_formulaires",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "ats"
+      ],
+      "texte": "les formulaires des jobboards qui réécrivent ton CV : pièges et parades"
+    },
+    {
+      "id": "entretien_echec",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "répondre à « parlez-moi d'un échec » sans se griller"
+    },
+    {
+      "id": "entretien_pourquoi_nous",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "préparer « pourquoi nous ? » avec une vraie recherche sur l'entreprise"
+    },
+    {
+      "id": "entretien_telephonique",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "réussir le premier appel du recruteur, souvent imprévu"
+    },
+    {
+      "id": "linkedin_open_to_work",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin"
+      ],
+      "texte": "le badge Open to Work et les réglages de visibilité côté recruteurs"
+    },
+    {
+      "id": "lettre_premiere_phrase",
+      "categorie": "conseil",
+      "tags": [
+        "lettre"
+      ],
+      "texte": "la première phrase de la lettre de motivation : bannir « Madame, Monsieur, je me permets »"
+    },
+    {
+      "id": "reconversion_competences_transferables",
+      "categorie": "conseil",
+      "tags": [
+        "reconversion",
+        "candidature"
+      ],
+      "texte": "traduire ses compétences transférables dans le vocabulaire du nouveau métier"
+    },
+    {
+      "id": "cv_international",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "postuler à l'étranger : ce qui change sur un CV (photo, âge, format)"
+    },
+    {
+      "id": "kf_score_ats",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : le score ATS et ce qui le fait monter, montré point par point"
+    },
+    {
+      "id": "kf_themes_pdf",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "killer feature : passer d'un CV Word banal à un PDF stylisé en changeant de thème"
+    },
+    {
+      "id": "une_offre_trois_minutes",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "une offre repérée, un CV adapté et une lettre prête en quelques minutes"
+    },
+    {
+      "id": "erreur_invisible_produit",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "l'erreur que tu ne vois pas sur ton propre CV, et comment l'outil la repère"
+    },
+    {
+      "id": "etudiant_premier_cv",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "un étudiant qui fait son premier CV avec l'outil, de zéro au PDF"
     }
   ]
 }

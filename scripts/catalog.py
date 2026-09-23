@@ -179,6 +179,23 @@ def pick_theme(history: list[dict], rng: random.Random) -> dict:
     return weighted_pick(themes(), _recent(history, "theme", config()["historique_themes"]), rng)
 
 
+def pick_cta(categorie: str, rng: random.Random) -> tuple[str, dict]:
+    """(phrase de CTA dite en fin de reel, textes du CTA anime) -- variantes de config.json."""
+    cfg = config()
+    phrases = cfg.get(f"ctas_{categorie}") or cfg.get("ctas_produit") or ["Lien en bio."]
+    anims = cfg.get("cta_anim") or [{}]
+    return rng.choice(phrases), dict(rng.choice(anims))
+
+
+def pick_ambiance(theme: dict, history: list[dict], rng: random.Random) -> str | None:
+    """Ambiance musicale parmi celles du theme ("ambiances"), en evitant les 2 plus recentes."""
+    options = theme.get("ambiances") or ([theme["ambiance"]] if theme.get("ambiance") else [])
+    if not options:
+        return None
+    recent = _recent(history, "ambiance", 2)
+    return rng.choice([a for a in options if a not in recent] or options)
+
+
 def recent_sujets(history: list[dict], n: int = 15) -> list[str]:
     return _recent(history, "sujet", n)
 
@@ -229,8 +246,11 @@ def validate_catalog() -> list[str]:
             if not re.fullmatch(r"#[0-9a-fA-F]{6}", t.get("couleurs", {}).get(key, "")):
                 errors.append(f"theme {t['id']} : couleur '{key}' absente ou pas au format #rrggbb")
         ambiances = {a["id"] for a in _load("audio")["ambiances"]}
-        if t.get("ambiance") and t["ambiance"] not in ambiances:
-            errors.append(f"theme {t['id']} : ambiance '{t['ambiance']}' absente de audio.json")
+        for amb in [t.get("ambiance")] + list(t.get("ambiances") or []):
+            if amb and amb not in ambiances:
+                errors.append(f"theme {t['id']} : ambiance '{amb}' absente de audio.json")
+        if t.get("sous_titres", {}).get("style", "karaoke") not in ("karaoke", "encadre", "boite", "mot"):
+            errors.append(f"theme {t['id']} : sous_titres.style inconnu")
         for role in ("titre", "texte"):
             name = t.get(f"police_{role}")
             if name and not (FONTS_DIR / name).exists():

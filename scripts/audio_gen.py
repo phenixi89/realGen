@@ -9,6 +9,8 @@ anti-abus des effets).
     render_sfx_track(cues, duration) -> piste d'effets mixee, cues filtres par
                                         les regles (ecart minimal, densite max)
     duck(music, voice)             -> baisse la musique quand la voix parle
+    master(mix)                    -> compression douce + normalisation -14 LUFS
+                                      + limiteur (niveau standard TikTok/Reels)
 
 Si assets/music/<ambiance>/ contient des fichiers audio (morceaux libres de
 droits que tu y deposes), l'un d'eux remplace la musique synthetisee.
@@ -156,19 +158,36 @@ def _norm(x: np.ndarray) -> np.ndarray:
     return (x / peak).astype(np.float64)
 
 
-def render_sfx_track(cues: list[dict], duration: float) -> np.ndarray:
+TONAL_SFX = ("pop", "ding", "sparkle", "tick")
+
+
+def _pitch(x: np.ndarray, semitones: float) -> np.ndarray:
+    """Transpose un effet court par reechantillonnage (duree changee, sans importance ici)."""
+    if not semitones:
+        return x
+    factor = 2 ** (semitones / 12)
+    idx = np.arange(0, len(x) - 1, factor)
+    return np.interp(idx, np.arange(len(x)), x)
+
+
+def render_sfx_track(cues: list[dict], duration: float, ambiance: dict | None = None) -> np.ndarray:
     """
     cues : [{"t": 1.2, "name": "pop", "gain": 0.5, ...}] -> piste mono.
     Regles anti-abus (catalog/audio.json "effets") : ecart minimal entre deux
     effets (les frappes de clavier exceptees), nombre maximal par tranche de
-    10 s, volume global plafonne.
+    10 s, volume global plafonne. ambiance : profil d'effets de l'ambiance
+    musicale ("effets": {"volume": 0.8, "tonalite": -3, "transition": "pop"}) --
+    effets plus doux en lo-fi, plus nets en tech, accordes sur la musique.
     """
+    profile = (ambiance or {}).get("effets", {})
     rules = audio_config()["effets"]
     if not rules.get("actif", True):
         return np.zeros(int(duration * SR))
     track = np.zeros(int(duration * SR) + SR)
     kept, last = [], -10.0
     for cue in sorted(cues, key=lambda c: c["t"]):
+        if cue.get("transition") and profile.get("transition"):
+            cue = {**cue, "name": profile["transition"]}
         if cue["name"] in rules.get("bannis", []):
             continue
         if cue["name"] != "click":
@@ -182,7 +201,9 @@ def render_sfx_track(cues: list[dict], duration: float) -> np.ndarray:
     for i, cue in enumerate(kept):
         base = rules["volumes"].get(cue["name"], 0.3)
         x = sfx(cue["name"], seed=i, **{k: v for k, v in cue.items() if k in ("duration",)})
-        x = x * base * cue.get("gain", 1.0) * rules["volume_global"]
+        if cue["name"] in TONAL_SFX:
+            x = _pitch(x, profile.get("tonalite", 0))
+        x = x * base * cue.get("gain", 1.0) * rules["volume_global"] * profile.get("volume", 1.0)
         start = int(max(cue["t"], 0) * SR)
         end = min(start + len(x), len(track))
         track[start:end] += x[: end - start]
@@ -208,6 +229,18 @@ def _drum(kind: str, seed: int) -> np.ndarray:
         n = int(0.22 * SR)
         return 0.7 * _lowpass_fast(_noise(n, seed), 5000) * env(n, 0.001, 0.07) + \
             0.3 * np.sin(2 * np.pi * 190 * _t(0.22)[:n]) * env(n, 0.001, 0.05)
+    if kind == "clap":
+        n = int(0.18 * SR)
+        x = _noise(n, seed)
+        x = x - _lowpass_fast(x, 900)
+        e = np.zeros(n)
+        for off in (0, int(0.012 * SR), int(0.024 * SR)):
+            e[off:] = np.maximum(e[off:], env(n - off, 0.0005, 0.02 if off < int(0.02 * SR) else 0.06))
+        return _lowpass_fast(x, 7000) * e
+    if kind == "shaker":
+        n = int(0.09 * SR)
+        x = _noise(n, seed)
+        return (x - _lowpass_fast(x, 5000)) * env(n, 0.02, 0.025)
     if kind == "hat":
         n = int(0.06 * SR)
         x = _noise(n, seed)
@@ -215,11 +248,69 @@ def _drum(kind: str, seed: int) -> np.ndarray:
     raise ValueError(kind)
 
 
+def _voice_chord(chord: list[int], t_bar: np.ndarray, bar: float, step: float, ambiance: dict) -> np.ndarray:
+    """
+    Accords selon l'instrument de l'ambiance ("instrument") :
+      nappe : sinus doux tenus (defaut)      piano : notes frappees, harmoniques qui s'eteignent
+      pluck : arpege pince (guitare/kalimba) synth : dents de scie desaccordees (synthwave)
+    "arpege" : ordre des notes jouees a chaque double-croche (piano/pluck), ex "0121".
+    """
+    kind = ambiance.get("instrument", "nappe")
+    n = len(t_bar)
+    seg = np.zeros(n)
+    if kind in ("piano", "pluck"):
+        arp = ambiance.get("arpege", "0123" if kind == "pluck" else "0.1.2.1.")
+        hits = [(i, int(c)) for i, c in enumerate((arp * 16)[:16]) if c.isdigit()]
+        for i, k in hits:
+            note = chord[k % len(chord)] + (12 if k >= len(chord) else 0)
+            f = midi_hz(note)
+            s = int(i * step * SR)
+            if s >= n:
+                continue
+            tt = t_bar[: n - s]
+            if kind == "piano":
+                tone = (np.sin(2 * np.pi * f * tt) + 0.5 * np.sin(4 * np.pi * f * tt) * np.exp(-tt * 6)
+                        + 0.2 * np.sin(6 * np.pi * f * tt) * np.exp(-tt * 9)) * env(len(tt), 0.004, 0.9)
+            else:
+                tone = (np.sign(np.sin(2 * np.pi * f * tt)) * 0.3 + np.sin(2 * np.pi * f * tt)) * env(len(tt), 0.002, 0.22)
+            seg[s:] += tone
+        # tapis tres discret des accords tenus pour lier les notes
+        for note in chord:
+            seg += 0.25 * np.sin(2 * np.pi * midi_hz(note) * t_bar) * env(n, 0.3, bar)
+        return seg
+    for note in chord:
+        f = midi_hz(note)
+        if kind == "synth":
+            for det in (-0.12, 0.12):
+                ph = (f * (1 + det / 100 * 12) * t_bar) % 1.0
+                seg += 0.5 * (2 * ph - 1)
+        else:
+            seg += np.sin(2 * np.pi * f * t_bar) + 0.25 * np.sin(4 * np.pi * f * t_bar)
+    return seg * (0.5 + 0.5 * env(n, 0.08, bar * 0.9))
+
+
+def _bass(chord: list[int], t_bar: np.ndarray, step: float, ambiance: dict) -> np.ndarray:
+    """Basse : "pulse" (defaut, pulsee a la noire), "808" (longue, glissee), "douce" (tenue)."""
+    f = midi_hz(chord[0] - 12)
+    kind = ambiance.get("basse_type", "pulse")
+    if kind == "808":
+        out = np.zeros(len(t_bar))
+        for beat in (0, 6, 10):
+            s = int(beat * step * SR)
+            tt = t_bar[: len(t_bar) - s]
+            ff = f * (1 + 0.5 * np.exp(-tt * 30))
+            out[s:] += np.tanh(1.8 * np.sin(2 * np.pi * np.cumsum(ff) / SR)) * env(len(tt), 0.002, 0.5)
+        return out
+    if kind == "douce":
+        return np.sin(2 * np.pi * f * t_bar) * 0.7
+    return np.sin(2 * np.pi * f * t_bar) * (0.6 + 0.4 * np.sign(np.sin(2 * np.pi * t_bar / (step * 4))))
+
+
 def music(duration: float, ambiance: dict, seed: int = 0) -> np.ndarray:
     """
-    Boucle synthetisee : accords (sinus doux + 2e harmonique), basse sur la
-    fondamentale, batterie selon les motifs 16 pas de l'ambiance
-    ("x" = coup, "." = silence). -> mono, normalise.
+    Boucle synthetisee : accords (instrument de l'ambiance, cf. _voice_chord),
+    basse (_bass), batterie selon les motifs 16 pas de l'ambiance
+    ("x" = coup, "." = silence ; kick, snare, hat, clap, shaker). -> mono, normalise.
     """
     n = int(duration * SR) + SR
     out = np.zeros(n)
@@ -232,18 +323,13 @@ def music(duration: float, ambiance: dict, seed: int = 0) -> np.ndarray:
         start = int(b * bar * SR)
         if start >= n:
             break
-        seg = np.zeros(len(t_bar))
-        for note in chord:
-            f = midi_hz(note)
-            seg += np.sin(2 * np.pi * f * t_bar) + 0.25 * np.sin(4 * np.pi * f * t_bar)
-        seg *= 0.5 + 0.5 * env(len(t_bar), 0.08, bar * 0.9)
-        bass_f = midi_hz(chord[0] - 12)
-        bass = np.sin(2 * np.pi * bass_f * t_bar) * (0.6 + 0.4 * np.sign(np.sin(2 * np.pi * t_bar / (step * 4))))
+        seg = _voice_chord(chord, t_bar, bar, step, ambiance)
+        bass = _bass(chord, t_bar, step, ambiance)
         end = min(start + len(t_bar), n)
         out[start:end] += (0.18 * seg / len(chord) + ambiance.get("basse", 0.25) * bass)[: end - start]
         for kind, pattern in ambiance.get("batterie", {}).items():
             hit = _drum(kind, seed + b)
-            gain = {"kick": 0.9, "snare": 0.5, "hat": 0.25}[kind]
+            gain = {"kick": 0.9, "snare": 0.5, "hat": 0.25, "clap": 0.45, "shaker": 0.18}[kind]
             for i, c in enumerate(pattern):
                 if c != "x":
                     continue
@@ -280,6 +366,65 @@ def duck(music_track: np.ndarray, voice: np.ndarray, amount: float) -> np.ndarra
     out = music_track.copy()
     out[:n] *= gain
     return out
+
+
+# ---------------------------------------------------------------------------
+# Mastering : compression douce, loudness (ITU-R BS.1770), limiteur
+# ---------------------------------------------------------------------------
+
+TARGET_LUFS = -14.0   # niveau de reference TikTok / Instagram / YouTube
+CEILING = 10 ** (-1.0 / 20)  # plafond -1 dBFS
+
+
+def _k_weight(x: np.ndarray) -> np.ndarray:
+    """Ponderation K (BS.1770) appliquee en frequentiel : shelf +4 dB aigus, coupe-bas 38 Hz."""
+    spec = np.fft.rfft(x)
+    f = np.fft.rfftfreq(len(x), 1 / SR)
+    shelf = 1 + (10 ** (4 / 20) - 1) / (1 + (1681.0 / np.maximum(f, 1e-3)) ** 2)
+    highpass = 1 / np.sqrt(1 + (38.0 / np.maximum(f, 1e-3)) ** 4)
+    return np.fft.irfft(spec * shelf * highpass, len(x))
+
+
+def loudness(x: np.ndarray) -> float:
+    """Loudness integree (LUFS, mono) : blocs de 400 ms, portes absolue -70 et relative -10."""
+    y = _k_weight(x)
+    block, hop = int(0.4 * SR), int(0.1 * SR)
+    if len(y) < block:
+        return -70.0
+    power = np.array([np.mean(y[i:i + block] ** 2) for i in range(0, len(y) - block + 1, hop)])
+    lufs = -0.691 + 10 * np.log10(np.maximum(power, 1e-12))
+    gated = power[lufs > -70]
+    if not gated.size:
+        return -70.0
+    rel = -0.691 + 10 * np.log10(np.mean(gated)) - 10
+    gated = power[(lufs > -70) & (lufs > rel)]
+    return float(-0.691 + 10 * np.log10(np.mean(gated))) if gated.size else -70.0
+
+
+def _envelope(x: np.ndarray, window_s: float) -> np.ndarray:
+    w = max(1, int(window_s * SR))
+    return np.sqrt(np.convolve(x ** 2, np.ones(w) / w, mode="same"))
+
+
+def master(mix: np.ndarray, target_lufs: float = TARGET_LUFS) -> np.ndarray:
+    """
+    Compression douce (ratio 2:1 au-dessus de -18 dBFS RMS) -> gain vers la
+    loudness cible -> limiteur a -1 dBFS. Tous les reels sortent au meme
+    volume percu, sans pic qui sature.
+    """
+    level = 20 * np.log10(np.maximum(_envelope(mix, 0.05), 1e-6))
+    over = np.maximum(level + 18, 0)
+    gain = 10 ** (-over * 0.5 / 20)
+    gain = np.convolve(gain, np.ones(int(0.02 * SR)) / int(0.02 * SR), mode="same")
+    x = mix * gain
+    current = loudness(x)
+    if current > -70:
+        x = x * 10 ** ((target_lufs - current) / 20)
+    peak = _envelope(x, 0.002) * 1.414
+    lim = np.minimum(1.0, CEILING / np.maximum(peak, 1e-9))
+    lim = -np.convolve(-lim, np.ones(int(0.004 * SR)) / int(0.004 * SR), mode="same")
+    x = x * np.minimum(lim, 1.0)
+    return np.clip(x, -CEILING, CEILING)
 
 
 def write_wav(path: Path, mono: np.ndarray):

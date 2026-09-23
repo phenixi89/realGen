@@ -60,6 +60,36 @@
       "id": "defi",
       "consigne": "Lancer un défi ou un test au spectateur.",
       "exemple": "Ouvre ton CV. Si tu vois ce mot, supprime-le."
+    },
+    {
+      "id": "stop",
+      "consigne": "Un ordre bref qui interrompt le scroll (« Stop. », « Arrête tout. ») suivi immédiatement de la raison concrète.",
+      "exemple": "Stop. Relis la première ligne de ton CV."
+    },
+    {
+      "id": "arrete_ca",
+      "consigne": "Interdire une habitude très répandue et présentée comme évidente.",
+      "exemple": "Arrête de mettre « dynamique et motivé » sur ton CV."
+    },
+    {
+      "id": "erreur_visible",
+      "consigne": "Décrire une erreur que le spectateur a probablement sous les yeux en ce moment, sur son propre CV.",
+      "exemple": "Regarde ton CV : si ton titre est « CV », on a un problème."
+    },
+    {
+      "id": "verdict",
+      "consigne": "Un verdict tranché, comme un jury, dès les premiers mots.",
+      "exemple": "Ton CV ? Recalé en six secondes."
+    },
+    {
+      "id": "scenario_catastrophe",
+      "consigne": "Une mini-scène concrète qui finit mal, racontée en une phrase au présent.",
+      "exemple": "Le recruteur ouvre ton CV, fronce les sourcils, et ferme l'onglet."
+    },
+    {
+      "id": "comparaison_inattendue",
+      "consigne": "Comparer le CV à quelque chose d'inattendu du quotidien pour surprendre.",
+      "exemple": "Ton CV, c'est une bande-annonce, pas le film entier."
     }
   ]
 }

@@ -29,6 +29,14 @@ CTA_PILL_PADDING = 24
 CTA_PILL_RADIUS = 32
 ACTIVE_SCALE = 1.14  # mot prononce legerement agrandi ("pop")
 KEYWORD_COLOR = (125, 211, 252, 255)  # mots-cles sans theme : bleu clair
+# Styles de sous-titres (themes.json sous_titres.style) :
+#   karaoke : mot prononce colore et agrandi (defaut)
+#   encadre : mot prononce sur une pastille de la couleur primaire
+#   boite   : toute la phrase sur un bandeau sombre arrondi
+#   mot     : un seul mot a la fois, en tres grand (rythme "punchy")
+CAPTION_MODES = ("karaoke", "encadre", "boite", "mot")
+WORD_MODE_SCALE = 1.55
+BOX_PADDING = 22
 
 
 def _font(size: int = FONT_SIZE):
@@ -40,14 +48,17 @@ def caption_style(theme: dict | None) -> dict:
     if not theme:
         return {"font": FONT_PATH, "size": FONT_SIZE, "cta_size": CTA_FONT_SIZE, "upper": False,
                 "outline": OUTLINE_WIDTH, "fg": DEFAULT_COLOR, "hl": HIGHLIGHT_COLOR,
-                "stroke": OUTLINE_COLOR, "pill": CTA_PILL_COLOR, "kw": KEYWORD_COLOR}
+                "stroke": OUTLINE_COLOR, "pill": CTA_PILL_COLOR, "kw": KEYWORD_COLOR,
+                "mode": "karaoke", "accent": HIGHLIGHT_COLOR}
     st, c = theme.get("sous_titres", {}), theme["couleurs"]
     size = int(st.get("taille", FONT_SIZE))
     return {"font": catalog.font_path(theme, "texte"), "size": size, "cta_size": round(size * CTA_FONT_SIZE / FONT_SIZE),
             "upper": bool(st.get("majuscules")), "outline": int(st.get("contour", OUTLINE_WIDTH)),
             "fg": catalog.hex_to_rgba(c["texte"]), "hl": catalog.hex_to_rgba(c["surligne"]),
             "stroke": catalog.hex_to_rgba(c["contour"]), "pill": catalog.hex_to_rgba(c["pastille"], 235),
-            "kw": catalog.hex_to_rgba(c.get("mot_cle") or c["secondaire"])}
+            "kw": catalog.hex_to_rgba(c.get("mot_cle") or c["secondaire"]),
+            "mode": st.get("style", "karaoke") if st.get("style") in CAPTION_MODES else "karaoke",
+            "accent": catalog.hex_to_rgba(c["primaire"])}
 
 
 def norm_word(word: str) -> str:
@@ -73,6 +84,11 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
     """
     style = caption_style(theme)
     keywords = keywords or set()
+    mode = style["mode"]
+    if mode == "mot" and not emphasize and 0 <= active_index < len(words):
+        # Un mot a la fois : la cue est reduite au mot prononce, agrandi.
+        words, active_index = [words[active_index]], 0
+        style = {**style, "size": round(style["size"] * WORD_MODE_SCALE)}
     is_keyword = [norm_word(w) in keywords for w in words]
     font = ImageFont.truetype(style["font"], style["cta_size"] if emphasize else style["size"])
     outline = style["outline"]
@@ -116,14 +132,16 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
     )
 
     # Marge pour le mot actif agrandi, qui deborde de son emplacement.
-    pad = outline * 2 + (CTA_PILL_PADDING if emphasize else 0) + int(font.size * (ACTIVE_SCALE - 1))
+    pad = (outline * 2 + (CTA_PILL_PADDING if emphasize else BOX_PADDING if mode in ("boite", "encadre") else 0)
+           + int(font.size * (ACTIVE_SCALE - 1)))
     active_font = ImageFont.truetype(style["font"], round(font.size * ACTIVE_SCALE))
     img = Image.new("RGBA", (total_width + pad * 2, total_height + pad * 2), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    if emphasize:
+    if emphasize or mode == "boite":
         draw.rounded_rectangle(
-            [0, 0, img.width - 1, img.height - 1], radius=CTA_PILL_RADIUS, fill=style["pill"]
+            [0, 0, img.width - 1, img.height - 1], radius=CTA_PILL_RADIUS,
+            fill=style["pill"] if emphasize else (*style["pill"][:3], 190)
         )
 
     y = pad
@@ -135,8 +153,16 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
                 # Centre du mot a sa place normale, trace plus grand.
                 cx = x + word_sizes[i][0] / 2
                 cy = y + (word_offsets[i][1] + word_offsets[i][2]) / 2 - line_top
-                draw.text((cx, cy), words[i], font=active_font, fill=style["hl"], anchor="mm",
-                          stroke_width=outline + 1, stroke_fill=style["stroke"])
+                if mode == "encadre":
+                    # Pastille dans l'espace du mot (sans agrandir) : ne mord pas sur les voisins.
+                    top = y + word_offsets[i][1] - line_top
+                    draw.rounded_rectangle([x - 8, top - 4, x + word_sizes[i][0] + 8, top + word_sizes[i][1] + 4],
+                                           radius=14, fill=style["accent"])
+                    draw.text((x - word_offsets[i][0], y - line_top), words[i], font=font, fill=style["fg"],
+                              stroke_width=outline, stroke_fill=style["stroke"])
+                else:
+                    draw.text((cx, cy), words[i], font=active_font, fill=style["hl"], anchor="mm",
+                              stroke_width=outline + 1, stroke_fill=style["stroke"])
             else:
                 color = style["kw"] if is_keyword[i] else style["fg"]
                 draw.text((x - word_offsets[i][0], y - line_top), words[i], font=font, fill=color,

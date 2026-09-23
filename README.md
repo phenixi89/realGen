@@ -137,9 +137,9 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine 4 choix pris da
 |---|---|---|
 | `catalog/formats.json` | **Structure** de la vidéo, catégorie `conseil` (contenu utile) ou `produit` (démo), usage des cartes texte | liste d'erreurs, idée reçue vs réalité, avant/après, astuce, décryptage d'offre, série « 30 jours », démo |
 | `catalog/sujets.json` | **De quoi** parle la vidéo, avec des tags croisés avec les formats | titre du CV, ATS, résultats chiffrés, lettre, entretien, LinkedIn… |
-| `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes | question choc, chiffre, erreur, contre-intuitif, POV, promesse, secret |
+| `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe… |
 | `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, accord de la musique | violet nuit, corail, vert, bleu corporate |
-| `catalog/config.json` | Mix cible (`conseil` 70 % / `produit` 30 %), fenêtres anti-répétition, seuil de similarité, CTA | |
+| `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), scène preuve, phrases bannies | |
 
 Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
 - le **format** est pris dans la catégorie la plus en retard sur le mix cible, en évitant les derniers utilisés ;
@@ -153,6 +153,17 @@ depuis le noir), une **légende** et des **hashtags** (écrits dans `output/fina
 offre d'emploi fictive et un style de CV pour la démo. Les textes sont en français accentué (vérifié :
 un script sans accents est renvoyé à Gemini), car les sous-titres affichent le texte exact.
 
+**Promotion de l'outil (~35 à 40 % du contenu)** : en plus des formats `produit` (démo, avant/après
+avec OpusCV, défi chronométré, « le recruteur a 6 secondes »), chaque reel `conseil` contient une
+**scène preuve** (`"preuve": true`) où le conseil est appliqué en direct dans OpusCV, avec le curseur
+qui clique (`preuve_produit` dans `config.json` pour la désactiver). Le CTA dit et le CTA animé
+sont tirés parmi plusieurs variantes.
+
+**Originalité** : formats POV, « ce que le recruteur voit vraiment », tier list, red flag / green flag,
+quiz « trouve l'erreur » ; Gemini doit apporter un élément concret par scène (exemple de formulation,
+cas précis), les conseils génériques de `phrases_bannies` sont refusés, et la dernière phrase répond
+à l'accroche pour que la vidéo boucle naturellement.
+
 Les formats `conseil` utilisent des **cartes texte animées** (`assets/anim/carte.html` : styles
 `normal`, `mythe`, `realite`, `avant`, `apres`) à la place des captures, en `--capture-mode screenshots`.
 
@@ -161,13 +172,22 @@ workflow). Vérifier le catalogue après modification : `python scripts/catalog.
 
 Ajouter par exemple un format : une entrée dans `formats.json` avec `id`, `nom`, `categorie`,
 `poids`, `cartes` (`aucune`/`autorisees`/`majoritaires`), `sujets` (tags) et `structure` (consigne
-donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"serie": true`).
+donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"serie": true`). Option
+`habillage` : surimpression sur tout le reel, ex. `"chrono"` (chronomètre, `habillage_params` :
+`label`, `from`, `down`).
 
 ## Son et effets (`catalog/audio.json`)
 
-- **Musique** synthétisée (aucun droit à gérer) : 5 ambiances (lo-fi, pop énergique, corporate,
-  tension tech, minimal pulsé) avec accords, basse et batterie. Chaque thème choisit son ambiance
-  (`"ambiance"` dans `themes.json`). La musique baisse automatiquement quand la voix parle.
+- **Musique** synthétisée (aucun droit à gérer) : 10 ambiances (lo-fi piano, pop énergique,
+  corporate, tension tech, minimal pulsé, house douce, piano minimal, synthwave, acoustique, trap
+  légère), avec 4 instruments (`nappe`, `piano`, `pluck`, `synth`), basses (`pulse`, `808`, `douce`)
+  et batterie (kick, snare, hat, clap, shaker). Chaque thème liste ses ambiances compatibles
+  (`"ambiances"`), une est tirée par reel sans reprendre les plus récentes. La musique baisse
+  automatiquement quand la voix parle.
+- **Mastering** : compression douce, normalisation à **-14 LUFS** (niveau de référence TikTok /
+  Reels) et limiteur à -1 dBFS : tous les reels sortent au même volume perçu.
+- **Effets accordés à l'ambiance** (`"effets"` de chaque ambiance) : volume, tonalité en demi-tons
+  (pop, ding, scintillement) et son de transition propres, plus doux en lo-fi, plus nets en tech.
   Pour utiliser de vrais morceaux libres de droits, dépose-les dans `assets/music/<id_ambiance>/`.
 - **Effets sonores** calés sur le montage (`scripts/sound_design.py`) : impact sur l'accroche,
   whoosh aux changements de scène, pop à l'apparition d'une carte, clics de clavier, montée de
@@ -181,8 +201,18 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
 
 ## Effets visuels et voix
 
-- **Sous-titres** : le mot prononcé « pop » (légèrement agrandi) et les **mots-clés** choisis par
-  Gemini (`mots_cles`) s'affichent dans la couleur d'accent du thème (`couleurs.mot_cle`).
+- **Sous-titres** : 4 styles par thème (`sous_titres.style`) : `karaoke` (mot prononcé coloré et
+  agrandi), `encadre` (mot prononcé sur une pastille), `boite` (phrase sur un bandeau), `mot` (un
+  seul mot à la fois, en très grand). Les **mots-clés** choisis par Gemini (`mots_cles`) s'affichent
+  dans la couleur d'accent du thème (`couleurs.mot_cle`).
+- **Captures habillées** (`cadre` dans `themes.json`, `navigateur` par défaut) : la capture est posée
+  dans une fenêtre de navigateur, avec ombre et liseré, sur un fond aux couleurs du thème.
+- **Accroche « pattern interrupt »** : le texte claque (flash, secousse), le mot fort est souligné ;
+  la vidéo s'ouvre sur un zoom arrière rapide, puis de petits coups de zoom rythment chaque mot-clé
+  prononcé (`--no-punch` dans `5_assemble.py` pour les retirer).
+- **Rythme** : un changement de plan toutes les 2,5 à 5 s environ.
+- **13 thèmes**, dont verre givré, éditorial magazine, néon nuit, tableau à la craie et affiche
+  impact (polices libres Playfair Display, Space Grotesk, DM Sans, Kalam, Bebas Neue).
 - **Barre de progression** fine en haut de l'écran, aux couleurs du thème (`--no-progress-bar` dans
   `5_assemble.py` pour la retirer).
 - **Fin en boucle** : les dernières images se fondent dans la première (accroche comprise), la

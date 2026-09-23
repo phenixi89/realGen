@@ -3,33 +3,52 @@
   Accroche d'ouverture (surimpression, 5_assemble.py) : texte en GRAND lisible
   DES LA PREMIERE IMAGE -- jamais de fondu d'entree depuis l'invisible, c'est
   ce qui se voit dans le flux avant que le spectateur decide de rester.
+  "Pattern interrupt" : le texte claque (echelle qui se pose + secousse),
+  un flash bref et un trait de soulignement balaye le dernier mot fort.
   Parametres : text, dur (duree d'affichage, s), + theme (common.js).
 -->
 <html lang="fr"><head><meta charset="utf-8">
 <style>
   html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden}
+  #flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.55),transparent 60%);opacity:0}
   #wrap{position:absolute;left:70px;right:70px;top:300px;text-align:center}
   #text{display:inline;font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:96px;line-height:1.28;color:var(--cfg);
     -webkit-box-decoration-break:clone;box-decoration-break:clone;padding:6px 26px;border-radius:22px;
     background:linear-gradient(90deg,var(--c1),var(--c2)) no-repeat;background-size:100% 100%;
     box-shadow:0 18px 50px rgba(0,0,0,.45);text-shadow:0 4px 14px rgba(0,0,0,.35)}
+  .hot{color:var(--chl);position:relative;white-space:nowrap}
+  .hot::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:10px;border-radius:6px;background:var(--chl);
+    transform-origin:0 50%;transform:scaleX(var(--u,0))}
   #shine{position:absolute;inset:-20px;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);mix-blend-mode:overlay}
 </style></head><body>
+<div id="flash"></div>
 <div id="wrap"><span id="text"></span><div id="shine"></div></div>
 <script src="vendor/gsap.min.js"></script>
 <script src="common.js"></script>
 <script>
   const text = param("text", "Ton CV passe-t-il les filtres ATS ?");
   const el = document.getElementById("text");
-  el.textContent = text;
+  // Mot fort = le plus long des derniers mots (hors ponctuation) : mis en couleur et souligne.
+  const words = text.split(" ");
+  let hot = -1, best = 0;
+  words.forEach((w, i) => { const n = w.replace(/[^\p{L}\p{N}%]/gu, "").length; if (i >= words.length / 2 - 1 && n >= best) { best = n; hot = i; } });
+  words.forEach((w, i) => {
+    if (i) el.append(" ");
+    if (i === hot && best >= 3) { const s = document.createElement("span"); s.className = "hot"; s.textContent = w; el.append(s); }
+    else el.append(w);
+  });
   if (text.length > 42) el.style.fontSize = "80px";
   const DUR = Math.max(num("dur", 2.6), 1.2);
+  const hotEl = document.querySelector(".hot");
   // Image 0 : deja lisible (echelle legerement superieure, qui se pose) --
   // le mouvement attire l'oeil sans jamais cacher le texte.
   const tl = gsap.timeline({ paused: true })
-    .fromTo("#wrap", { scale: 1.12, rotate: -2 }, { scale: 1, rotate: 0, duration: 0.45, ease: "back.out(2.5)" }, 0)
-    .fromTo("#shine", { x: "-100%" }, { x: "100%", duration: 0.7, ease: "power2.inOut" }, 0.35)
-    .to("#wrap", { scale: 1.03, duration: Math.max(DUR - 0.9, 0.2), ease: "sine.inOut" }, 0.45)
-    .to("#wrap", { opacity: 0, y: -50, scale: 0.94, duration: 0.3, ease: "power2.in" }, Math.max(DUR - 0.3, 0.5));
+    .fromTo("#wrap", { scale: 1.18, rotate: -3 }, { scale: 1, rotate: 0, duration: 0.32, ease: "back.out(3)" }, 0)
+    .fromTo("#flash", { opacity: 0.5 }, { opacity: 0, duration: 0.35, ease: "power2.out" }, 0)
+    .to("#wrap", { keyframes: { x: [0, -14, 12, -8, 5, 0] }, duration: 0.3, ease: "none" }, 0.3)
+    .fromTo("#shine", { x: "-100%" }, { x: "100%", duration: 0.7, ease: "power2.inOut" }, 0.4)
+    .to("#wrap", { scale: 1.03, duration: Math.max(DUR - 0.9, 0.2), ease: "sine.inOut" }, 0.6)
+    .to("#wrap", { opacity: 0, y: -50, scale: 0.94, duration: 0.3, ease: "power2.in" }, Math.max(DUR - 0.3, 0.6));
+  if (hotEl) tl.fromTo(hotEl, { "--u": 0 }, { "--u": 1, duration: 0.35, ease: "power3.out", immediateRender: false }, 0.5);
   expose(tl);
 </script></body></html>

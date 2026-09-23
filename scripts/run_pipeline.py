@@ -33,8 +33,8 @@ STEPS = ["script", "voice", "video", "subs", "assemble"]
 ANIM_KINDS = ["overlay", "scene", "highlight", "cursor"]
 DEFAULT_OVERLAY = "score_ats"
 DEFAULT_SCENE_ANIM = "cta"
-CONSEIL_CTA = "cta?" + urlencode({"title": "Teste ton CV gratuitement", "sub": "Lien en bio · abonne-toi pour la suite",
-                                  "button": "Essaie OpusCV"})
+CONSEIL_CTA = {"title": "Teste ton CV gratuitement", "sub": "Lien en bio · abonne-toi pour la suite",
+               "button": "Essaie OpusCV"}
 # Scene qui recoit la surimpression par defaut : la premiere qui parle de
 # ces fonctionnalites (ATS/optimisation), sinon la 2e scene.
 OVERLAY_FEATURES = ("checklist", "relecture", "adapter", "fonctions_ia")
@@ -102,7 +102,9 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     # de l'app n'y dit rien) ; pour les demos, seulement avec --anims scene.
     wants_cta = "scene" in kinds or (cards and script.get("categorie") == "conseil")
     if wants_cta and t_scenes and not chosen and last not in card_scenes:
-        chosen = {last: CONSEIL_CTA if script.get("categorie") == "conseil" else DEFAULT_SCENE_ANIM}
+        # Textes du CTA : variante tiree par 1_generate_script.py (config.json cta_anim).
+        texts = script.get("cta_anim") or (CONSEIL_CTA if script.get("categorie") == "conseil" else {})
+        chosen = {last: "cta?" + urlencode(texts) if texts else DEFAULT_SCENE_ANIM}
     if "scene" in kinds or cards:
         scene_anims.update(chosen)
     for i, spec in sorted(scene_anims.items()):
@@ -124,6 +126,11 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
             spec += ("&" if "?" in spec else "?") + f"fit={fit:.2f}"
             assemble_args += ["--overlay", f"{start:.2f}:{spec}"]
 
+    # Scene "preuve" (reels conseil) : le curseur clique dans l'outil, meme
+    # sans --anims cursor -- c'est le moment ou le produit se montre en action.
+    for i, s in enumerate(scenes):
+        if s.get("preuve") and i not in scene_anims and cards:
+            video_args += ["--cursor-scene", str(i)]
     if "cursor" in kinds:
         video_args.append("--cursor")
     if "highlight" in kinds:
@@ -132,6 +139,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         for i in overlays:
             video_args += ["--highlight-skip", str(i)]
 
+    if script.get("ambiance"):
+        assemble_args += ["--ambiance", script["ambiance"]]
     if script.get("mots_cles"):
         assemble_args += ["--keywords", "|".join(script["mots_cles"])]
     show_hook = bool(hook and script.get("accroche_ecran") and t_scenes)
@@ -139,6 +148,14 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         first_scene = t_scenes[0]["end"] - t_scenes[0]["start"]
         assemble_args += ["--hook-text", script["accroche_ecran"],
                           "--hook-duration", f"{min(max(first_scene, HOOK_MIN_S), HOOK_MAX_S):.2f}"]
+    # Habillage du format (ex: chronometre du "defi") : de la fin de l'accroche
+    # au debut du CTA final.
+    if script.get("habillage") and len(t_scenes) > 1:
+        start = float(assemble_args[assemble_args.index("--hook-duration") + 1]) if show_hook else 0.3
+        end = t_scenes[-1]["start"]
+        if end - start > 2:
+            params = {**script.get("habillage_params", {}), "dur": f"{end - start:.2f}"}
+            assemble_args += ["--overlay", f"{start:.2f}:{script['habillage']}?{urlencode(params)}"]
     # Plans animes effectivement montes (cartes/CTA : mode screenshots seulement).
     sfx_cues = sound_design.plan_cues(timeline, scene_anims if cards else {}, show_hook)
     return video_args, assemble_args, sfx_cues

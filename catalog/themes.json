@@ -1,5 +1,5 @@
 {
-  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans.",
+  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'.",
   "themes": [
     {
       "id": "violet_nuit",
@@ -20,7 +20,8 @@
       "sous_titres": {
         "taille": 60,
         "majuscules": false,
-        "contour": 4
+        "contour": 4,
+        "style": "karaoke"
       },
       "ambiance": "lofi_chill",
       "transitions": [
@@ -28,6 +29,11 @@
         "smoothup",
         "circleopen",
         "slideleft"
+      ],
+      "ambiances": [
+        "lofi_chill",
+        "piano_minimal",
+        "synthwave"
       ]
     },
     {
@@ -49,7 +55,8 @@
       "sous_titres": {
         "taille": 62,
         "majuscules": true,
-        "contour": 5
+        "contour": 5,
+        "style": "encadre"
       },
       "ambiance": "pop_energie",
       "transitions": [
@@ -57,6 +64,11 @@
         "zoomin",
         "slideright",
         "fadewhite"
+      ],
+      "ambiances": [
+        "pop_energie",
+        "house_douce",
+        "acoustique"
       ]
     },
     {
@@ -78,7 +90,8 @@
       "sous_titres": {
         "taille": 58,
         "majuscules": false,
-        "contour": 4
+        "contour": 4,
+        "style": "boite"
       },
       "ambiance": "corporate_positif",
       "transitions": [
@@ -86,6 +99,11 @@
         "smoothleft",
         "dissolve",
         "smoothup"
+      ],
+      "ambiances": [
+        "corporate_positif",
+        "acoustique",
+        "piano_minimal"
       ]
     },
     {
@@ -107,7 +125,8 @@
       "sous_titres": {
         "taille": 60,
         "majuscules": true,
-        "contour": 4
+        "contour": 4,
+        "style": "karaoke"
       },
       "ambiance": "minimal_pulse",
       "transitions": [
@@ -115,6 +134,11 @@
         "slideup",
         "wiperight",
         "fade"
+      ],
+      "ambiances": [
+        "minimal_pulse",
+        "corporate_positif",
+        "house_douce"
       ]
     },
     {
@@ -136,7 +160,8 @@
       "sous_titres": {
         "taille": 60,
         "majuscules": true,
-        "contour": 4
+        "contour": 4,
+        "style": "mot"
       },
       "ambiance": "tension_tech",
       "transitions": [
@@ -144,6 +169,11 @@
         "pixelize",
         "hblur",
         "fadewhite"
+      ],
+      "ambiances": [
+        "tension_tech",
+        "trap_legere",
+        "synthwave"
       ]
     },
     {
@@ -165,7 +195,8 @@
       "sous_titres": {
         "taille": 62,
         "majuscules": false,
-        "contour": 5
+        "contour": 5,
+        "style": "encadre"
       },
       "ambiance": "pop_energie",
       "transitions": [
@@ -173,6 +204,11 @@
         "zoomin",
         "radial",
         "slideleft"
+      ],
+      "ambiances": [
+        "pop_energie",
+        "house_douce",
+        "trap_legere"
       ]
     },
     {
@@ -194,7 +230,8 @@
       "sous_titres": {
         "taille": 56,
         "majuscules": false,
-        "contour": 3
+        "contour": 3,
+        "style": "boite"
       },
       "ambiance": "lofi_chill",
       "transitions": [
@@ -202,6 +239,11 @@
         "smoothup",
         "fade",
         "diagtl"
+      ],
+      "ambiances": [
+        "lofi_chill",
+        "piano_minimal",
+        "minimal_pulse"
       ]
     },
     {
@@ -223,7 +265,8 @@
       "sous_titres": {
         "taille": 62,
         "majuscules": true,
-        "contour": 5
+        "contour": 5,
+        "style": "mot"
       },
       "ambiance": "pop_energie",
       "transitions": [
@@ -231,6 +274,186 @@
         "zoomin",
         "fadewhite",
         "squeezeh"
+      ],
+      "ambiances": [
+        "pop_energie",
+        "acoustique",
+        "house_douce"
+      ]
+    },
+    {
+      "id": "verre_givre",
+      "nom": "Verre givré (glassmorphism)",
+      "poids": 2,
+      "couleurs": {
+        "primaire": "#7dd3fc",
+        "secondaire": "#c4b5fd",
+        "fond": "#0f172a",
+        "texte": "#ffffff",
+        "surligne": "#7dd3fc",
+        "contour": "#0b1020",
+        "pastille": "#1e293b",
+        "mot_cle": "#c4b5fd"
+      },
+      "police_titre": "DMSans-Bold.ttf",
+      "police_texte": "DMSans-Bold.ttf",
+      "sous_titres": {
+        "taille": 60,
+        "majuscules": false,
+        "contour": 3,
+        "style": "boite"
+      },
+      "ambiance": "piano_minimal",
+      "ambiances": [
+        "piano_minimal",
+        "house_douce",
+        "lofi_chill"
+      ],
+      "transitions": [
+        "hblur",
+        "fade",
+        "smoothup",
+        "circleopen"
+      ]
+    },
+    {
+      "id": "editorial",
+      "nom": "Éditorial magazine",
+      "poids": 2,
+      "couleurs": {
+        "primaire": "#e11d48",
+        "secondaire": "#f59e0b",
+        "fond": "#1c1917",
+        "texte": "#ffffff",
+        "surligne": "#fde047",
+        "contour": "#111111",
+        "pastille": "#111111",
+        "mot_cle": "#fb7185"
+      },
+      "police_titre": "PlayfairDisplay-ExtraBold.ttf",
+      "police_texte": "DMSans-Bold.ttf",
+      "sous_titres": {
+        "taille": 58,
+        "majuscules": false,
+        "contour": 4,
+        "style": "encadre"
+      },
+      "ambiance": "piano_minimal",
+      "ambiances": [
+        "piano_minimal",
+        "acoustique",
+        "corporate_positif"
+      ],
+      "transitions": [
+        "wipeleft",
+        "fadeblack",
+        "slideup",
+        "wiperight"
+      ]
+    },
+    {
+      "id": "neon_nuit",
+      "nom": "Néon nuit",
+      "poids": 2,
+      "couleurs": {
+        "primaire": "#22d3ee",
+        "secondaire": "#f0abfc",
+        "fond": "#05010f",
+        "texte": "#ffffff",
+        "surligne": "#22d3ee",
+        "contour": "#000000",
+        "pastille": "#150a2e",
+        "mot_cle": "#f0abfc"
+      },
+      "police_titre": "SpaceGrotesk-Bold.ttf",
+      "police_texte": "SpaceGrotesk-Bold.ttf",
+      "sous_titres": {
+        "taille": 62,
+        "majuscules": true,
+        "contour": 5,
+        "style": "mot"
+      },
+      "ambiance": "synthwave",
+      "ambiances": [
+        "synthwave",
+        "trap_legere",
+        "tension_tech"
+      ],
+      "transitions": [
+        "fadewhite",
+        "pixelize",
+        "zoomin",
+        "hblur"
+      ]
+    },
+    {
+      "id": "craie_tableau",
+      "nom": "Tableau à la craie",
+      "poids": 1,
+      "couleurs": {
+        "primaire": "#fef08a",
+        "secondaire": "#86efac",
+        "fond": "#1f3a2e",
+        "texte": "#ffffff",
+        "surligne": "#fef08a",
+        "contour": "#0d1f17",
+        "pastille": "#16301f",
+        "mot_cle": "#86efac"
+      },
+      "police_titre": "Kalam-Bold.ttf",
+      "police_texte": "Kalam-Bold.ttf",
+      "sous_titres": {
+        "taille": 64,
+        "majuscules": false,
+        "contour": 4,
+        "style": "karaoke"
+      },
+      "ambiance": "acoustique",
+      "ambiances": [
+        "acoustique",
+        "lofi_chill",
+        "piano_minimal"
+      ],
+      "transitions": [
+        "dissolve",
+        "smoothleft",
+        "fade",
+        "diagtl"
+      ]
+    },
+    {
+      "id": "affiche_bebas",
+      "nom": "Affiche impact",
+      "poids": 2,
+      "couleurs": {
+        "primaire": "#facc15",
+        "secondaire": "#ef4444",
+        "fond": "#0a0a0a",
+        "texte": "#ffffff",
+        "surligne": "#facc15",
+        "contour": "#000000",
+        "pastille": "#171717",
+        "mot_cle": "#f87171"
+      },
+      "police_titre": "BebasNeue-Regular.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {
+        "taille": 62,
+        "majuscules": true,
+        "contour": 5,
+        "style": "encadre"
+      },
+      "ambiance": "trap_legere",
+      "ambiances": [
+        "trap_legere",
+        "pop_energie",
+        "house_douce"
+      ],
+      "transitions": [
+        "slideleft",
+        "zoomin",
+        "squeezeh",
+        "fadeblack"
       ]
     }
   ]

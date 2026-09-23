@@ -92,7 +92,7 @@ def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[d
     for i, scene in enumerate(scenes):
         start, dur = scene["start"], scene["end"] - scene["start"]
         if i > 0:
-            cues.append({"t": max(start - WHOOSH_LEAD, 0), "name": transition_sound()})
+            cues.append({"t": max(start - WHOOSH_LEAD, 0), "name": transition_sound(), "transition": True})
         spec = scene_anims.get(i)
         if not spec:
             continue

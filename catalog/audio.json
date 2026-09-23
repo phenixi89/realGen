@@ -1,5 +1,5 @@
 {
-  "_doc": "Audio des reels (scripts/audio_gen.py). ambiances : musiques synthetisees (bpm, accords en notes MIDI, motifs de batterie 16 pas 'x' = coup). Chaque theme (themes.json) choisit son ambiance via 'ambiance'. Deposer des morceaux libres de droits dans assets/music/<id_ambiance>/ pour les utiliser a la place de la synthese. effets : transition = son des changements de scene (tick, whoosh, pop...), volumes par effet, regles anti-abus (ecart minimal, maximum par 10 s, effets bannis).",
+  "_doc": "Audio des reels (scripts/audio_gen.py). ambiances : musiques synthetisees (bpm, accords en notes MIDI, motifs de batterie 16 pas 'x' = coup). Chaque theme (themes.json) choisit son ambiance via 'ambiance'. Deposer des morceaux libres de droits dans assets/music/<id_ambiance>/ pour les utiliser a la place de la synthese. effets : transition = son des changements de scene (tick, whoosh, pop...), volumes par effet, regles anti-abus (ecart minimal, maximum par 10 s, effets bannis). instrument : nappe | piano | pluck | synth ; arpege : ordre des notes par double-croche (chiffres = rang dans l'accord, '.' = silence) ; basse_type : pulse | 808 | douce ; batterie : kick, snare, hat, clap, shaker. effets (par ambiance) : volume (multiplicateur), tonalite (demi-tons, effets melodiques accordes sur la musique), transition (son des changements de scene pour cette ambiance). Le mix final est masterise a -14 LUFS (audio_gen.master).",
   "musique": {
     "volume": 0.16,
     "baisse_sous_voix": 0.55
@@ -10,10 +10,30 @@
       "nom": "Lo-fi détendu",
       "bpm": 84,
       "accords": [
-        [57, 60, 64, 67],
-        [53, 57, 60, 64],
-        [55, 59, 62, 65],
-        [52, 55, 59, 62]
+        [
+          57,
+          60,
+          64,
+          67
+        ],
+        [
+          53,
+          57,
+          60,
+          64
+        ],
+        [
+          55,
+          59,
+          62,
+          65
+        ],
+        [
+          52,
+          55,
+          59,
+          62
+        ]
       ],
       "basse": 0.22,
       "filtre_hz": 3500,
@@ -21,17 +41,40 @@
         "kick": "x.........x.....",
         "snare": "....x.......x...",
         "hat": "x.x.x.x.x.x.x.x."
-      }
+      },
+      "effets": {
+        "volume": 0.8,
+        "tonalite": -3
+      },
+      "instrument": "piano",
+      "arpege": "0.1.2.3.",
+      "basse_type": "douce"
     },
     {
       "id": "pop_energie",
       "nom": "Pop énergique",
       "bpm": 112,
       "accords": [
-        [60, 64, 67],
-        [55, 59, 62],
-        [57, 60, 64],
-        [53, 57, 60]
+        [
+          60,
+          64,
+          67
+        ],
+        [
+          55,
+          59,
+          62
+        ],
+        [
+          57,
+          60,
+          64
+        ],
+        [
+          53,
+          57,
+          60
+        ]
       ],
       "basse": 0.3,
       "filtre_hz": 7000,
@@ -39,6 +82,11 @@
         "kick": "x...x...x...x...",
         "snare": "....x.......x...",
         "hat": "..x...x...x...x."
+      },
+      "effets": {
+        "volume": 1.0,
+        "tonalite": 0,
+        "transition": "pop"
       }
     },
     {
@@ -46,10 +94,26 @@
       "nom": "Corporate positif",
       "bpm": 100,
       "accords": [
-        [62, 66, 69],
-        [59, 62, 66],
-        [55, 59, 62],
-        [57, 61, 64]
+        [
+          62,
+          66,
+          69
+        ],
+        [
+          59,
+          62,
+          66
+        ],
+        [
+          55,
+          59,
+          62
+        ],
+        [
+          57,
+          61,
+          64
+        ]
       ],
       "basse": 0.25,
       "filtre_hz": 6000,
@@ -57,17 +121,39 @@
         "kick": "x.......x.......",
         "snare": "....x.......x...",
         "hat": "x.x.x.x.x.x.x.x."
-      }
+      },
+      "effets": {
+        "volume": 0.9,
+        "tonalite": 2
+      },
+      "instrument": "pluck",
+      "arpege": "0123"
     },
     {
       "id": "tension_tech",
       "nom": "Tension tech",
       "bpm": 96,
       "accords": [
-        [57, 60, 64],
-        [57, 60, 65],
-        [55, 58, 62],
-        [56, 60, 63]
+        [
+          57,
+          60,
+          64
+        ],
+        [
+          57,
+          60,
+          65
+        ],
+        [
+          55,
+          58,
+          62
+        ],
+        [
+          56,
+          60,
+          63
+        ]
       ],
       "basse": 0.35,
       "filtre_hz": 4000,
@@ -75,6 +161,10 @@
         "kick": "x..x....x..x....",
         "snare": "........x.......",
         "hat": "xxxxxxxxxxxxxxxx"
+      },
+      "effets": {
+        "volume": 1.05,
+        "tonalite": -5
       }
     },
     {
@@ -82,16 +172,256 @@
       "nom": "Minimal pulsé",
       "bpm": 120,
       "accords": [
-        [60, 63, 67],
-        [58, 62, 65],
-        [56, 60, 63],
-        [55, 58, 62]
+        [
+          60,
+          63,
+          67
+        ],
+        [
+          58,
+          62,
+          65
+        ],
+        [
+          56,
+          60,
+          63
+        ],
+        [
+          55,
+          58,
+          62
+        ]
       ],
       "basse": 0.3,
       "filtre_hz": 5000,
       "batterie": {
         "kick": "x...x...x...x...",
         "hat": "..x...x...x...x."
+      },
+      "effets": {
+        "volume": 0.95,
+        "tonalite": 0
+      }
+    },
+    {
+      "id": "house_douce",
+      "nom": "House douce",
+      "bpm": 118,
+      "instrument": "nappe",
+      "basse_type": "pulse",
+      "accords": [
+        [
+          57,
+          60,
+          64,
+          67
+        ],
+        [
+          53,
+          57,
+          60,
+          64
+        ],
+        [
+          60,
+          64,
+          67,
+          71
+        ],
+        [
+          55,
+          59,
+          62,
+          67
+        ]
+      ],
+      "basse": 0.3,
+      "filtre_hz": 6500,
+      "batterie": {
+        "kick": "x...x...x...x...",
+        "clap": "....x.......x...",
+        "hat": "..x...x...x...x.",
+        "shaker": "x.xxx.xxx.xxx.xx"
+      },
+      "effets": {
+        "volume": 0.95,
+        "tonalite": 0,
+        "transition": "tick"
+      }
+    },
+    {
+      "id": "piano_minimal",
+      "nom": "Piano minimal",
+      "bpm": 76,
+      "instrument": "piano",
+      "arpege": "0..1..2.3..2..1.",
+      "basse_type": "douce",
+      "accords": [
+        [
+          60,
+          64,
+          67,
+          71
+        ],
+        [
+          57,
+          60,
+          64,
+          67
+        ],
+        [
+          53,
+          57,
+          60,
+          64
+        ],
+        [
+          55,
+          59,
+          62,
+          65
+        ]
+      ],
+      "basse": 0.18,
+      "filtre_hz": 5000,
+      "batterie": {
+        "kick": "x...............",
+        "shaker": "....x.......x..."
+      },
+      "effets": {
+        "volume": 0.75,
+        "tonalite": -2,
+        "transition": "tick"
+      }
+    },
+    {
+      "id": "synthwave",
+      "nom": "Synthwave",
+      "bpm": 100,
+      "instrument": "synth",
+      "basse_type": "pulse",
+      "accords": [
+        [
+          57,
+          60,
+          64
+        ],
+        [
+          53,
+          57,
+          60
+        ],
+        [
+          48,
+          52,
+          55
+        ],
+        [
+          55,
+          59,
+          62
+        ]
+      ],
+      "basse": 0.32,
+      "filtre_hz": 4500,
+      "batterie": {
+        "kick": "x.......x.......",
+        "snare": "....x.......x...",
+        "hat": "x.x.x.x.x.x.x.x."
+      },
+      "effets": {
+        "volume": 1.0,
+        "tonalite": -4,
+        "transition": "tick"
+      }
+    },
+    {
+      "id": "acoustique",
+      "nom": "Acoustique solaire",
+      "bpm": 96,
+      "instrument": "pluck",
+      "arpege": "0213",
+      "basse_type": "douce",
+      "accords": [
+        [
+          55,
+          59,
+          62,
+          67
+        ],
+        [
+          52,
+          55,
+          59,
+          64
+        ],
+        [
+          48,
+          52,
+          55,
+          60
+        ],
+        [
+          50,
+          54,
+          57,
+          62
+        ]
+      ],
+      "basse": 0.2,
+      "filtre_hz": 7000,
+      "batterie": {
+        "kick": "x.......x.......",
+        "clap": "....x.......x...",
+        "shaker": "x.x.x.x.x.x.x.x."
+      },
+      "effets": {
+        "volume": 0.85,
+        "tonalite": 2,
+        "transition": "pop"
+      }
+    },
+    {
+      "id": "trap_legere",
+      "nom": "Trap légère",
+      "bpm": 140,
+      "instrument": "piano",
+      "arpege": "0...2...1...3...",
+      "basse_type": "808",
+      "accords": [
+        [
+          57,
+          60,
+          64
+        ],
+        [
+          53,
+          57,
+          60
+        ],
+        [
+          55,
+          58,
+          62
+        ],
+        [
+          52,
+          55,
+          59
+        ]
+      ],
+      "basse": 0.4,
+      "filtre_hz": 6000,
+      "batterie": {
+        "kick": "x......x..x.....",
+        "clap": "........x.......",
+        "hat": "x.x.x.xxx.x.x.xx"
+      },
+      "effets": {
+        "volume": 1.0,
+        "tonalite": -2,
+        "transition": "tick"
       }
     }
   ],

@@ -1,0 +1,54 @@
+<!doctype html>
+<!--
+  Habillage "chrono" (formats avec "habillage": "chrono", cf. run_pipeline.py) :
+  pastille chronometre en haut a droite pendant tout le reel, qui compte
+  (ou decompte avec ?down=1 depuis ?from=) ; pulsation a chaque seconde,
+  passage en couleur d'alerte sur les 3 dernieres secondes d'un decompte.
+  Parametres : dur (duree, s), label, from, down, + theme.
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden}
+  #pill{position:absolute;right:56px;top:200px;display:flex;align-items:center;gap:18px;padding:16px 28px 16px 20px;
+    border-radius:999px;background:color-mix(in srgb,var(--cbg) 82%,transparent);border:3px solid var(--c1);
+    box-shadow:0 12px 34px rgba(0,0,0,.45);font-family:TitleFont,"DejaVu Sans",sans-serif;color:var(--cfg);transform-origin:100% 50%}
+  #dot{width:22px;height:22px;border-radius:50%;background:#ff3b3b;box-shadow:0 0 16px #ff3b3b}
+  #label{font-size:30px;letter-spacing:3px;opacity:.85}
+  #time{font-size:56px;font-weight:800;font-variant-numeric:tabular-nums;min-width:190px;text-align:right}
+  #pill.alert{border-color:#ff3b3b}
+  #pill.alert #time{color:#ff5a5a}
+</style></head><body>
+<div id="pill"><div id="dot"></div><div id="label"></div><div id="time">00:00</div></div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>
+  const DUR = Math.max(num("dur", 30), 1), DOWN = param("down", "") === "1", FROM = num("from", 30);
+  const pill = document.getElementById("pill"), timeEl = document.getElementById("time"), dot = document.getElementById("dot");
+  document.getElementById("label").textContent = param("label", "CHRONO");
+  // Decompte : le temps affiche va de FROM a 0 sur toute la duree (compression
+  // assumee : c'est un effet de tension, pas une vraie horloge).
+  const shown = (t) => DOWN ? Math.max(FROM * (1 - t / DUR), 0) : t;
+  const fmt = (s) => {
+    const sec = Math.floor(s), cs = Math.floor((s - sec) * 100);
+    return `${String(sec).padStart(2, "0")},${String(cs).padStart(2, "0")} s`;
+  };
+  const tl = gsap.timeline({ paused: true })
+    .fromTo(pill, { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2.2)" }, 0)
+    .to(pill, { opacity: 0, scale: 0.85, duration: 0.3 }, DUR - 0.3);
+  expose(tl);
+  const baseSeek = window.seek;
+  window.seek = (t) => {
+    baseSeek(t);
+    const s = shown(Math.min(Math.max(t, 0), DUR));
+    timeEl.textContent = fmt(s);
+    const frac = s % 1;
+    dot.style.opacity = frac < 0.5 ? 1 : 0.35;
+    pill.classList.toggle("alert", DOWN && s <= 3);
+    // Pulsation a chaque seconde franchie (cadence plus nerveuse en alerte).
+    const beat = Math.max(0, 1 - (DOWN ? 1 - frac : frac) / 0.18);
+    pill.style.setProperty("--beat", beat);
+    timeEl.style.transform = `scale(${1 + 0.08 * beat})`;
+  };
+  window.DURATION = DUR;
+  window.seek(0);
+</script></body></html>

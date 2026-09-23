@@ -39,6 +39,48 @@ LOOP_S = 0.45
 HOOK_DEFAULT_S = 2.6
 WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 WATERMARK_TEXT = "opuscv.fr"
+# Pattern interrupt : la video "claque" en zoom arriere sur la 1re image,
+# puis de petits coups de zoom a chaque mot-cle prononce (rythme visuel).
+PUNCH_OPEN_ZOOM = 0.14
+PUNCH_OPEN_S = 0.4
+PUNCH_KEYWORD_ZOOM = 0.045
+PUNCH_KEYWORD_S = 0.3
+PUNCH_MIN_GAP_S = 1.2
+
+
+def punch_times(cues: list[dict], keywords: set[str]) -> list[float]:
+    """Instants des mots-cles prononces, espaces d'au moins PUNCH_MIN_GAP_S."""
+    times = []
+    for cue in cues:
+        for w in cue["words"]:
+            if norm_word(w["text"]) in keywords and (not times or w["start"] - times[-1] >= PUNCH_MIN_GAP_S):
+                times.append(w["start"])
+    return times
+
+
+def punch_zoom(t: float, beats: list[float]) -> float:
+    """Facteur de zoom de la video a l'instant t (1 = aucun)."""
+    z = 1.0
+    if t < PUNCH_OPEN_S:
+        z += PUNCH_OPEN_ZOOM * (1 - t / PUNCH_OPEN_S) ** 2
+    for b in beats:
+        if 0 <= t - b < PUNCH_KEYWORD_S:
+            k = (t - b) / PUNCH_KEYWORD_S
+            z += PUNCH_KEYWORD_ZOOM * (1 - k) * min(k * 4, 1)
+    return z
+
+
+def apply_punch(video, beats: list[float]):
+    def frame(get_frame, t):
+        img = get_frame(t)
+        z = punch_zoom(t, beats)
+        if z <= 1.001:
+            return img
+        h, w = img.shape[:2]
+        cw, ch = int(w / z), int(h / z)
+        x, y = (w - cw) // 2, (h - ch) // 2
+        return np.array(Image.fromarray(img[y:y + ch, x:x + cw]).resize((w, h), Image.BILINEAR))
+    return video.transform(frame)
 
 def make_vignette(size: tuple[int, int]):
     """
@@ -68,7 +110,8 @@ def make_soundtrack(voice: AudioFileClip, duration: float, ambiance_id: str | No
                     sfx_cues: list[dict]) -> AudioArrayClip:
     """
     Voix + musique d'ambiance (catalog/audio.json, baissee quand la voix parle)
-    + effets sonores cales sur le montage (sound_design.py), mixes en numpy.
+    + effets sonores cales sur le montage (sound_design.py), mixes en numpy,
+    puis masterises (audio_gen.master : compression, -14 LUFS, limiteur).
     """
     cfg = audio_gen.audio_config()["musique"]
     n = int(duration * audio_gen.SR)
@@ -83,11 +126,11 @@ def make_soundtrack(voice: AudioFileClip, duration: float, ambiance_id: str | No
         voice_mono = voice_mono * min(max(VOICE_TARGET_RMS / rms, 0.5), 4.0)
     music = audio_gen.load_music(duration, ambiance_id) * cfg["volume"]
     music = audio_gen.duck(music, voice_mono, cfg["baisse_sous_voix"])[:n]
-    effects = audio_gen.render_sfx_track(sfx_cues, duration)[:n]
-    mix = voice_mono + music + effects
-    peak = np.max(np.abs(mix)) or 1.0
-    if peak > 0.98:  # jamais de saturation, meme si un effet tombe sur un pic de voix
-        mix = mix * (0.98 / peak)
+    effects = audio_gen.render_sfx_track(sfx_cues, duration, audio_gen.get_ambiance(ambiance_id))[:n]
+    # Mastering : meme volume percu d'un reel a l'autre (-14 LUFS), sans saturation.
+    # Sortie stereo a canaux identiques : BS.1770 additionne les canaux (+3 dB),
+    # d'ou la cible mono abaissee d'autant pour mesurer -14 LUFS sur le fichier final.
+    mix = audio_gen.master(voice_mono + music + effects, audio_gen.TARGET_LUFS - 3.0)
     return AudioArrayClip(np.column_stack([mix, mix]).astype(np.float32), fps=audio_gen.SR)
 
 
@@ -162,7 +205,8 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
              overlays: list[tuple[float, str]] | None = None, theme: dict | None = None,
              hook_text: str = "", hook_duration: float = HOOK_DEFAULT_S,
              ambiance_id: str | None = None, sfx_cues: list[dict] | None = None,
-             keywords: list[str] | None = None, progress_bar: bool = True, loop_ending: bool = True):
+             keywords: list[str] | None = None, progress_bar: bool = True, loop_ending: bool = True,
+             punch: bool = True):
     """
     theme : catalog/themes.json (sous-titres, animations, watermark, musique).
     hook_text : accroche affichee en grand des la premiere image (assets/anim/hook.html).
@@ -170,6 +214,7 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     sfx_cues : effets sonores [{"t", "name", ...}] (sound_design.plan_cues).
     keywords : mots-cles colores dans les sous-titres.
     progress_bar / loop_ending : barre de progression, fin raccordee au debut.
+    punch : zoom "claque" a l'ouverture et petits coups de zoom sur les mots-cles.
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cues = json.loads(subs_path.read_text(encoding="utf-8"))
@@ -188,6 +233,8 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
 
     vignette_mask = make_vignette(video.size)
     video = video.image_transform(lambda frame: np.clip(frame * vignette_mask, 0, 255).astype("uint8"))
+    if punch:
+        video = apply_punch(video, punch_times(cues, {norm_word(k) for k in keywords or []}))
 
     tmp = tempfile.TemporaryDirectory()
     overlays = list(overlays or [])
@@ -258,6 +305,8 @@ def main():
     parser.add_argument("--no-progress-bar", action="store_true", help="Sans barre de progression")
     parser.add_argument("--no-loop", action="store_true",
                          help="Fin en fondu au noir au lieu d'un raccord avec la premiere image")
+    parser.add_argument("--no-punch", action="store_true",
+                         help="Sans zoom 'claque' a l'ouverture ni coups de zoom sur les mots-cles")
     parser.add_argument("--force", action="store_true",
                          help="Reassemble meme si --out existe deja")
     args = parser.parse_args()
@@ -272,7 +321,7 @@ def main():
              hook_text=args.hook_text, hook_duration=args.hook_duration, ambiance_id=args.ambiance,
              sfx_cues=json.loads(Path(args.sfx).read_text(encoding="utf-8")) if args.sfx else [],
              keywords=[k for k in args.keywords.split("|") if k.strip()],
-             progress_bar=not args.no_progress_bar, loop_ending=not args.no_loop)
+             progress_bar=not args.no_progress_bar, loop_ending=not args.no_loop, punch=not args.no_punch)
     print(f"OK -> {args.out}")
 
 

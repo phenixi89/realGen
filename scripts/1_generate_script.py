@@ -91,8 +91,9 @@ def word_budget(duration: int) -> tuple[int, int, int]:
 def scene_bounds(duration: int) -> tuple[int, int]:
     # ~3 a ~6 s par scene : en dessous, l'image n'a pas le temps d'etre lue ;
     # au-dessus, le plan s'eternise sur un reel.
-    lo = max(3, math.floor(duration / 6))
-    hi = max(lo + 1, math.ceil(duration / 3))
+    # Rythme reseaux sociaux : un changement de plan toutes les ~2.5-5 s.
+    lo = max(3, math.floor(duration / 5))
+    hi = max(lo + 1, math.ceil(duration / 2.5))
     return lo, hi
 
 
@@ -158,11 +159,14 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         hook = catalog.get_hook(hook_id) if hook_id else catalog.pick_hook(working, rng)
         theme = catalog.get_theme(theme_id) if theme_id else catalog.pick_theme(working, rng)
         voice = catalog.pick_voice(working, rng)
+        cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
+        ambiance = catalog.pick_ambiance(theme, working, rng)
         plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice,
+                "cta": cta, "cta_anim": cta_anim, "ambiance": ambiance,
                 "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None}
         plans.append(plan)
         working.append({"format": fmt["id"], "categorie": fmt["categorie"], "sujet": sujet["id"],
-                        "hook": hook["id"], "theme": theme["id"], "voix": voice["id"]})
+                        "hook": hook["id"], "theme": theme["id"], "voix": voice["id"], "ambiance": ambiance})
     return plans
 
 
@@ -176,8 +180,7 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
     catalog_features = "\n".join(f'- "{fid}" : {f.description}' for fid, f in available_features().items())
     target, lo_w, hi_w = word_budget(duration)
     lo_s, hi_s = scene_bounds(duration)
-    cfg = catalog.config()
-    cta = cfg["cta_conseil"] if fmt["categorie"] == "conseil" else cfg["cta_produit"]
+    cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
     structure = fmt["structure"].replace("{episode}", str(plan["episode"] or 1))
 
     # Un sujet "killer feature : ..." vise UNE fonctionnalite en profondeur
@@ -216,9 +219,19 @@ Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus
 Le texte de la carte ne recopie PAS la voix : il la résume. Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée)."""
 
+    proof_rule = ""
+    if wants_proof(fmt):
+        proof_rule = """
+SCÈNE PREUVE (obligatoire, une seule) : l'avant-dernière ou l'antépénultième scène montre le conseil
+APPLIQUÉ EN DIRECT dans OpusCV : marque-la "preuve": true, SANS carte, avec la fonctionnalité qui
+applique ce conseil (ex : "checklist" pour les erreurs détectées, "adapter" pour les mots-clés d'une offre,
+"relecture" pour l'orthographe). La voix dit concrètement ce que l'outil fait à ce moment
+(« là, l'outil repère... »), naturellement, sans ton publicitaire ni superlatif.
+"""
     intent = ("contenu utile : le spectateur doit apprendre quelque chose, le produit n'est qu'un outil"
               if fmt["categorie"] == "conseil" else "démonstration du produit")
     avoid_hooks = "\n".join(f"- {h}" for h in recent_hooks[-12:]) or "(aucune)"
+    banned = " ; ".join(f"« {b} »" for b in catalog.config().get("phrases_bannies", []))
     prompt = f"""Tu es copywriter spécialisé en contenu court viral (TikTok/Instagram Reels) pour chercheurs d'emploi.
 Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonctionnalité :
 
@@ -242,7 +255,7 @@ Fonctionnalités filmables (utilise UNIQUEMENT ces ids, champ "feature") :
 {catalog_features}
 
 {cards_rule}
-
+{proof_rule}
 Contraintes :
 - entre {lo_s} et {hi_s} scènes ;
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
@@ -252,7 +265,13 @@ Contraintes :
 - {variety_rule}
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est
   affiché tel quel en sous-titres ;
-- pas d'emoji, pas de hashtag, pas d'indication de mise en scène dans les textes.
+- pas d'emoji, pas de hashtag, pas d'indication de mise en scène dans les textes ;
+- ORIGINALITÉ : aucun conseil générique ou évident (interdit : {banned}) ;
+  chaque scène apporte un élément concret : un exemple de formulation, un chiffre plausible
+  et non inventé sur OpusCV, un cas précis ou une astuce actionnable immédiatement ;
+- RYTHME : phrases courtes et percutantes, une idée par scène, aucune phrase de transition creuse ;
+- BOUCLE : la dernière phrase répond ou fait écho à l'accroche, pour que la vidéo s'enchaîne
+  naturellement si elle recommence.
 
 Fournis aussi :
 - "accroche_ecran" : le texte affiché en GRAND à l'écran dès la première image ({ACCROCHE_MAX_WORDS} mots max),
@@ -283,7 +302,7 @@ Recopie à l'identique les textes imposés ; écris uniquement les textes manqua
     prompt += """
 Réponds UNIQUEMENT en JSON valide :
 {"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."], "offre_emploi": "...",
- "theme_style": "...", "scenes": [{"feature": "<id>", "texte": "...", "carte": {...} (optionnel)}]}
+ "theme_style": "...", "scenes": [{"feature": "<id>", "texte": "...", "carte": {...} (optionnel), "preuve": true (optionnel)}]}
 """
     return prompt
 
@@ -329,8 +348,18 @@ def clean_card(raw) -> dict | None:
     }
 
 
+def wants_proof(fmt: dict) -> bool:
+    """Reels conseil : une scene "preuve" montre le conseil applique dans OpusCV (config preuve_produit)."""
+    return fmt.get("categorie") == "conseil" and bool(catalog.config().get("preuve_produit", True))
+
+
+def banned_phrases(text: str) -> list[str]:
+    low = catalog._norm(text)
+    return [b for b in catalog.config().get("phrases_bannies", []) if catalog._norm(b) in low]
+
+
 def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: str = "aucune",
-             recent_hooks: list[str] | None = None) -> tuple[list[dict], list[str]]:
+             recent_hooks: list[str] | None = None, proof: bool = False) -> tuple[list[dict], list[str]]:
     """Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA)."""
     problems = []
     scenes = []
@@ -352,6 +381,8 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
         # Animations demandees par le scenario (run_pipeline.py --anims) :
         # conservees telles quelles, interpretees au montage.
         scene.update({k: raw[k] for k in ANIM_KEYS if raw.get(k)})
+        if raw.get("preuve") is True:
+            scene["preuve"] = True
         scenes.append(scene)
 
     if forced:
@@ -370,6 +401,23 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
     suspense = [s for s in scenes if s.get("carte", {}).get("effet") == "suspense"]  # noqa: E501
     for extra in suspense[1:]:
         extra["carte"]["effet"] = "standard"
+
+    if proof and not forced and scenes:
+        # Preuve : une seule, sans carte, ni accroche ni CTA.
+        proofs = [i for i, s in enumerate(scenes) if s.get("preuve")]
+        for i in proofs:
+            if i in (0, len(scenes) - 1):
+                del scenes[i]["preuve"]
+        proofs = [i for i in proofs if 0 < i < len(scenes) - 1]
+        for i in proofs[1:]:
+            del scenes[i]["preuve"]
+        if proofs:
+            scenes[proofs[0]].pop("carte", None)
+        else:
+            problems.append('il manque la scène "preuve": true (conseil appliqué en direct dans OpusCV)')
+    banned = banned_phrases(" ".join(s["texte"] for s in scenes))
+    if banned:
+        problems.append("formulations trop génériques à remplacer par du concret : " + ", ".join(banned))
 
     words = sum(len(s["texte"].split()) for s in scenes)
     _, lo_w, hi_w = word_budget(duration)
@@ -413,7 +461,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         except json.JSONDecodeError:
             feedback = "ta réponse n'était pas du JSON valide"
             continue
-        scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks)
+        scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks, wants_proof(fmt))
         if scenes:
             best, best_data = scenes, data
         if not problems:
@@ -442,7 +490,11 @@ def plan_fields(plan: dict) -> dict:
     return {"format": plan["format"]["id"], "categorie": plan["format"]["categorie"],
             "sujet": plan["sujet"]["id"], "hook": plan["hook"]["id"], "theme": plan["theme"]["id"],
             "episode": plan["episode"], "voix": plan["voix"]["id"],
-            "ton": plan["format"].get("ton") or catalog.default_tone()}
+            "ton": plan["format"].get("ton") or catalog.default_tone(),
+            "cta_anim": plan.get("cta_anim") or {},
+            "ambiance": plan.get("ambiance"),
+            **({"habillage": plan["format"]["habillage"], "habillage_params": plan["format"].get("habillage_params", {})}
+               if plan["format"].get("habillage") else {})}
 
 
 def finalize(scenario: dict) -> dict:
@@ -586,7 +638,8 @@ def main():
     # Historique : ce qui a ete genere nourrit l'anti-redondance des prochains runs.
     catalog.save_history(history_path, history + [
         {"format": s.get("format"), "categorie": s.get("categorie"), "sujet": s.get("sujet"),
-         "hook": s.get("hook"), "theme": s.get("theme"), "voix": s.get("voix"), "titre": s.get("titre"),
+         "hook": s.get("hook"), "theme": s.get("theme"), "voix": s.get("voix"), "ambiance": s.get("ambiance"),
+         "titre": s.get("titre"),
          "accroche": s.get("accroche_ecran") or (s["scenes"][0]["texte"] if s["scenes"] else "")}
         for s in scenarios])
     print(f"OK -> {out_path} ({len(scenarios)} scenarios)")

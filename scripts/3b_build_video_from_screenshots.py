@@ -19,7 +19,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from PIL import Image
+
 import catalog
+from scene_compose import frame_scene
 from render_js_anim import file_uri, parse_spec, render_clip, render_frames
 from timeline import clip_lengths, concat_with_xfade, load_timeline, plan_items
 
@@ -141,7 +144,7 @@ def build_video_from_screenshots(screens_dir: Path, out_path: Path, clip_seconds
 def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                             scene_anims: dict[int, str] | None = None, highlight: bool = False,
                             highlight_skip: set[int] | None = None, theme: dict | None = None,
-                            cursor: bool = False) -> list[float]:
+                            cursor: bool = False, cursor_scenes: set[int] | None = None) -> list[float]:
     """
     Montage cale sur la voix : chaque scene du scenario affiche les captures
     de SA fonctionnalite (captures.json, ecrit par 3_record_demo.py) pendant
@@ -156,6 +159,7 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
     theme : couleurs/polices des animations (catalog/themes.json).
     cursor : curseur anime qui clique sur le bouton d'action (captures.json
     "focus") ; avec highlight, les deux alternent d'une scene a l'autre.
+    cursor_scenes : scenes qui ont le curseur meme sans cursor (scene "preuve").
     Chaque capture avec "focus" est zoomee vers ce point.
     -> instants des clics du curseur (effet sonore, cf. run_pipeline.py).
     """
@@ -215,7 +219,8 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                                "fps": FPS, "fx": (fxy or (0.5, 0.5))[0], "fy": (fxy or (0.5, 0.5))[1]}
                 first_of_scene = scene_index != previous_scene and scene_index not in (highlight_skip or set())
                 # Curseur si possible ; avec le souligne aussi actif, une scene sur deux.
-                use_cursor = cursor and focus and first_of_scene and (not highlight or scene_index % 2 == 0)
+                use_cursor = focus and first_of_scene and (
+                    (cursor and (not highlight or scene_index % 2 == 0)) or scene_index in (cursor_scenes or set()))
                 if use_cursor:
                     overlay = Path(tmp) / f"cur_{i:02d}"
                     render_frames("cursor", {**theme_params, **zoom_params, "x": focus[0], "y": focus[1],
@@ -226,7 +231,12 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                     x, y, w, h = card
                     render_frames("highlight", {**theme_params, **zoom_params, "x": x, "y": y, "w": w, "h": h,
                                                 "delay": HIGHLIGHT_DELAY_S}, overlay)
-                build_clip(media, clip, length, zoom_out=zoom_out, overlay_frames=overlay, focus=fxy)
+                source = media
+                if card and theme and theme.get("cadre", "navigateur") == "navigateur":
+                    # Habillage du theme (fond + fenetre de navigateur), carte a la meme place.
+                    source = Path(tmp) / f"framed_{i:02d}.png"
+                    frame_scene(Image.open(media), card, theme, seed=i).save(source)
+                build_clip(source, clip, length, zoom_out=zoom_out, overlay_frames=overlay, focus=fxy)
             previous_scene = scene_index
             clips.append(clip)
         concat_with_xfade(clips, durations, out_path, (theme or {}).get("transitions"))
@@ -261,6 +271,8 @@ def main():
     parser.add_argument("--theme", type=str, default=None, help="Theme visuel des animations (catalog/themes.json)")
     parser.add_argument("--cursor", action="store_true",
                          help="Curseur anime qui clique sur le bouton d'action des captures (avec --timeline)")
+    parser.add_argument("--cursor-scene", action="append", type=int, default=[], metavar="INDEX",
+                         help="Curseur anime sur cette scene meme sans --cursor (scene preuve) ; repetable")
     parser.add_argument("--highlight-skip", action="append", type=int, default=[], metavar="INDEX",
                          help="Scene sans cadre anime (--highlight) ; repetable")
     parser.add_argument("--force", action="store_true",
@@ -277,7 +289,7 @@ def main():
     if timeline and (screens_dir / "captures.json").exists():
         clicks = build_video_on_timeline(screens_dir, out_path, timeline, cursor=args.cursor,
                                 scene_anims=parse_scene_anims(args.scene_anim), highlight=args.highlight,
-                                highlight_skip=set(args.highlight_skip),
+                                highlight_skip=set(args.highlight_skip), cursor_scenes=set(args.cursor_scene),
                                 theme=catalog.get_theme(args.theme) if args.theme else None)
         # Instants des clics du curseur, pour l'effet sonore (run_pipeline.py -> 5_assemble.py).
         out_path.with_suffix(".events.json").write_text(json.dumps({"clics": clicks}), encoding="utf-8")
