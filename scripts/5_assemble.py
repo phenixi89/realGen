@@ -34,7 +34,7 @@ FADE_DURATION = 0.4
 # Duree d'affichage de l'accroche par defaut (sinon : duree de la 1re scene).
 HOOK_DEFAULT_S = 2.6
 WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-WATERMARK_TEXT = "OpusCV"
+WATERMARK_TEXT = "opuscv.fr"
 
 # Fond musical genere (pas de fichier externe -> aucune question de licence).
 # Nappe Am7 (A2/C3/E3/G3) : neutre et pro, ne tire l'attention sur aucune
