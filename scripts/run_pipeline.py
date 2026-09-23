@@ -30,6 +30,8 @@ STEPS = ["script", "voice", "video", "subs", "assemble"]
 ANIM_KINDS = ["overlay", "scene", "highlight"]
 DEFAULT_OVERLAY = "score_ats"
 DEFAULT_SCENE_ANIM = "cta"
+CONSEIL_CTA = "cta?" + urlencode({"title": "Teste ton CV gratuitement", "sub": "Lien en bio · abonne-toi pour la suite",
+                                  "button": "Essaie OpusCV"})
 # Scene qui recoit la surimpression par defaut : la premiere qui parle de
 # ces fonctionnalites (ATS/optimisation), sinon la 2e scene.
 OVERLAY_FEATURES = ("checklist", "relecture", "adapter", "fonctions_ia")
@@ -88,11 +90,14 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
 
     card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
     scene_anims = {i: "carte?" + urlencode(scenes[i]["carte"]) for i in card_scenes}
-    if "scene" in kinds and t_scenes:
-        chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
-        last = len(t_scenes) - 1
-        if not chosen and last not in card_scenes:
-            chosen = {last: DEFAULT_SCENE_ANIM}
+    last = len(t_scenes) - 1
+    chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
+    # Fin de reel "conseil" : toujours un CTA anime plein cadre (une capture
+    # de l'app n'y dit rien) ; pour les demos, seulement avec --anims scene.
+    wants_cta = "scene" in kinds or (cards and script.get("categorie") == "conseil")
+    if wants_cta and t_scenes and not chosen and last not in card_scenes:
+        chosen = {last: CONSEIL_CTA if script.get("categorie") == "conseil" else DEFAULT_SCENE_ANIM}
+    if "scene" in kinds or cards:
         scene_anims.update(chosen)
     for i, spec in sorted(scene_anims.items()):
         video_args += ["--scene-anim", f"{i}={spec}"]

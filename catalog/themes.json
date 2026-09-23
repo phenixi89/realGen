@@ -25,7 +25,7 @@
       "id": "vert_confiance",
       "nom": "Vert confiance",
       "poids": 2,
-      "couleurs": {"primaire": "#10b981", "secondaire": "#06b6d4", "fond": "#06201a", "texte": "#ffffff", "surligne": "#a7f3d0", "contour": "#000000", "pastille": "#0b2e25"},
+      "couleurs": {"primaire": "#10b981", "secondaire": "#06b6d4", "fond": "#06201a", "texte": "#ffffff", "surligne": "#bef264", "contour": "#000000", "pastille": "#0b2e25"},
       "police_titre": "Poppins-ExtraBold.ttf",
       "police_texte": "Poppins-Bold.ttf",
       "sous_titres": {"taille": 58, "majuscules": false, "contour": 4},

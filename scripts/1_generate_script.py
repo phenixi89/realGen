@@ -197,6 +197,7 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
 capture, qui résume visuellement ce que dit la voix :
   "carte": {{"surtitre": "2 à 4 mots", "titre": "2 à 8 mots, l'idée clé", "texte": "une phrase courte, optionnelle",
              "style": "normal" | "mythe" | "realite" | "avant" | "apres"}}
+Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus) ni sur la dernière (CTA).
 Le texte de la carte ne recopie PAS la voix : il la résume. Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée)."""
 
@@ -297,7 +298,8 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
                 problems.append(f'feature inconnue "{raw.get("feature")}" (remplacée par apercu_cv)')
             fid = "apercu_cv"
         scene = {"feature": fid, "texte": texte}
-        card = clean_card(raw.get("carte")) if card_mode != "aucune" else None
+        # Scene 1 = accroche : jamais de carte, l'accroche_ecran s'y affiche deja en grand.
+        card = clean_card(raw.get("carte")) if card_mode != "aucune" and scenes else None
         if card:
             scene["carte"] = card
         # Animations demandees par le scenario (run_pipeline.py --anims) :
