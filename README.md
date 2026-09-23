@@ -233,6 +233,26 @@ si le premier chargement dépasse le délai habituel.
 
 Interface pour lancer le workflow, suivre les runs et regarder/télécharger les
 reels avec leur légende. Page statique : activer GitHub Pages (Settings → Pages →
-branche `main`, dossier `/docs`) ou ouvrir le fichier en local. Au premier
-accès, coller un token GitHub *fine-grained* limité à ce dépôt (Actions :
-lecture/écriture, Contents : lecture) ; il reste dans le navigateur.
+branche `main`, dossier `/docs`, dépôt public ou compte payant) ou ouvrir
+`docs/index.html` en local. Le token reste dans le navigateur.
+
+### Créer le token GitHub (fine-grained)
+
+Lien direct (dans un navigateur, l'app mobile GitHub n'a pas ce menu) :
+https://github.com/settings/personal-access-tokens/new
+
+Chemin manuel : photo de profil (en haut à droite) → **Settings** → tout en bas
+du menu de gauche **Developer settings** → **Personal access tokens** →
+**Fine-grained tokens** → **Generate new token**.
+
+1. **Token name** : `console realGen`
+2. **Expiration** : 90 jours (par exemple)
+3. **Repository access** : *Only select repositories* → **realGen**
+4. **Permissions** → **Repository permissions** :
+   - **Actions** : *Read and write*
+   - **Contents** : *Read-only*
+5. **Generate token**, copier le `github_pat_...` (affiché une seule fois) et le
+   coller dans la console au premier accès.
+
+À l'expiration : en générer un nouveau de la même façon, puis « Déconnexion »
+dans la console et coller le nouveau.
