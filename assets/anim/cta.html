@@ -7,20 +7,20 @@
 -->
 <html lang="fr"><head><meta charset="utf-8">
 <style>
-  html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#140f2e;font-family:"DejaVu Sans",system-ui,sans-serif;color:#fff}
+  html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--cbg);font-family:TextFont,"DejaVu Sans",system-ui,sans-serif;color:#fff}
   #bg{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(26px) brightness(.45) saturate(1.2)}
-  #grad{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(108,71,255,.45),rgba(20,15,46,.2) 55%,rgba(10,8,24,.85))}
+  #grad{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--c1) 45%,transparent),rgba(20,15,46,.2) 55%,rgba(10,8,24,.85))}
   #glow{position:absolute;left:50%;top:640px;width:900px;height:900px;margin:-450px 0 0 -450px;border-radius:50%;
-    background:radial-gradient(circle,rgba(181,71,255,.55),transparent 65%)}
-  #brand{position:absolute;top:470px;width:100%;text-align:center;font-weight:800;font-size:150px;letter-spacing:-.02em}
+    background:radial-gradient(circle,color-mix(in srgb,var(--c2) 55%,transparent),transparent 65%)}
+  #brand{position:absolute;top:470px;width:100%;text-align:center;font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:150px;letter-spacing:-.02em}
   #brand b{display:inline-block}
-  #brand i{font-style:normal;background:linear-gradient(90deg,#8f6bff,#e07bff);-webkit-background-clip:text;background-clip:text;color:transparent}
-  #title{position:absolute;top:720px;left:90px;right:90px;text-align:center;font-weight:800;font-size:72px;line-height:1.15}
+  #brand i{font-style:normal;background:linear-gradient(90deg,var(--c1),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  #title{position:absolute;top:720px;font-family:TitleFont,"DejaVu Sans",sans-serif;left:90px;right:90px;text-align:center;font-weight:800;font-size:72px;line-height:1.15}
   #title span{display:inline-block;margin:0 .14em}
   #sub{position:absolute;top:980px;width:100%;text-align:center;font-size:44px;opacity:.8}
   #btn{position:absolute;top:1120px;width:100%;text-align:center}
   #btn span{position:relative;overflow:hidden;display:inline-block;font-weight:800;font-size:62px;padding:36px 90px;border-radius:99px;
-    background:linear-gradient(90deg,#6c47ff,#b547ff);box-shadow:0 20px 60px rgba(108,71,255,.7)}
+    background:linear-gradient(90deg,var(--c1),var(--c2));box-shadow:0 20px 60px color-mix(in srgb,var(--c1) 70%,transparent)}
   #shine{position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%)}
   #arrow{position:absolute;top:1330px;width:100%;text-align:center;font-size:70px}
 </style></head><body>

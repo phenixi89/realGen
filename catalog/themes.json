@@ -1,0 +1,45 @@
+{
+  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et musique de fond. Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb.",
+  "themes": [
+    {
+      "id": "violet_nuit",
+      "nom": "Violet nuit (couleurs OpusCV)",
+      "poids": 3,
+      "couleurs": {"primaire": "#6c47ff", "secondaire": "#b547ff", "fond": "#140f2e", "texte": "#ffffff", "surligne": "#ffd700", "contour": "#000000", "pastille": "#111827"},
+      "police_titre": "Poppins-ExtraBold.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {"taille": 60, "majuscules": false, "contour": 4},
+      "musique": [110.00, 130.81, 164.81, 196.00]
+    },
+    {
+      "id": "corail_energie",
+      "nom": "Corail energique",
+      "poids": 2,
+      "couleurs": {"primaire": "#ff5a5f", "secondaire": "#ff9f43", "fond": "#1f1020", "texte": "#ffffff", "surligne": "#ffe066", "contour": "#000000", "pastille": "#2b1320"},
+      "police_titre": "Anton-Regular.ttf",
+      "police_texte": "Poppins-ExtraBold.ttf",
+      "sous_titres": {"taille": 62, "majuscules": true, "contour": 5},
+      "musique": [146.83, 185.00, 220.00, 277.18]
+    },
+    {
+      "id": "vert_confiance",
+      "nom": "Vert confiance",
+      "poids": 2,
+      "couleurs": {"primaire": "#10b981", "secondaire": "#06b6d4", "fond": "#06201a", "texte": "#ffffff", "surligne": "#a7f3d0", "contour": "#000000", "pastille": "#0b2e25"},
+      "police_titre": "Poppins-ExtraBold.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {"taille": 58, "majuscules": false, "contour": 4},
+      "musique": [130.81, 164.81, 196.00, 246.94]
+    },
+    {
+      "id": "bleu_corporate",
+      "nom": "Bleu corporate",
+      "poids": 2,
+      "couleurs": {"primaire": "#2563eb", "secondaire": "#38bdf8", "fond": "#0b1530", "texte": "#ffffff", "surligne": "#fde047", "contour": "#000000", "pastille": "#0f1d3d"},
+      "police_titre": "Anton-Regular.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {"taille": 60, "majuscules": true, "contour": 4},
+      "musique": [98.00, 123.47, 146.83, 185.00]
+    }
+  ]
+}

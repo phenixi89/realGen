@@ -35,6 +35,9 @@ DEFAULT_SCENE_ANIM = "cta"
 OVERLAY_FEATURES = ("checklist", "relecture", "adapter", "fonctions_ia")
 # Laisse passer le fondu d'entree de la scene avant la surimpression.
 OVERLAY_DELAY_S = 0.3
+# Accroche d'ouverture : affichee pendant la 1re scene, dans ces bornes.
+HOOK_MIN_S = 1.6
+HOOK_MAX_S = 4.0
 
 
 def parse_anims(value: str) -> list[str]:
@@ -60,30 +63,49 @@ def anim_spec(value, default_template: str) -> str:
     return default_template
 
 
-def plan_anims(script: dict, timeline: dict, kinds: list[str]) -> tuple[list[str], list[str]]:
+def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
+                 hook: bool) -> tuple[list[str], list[str]]:
     """
-    -> (arguments 3b, arguments 5_assemble). Le scenario peut placer les
-    animations lui-meme (champs "anim"/"overlay" d'une scene, cf.
-    scenarios/exemple.json) ; sinon placement par defaut : CTA anime sur la
-    derniere scene, score ATS sur la scene ATS/optimisation.
+    -> (arguments 3b, arguments 5_assemble) pour un reel.
+
+    - cards : scenes "carte" du scenario (formats conseil) -> plans animes
+      assets/anim/carte.html, toujours (independant de --anims) ;
+    - kinds (--anims) : le scenario peut placer les animations lui-meme
+      (champs "anim"/"overlay" d'une scene, cf. scenarios/exemple.json) ;
+      sinon placement par defaut : CTA anime sur la derniere scene, score
+      ATS sur la scene ATS/optimisation ;
+    - hook : accroche_ecran en grand des la 1re image, pendant la 1re scene ;
+    - theme du scenario transmis aux deux etapes.
     """
     scenes = [s for s in script.get("scenes", []) if s.get("texte", "").strip()]
     t_scenes = timeline["scenes"]
     if len(scenes) != len(t_scenes):
         scenes = [{}] * len(t_scenes)  # timeline sans scenario (ancien format) : placement par defaut
     video_args, assemble_args = [], []
+    if script.get("theme"):
+        video_args += ["--theme", script["theme"]]
+        assemble_args += ["--theme", script["theme"]]
 
+    card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
+    scene_anims = {i: "carte?" + urlencode(scenes[i]["carte"]) for i in card_scenes}
     if "scene" in kinds and t_scenes:
         chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
-        for i, spec in (chosen or {len(t_scenes) - 1: DEFAULT_SCENE_ANIM}).items():
-            video_args += ["--scene-anim", f"{i}={spec}"]
+        last = len(t_scenes) - 1
+        if not chosen and last not in card_scenes:
+            chosen = {last: DEFAULT_SCENE_ANIM}
+        scene_anims.update(chosen)
+    for i, spec in sorted(scene_anims.items()):
+        video_args += ["--scene-anim", f"{i}={spec}"]
+
     overlays = {}
     if "overlay" in kinds and t_scenes:
         overlays = {i: anim_spec(s["overlay"], DEFAULT_OVERLAY) for i, s in enumerate(scenes) if s.get("overlay")}
         if not overlays:
-            default = next((i for i, s in enumerate(t_scenes) if s.get("feature") in OVERLAY_FEATURES),
-                           min(1, len(t_scenes) - 1))
-            overlays = {default: DEFAULT_OVERLAY}
+            # Jamais sur la 1re scene (accroche) ni sur un plan deja anime
+            # (carte, CTA) : aucune scene libre -> pas de surimpression.
+            free = [i for i in range(1, len(t_scenes)) if i not in scene_anims]
+            default = next((i for i in free if t_scenes[i].get("feature") in OVERLAY_FEATURES), free[0] if free else None)
+            overlays = {default: DEFAULT_OVERLAY} if default is not None else {}
         for i, spec in overlays.items():
             start = t_scenes[i]["start"] + OVERLAY_DELAY_S
             # fit : l'animation accelere si besoin pour finir avec sa scene.
@@ -96,7 +118,18 @@ def plan_anims(script: dict, timeline: dict, kinds: list[str]) -> tuple[list[str
         # Pas de cadre sous une surimpression : les deux se disputeraient l'ecran.
         for i in overlays:
             video_args += ["--highlight-skip", str(i)]
+
+    if hook and script.get("accroche_ecran") and t_scenes:
+        first_scene = t_scenes[0]["end"] - t_scenes[0]["start"]
+        assemble_args += ["--hook-text", script["accroche_ecran"],
+                          "--hook-duration", f"{min(max(first_scene, HOOK_MIN_S), HOOK_MAX_S):.2f}"]
     return video_args, assemble_args
+
+
+def write_caption_file(script: dict, path: Path):
+    """Texte de publication (legende + hashtags) a cote du reel final."""
+    lines = [script.get("legende", "").strip(), "", " ".join(script.get("hashtags") or [])]
+    path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
 
 
 def run(cmd: list[str]):
@@ -133,6 +166,14 @@ def main():
                               "overlay (surimpression score ATS), scene (scene CTA animee), "
                               "highlight (cadre anime sur la zone montree) ; ou all / none (defaut). "
                               "scene/highlight : --capture-mode screenshots uniquement")
+    parser.add_argument("--format", type=str, default=None,
+                         help="Format impose (catalog/formats.json) ; sinon choix automatique (mix conseil/produit)")
+    parser.add_argument("--theme", type=str, default=None,
+                         help="Theme visuel impose (catalog/themes.json) ; sinon rotation")
+    parser.add_argument("--hook", type=str, default=None,
+                         help="Style d'accroche impose (catalog/hooks.json) ; sinon rotation")
+    parser.add_argument("--no-hook-overlay", action="store_true",
+                         help="N'affiche pas l'accroche en grand au debut de la video")
     args = parser.parse_args()
 
     screen_only = [k for k in args.anims if k in ("scene", "highlight")]
@@ -150,7 +191,9 @@ def main():
     if from_index is None and scripts_path.exists():
         existing = json.loads(scripts_path.read_text(encoding="utf-8"))
         stale_duration = any(s.get("duree_cible_s") != args.duration for s in existing) and not args.scenario
-        if args.scenario or args.angle or stale_duration:
+        stale_catalog = any(v and any(sc.get(k) != v for sc in existing)
+                            for k, v in (("format", args.format), ("theme", args.theme), ("hook", args.hook)))
+        if args.scenario or args.angle or stale_duration or stale_catalog:
             print("Parametres de scenario differents de la derniere execution -> regeneration complete")
             from_index = 0
 
@@ -179,6 +222,9 @@ def main():
         scenario_args += ["--angle", args.angle]
     if args.scenario:
         scenario_args += ["--scenario", args.scenario]
+    for flag, value in (("--format", args.format), ("--theme", args.theme), ("--hook", args.hook)):
+        if value:
+            scenario_args += [flag, value]
     run([sys.executable, str(ROOT / "1_generate_script.py"),
          "--n", str(args.n), *scenario_args, "--out", str(scripts_path), *force_flag_for("script")])
 
@@ -271,9 +317,15 @@ def main():
         #    Un choix d'animations different du dernier montage de ce reel
         #    force 3b et l'assemblage (pas la capture, couteuse).
         anim_video_args, anim_assemble_args = [], []
-        if args.anims and timeline_path.exists():
-            anim_video_args, anim_assemble_args = plan_anims(
-                scripts[i - 1], json.loads(timeline_path.read_text(encoding="utf-8")), args.anims)
+        if timeline_path.exists():
+            anim_video_args, anim_assemble_args = plan_montage(
+                scripts[i - 1], json.loads(timeline_path.read_text(encoding="utf-8")), args.anims,
+                cards=args.capture_mode == "screenshots", hook=not args.no_hook_overlay)
+            if args.capture_mode != "screenshots" and any(s.get("carte") for s in scripts[i - 1].get("scenes", [])):
+                print(f"[{i}] cartes texte ignorees hors --capture-mode screenshots (captures montrees a la place)")
+        if args.capture_mode != "screenshots":
+            # 3c / video mobile : pas de --scene-anim/--highlight/--theme cote montage.
+            anim_video_args = []
         anims_marker = video_dir / ".anims"
         anims_signature = json.dumps([anim_video_args, anim_assemble_args])
         previous_signature = anims_marker.read_text(encoding="utf-8") if anims_marker.exists() else json.dumps([[], []])
@@ -309,6 +361,7 @@ def main():
              "--subs", str(subs_path), "--out", str(final_path), *anim_assemble_args,
              *(force_flag_for("assemble") or subs_force or anims_force)])
         anims_marker.write_text(anims_signature, encoding="utf-8")
+        write_caption_file(scripts[i - 1], final_path.with_suffix(".txt"))
 
     print(f"\nTermine. {args.n} reel(s) dans output/final/")
 

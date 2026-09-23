@@ -12,8 +12,8 @@
   #layer{position:absolute;inset:0;transform-origin:540px 960px}
   #box{position:absolute}
   #box svg{position:absolute;inset:-14px;width:calc(100% + 28px);height:calc(100% + 28px);overflow:visible}
-  #glow{position:absolute;inset:-14px;border-radius:40px;box-shadow:0 0 50px 10px rgba(143,107,255,.75),inset 0 0 30px rgba(143,107,255,.35)}
-  .c{position:absolute;width:70px;height:70px;border:9px solid #fff;filter:drop-shadow(0 0 10px rgba(143,107,255,.9))}
+  #glow{position:absolute;inset:-14px;border-radius:40px;box-shadow:0 0 50px 10px color-mix(in srgb,var(--c1) 75%,transparent),inset 0 0 30px color-mix(in srgb,var(--c1) 35%,transparent)}
+  .c{position:absolute;width:70px;height:70px;border:9px solid #fff;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--c1) 90%,transparent))}
   .tl{left:-34px;top:-34px;border-right:0;border-bottom:0;border-top-left-radius:30px}
   .tr{right:-34px;top:-34px;border-left:0;border-bottom:0;border-top-right-radius:30px}
   .bl{left:-34px;bottom:-34px;border-right:0;border-top:0;border-bottom-left-radius:30px}
@@ -25,7 +25,7 @@
   <div id="box">
     <div id="glow"></div>
     <svg><rect id="rect" x="4" y="4" rx="36" fill="none" stroke="url(#hg)" stroke-width="8"/>
-      <defs><linearGradient id="hg"><stop offset="0" stop-color="#8f6bff"/><stop offset="1" stop-color="#e07bff"/></linearGradient></defs></svg>
+      <defs><linearGradient id="hg"><stop offset="0" style="stop-color:var(--c1)"/><stop offset="1" style="stop-color:var(--c2)"/></linearGradient></defs></svg>
     <div id="sweep"><div></div></div>
     <div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div>
   </div>

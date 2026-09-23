@@ -10,6 +10,18 @@ window.param = (k, d) => (P[k] !== undefined && P[k] !== "" ? P[k] : d);
 window.num = (k, d) => (isNaN(parseFloat(P[k])) ? d : parseFloat(P[k]));
 window.READY = false;
 
+// Theme (catalog/themes.json, passe par catalog.anim_params) : couleurs en
+// variables CSS (--c1 primaire, --c2 secondaire, --cbg fond, --cfg texte,
+// --chl surligne) et polices TitleFont / TextFont chargees depuis ?ftitle= / ?ftext=.
+{
+  const css = document.documentElement.style;
+  const colors = { c1: "#6c47ff", c2: "#b547ff", cbg: "#140f2e", cfg: "#ffffff", chl: "#ffd700" };
+  for (const [k, d] of Object.entries(colors)) css.setProperty(`--${k}`, /^#[0-9a-f]{6}$/i.test(P[k] || "") ? P[k] : d);
+  const fonts = [["TitleFont", P.ftitle], ["TextFont", P.ftext]].filter(([, url]) => url)
+    .map(([name, url]) => new FontFace(name, `url("${url}")`).load().then((f) => document.fonts.add(f)).catch(() => null));
+  window.FONTS_READY = Promise.all(fonts);
+}
+
 //   - ?fit=S : si l'animation dure plus de S secondes, elle est acceleree
 //     pour tenir dans S (surimpression calee sur la duree de sa scene).
 window.expose = (tl, extraReady) => {
@@ -19,7 +31,7 @@ window.expose = (tl, extraReady) => {
   window.seek = (t) => { tl.seek(Math.min(Math.max(t * speed, 0), natural), false); };
   tl.seek(0);
   const imgs = [...document.images].map((i) => (i.complete ? null : new Promise((r) => (i.onload = i.onerror = r))));
-  Promise.all([document.fonts ? document.fonts.ready : null, ...imgs, extraReady || null]).then(() => (window.READY = true));
+  Promise.all([window.FONTS_READY, document.fonts ? document.fonts.ready : null, ...imgs, extraReady || null]).then(() => (window.READY = true));
   // Apercu dans un navigateur (sans ?render=1) : lecture en boucle.
   if (!P.render) {
     let t0 = performance.now();

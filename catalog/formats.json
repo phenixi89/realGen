@@ -1,0 +1,69 @@
+{
+  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes texte animees, assets/anim/carte.html -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher.",
+  "formats": [
+    {
+      "id": "demo_produit",
+      "nom": "Demo produit",
+      "categorie": "produit",
+      "poids": 1,
+      "cartes": "aucune",
+      "sujets": ["produit"],
+      "structure": "Accroche, puis chaque scene montre une fonctionnalite reelle d'OpusCV a l'ecran en expliquant le benefice concret, puis CTA."
+    },
+    {
+      "id": "liste_erreurs",
+      "nom": "N erreurs a eviter",
+      "categorie": "conseil",
+      "poids": 3,
+      "cartes": "majoritaires",
+      "sujets": ["cv", "ats", "lettre", "candidature"],
+      "structure": "Accroche annoncant le nombre d'erreurs (3 a 5 selon la duree). Une scene-carte par erreur : surtitre 'Erreur n°X', titre = l'erreur en 2 a 5 mots, texte = la correction en une phrase courte ; la voix explique pourquoi c'est une erreur et quoi faire a la place. Avant-derniere scene (sans carte) : montrer la fonctionnalite d'OpusCV qui detecte ou corrige ces erreurs. Derniere scene : CTA."
+    },
+    {
+      "id": "mythe_realite",
+      "nom": "Idee recue vs realite",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "sujets": ["cv", "ats", "entretien", "candidature"],
+      "structure": "Accroche. Puis 2 ou 3 paires de scenes-cartes : une carte style 'mythe' (surtitre 'Idée reçue', titre = l'idee fausse) suivie d'une carte style 'realite' (surtitre 'Réalité', titre = la verite, texte = le conseil concret). Une scene sans carte montre OpusCV qui applique le bon reflexe. Derniere scene : CTA."
+    },
+    {
+      "id": "avant_apres",
+      "nom": "Avant / apres une ligne de CV",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "sujets": ["cv", "ats"],
+      "structure": "Accroche. Puis 2 ou 3 exemples : une carte style 'avant' (surtitre 'Avant', titre = une formulation faible typique d'un CV, entre guillemets) puis une carte style 'apres' (surtitre 'Après', titre = la meme ligne reecrite, chiffree et orientee resultat) ; la voix explique ce qui change. Une scene sans carte montre OpusCV qui propose ce type de reecriture. Derniere scene : CTA."
+    },
+    {
+      "id": "astuce_express",
+      "nom": "Une astuce, a fond",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "autorisees",
+      "sujets": ["cv", "ats", "lettre", "entretien", "linkedin", "candidature"],
+      "structure": "Accroche. Une seule astuce expliquee en etapes : une scene-carte par etape (surtitre 'Étape X', titre = l'action). Une scene sans carte montre la fonctionnalite d'OpusCV liee. Derniere scene : CTA."
+    },
+    {
+      "id": "decryptage_offre",
+      "nom": "Decryptage d'une offre d'emploi",
+      "categorie": "conseil",
+      "poids": 1,
+      "cartes": "majoritaires",
+      "sujets": ["candidature", "ats"],
+      "structure": "Accroche. On decortique l'offre_emploi fournie : une scene-carte par expression de l'offre (surtitre 'Dans l'offre', titre = l'expression entre guillemets, texte = ce qu'elle veut vraiment dire et le mot-cle a reprendre dans son CV). Une scene sans carte montre OpusCV qui adapte le CV a cette offre. Derniere scene : CTA."
+    },
+    {
+      "id": "serie_30_jours",
+      "nom": "Serie : 30 jours pour decrocher un entretien",
+      "categorie": "conseil",
+      "poids": 1,
+      "serie": true,
+      "cartes": "autorisees",
+      "sujets": ["cv", "ats", "lettre", "entretien", "linkedin", "candidature"],
+      "structure": "Episode d'une serie quotidienne. Premiere scene-carte : surtitre 'Jour {episode}/30', titre = l'objectif du jour. Puis le conseil du jour en 2 ou 3 scenes (cartes ou demo OpusCV si pertinent). Derniere scene : 'Demain : ...' (teaser du prochain episode) + invitation a s'abonner."
+    }
+  ]
+}

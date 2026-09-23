@@ -58,6 +58,8 @@ Principales options de `run_pipeline.py` :
 | `--voice` | Kore | Voix TTS Gemini |
 | `--angle` | — | Impose un angle marketing (sinon choisi stratégiquement, voir plus bas) |
 | `--scenario` | — | Fichier JSON de scénario écrit à la main (voir `scenarios/exemple.json`) |
+| `--format` / `--theme` / `--hook` | auto | Impose un élément du catalogue (voir « Ligne éditoriale ») |
+| `--no-hook-overlay` | — | N'affiche pas l'accroche en grand au début |
 | `--anims` | `none` | Animations HTML/JS intégrées au montage : `overlay`, `scene`, `highlight` (séparées par des virgules), `all` ou `none` — voir ci-dessous |
 | `--from-step` | — | Reprend à partir d'une étape (`script`/`voice`/`video`/`subs`/`assemble`) sans tout regénérer |
 | `--force` | — | Régénère tout depuis zéro |
@@ -124,21 +126,40 @@ timeline GSAP en pause et appelle `expose(tl)` (voir `common.js` pour le contrat
 `highlight` a besoin de la position des cartes, enregistrée dans `captures.json` par les captures
 récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
-## Ce que génère l'IA (Gemini)
+## Ligne éditoriale : le catalogue (`catalog/`)
 
-Un seul appel `1_generate_script.py` produit, par reel :
+Pour éviter que les reels se ressemblent, chaque vidéo combine 4 choix pris dans des fichiers JSON
+éditables (aucun code à toucher pour enrichir) :
 
-- **Le choix de l'angle marketing** — un appel stratégique dédié sélectionne les angles les plus
-  prometteurs parmi le catalogue (`ANGLES` dans le script), en évitant ceux récemment utilisés
-  (historique persisté dans `output/angle_history.json`). Le catalogue inclut des angles "tour
-  d'horizon" et des angles **killer feature** ciblant une seule fonctionnalité forte (lettre de
-  motivation IA, simulation d'entretien, partage par lien, etc.).
-- **Le scénario scène par scène** — texte + fonctionnalité montrée à chaque instant, calé ensuite
-  sur le timing réel de la voix off (Whisper mesure, jamais le texte affiché).
-- **Une offre d'emploi fictive** cohérente avec l'angle, utilisée dans les démos "Adapter à une
-  offre" / "Lettre de motivation" (remplace un exemple statique).
-- **Un style visuel** (ex. "sobre et corporate") utilisé pour choisir, parmi les thèmes réellement
-  affichés par l'app, ceux qui correspondent le mieux au persona du reel.
+| Fichier | Contenu | Exemples |
+|---|---|---|
+| `catalog/formats.json` | **Structure** de la vidéo, catégorie `conseil` (contenu utile) ou `produit` (démo), usage des cartes texte | liste d'erreurs, idée reçue vs réalité, avant/après, astuce, décryptage d'offre, série « 30 jours », démo |
+| `catalog/sujets.json` | **De quoi** parle la vidéo, avec des tags croisés avec les formats | titre du CV, ATS, résultats chiffrés, lettre, entretien, LinkedIn… |
+| `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes | question choc, chiffre, erreur, contre-intuitif, POV, promesse, secret |
+| `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, accord de la musique | violet nuit, corail, vert, bleu corporate |
+| `catalog/config.json` | Mix cible (`conseil` 70 % / `produit` 30 %), fenêtres anti-répétition, seuil de similarité, CTA | |
+
+Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
+- le **format** est pris dans la catégorie la plus en retard sur le mix cible, en évitant les derniers utilisés ;
+- le **sujet** est choisi par Gemini parmi ceux compatibles avec le format et non traités récemment ;
+- l'**accroche** et le **thème** tournent (tirage pondéré par `poids`, sans les plus récents) ;
+- une accroche trop proche d'une accroche déjà publiée est refusée et Gemini recommence ;
+- tout est historisé dans `output/content_history.json` (persisté entre les runs CI par le cache).
+
+Chaque scénario contient aussi l'**accroche affichée** en grand dès la première image (pas de fondu
+depuis le noir), une **légende** et des **hashtags** (écrits dans `output/final/reel_XX.txt`), une
+offre d'emploi fictive et un style de CV pour la démo. Les textes sont en français accentué (vérifié :
+un script sans accents est renvoyé à Gemini), car les sous-titres affichent le texte exact.
+
+Les formats `conseil` utilisent des **cartes texte animées** (`assets/anim/carte.html` : styles
+`normal`, `mythe`, `realite`, `avant`, `apres`) à la place des captures, en `--capture-mode screenshots`.
+
+Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--hook pov` (aussi dans le
+workflow). Vérifier le catalogue après modification : `python scripts/catalog.py`.
+
+Ajouter par exemple un format : une entrée dans `formats.json` avec `id`, `nom`, `categorie`,
+`poids`, `cartes` (`aucune`/`autorisees`/`majoritaires`), `sujets` (tags) et `structure` (consigne
+donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"serie": true`).
 
 ## Catalogue des fonctionnalités capturables
 

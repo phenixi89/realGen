@@ -19,6 +19,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import catalog
 from render_js_anim import file_uri, parse_spec, render_clip, render_frames
 from timeline import clip_lengths, concat_with_xfade, load_timeline, plan_items
 
@@ -133,7 +134,7 @@ def build_video_from_screenshots(screens_dir: Path, out_path: Path, clip_seconds
 
 def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                             scene_anims: dict[int, str] | None = None, highlight: bool = False,
-                            highlight_skip: set[int] | None = None):
+                            highlight_skip: set[int] | None = None, theme: dict | None = None):
     """
     Montage cale sur la voix : chaque scene du scenario affiche les captures
     de SA fonctionnalite (captures.json, ecrit par 3_record_demo.py) pendant
@@ -145,7 +146,9 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
     auraient montree. highlight : cadre anime autour de la carte nette de la
     premiere capture de chaque scene (captures.json "card"), sauf les
     scenes de highlight_skip (ex: celles qui ont une surimpression).
+    theme : couleurs/polices des animations (catalog/themes.json).
     """
+    theme_params = catalog.anim_params(theme)
     captures = json.loads((screens_dir / "captures.json").read_text(encoding="utf-8"))
     media_by_feature: dict[str, list[Path]] = {}
     card_by_file: dict[str, list[int]] = {}
@@ -187,7 +190,7 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
             if isinstance(media, tuple):
                 name, params = media
                 print(f"Scene {scene_index} : animation '{name}' ({length:.1f}s)")
-                render_clip(name, params, clip, length)
+                render_clip(name, {**theme_params, **params}, clip, length)
             else:
                 overlay = None
                 card = card_by_file.get(media.name)
@@ -196,7 +199,7 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                     overlay = Path(tmp) / f"hl_{i:02d}"
                     x, y, w, h = card
                     render_frames("highlight", {
-                        "x": x, "y": y, "w": w, "h": h, "zoom": "out" if zoom_out else "in",
+                        **theme_params, "x": x, "y": y, "w": w, "h": h, "zoom": "out" if zoom_out else "in",
                         "step": ZOOM_STEP, "zmax": ZOOM_MAX, "fps": FPS, "delay": HIGHLIGHT_DELAY_S,
                     }, overlay)
                 build_clip(media, clip, length, zoom_out=zoom_out, overlay_frames=overlay)
@@ -230,6 +233,7 @@ def main():
                               "(assets/anim/), ex: -1=cta ; repetable (avec --timeline)")
     parser.add_argument("--highlight", action="store_true",
                          help="Cadre anime autour de la zone montree, au debut de chaque scene (avec --timeline)")
+    parser.add_argument("--theme", type=str, default=None, help="Theme visuel des animations (catalog/themes.json)")
     parser.add_argument("--highlight-skip", action="append", type=int, default=[], metavar="INDEX",
                          help="Scene sans cadre anime (--highlight) ; repetable")
     parser.add_argument("--force", action="store_true",
@@ -246,7 +250,8 @@ def main():
     if timeline and (screens_dir / "captures.json").exists():
         build_video_on_timeline(screens_dir, out_path, timeline,
                                 scene_anims=parse_scene_anims(args.scene_anim), highlight=args.highlight,
-                                highlight_skip=set(args.highlight_skip))
+                                highlight_skip=set(args.highlight_skip),
+                                theme=catalog.get_theme(args.theme) if args.theme else None)
     else:
         build_video_from_screenshots(screens_dir, out_path, args.clip_seconds)
     print(f"OK -> {out_path}")

@@ -1,10 +1,13 @@
 {
-  "angle": "un CV par offre : adapter son CV a chaque candidature",
+  "angle": "un CV par offre : adapter son CV à chaque candidature",
   "titre": "Un CV par offre en 30 secondes",
   "duree_cible_s": 30,
+  "format": "demo_produit",
+  "theme": "violet_nuit",
+  "accroche_ecran": "Le même CV pour 50 offres ?",
   "scenes": [
-    {"feature": "dashboard", "texte": "Tu envoies le meme CV a toutes les offres ?"},
-    {"feature": "checklist"},
+    {"feature": "dashboard", "texte": "Tu envoies le même CV à toutes les offres ?"},
+    {"feature": "checklist", "carte": {"surtitre": "Erreur n°1", "titre": "Un CV unique pour tout", "texte": "Les ATS cherchent les mots de l'offre.", "style": "normal"}},
     {"feature": "fonctions_ia"},
     {"feature": "lettre_motivation"},
     {"feature": "design"},

@@ -1,0 +1,81 @@
+<!doctype html>
+<!--
+  Carte texte plein cadre (scenes "carte" des formats conseil, cf.
+  catalog/formats.json) : surtitre en pastille, titre mot par mot, texte,
+  et un traitement par style :
+    normal  -> pastille couleur du theme
+    mythe   -> rouge, croix, titre barre
+    realite -> vert, coche
+    avant   -> rouge attenue, titre entre guillemets
+    apres   -> vert, titre souligne
+  Parametres : surtitre, titre, texte, style, bg (capture floutee en fond,
+  optionnelle), + couleurs/polices du theme (common.js).
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--cbg);color:var(--cfg);
+    font-family:TextFont,"DejaVu Sans",system-ui,sans-serif}
+  #bg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(34px) brightness(.35) saturate(1.1);opacity:.55}
+  #grad{position:absolute;inset:0;background:
+    radial-gradient(circle at 20% 15%,color-mix(in srgb,var(--accent) 38%,transparent),transparent 55%),
+    radial-gradient(circle at 85% 85%,color-mix(in srgb,var(--c2) 30%,transparent),transparent 55%)}
+  #grid{position:absolute;inset:0;opacity:.07;background-image:linear-gradient(var(--cfg) 1px,transparent 1px),linear-gradient(90deg,var(--cfg) 1px,transparent 1px);background-size:90px 90px}
+  #box{position:absolute;left:90px;right:90px;top:600px}
+  #kicker{display:inline-flex;align-items:center;gap:22px;font-weight:800;font-size:44px;letter-spacing:.06em;text-transform:uppercase;
+    padding:16px 34px;border-radius:99px;background:var(--accent);color:#fff;box-shadow:0 12px 40px color-mix(in srgb,var(--accent) 55%,transparent)}
+  #icon{display:none;width:54px;height:54px;border-radius:50%;background:#fff;color:var(--accent);font-size:40px;line-height:54px;text-align:center;font-weight:900}
+  #title{position:relative;margin-top:60px;font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:108px;line-height:1.08;letter-spacing:-.01em}
+  #title span{display:inline-block;margin-right:.24em}
+  #strike{position:absolute;left:-10px;top:50%;height:14px;width:0;background:var(--accent);border-radius:8px;transform:rotate(-3deg);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+  #under{height:14px;width:0;margin-top:26px;border-radius:8px;background:linear-gradient(90deg,var(--accent),var(--c2))}
+  #text{margin-top:50px;font-size:54px;line-height:1.3;opacity:.92}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="grid"></div>
+<div id="box">
+  <div id="kicker"><span id="icon"></span><span id="kickertxt"></span></div>
+  <div id="title"><div id="strike"></div></div>
+  <div id="under"></div>
+  <div id="text"></div>
+</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>
+  const STYLE = param("style", "normal");
+  const accents = { mythe: "#ef4444", avant: "#e5484d", realite: "#10b981", apres: "#10b981" };
+  document.documentElement.style.setProperty("--accent", accents[STYLE] || getComputedStyle(document.documentElement).getPropertyValue("--c1"));
+  const icon = document.getElementById("icon");
+  if (STYLE === "mythe" || STYLE === "avant") { icon.textContent = "✕"; icon.style.display = "inline-block"; }
+  if (STYLE === "realite" || STYLE === "apres") { icon.textContent = "✓"; icon.style.display = "inline-block"; }
+
+  const bg = param("bg", "");
+  let bgReady = null;
+  if (bg) {
+    document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; });
+  }
+  document.getElementById("kickertxt").textContent = param("surtitre", "");
+  if (!param("surtitre", "")) document.getElementById("kicker").style.display = "none";
+  let titre = param("titre", "Titre de la carte");
+  if (STYLE === "avant" || STYLE === "apres") titre = `« ${titre.replace(/^[«"“\s]+|[»"”\s]+$/g, "")} »`;
+  const titleEl = document.getElementById("title");
+  titre.split(/\s+/).forEach((w) => { const s = document.createElement("span"); s.textContent = w; titleEl.appendChild(s); });
+  document.getElementById("text").textContent = param("texte", "");
+  // Titre long : police reduite pour tenir sur ~4 lignes.
+  if (titre.length > 60) titleEl.style.fontSize = "84px";
+  if (STYLE === "avant") titleEl.style.opacity = ".8";
+
+  const tl = gsap.timeline({ paused: true })
+    .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
+    .fromTo("#grad", { opacity: 0.6, x: -30 }, { opacity: 1, x: 30, duration: 10, ease: "sine.inOut" }, 0)
+    .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.45, ease: "back.out(2.2)" }, 0.05)
+    .from("#icon", { rotate: -120, scale: 0, duration: 0.4, ease: "back.out(3)" }, 0.3)
+    .from("#title span", { y: 70, opacity: 0, rotateX: -60, duration: 0.45, stagger: 0.07, ease: "power3.out" }, 0.25)
+    .to("#under", { width: STYLE === "apres" || STYLE === "realite" ? "70%" : "38%", duration: 0.5, ease: "power2.out" }, ">-.1")
+    .from("#text", { y: 30, opacity: 0, duration: 0.45, ease: "power2.out" }, ">-.2");
+  if (STYLE === "mythe") tl.to("#strike", { width: "calc(100% + 20px)", duration: 0.45, ease: "power2.inOut" }, ">+.25")
+                           .to("#title span", { opacity: 0.55, duration: 0.3 }, "<");
+  // Respiration legere : la carte ne reste jamais figee meme sur une longue scene.
+  tl.to("#box", { y: -14, duration: 2.2, repeat: 4, yoyo: true, ease: "sine.inOut" }, 1.6);
+  expose(tl, bgReady);
+  window.DURATION = 2.4;
+</script></body></html>

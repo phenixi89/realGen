@@ -17,18 +17,22 @@ import argparse
 import json
 import tempfile
 from pathlib import Path
+from urllib.parse import urlencode
 
 import numpy as np
 from moviepy import (AudioArrayClip, AudioFileClip, CompositeAudioClip, CompositeVideoClip, ImageClip,
                      ImageSequenceClip, VideoFileClip)
-from moviepy.video.fx import FadeIn, FadeOut, Loop
+from moviepy.video.fx import FadeOut, Loop
 from moviepy.audio.fx import AudioFadeIn, AudioFadeOut
 from PIL import Image, ImageDraw, ImageFont
 
+import catalog
 from caption_render import render_caption
 from render_js_anim import FPS as ANIM_FPS, parse_spec, render_frames
 
 FADE_DURATION = 0.4
+# Duree d'affichage de l'accroche par defaut (sinon : duree de la 1re scene).
+HOOK_DEFAULT_S = 2.6
 WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 WATERMARK_TEXT = "OpusCV"
 
@@ -54,8 +58,8 @@ def make_vignette(size: tuple[int, int]):
     return strength[:, :, None]  # (h, w, 1), broadcast sur les 3 canaux RGB
 
 
-def make_watermark_clip(duration: float) -> ImageClip:
-    font = ImageFont.truetype(WATERMARK_FONT, 34)
+def make_watermark_clip(duration: float, theme: dict | None = None) -> ImageClip:
+    font = ImageFont.truetype(catalog.font_path(theme, "titre") if theme else WATERMARK_FONT, 34)
     dummy = Image.new("RGBA", (10, 10))
     bbox = ImageDraw.Draw(dummy).textbbox((0, 0), WATERMARK_TEXT, font=font, stroke_width=2)
     img = Image.new("RGBA", (bbox[2] - bbox[0] + 8, bbox[3] - bbox[1] + 8), (0, 0, 0, 0))
@@ -64,7 +68,7 @@ def make_watermark_clip(duration: float) -> ImageClip:
     return ImageClip(np.array(img), duration=duration).with_position((40, 40))
 
 
-def make_background_music(duration: float) -> AudioArrayClip:
+def make_background_music(duration: float, freqs: list[float] | None = None) -> AudioArrayClip:
     """
     Nappe synthetisee (4 oscillateurs detunes + vibrato lent + swell
     d'amplitude), volume fixe et bas : juste de quoi eviter un silence
@@ -73,17 +77,18 @@ def make_background_music(duration: float) -> AudioArrayClip:
     n_samples = int(duration * MUSIC_SAMPLE_RATE)
     t = np.linspace(0, duration, n_samples, endpoint=False)
     signal = np.zeros(n_samples)
-    for freq in MUSIC_FREQS:
+    freqs = freqs or MUSIC_FREQS
+    for freq in freqs:
         vibrato = 1 + 0.002 * np.sin(2 * np.pi * 0.15 * t)
         signal += np.sin(2 * np.pi * freq * vibrato * t)
-    signal /= len(MUSIC_FREQS)
+    signal /= len(freqs)
     swell = 0.6 + 0.4 * np.sin(2 * np.pi * t / 8.0 - np.pi / 2) ** 2  # respire sur ~8s, pas statique
     signal = signal * swell * MUSIC_GAIN
     stereo = np.column_stack([signal, signal]).astype(np.float32)
     return AudioArrayClip(stereo, fps=MUSIC_SAMPLE_RATE)
 
 
-def make_caption_clips(cues: list[dict]) -> list[ImageClip]:
+def make_caption_clips(cues: list[dict], theme: dict | None = None) -> list[ImageClip]:
     clips = []
     for cue_index, cue in enumerate(cues):
         words = [w["text"] for w in cue["words"]]
@@ -93,7 +98,7 @@ def make_caption_clips(cues: list[dict]) -> list[ImageClip]:
         # sous-titres pour qu'elle ne se noie pas dans le flux.
         emphasize = cue_index == len(cues) - 1
         for i, w in enumerate(cue["words"]):
-            img = render_caption(words, active_index=i, emphasize=emphasize)
+            img = render_caption(words, active_index=i, emphasize=emphasize, theme=theme)
             dur = max(w["end"] - w["start"], 0.05)
             clip = (
                 ImageClip(np.array(img), duration=dur)
@@ -112,7 +117,8 @@ def parse_overlay(value: str) -> tuple[float, str]:
     return float(start), spec
 
 
-def make_overlay_clips(overlays: list[tuple[float, str]], duration: float, tmp_dir: Path) -> list:
+def make_overlay_clips(overlays: list[tuple[float, str]], duration: float, tmp_dir: Path,
+                       theme: dict | None = None) -> list:
     """
     Animations HTML/JS (assets/anim/) rendues en PNG transparents et posees
     par-dessus la video a leur instant de debut -- sous les sous-titres,
@@ -125,7 +131,7 @@ def make_overlay_clips(overlays: list[tuple[float, str]], duration: float, tmp_d
             continue
         name, params = parse_spec(spec)
         frames_dir = tmp_dir / f"overlay_{k:02d}"
-        render_frames(name, params, frames_dir)
+        render_frames(name, {**catalog.anim_params(theme), **params}, frames_dir)
         clip = ImageSequenceClip(sorted(str(f) for f in frames_dir.glob("*.png")), fps=ANIM_FPS, with_mask=True)
         clip = clip.with_start(start)
         if start + clip.duration > duration:
@@ -135,7 +141,12 @@ def make_overlay_clips(overlays: list[tuple[float, str]], duration: float, tmp_d
 
 
 def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path,
-             overlays: list[tuple[float, str]] | None = None):
+             overlays: list[tuple[float, str]] | None = None, theme: dict | None = None,
+             hook_text: str = "", hook_duration: float = HOOK_DEFAULT_S):
+    """
+    theme : catalog/themes.json (sous-titres, animations, watermark, musique).
+    hook_text : accroche affichee en grand des la premiere image (assets/anim/hook.html).
+    """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cues = json.loads(subs_path.read_text(encoding="utf-8"))
 
@@ -155,14 +166,20 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     video = video.image_transform(lambda frame: np.clip(frame * vignette_mask, 0, 255).astype("uint8"))
 
     tmp = tempfile.TemporaryDirectory()
-    overlay_clips = make_overlay_clips(overlays or [], duration, Path(tmp.name))
-    layers = [video, make_watermark_clip(duration), *overlay_clips, *make_caption_clips(cues)]
+    overlays = list(overlays or [])
+    if hook_text:
+        overlays.insert(0, (0.0, "hook?" + urlencode({"text": hook_text, "dur": f"{min(hook_duration, duration):.2f}"})))
+    overlay_clips = make_overlay_clips(overlays, duration, Path(tmp.name), theme)
+    layers = [video, make_watermark_clip(duration, theme), *overlay_clips, *make_caption_clips(cues, theme)]
     final = CompositeVideoClip(layers, size=video.size).with_duration(duration)
 
-    final = final.with_effects([FadeIn(FADE_DURATION), FadeOut(FADE_DURATION)])
-    music = make_background_music(duration)
+    # Pas de fondu d'ouverture : la premiere image est celle qui s'affiche
+    # dans le flux et decide du scroll -- elle doit etre pleine, pas noire.
+    final = final.with_effects([FadeOut(FADE_DURATION)])
+    music = make_background_music(duration, (theme or {}).get("musique"))
     mixed_audio = CompositeAudioClip([music, audio]).with_duration(duration).with_effects(
-        [AudioFadeIn(FADE_DURATION), AudioFadeOut(FADE_DURATION)]
+        # Fondu d'entree minimal (anti-clic) : la voix demarre des la 1re image.
+        [AudioFadeIn(0.05), AudioFadeOut(FADE_DURATION)]
     )
     final = final.with_audio(mixed_audio)
 
@@ -192,6 +209,11 @@ def main():
     parser.add_argument("--overlay", action="append", default=[], metavar="DEBUT_S:GABARIT[?PARAMS]",
                          help="Animation HTML/JS (assets/anim/) en surimpression a partir de DEBUT_S, "
                               "ex: 3.2:score_ats?from=35&to=92 ; repetable")
+    parser.add_argument("--theme", type=str, default=None, help="Theme visuel (catalog/themes.json)")
+    parser.add_argument("--hook-text", type=str, default="",
+                         help="Accroche affichee en grand des la premiere image (vide = aucune)")
+    parser.add_argument("--hook-duration", type=float, default=HOOK_DEFAULT_S,
+                         help="Duree d'affichage de l'accroche, en s")
     parser.add_argument("--force", action="store_true",
                          help="Reassemble meme si --out existe deja")
     args = parser.parse_args()
@@ -201,7 +223,9 @@ def main():
         return
 
     assemble(Path(args.video), Path(args.audio), Path(args.subs), Path(args.out),
-             overlays=[parse_overlay(v) for v in args.overlay])
+             overlays=[parse_overlay(v) for v in args.overlay],
+             theme=catalog.get_theme(args.theme) if args.theme else None,
+             hook_text=args.hook_text, hook_duration=args.hook_duration)
     print(f"OK -> {args.out}")
 
 

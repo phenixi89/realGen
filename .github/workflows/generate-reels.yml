@@ -41,6 +41,14 @@ on:
           - scene,highlight
         required: false
         default: none
+      format:
+        description: "Format impose (catalog/formats.json), vide = choix automatique selon le mix conseil/produit"
+        required: false
+        default: ""
+      theme:
+        description: "Theme visuel impose (catalog/themes.json), vide = rotation"
+        required: false
+        default: ""
       from_step:
         description: "Regenerer a partir de cette etape (et les suivantes), ignore le cache pour elles. Vide = reprise normale."
         type: choice
@@ -135,10 +143,14 @@ jobs:
           # script shell (sinon un angle contenant $(...) serait execute).
           INPUT_ANGLE: ${{ github.event.inputs.angle }}
           INPUT_SCENARIO: ${{ github.event.inputs.scenario }}
+          INPUT_FORMAT: ${{ github.event.inputs.format }}
+          INPUT_THEME: ${{ github.event.inputs.theme }}
         run: |
           extra=()
           [ -n "$INPUT_ANGLE" ] && extra+=(--angle "$INPUT_ANGLE")
           [ -n "$INPUT_SCENARIO" ] && extra+=(--scenario "$INPUT_SCENARIO")
+          [ -n "$INPUT_FORMAT" ] && extra+=(--format "$INPUT_FORMAT")
+          [ -n "$INPUT_THEME" ] && extra+=(--theme "$INPUT_THEME")
           python scripts/run_pipeline.py \
             --n "${{ github.event.inputs.n || '3' }}" \
             --duration "${{ github.event.inputs.duration || '30' }}" \

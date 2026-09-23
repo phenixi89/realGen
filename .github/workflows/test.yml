@@ -29,6 +29,9 @@ jobs:
               ast.parse(f.read_text(encoding='utf-8'), filename=str(f))
           print('OK: tous les scripts parsent correctement')"
 
+      - name: Valide le catalogue (catalog/*.json)
+        run: python scripts/catalog.py
+
       - name: Vérifie run_pipeline.py --help
         run: python scripts/run_pipeline.py --help
 
