@@ -59,6 +59,7 @@ Principales options de `run_pipeline.py` :
 | `--angle` | — | Impose un angle marketing (sinon choisi stratégiquement, voir plus bas) |
 | `--scenario` | — | Fichier JSON de scénario écrit à la main (voir `scenarios/exemple.json`) |
 | `--format` / `--theme` / `--hook` | auto | Impose un élément du catalogue (voir « Ligne éditoriale ») |
+| `--no-sfx` | — | Sans effets sonores (musique conservée) — case « sfx » dans le workflow |
 | `--no-hook-overlay` | — | N'affiche pas l'accroche en grand au début |
 | `--anims` | `none` | Animations HTML/JS intégrées au montage : `overlay`, `scene`, `highlight` (séparées par des virgules), `all` ou `none` — voir ci-dessous |
 | `--from-step` | — | Reprend à partir d'une étape (`script`/`voice`/`video`/`subs`/`assemble`) sans tout regénérer |

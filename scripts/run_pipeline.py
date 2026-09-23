@@ -185,6 +185,8 @@ def main():
                          help="Theme visuel impose (catalog/themes.json) ; sinon rotation")
     parser.add_argument("--hook", type=str, default=None,
                          help="Style d'accroche impose (catalog/hooks.json) ; sinon rotation")
+    parser.add_argument("--no-sfx", action="store_true",
+                         help="Sans effets sonores (la musique reste) ; reglages fins : catalog/audio.json")
     parser.add_argument("--no-hook-overlay", action="store_true",
                          help="N'affiche pas l'accroche en grand au debut de la video")
     args = parser.parse_args()
@@ -339,6 +341,8 @@ def main():
         if args.capture_mode != "screenshots":
             # 3c / video mobile : pas de --scene-anim/--highlight/--theme cote montage.
             anim_video_args = []
+        if args.no_sfx:
+            sfx_cues = []
         if sfx_cues:
             sfx_path = video_dir / "sfx.json"
             sfx_path.write_text(json.dumps(sfx_cues), encoding="utf-8")

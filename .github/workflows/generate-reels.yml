@@ -41,6 +41,11 @@ on:
           - scene,highlight
         required: false
         default: none
+      sfx:
+        description: "Effets sonores (pop, clics de clavier, ding, suspense...)"
+        type: boolean
+        required: false
+        default: true
       format:
         description: "Format impose (catalog/formats.json), vide = choix automatique selon le mix conseil/produit"
         required: false
@@ -160,7 +165,8 @@ jobs:
             --anims "${{ github.event.inputs.anims || 'none' }}" \
             "${extra[@]}" \
             ${{ github.event.inputs.from_step && format('--from-step {0}', github.event.inputs.from_step) || '' }} \
-            ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
+            ${{ github.event.inputs.sfx == 'false' && '--no-sfx' || '' }}
 
       # if: always() -- meme si le pipeline echoue en route (ex: etape 3),
       # on veut recuperer ce qui a deja ete genere (scripts, audio, video,
