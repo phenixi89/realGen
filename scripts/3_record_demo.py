@@ -265,9 +265,24 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
         page.on("console", lambda msg: print(f"[console:{msg.type}] {msg.text}", file=sys.stderr))
         page.on("pageerror", lambda exc: print(f"[pageerror] {exc}", file=sys.stderr))
         # Render free tier met le service en veille apres inactivite : le
-        # premier chargement peut prendre 30-60s (cold start).
+        # premier chargement peut prendre 30-60s (cold start), parfois plus
+        # si l'instance vient tout juste de recevoir le ping de reveil (le
+        # warm-up du workflow tourne en parallele, sans garantie de delai).
+        # Plusieurs tentatives valent mieux qu'un timeout fixe plus long :
+        # un cold start typique reussit largement avant 60s, donc un retry
+        # ne coute cher que dans le pire des cas.
         page.set_default_timeout(60000)
-        await page.goto(url, wait_until="networkidle", timeout=60000)
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                await page.goto(url, wait_until="networkidle", timeout=60000)
+                last_error = None
+                break
+            except Exception as exc:
+                last_error = exc
+                print(f"Chargement de {url} echoue (tentative {attempt}/3) : {exc}", file=sys.stderr)
+        if last_error is not None:
+            raise last_error
         await dismiss_cookie_banner(page)
 
         segments = None
