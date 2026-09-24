@@ -88,7 +88,14 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
     if mode == "mot" and not emphasize and 0 <= active_index < len(words):
         # Un mot a la fois : la cue est reduite au mot prononce, agrandi.
         words, active_index = [words[active_index]], 0
-        style = {**style, "size": round(style["size"] * WORD_MODE_SCALE)}
+        size = round(style["size"] * WORD_MODE_SCALE)
+        # Mot long : reduit pour tenir dans la largeur (agrandissement du mot actif compris).
+        probe = ImageFont.truetype(style["font"], size)
+        text = words[0].upper() if style["upper"] else words[0]
+        width = probe.getlength(text) * ACTIVE_SCALE + style["outline"] * 4
+        if width > MAX_WIDTH:
+            size = int(size * MAX_WIDTH / width)
+        style = {**style, "size": size}
     is_keyword = [norm_word(w) in keywords for w in words]
     font = ImageFont.truetype(style["font"], style["cta_size"] if emphasize else style["size"])
     outline = style["outline"]
@@ -102,16 +109,21 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
     # hauteur, pour les polices a grand interligne comme Poppins) : sans le
     # compenser, le bas des lettres (ou le haut des accents) sortait de l'image.
     word_offsets = []
-    for w in words:
+    # Marge de chaque mot pour son agrandissement quand il est prononce : sans
+    # elle, le mot actif mordait sur ses voisins ("d'envoyerton").
+    grow = [0] * len(words)
+    for k, w in enumerate(words):
         bbox = draw.textbbox((0, 0), w, font=font, stroke_width=outline)
         word_sizes.append((bbox[2] - bbox[0], bbox[3] - bbox[1]))
         word_offsets.append((bbox[0], bbox[1], bbox[3]))
+        grow[k] = 0 if mode == "encadre" else int((bbox[2] - bbox[0]) * (ACTIVE_SCALE - 1) / 2) + 1
 
     # Retour a la ligne simple si la cue depasse la largeur max (rare avec
     # MAX_WORDS_PER_CUE=4, mais un mot compose long peut suffire a deborder).
     lines: list[list[int]] = [[]]
     line_width = 0
     for i, (w_width, _) in enumerate(word_sizes):
+        w_width += 2 * grow[i]
         added = w_width + (WORD_GAP if lines[-1] else 0)
         if line_width + added > MAX_WIDTH and lines[-1]:
             lines.append([])
@@ -127,7 +139,7 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
     line_heights = [max(word_offsets[i][2] for i in line) - top for line, top in zip(lines, line_tops)]
     total_height = sum(line_heights) + WORD_GAP * (len(lines) - 1)
     total_width = max(
-        sum(word_sizes[i][0] for i in line) + WORD_GAP * (len(line) - 1)
+        sum(word_sizes[i][0] + 2 * grow[i] for i in line) + WORD_GAP * (len(line) - 1)
         for line in lines
     )
 
@@ -146,9 +158,10 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
 
     y = pad
     for line, line_h, line_top in zip(lines, line_heights, line_tops):
-        line_w = sum(word_sizes[i][0] for i in line) + WORD_GAP * (len(line) - 1)
+        line_w = sum(word_sizes[i][0] + 2 * grow[i] for i in line) + WORD_GAP * (len(line) - 1)
         x = pad + (total_width - line_w) // 2
         for i in line:
+            x += grow[i]
             if i == active_index:
                 # Centre du mot a sa place normale, trace plus grand.
                 cx = x + word_sizes[i][0] / 2
@@ -167,7 +180,7 @@ def render_caption(words: list[str], active_index: int, emphasize: bool = False,
                 color = style["kw"] if is_keyword[i] else style["fg"]
                 draw.text((x - word_offsets[i][0], y - line_top), words[i], font=font, fill=color,
                           stroke_width=outline, stroke_fill=style["stroke"])
-            x += word_sizes[i][0] + WORD_GAP
+            x += word_sizes[i][0] + grow[i] + WORD_GAP
         y += line_h + WORD_GAP
 
     return img

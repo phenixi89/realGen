@@ -61,7 +61,7 @@
       "ambiance": "pop_energie",
       "transitions": [
         "slideleft",
-        "zoomin",
+        "smoothleft",
         "slideright",
         "fadewhite"
       ],
@@ -201,7 +201,7 @@
       "ambiance": "pop_energie",
       "transitions": [
         "circleopen",
-        "zoomin",
+        "smoothleft",
         "radial",
         "slideleft"
       ],
@@ -271,7 +271,7 @@
       "ambiance": "pop_energie",
       "transitions": [
         "slideright",
-        "zoomin",
+        "smoothleft",
         "fadewhite",
         "squeezeh"
       ],
@@ -382,7 +382,7 @@
       "transitions": [
         "fadewhite",
         "pixelize",
-        "zoomin",
+        "smoothleft",
         "hblur"
       ]
     },
@@ -451,7 +451,7 @@
       ],
       "transitions": [
         "slideleft",
-        "zoomin",
+        "smoothleft",
         "squeezeh",
         "fadeblack"
       ]

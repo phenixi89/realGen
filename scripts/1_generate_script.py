@@ -74,6 +74,7 @@ MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 # les voix Gemini FR : ~2.6 mots/s. Sert a traduire la duree cible en volume
 # de texte -- c'est le texte qui fixe la duree reelle du reel, pas l'inverse.
 WORDS_PER_SECOND = 2.6
+FAST_WORDS_PER_SECOND = 3.4
 MAX_ATTEMPTS = 3
 ACCROCHE_MAX_WORDS = 8
 ANIM_KEYS = ("anim", "overlay")
@@ -83,8 +84,13 @@ ACCENT_RE = re.compile(r"[éèêëàâùûüîïôçœÉÈÊÀÂÙÛÎÔÇ]")
 MIN_WORDS_ACCENT_CHECK = 12
 
 
-def word_budget(duration: int) -> tuple[int, int, int]:
-    target = round(duration * WORDS_PER_SECOND)
+def words_per_second(tone: str = "") -> float:
+    """Un ton "rapide" fait parler le TTS nettement plus vite (mesure : ~3.3 mots/s)."""
+    return FAST_WORDS_PER_SECOND if re.search(r"rapide|haletant", tone or "", re.I) else WORDS_PER_SECOND
+
+
+def word_budget(duration: int, tone: str = "") -> tuple[int, int, int]:
+    target = round(duration * words_per_second(tone))
     return target, round(target * 0.85), round(target * 1.12)
 
 
@@ -178,7 +184,7 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
                  recent_hooks: list[str]) -> str:
     fmt, hook = plan["format"], plan["hook"]
     catalog_features = "\n".join(f'- "{fid}" : {f.description}' for fid, f in available_features().items())
-    target, lo_w, hi_w = word_budget(duration)
+    target, lo_w, hi_w = word_budget(duration, fmt.get("ton", ""))
     lo_s, hi_s = scene_bounds(duration)
     cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
     structure = fmt["structure"].replace("{episode}", str(plan["episode"] or 1))
@@ -359,7 +365,8 @@ def banned_phrases(text: str) -> list[str]:
 
 
 def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: str = "aucune",
-             recent_hooks: list[str] | None = None, proof: bool = False) -> tuple[list[dict], list[str]]:
+             recent_hooks: list[str] | None = None, proof: bool = False,
+             tone: str = "") -> tuple[list[dict], list[str]]:
     """Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA)."""
     problems = []
     scenes = []
@@ -381,7 +388,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
         # Animations demandees par le scenario (run_pipeline.py --anims) :
         # conservees telles quelles, interpretees au montage.
         scene.update({k: raw[k] for k in ANIM_KEYS if raw.get(k)})
-        if raw.get("preuve") is True:
+        if raw.get("preuve") is True and proof:
             scene["preuve"] = True
         scenes.append(scene)
 
@@ -420,7 +427,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
         problems.append("formulations trop génériques à remplacer par du concret : " + ", ".join(banned))
 
     words = sum(len(s["texte"].split()) for s in scenes)
-    _, lo_w, hi_w = word_budget(duration)
+    _, lo_w, hi_w = word_budget(duration, tone)
     lo_s, hi_s = scene_bounds(duration)
     if not scenes:
         problems.append("aucune scène exploitable")
@@ -461,7 +468,8 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         except json.JSONDecodeError:
             feedback = "ta réponse n'était pas du JSON valide"
             continue
-        scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks, wants_proof(fmt))
+        scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks, wants_proof(fmt),
+                                    fmt.get("ton", ""))
         if scenes:
             best, best_data = scenes, data
         if not problems:
