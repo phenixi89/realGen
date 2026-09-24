@@ -1,8 +1,8 @@
 {
   "_doc": "Audio des reels (scripts/audio_gen.py). ambiances : musiques synthetisees (bpm, accords en notes MIDI, motifs de batterie 16 pas 'x' = coup). Chaque theme (themes.json) choisit son ambiance via 'ambiance'. Deposer des morceaux libres de droits dans assets/music/<id_ambiance>/ pour les utiliser a la place de la synthese. effets : transition = son des changements de scene (tick, whoosh, pop...), volumes par effet, regles anti-abus (ecart minimal, maximum par 10 s, effets bannis). instrument : nappe | piano | pluck | synth ; arpege : ordre des notes par double-croche (chiffres = rang dans l'accord, '.' = silence) ; basse_type : pulse | 808 | douce ; batterie : kick, snare, hat, clap, shaker. effets (par ambiance) : volume (multiplicateur), tonalite (demi-tons, effets melodiques accordes sur la musique), transition (son des changements de scene pour cette ambiance). Le mix final est masterise a -14 LUFS (audio_gen.master).",
   "musique": {
-    "volume": 0.16,
-    "baisse_sous_voix": 0.55
+    "volume": 0.1,
+    "baisse_sous_voix": 0.7
   },
   "ambiances": [
     {
@@ -85,8 +85,7 @@
       },
       "effets": {
         "volume": 1.0,
-        "tonalite": 0,
-        "transition": "pop"
+        "tonalite": 0
       }
     },
     {
@@ -246,8 +245,7 @@
       },
       "effets": {
         "volume": 0.95,
-        "tonalite": 0,
-        "transition": "tick"
+        "tonalite": 0
       }
     },
     {
@@ -291,8 +289,7 @@
       },
       "effets": {
         "volume": 0.75,
-        "tonalite": -2,
-        "transition": "tick"
+        "tonalite": -2
       }
     },
     {
@@ -332,8 +329,7 @@
       },
       "effets": {
         "volume": 1.0,
-        "tonalite": -4,
-        "transition": "tick"
+        "tonalite": -4
       }
     },
     {
@@ -378,8 +374,7 @@
       },
       "effets": {
         "volume": 0.85,
-        "tonalite": 2,
-        "transition": "pop"
+        "tonalite": 2
       }
     },
     {
@@ -420,18 +415,21 @@
       },
       "effets": {
         "volume": 1.0,
-        "tonalite": -2,
-        "transition": "tick"
+        "tonalite": -2
       }
     }
   ],
   "effets": {
     "actif": true,
-    "volume_global": 1.0,
-    "ecart_min_s": 0.35,
-    "max_par_10s": 6,
+    "volume_global": 0.6,
+    "ecart_min_s": 0.9,
+    "max_par_10s": 3,
     "bannis": [
-      "whoosh"
+      "whoosh",
+      "click",
+      "tick",
+      "buzz",
+      "riser"
     ],
     "volumes": {
       "whoosh": 0.22,
@@ -445,6 +443,7 @@
       "tick": 0.14,
       "mouse": 0.3
     },
-    "transition": "tick"
+    "transition": "",
+    "_note": "Mix sobre : seuls les effets qui soulignent un moment cle restent (impact de l'accroche et de la revelation, pop des cartes, ding, scintillement du CTA, clic de souris). transition vide = aucun son aux changements de scene."
   }
 }

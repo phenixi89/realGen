@@ -34,7 +34,7 @@ QUOTES = ' «»"“”'
 def transition_sound() -> str:
     """Effet des changements de scene (catalog/audio.json "effets.transition")."""
     import audio_gen
-    return audio_gen.audio_config()["effets"].get("transition", "tick")
+    return audio_gen.audio_config()["effets"].get("transition", "")
 
 
 def type_interval(n_chars: int, dur: float) -> float:
@@ -88,10 +88,10 @@ def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[d
     tel que rendu au montage -- les parametres des cartes y sont deja.
     """
     scenes = timeline["scenes"]
-    cues = [{"t": 0.02, "name": "impact", "gain": 0.8}] if hook else []
+    cues = [{"t": 0.02, "name": "impact", "gain": 0.5}] if hook else []
     for i, scene in enumerate(scenes):
         start, dur = scene["start"], scene["end"] - scene["start"]
-        if i > 0:
+        if i > 0 and transition_sound():
             cues.append({"t": max(start - WHOOSH_LEAD, 0), "name": transition_sound(), "transition": True})
         spec = scene_anims.get(i)
         if not spec:

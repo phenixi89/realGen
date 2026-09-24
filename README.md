@@ -189,6 +189,10 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
 - **Effets accordés à l'ambiance** (`"effets"` de chaque ambiance) : volume, tonalité en demi-tons
   (pop, ding, scintillement) et son de transition propres, plus doux en lo-fi, plus nets en tech.
   Pour utiliser de vrais morceaux libres de droits, dépose-les dans `assets/music/<id_ambiance>/`.
+- **Mix sobre par défaut** : voix au débit posé (pauses entre les phrases, `ton` des formats),
+  musique basse (volume 0,10, baissée de 70 % sous la voix), effets limités aux moments clés
+  (3 max par 10 s ; `whoosh`, `click`, `tick`, `buzz`, `riser` dans `bannis`, aucun son de
+  transition). Pour un rendu plus nerveux, retirer des effets de `bannis` dans `audio.json`.
 - **Effets sonores** calés sur le montage (`scripts/sound_design.py`) : impact sur l'accroche,
   whoosh aux changements de scène, pop à l'apparition d'une carte, clics de clavier, montée de
   tension + impact pour le suspense, ding (réalité/après), buzz (idée reçue/avant), scintillement

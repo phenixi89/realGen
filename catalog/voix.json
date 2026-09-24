@@ -1,12 +1,36 @@
 {
   "_doc": "Voix Gemini TTS utilisees en rotation (une par reel, en evitant les plus recentes) quand la voix demandee est 'auto'. id = nom exact de la voix Gemini. Le ton de lecture vient du format (formats.json 'ton'), sinon de ton_par_defaut.",
-  "ton_par_defaut": "chaleureux, dynamique, rythme rapide pour réseaux sociaux",
+  "ton_par_defaut": "chaleureux et dynamique, débit posé et naturel, avec de courtes pauses entre les phrases",
   "voix": [
-    {"id": "Kore", "description": "ferme, assurée", "poids": 2},
-    {"id": "Puck", "description": "enjouée, énergique", "poids": 2},
-    {"id": "Charon", "description": "posée, informative", "poids": 1},
-    {"id": "Aoede", "description": "légère, aérée", "poids": 1},
-    {"id": "Fenrir", "description": "vive, enthousiaste", "poids": 1},
-    {"id": "Leda", "description": "jeune, spontanée", "poids": 1}
+    {
+      "id": "Kore",
+      "description": "ferme, assurée",
+      "poids": 2
+    },
+    {
+      "id": "Puck",
+      "description": "enjouée, énergique",
+      "poids": 2
+    },
+    {
+      "id": "Charon",
+      "description": "posée, informative",
+      "poids": 1
+    },
+    {
+      "id": "Aoede",
+      "description": "légère, aérée",
+      "poids": 1
+    },
+    {
+      "id": "Fenrir",
+      "description": "vive, enthousiaste",
+      "poids": 1
+    },
+    {
+      "id": "Leda",
+      "description": "jeune, spontanée",
+      "poids": 1
+    }
   ]
 }
