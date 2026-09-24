@@ -44,11 +44,23 @@ async def dismiss_cookie_banner(page):
     l'enregistrement -- gênant surtout en mode screenshots, ou il finit dans
     le cadrage final.
     """
-    accept = page.locator("button:visible").filter(has_text=re.compile("j'ai compris|compris", re.I)).first
+    accept = page.locator("button:visible").filter(
+        has_text=re.compile(r"j'ai compris|compris|d'accord|^\s*ok\s*$|accepter|fermer", re.I)).first
     try:
         await accept.click(timeout=3000)
     except Exception:
         pass  # deja accepte (execution precedente / --force) ou bandeau absent
+    # Filet de securite (libelle du bouton change, bandeau revenu apres la
+    # connexion) : tout bloc fixe qui parle de stockage/traceurs est masque.
+    await page.evaluate("""() => {
+        for (const el of document.querySelectorAll('body *')) {
+            const pos = getComputedStyle(el).position;
+            if ((pos === 'fixed' || pos === 'sticky') && /traceur|stockage fonctionnel|cookie/i.test(el.textContent || '')
+                && el.getBoundingClientRect().height < window.innerHeight / 2) {
+                el.style.setProperty('display', 'none', 'important');
+            }
+        }
+    }""")
 
 
 async def login(page, email: str, password: str):
@@ -294,6 +306,7 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
         try:
             if email and password:
                 await login(page, email, password)
+                await dismiss_cookie_banner(page)
             else:
                 print("ATTENTION: pas de credentials fournis, demo enregistree sans connexion", file=sys.stderr)
 

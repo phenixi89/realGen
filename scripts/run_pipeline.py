@@ -113,10 +113,11 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     overlays = {}
     if "overlay" in kinds and t_scenes:
         overlays = {i: anim_spec(s["overlay"], DEFAULT_OVERLAY) for i, s in enumerate(scenes) if s.get("overlay")}
-        if not overlays:
+        if not overlays and not script.get("habillage"):
             # Jamais sur la 1re scene (accroche) ni sur un plan deja anime
-            # (carte, CTA) : aucune scene libre -> pas de surimpression.
-            free = [i for i in range(1, len(t_scenes)) if i not in scene_anims]
+            # (carte, CTA), ni sur la scene preuve (le produit doit s'y voir),
+            # ni avec un habillage (chrono) qui occupe deja le haut de l'ecran.
+            free = [i for i in range(1, len(t_scenes)) if i not in scene_anims and not scenes[i].get("preuve")]
             default = next((i for i in free if t_scenes[i].get("feature") in OVERLAY_FEATURES), free[0] if free else None)
             overlays = {default: DEFAULT_OVERLAY} if default is not None else {}
         for i, spec in overlays.items():
