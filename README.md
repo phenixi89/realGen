@@ -135,11 +135,38 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine 4 choix pris da
 
 | Fichier | Contenu | Exemples |
 |---|---|---|
-| `catalog/formats.json` | **Structure** de la vidéo, catégorie `conseil` (contenu utile) ou `produit` (démo), usage des cartes texte | liste d'erreurs, idée reçue vs réalité, avant/après, astuce, décryptage d'offre, série « 30 jours », démo |
+| `catalog/formats.json` | **Structure** de la vidéo (20 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), usage des cartes texte, ton de lecture | voir le tableau ci-dessous |
 | `catalog/sujets.json` | **De quoi** parle la vidéo, avec des tags croisés avec les formats | titre du CV, ATS, résultats chiffrés, lettre, entretien, LinkedIn… |
 | `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe… |
 | `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, accord de la musique | violet nuit, corail, vert, bleu corporate |
 | `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), scène preuve, phrases bannies | |
+
+### Les capsules (`formats.json`)
+
+| Famille | Capsule (`id`) | Principe |
+|---|---|---|
+| conseil | Liste d'erreurs (`liste_erreurs`) | « 3 erreurs qui te font recaler », une carte par erreur |
+| conseil | Idée reçue vs réalité (`mythe_realite`) | idée reçue barrée, puis la réalité |
+| conseil | Avant / Après (`avant_apres`) | formulation faible puis réécrite |
+| conseil | Astuce express (`astuce_express`) | une astuce actionnable |
+| conseil | Décryptage d'offre (`decryptage_offre`) | ce que cache une offre d'emploi |
+| conseil | Série 30 jours (`serie_30_jours`) | épisodes numérotés automatiquement |
+| conseil | Question de recruteur (`question_recruteur`) | ce que le recruteur veut entendre |
+| conseil | Checklist express (`checklist_express`) | points numérotés, liste qui se coche |
+| conseil | Top / Flop (`top_bottom`) | ce qui marche / ne marche pas |
+| conseil | Cas pratique (`cas_pratique`) | une situation réelle racontée |
+| conseil | POV (`pov_situation`) | « POV : tu envoies ta 50e candidature… » |
+| conseil | Vu par le recruteur (`vu_par_recruteur`) | ce que tu crois montrer vs ce qu'il comprend |
+| conseil | Tier list (`tier_list`) | erreurs classées du rang C au rang S |
+| conseil | Red flag / Green flag (`red_green_flag`) | verdicts alternés |
+| conseil | Quiz trouve l'erreur (`trouve_erreur`) | ligne piégée puis révélation |
+| produit | Démo produit (`demo_produit`) | une fonctionnalité réelle par scène |
+| produit | Témoignage (`temoignage_produit`) | récit fictif à la 1re personne |
+| produit | Avant / Après avec OpusCV (`split_avant_apres`) | comparaison puis le chemin dans l'outil |
+| produit | Défi chrono (`defi_chrono`) | chronomètre, CV corrigé en direct |
+| produit | Le recruteur a 6 s (`reaction_recruteur`) | décompte, erreur repérée puis corrigée |
+
+Tester une capsule précise : `--format tier_list` (champ `format` du workflow).
 
 Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
 - le **format** est pris dans la catégorie la plus en retard sur le mix cible, en évitant les derniers utilisés ;
@@ -193,10 +220,10 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
   musique basse (volume 0,10, baissée de 70 % sous la voix), effets limités aux moments clés
   (3 max par 10 s ; `whoosh`, `click`, `tick`, `buzz`, `riser` dans `bannis`, aucun son de
   transition). Pour un rendu plus nerveux, retirer des effets de `bannis` dans `audio.json`.
-- **Effets sonores** calés sur le montage (`scripts/sound_design.py`) : impact sur l'accroche,
-  whoosh aux changements de scène, pop à l'apparition d'une carte, clics de clavier, montée de
-  tension + impact pour le suspense, ding (réalité/après), buzz (idée reçue/avant), scintillement
-  sur le CTA. Garde-fous dans `audio.json` : volumes par effet, écart minimal, maximum par 10 s,
+- **Effets sonores** calés sur le montage (`scripts/sound_design.py`) : impact sur l'accroche et
+  la révélation du suspense, pop à l'apparition d'une carte, ding (réalité/après), scintillement
+  sur le CTA, clic de souris du curseur. Disponibles mais bannis par défaut : whoosh/tick aux
+  changements de scène, clics de clavier, buzz, montée de tension. Garde-fous dans `audio.json` : volumes par effet, écart minimal, maximum par 10 s,
   liste `bannis` pour désactiver un effet.
 - **Effets de carte** (`"effet"`, choisi par Gemini) : `standard`, `frappe` (texte tapé au clavier)
   et `suspense` (titre caché puis révélé, un seul par reel).
@@ -214,7 +241,12 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
 - **Accroche « pattern interrupt »** : le texte claque (flash, secousse), le mot fort est souligné ;
   la vidéo s'ouvre sur un zoom arrière rapide, puis de petits coups de zoom rythment chaque mot-clé
   prononcé (`--no-punch` dans `5_assemble.py` pour les retirer).
-- **Rythme** : un changement de plan toutes les 2,5 à 5 s environ.
+- **Rythme** : un changement de plan toutes les 2,5 à 5 s environ. Voix au débit posé (≈ 2,6 mots/s,
+  budget de mots calculé dessus ; un ton contenant « rapide » compte ≈ 3,4 mots/s).
+- **Durée** : 30 s ≈ 78 mots et 6 à 12 scènes ; 45 s ≈ 117 mots et 9 à 18 scènes. Changer la durée
+  régénère tout (scénarios, voix, captures), même en reprise.
+- **Surimpression score ATS** (`--anims overlay`) : jamais sur l'accroche, une carte, le CTA, la scène
+  preuve, ni dans un reel à habillage (chrono), pour ne rien masquer.
 - **13 thèmes**, dont verre givré, éditorial magazine, néon nuit, tableau à la craie et affiche
   impact (polices libres Playfair Display, Space Grotesk, DM Sans, Kalam, Bebas Neue).
 - **Barre de progression** fine en haut de l'écran, aux couleurs du thème (`--no-progress-bar` dans
