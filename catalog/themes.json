@@ -1,5 +1,5 @@
 {
-  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'.",
+  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'. dessin : support des cartes dessinees a la main et des annotations (assets/anim/sketch.js) -- 'papier' (feutre sur feuille), 'craie' (tableau), 'neon' (traits lumineux).",
   "themes": [
     {
       "id": "violet_nuit",
@@ -34,7 +34,8 @@
         "lofi_chill",
         "piano_minimal",
         "synthwave"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "corail_energie",
@@ -69,7 +70,8 @@
         "pop_energie",
         "house_douce",
         "acoustique"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "vert_confiance",
@@ -104,7 +106,8 @@
         "corporate_positif",
         "acoustique",
         "piano_minimal"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "bleu_corporate",
@@ -139,7 +142,8 @@
         "minimal_pulse",
         "corporate_positif",
         "house_douce"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "noir_or",
@@ -174,7 +178,8 @@
         "tension_tech",
         "trap_legere",
         "synthwave"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "rose_pop",
@@ -209,7 +214,8 @@
         "pop_energie",
         "house_douce",
         "trap_legere"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "ardoise_indigo",
@@ -244,7 +250,8 @@
         "lofi_chill",
         "piano_minimal",
         "minimal_pulse"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "orange_sunset",
@@ -279,7 +286,8 @@
         "pop_energie",
         "acoustique",
         "house_douce"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "verre_givre",
@@ -314,7 +322,8 @@
         "fade",
         "smoothup",
         "circleopen"
-      ]
+      ],
+      "dessin": "neon"
     },
     {
       "id": "editorial",
@@ -349,7 +358,8 @@
         "fadeblack",
         "slideup",
         "wiperight"
-      ]
+      ],
+      "dessin": "papier"
     },
     {
       "id": "neon_nuit",
@@ -384,7 +394,8 @@
         "pixelize",
         "smoothleft",
         "hblur"
-      ]
+      ],
+      "dessin": "neon"
     },
     {
       "id": "craie_tableau",
@@ -419,7 +430,8 @@
         "smoothleft",
         "fade",
         "diagtl"
-      ]
+      ],
+      "dessin": "craie"
     },
     {
       "id": "affiche_bebas",
@@ -454,7 +466,8 @@
         "smoothleft",
         "squeezeh",
         "fadeblack"
-      ]
+      ],
+      "dessin": "papier"
     }
   ]
 }

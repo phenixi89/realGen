@@ -1,0 +1,64 @@
+<!doctype html>
+<!--
+  Annotation au feutre (surimpression d'une capture, 3b_build_video_from_screenshots
+  --annotate) : l'element montre (bouton d'action, ?x=&y= = captures.json
+  "focus", ou a defaut la zone ?rx=&ry=&rw=&rh=) est entoure a la main, puis
+  une fleche dessinee relie l'element a un post-it manuscrit (?texte=, 2 a 5
+  mots, optionnel). Reste affiche jusqu'a la fin du clip. Suit le zoom de la
+  capture comme highlight.html (common.js zoomCss).
+  Parametres : x, y | rx, ry, rw, rh ; texte ; delay (debut, s) ; pen (1 =
+  feutre visible) ; zoom/step/zmax/fps/fx/fy ; + theme.
+  Instant partage avec scripts/sound_design.py : le trace commence a ?delay=.
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden}
+  #layer{position:absolute;inset:0;transform-origin:0 0}
+  svg{position:absolute;left:0;top:0;overflow:visible;filter:drop-shadow(0 3px 0 rgba(255,255,255,.85)) drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+  #note{position:absolute;padding:20px 30px 24px;background:#fde68a;color:#1f2937;font:52px/1.1 HandFont,"Comic Sans MS",cursive;
+    box-shadow:0 14px 30px rgba(0,0,0,.35);transform-origin:50% 0;max-width:560px;text-align:center}
+  #note::before{content:"";position:absolute;left:50%;top:-16px;width:120px;height:34px;margin-left:-60px;background:rgba(255,255,255,.6);transform:rotate(-3deg)}
+</style></head><body>
+<div id="layer"><svg id="svg" width="1080" height="1920"></svg><div id="note"></div></div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>P.dessin = "papier";  // feutre sur l'ecran quel que soit le theme (craie/neon : cartes schema seulement)</script>
+<script src="sketch.js"></script>
+<script>
+  const DELAY = num("delay", 0), RED = "#ff2d55";
+  document.documentElement.style.setProperty("--ink-a1", RED);  // capuchon du feutre = couleur du trait
+  const hasPoint = !isNaN(parseFloat(P.x)) && !isNaN(parseFloat(P.y));
+  // Cible : point (bouton) ou zone (carte nette de la capture), bornee au cadre.
+  const cx = hasPoint ? num("x", 540) : num("rx", 70) + num("rw", 940) / 2;
+  const cy = hasPoint ? num("y", 960) : num("ry", 500) + num("rh", 600) / 2;
+  const rx = hasPoint ? 190 : Math.min(num("rw", 940) / 2 + 40, 520), ry = hasPoint ? 120 : Math.min(num("rh", 600) / 2 + 50, 700);
+  const texte = param("texte", "");
+  const note = document.getElementById("note");
+  note.textContent = texte;
+  if (!texte) note.style.display = "none";
+
+  Promise.all([FONTS_READY, HAND_READY]).then(() => {
+    const sk = new Sketch(document.getElementById("svg"), { seed: Math.round(cx + cy), pen: P.pen === "1" });
+    sk.loop(cx, cy, rx, ry, { color: RED, width: 11, at: 0, dur: 0.55 });
+    let noteBox = null;
+    if (texte) {
+      // Post-it au-dessus de la cible si la place le permet, sinon en dessous.
+      const nw = Math.min(note.offsetWidth, 560), nh = note.offsetHeight, above = cy - ry - 260 - nh > 150;
+      const nx = Math.min(Math.max(cx - nw / 2 + (cx < 540 ? 120 : -120), 50), 1030 - nw);
+      const ny = above ? cy - ry - 230 - nh : Math.min(cy + ry + 200, 1460 - nh);
+      Object.assign(note.style, { left: `${nx}px`, top: `${ny}px` });
+      noteBox = { x: nx, y: ny, w: nw, h: nh, above };
+      const sx = nx + nw / 2, sy = above ? ny + nh + 18 : ny - 22;
+      const ex = cx + (sx < cx ? -rx * 0.35 : rx * 0.35), ey = above ? cy - ry - 16 : cy + ry + 16;
+      sk.arrow(sx, sy, ex, ey, { color: RED, width: 10, bend: sx < cx ? -0.25 : 0.25, head: 40 });
+    }
+    const tl = gsap.timeline({ paused: true }).add(sk.draw, 0);
+    if (noteBox) tl.fromTo(note, { scale: 0.3, opacity: 0, rotate: -14 }, { scale: 1, opacity: 1, rotate: noteBox.x > 540 ? 3 : -4, duration: 0.4, ease: "back.out(2.2)" }, 0.45);
+    tl.to({}, { duration: 3 }, 0);  // l'annotation reste affichee (le rendu couvre tout le clip)
+    expose(tl);
+    const layer = document.getElementById("layer"), baseSeek = window.seek;
+    window.seek = (t) => { baseSeek(t - DELAY); sk.updatePen(t - DELAY); layer.style.transform = zoomCss(t); };
+    window.DURATION = DELAY + tl.duration();
+    window.seek(0);
+  });
+</script></body></html>

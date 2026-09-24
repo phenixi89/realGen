@@ -7,5 +7,5 @@ html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--c
   radial-gradient(circle at 85% 85%,color-mix(in srgb,var(--c2) 30%,transparent),transparent 55%)}
 #grid{position:absolute;inset:0;opacity:.07;background-image:linear-gradient(var(--cfg) 1px,transparent 1px),linear-gradient(90deg,var(--cfg) 1px,transparent 1px);background-size:90px 90px}
 .kicker{display:inline-flex;align-items:center;font-weight:800;font-size:44px;letter-spacing:.06em;text-transform:uppercase;
-  padding:16px 34px;border-radius:99px;background:var(--c1);color:#fff;box-shadow:0 12px 40px color-mix(in srgb,var(--c1) 55%,transparent)}
+  padding:16px 34px;border-radius:99px;background:var(--c1);color:var(--c1fg);box-shadow:0 12px 40px color-mix(in srgb,var(--c1) 55%,transparent)}
 .title{font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;line-height:1.08}

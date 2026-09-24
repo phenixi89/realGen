@@ -21,6 +21,9 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   (mêmes contrôles que `.github/workflows/test.yml`).
 - Enrichir le catalogue = éditer `catalog/*.json` (aucun code) ; documenter les champs dans le
   `_doc` du fichier et dans le README.
+- Icônes dessinables : `assets/anim/icones.js` (JSON strict après `window.ICONES = `, lu aussi par
+  `catalog.py`). Nouveau gabarit dessiné : s'appuyer sur `assets/anim/sketch.js`. Tout instant
+  d'animation repris par `scripts/sound_design.py` doit rester identique des deux côtés.
 - Polices : uniquement sous licence libre (OFL), licence copiée dans `assets/fonts/`.
 - Après un run du workflow `generate-reels.yml`, l'analyse se fait sur l'artefact `output`
   (images extraites des reels, loudness mesurée avec `ffmpeg -af ebur128`, cible -14 LUFS).

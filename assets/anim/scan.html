@@ -1,0 +1,112 @@
+<!doctype html>
+<!--
+  Carte "scan" (scanner ATS) : un CV schematique passe sous un rayon laser ;
+  les mots-cles de l'offre presents dans le CV s'allument en vert au passage
+  du rayon, les manquants se marquent en rouge dans la liste de l'offre ;
+  score final "N/total mots-cles trouves".
+  Parametres : surtitre, titre, trouves ("a|b|c"), manquants ("d|e"),
+  bg, dur + theme. 6 mots-cles au total au maximum.
+  Instants partages avec scripts/sound_design.py : SCAN_AT, scanDur(), RESULT_AT.
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card_base.css">
+<style>
+  #box{position:absolute;left:90px;right:90px;top:250px;text-align:center}
+  #title{margin-top:30px;font-size:74px}
+  #sheet{position:absolute;left:150px;right:150px;top:520px;height:500px;border-radius:22px;background:#f8fafc;padding:44px 50px;box-sizing:border-box;
+    box-shadow:0 30px 80px rgba(0,0,0,.5);overflow:hidden}
+  .row{display:flex;align-items:center;gap:18px;height:46px;margin-bottom:12px}
+  .bar{height:18px;border-radius:9px;background:#cbd5e1;flex:none}
+  .hd .bar{height:30px;background:#334155}
+  .chip{flex:none;font:800 32px/1 TextFont,"DejaVu Sans",sans-serif;color:#334155;padding:9px 16px;border-radius:12px;border:3px solid transparent;white-space:nowrap}
+  #laser{position:absolute;left:0;right:0;top:0;height:6px;background:var(--c1);
+    box-shadow:0 0 18px 6px color-mix(in srgb,var(--c1) 80%,transparent),0 0 60px 20px color-mix(in srgb,var(--c1) 35%,transparent)}
+  #trail{position:absolute;left:0;right:0;top:0;height:0;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--c1) 16%,transparent))}
+  #offer{position:absolute;left:80px;right:80px;top:1070px;text-align:center}
+  #olabel{font-size:34px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+  #kw{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;margin-top:22px}
+  .k{font-weight:800;font-size:40px;padding:12px 24px;border-radius:16px;border:3px solid color-mix(in srgb,var(--cfg) 30%,transparent);display:flex;gap:12px;align-items:center}
+  .k b{display:inline-block;width:0;overflow:hidden}
+  .k.ok{background:#10b981;border-color:#10b981;color:#fff}
+  .k.ko{border-color:#ef4444;color:#fecaca;background:rgba(239,68,68,.15)}
+  #result{margin-top:40px;font-size:62px}
+  #result span{display:inline-block;padding:10px 34px;border-radius:99px;color:#fff}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="grid"></div>
+<div id="box"><div class="kicker" id="kicker"></div><div class="title" id="title"></div></div>
+<div id="sheet"><div id="rows"></div><div id="trail"></div><div id="laser"></div></div>
+<div id="offer"><div id="olabel">Mots-clés de l'offre</div><div id="kw"></div><div id="result" class="title"><span></span></div></div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>
+  const DUR = num("dur", 5), SCAN_AT = 0.55;
+  const split = (k, d) => param(k, d).split("|").map((s) => s.trim()).filter(Boolean);
+  const found = split("trouves", "Python|SQL|Tableau"), missing = split("manquants", "Power BI|Agile");
+  const all = [];  // ordre de la liste de l'offre : trouves et manquants alternes (suspense)
+  for (let i = 0; i < Math.max(found.length, missing.length); i++) {
+    if (found[i]) all.push({ k: found[i], ok: true });
+    if (missing[i]) all.push({ k: missing[i], ok: false });
+  }
+  all.splice(6);
+  const scanDur = Math.min(1.8, Math.max(1.0, DUR * 0.35)), RESULT_AT = SCAN_AT + scanDur + 0.25;
+  document.getElementById("title").textContent = param("titre", "Ton CV passé au scanner ATS");
+  const kicker = param("surtitre", "Scan ATS"); document.getElementById("kicker").textContent = kicker;
+  if (!kicker) document.getElementById("kicker").style.display = "none";
+  const bg = param("bg", ""); let bgReady = null;
+  if (bg) { document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
+
+  // CV schematique : 8 lignes, les mots-cles trouves places dans des lignes reparties.
+  const rows = document.getElementById("rows"), N = 7, chips = [];
+  const okList = all.filter((a) => a.ok);
+  const slots = okList.map((_, i) => 2 + Math.round((i * (N - 3)) / Math.max(okList.length - 1, 1)));
+  for (let r = 0; r < N; r++) {
+    const row = document.createElement("div"); row.className = r === 0 ? "row hd" : "row";
+    const w1 = r === 0 ? 300 : 90 + ((r * 67) % 160);
+    row.innerHTML = `<span class="bar" style="width:${w1}px"></span>`;
+    const j = slots.indexOf(r);
+    if (j >= 0) { const c = document.createElement("span"); c.className = "chip"; c.textContent = okList[j].k; row.appendChild(c); chips.push({ c, row: r, k: okList[j].k }); }
+    row.insertAdjacentHTML("beforeend", `<span class="bar" style="width:${r === 0 ? 0 : 120 + ((r * 41) % 200)}px"></span>`);
+    rows.appendChild(row);
+  }
+  const kw = document.getElementById("kw");
+  all.forEach((a) => { const d = document.createElement("div"); d.className = "k"; d.innerHTML = "<span></span><b></b>";
+    d.firstChild.textContent = a.k; d.lastChild.textContent = a.ok ? "✓" : "✕"; kw.appendChild(d); a.el = d; });
+  const nOk = okList.length, ratio = nOk / Math.max(all.length, 1);
+  const res = document.querySelector("#result span");
+  res.textContent = `${nOk}/${all.length} mots-clés trouvés`;
+  res.style.background = ratio >= 0.8 ? "#10b981" : ratio >= 0.5 ? "#f59e0b" : "#ef4444";
+
+  FONTS_READY.then(() => {
+    const sheetH = document.getElementById("sheet").clientHeight;
+    const rowY = (r) => 44 + r * 58 + 23;  // centre de la ligne r dans la feuille
+    const tl = gsap.timeline({ paused: true })
+      .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
+      .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2.2)" }, 0.05)
+      .from("#title", { y: 40, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.15)
+      .from("#sheet", { y: 80, opacity: 0, rotate: -2, duration: 0.45, ease: "power3.out" }, 0.1)
+      .from(".k", { y: 30, opacity: 0, duration: 0.3, stagger: 0.05, ease: "power2.out" }, 0.3)
+      .fromTo("#laser", { y: 0, opacity: 0 }, { y: sheetH - 6, opacity: 1, duration: scanDur, ease: "none" }, SCAN_AT)
+      .fromTo("#trail", { height: 0 }, { height: sheetH, duration: scanDur, ease: "none" }, SCAN_AT)
+      .to(["#laser", "#trail"], { opacity: 0, duration: 0.3 }, SCAN_AT + scanDur);
+    // Mot-cle trouve : s'allume quand le rayon passe sa ligne.
+    chips.forEach((ch) => {
+      const t = SCAN_AT + (rowY(ch.row) / sheetH) * scanDur;
+      tl.to(ch.c, { backgroundColor: "rgba(16,185,129,.22)", borderColor: "#10b981", color: "#047857", duration: 0.15 }, t)
+        .fromTo(ch.c, { scale: 1.25 }, { scale: 1, duration: 0.3, ease: "back.out(3)", immediateRender: false }, t);
+    });
+    // Liste de l'offre : verdict de chaque mot-cle au fil du scan.
+    all.forEach((a, i) => {
+      const t = SCAN_AT + (scanDur * (i + 1)) / (all.length + 1);
+      tl.call(() => a.el.classList.add(a.ok ? "ok" : "ko"), null, t)
+        .to(a.el.querySelector("b"), { width: "1em", duration: 0.2 }, t)
+        .fromTo(a.el, { scale: 1.2 }, { scale: 1, duration: 0.3, ease: "back.out(3)", immediateRender: false }, t);
+      if (!a.ok) tl.to(a.el, { keyframes: { x: [0, -10, 9, -6, 0] }, duration: 0.3 }, t + 0.1);
+    });
+    tl.from("#result span", { scale: 0.4, opacity: 0, duration: 0.45, ease: "back.out(2.4)" }, RESULT_AT)
+      .to("#sheet", { y: -10, duration: 2, repeat: 3, yoyo: true, ease: "sine.inOut" }, RESULT_AT + 0.4);
+    addAmbient(tl, 8);
+    expose(tl, bgReady);
+    window.DURATION = Math.min(RESULT_AT + 0.8, DUR);
+  });
+</script></body></html>

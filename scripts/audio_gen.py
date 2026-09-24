@@ -150,6 +150,20 @@ def sfx(name: str, seed: int = 0, **kw) -> np.ndarray:
             seg = t[: len(t) - start]
             y[start:] += np.sin(2 * np.pi * midi_hz(note) * seg) * env(len(seg), 0.002, 0.12)
         return _norm(y)
+    if name == "feutre":  # feutre sur papier : quelques traits frottes, doux (dessins, annotations)
+        n = int(kw.get("duration", 0.8) * SR)
+        rng = np.random.default_rng(seed)
+        y, pos = np.zeros(n), 0
+        while pos < n:
+            length = int(rng.uniform(0.12, 0.28) * SR)
+            seg = _noise(length, seed + pos)
+            seg = _lowpass_fast(seg, 5500) - _lowpass_fast(seg, 1600)  # bande 1.6-5.5 kHz : frottement
+            grain = 0.65 + 0.35 * np.sin(2 * np.pi * rng.uniform(16, 28) * np.arange(length) / SR)
+            seg = seg * grain * np.sin(np.linspace(0, np.pi, length)) ** 0.8
+            end = min(pos + length, n)
+            y[pos:end] += seg[: end - pos]
+            pos += length + int(rng.uniform(0.05, 0.14) * SR)
+        return _norm(y)
     raise ValueError(f"effet inconnu : {name}")
 
 

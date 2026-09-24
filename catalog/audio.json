@@ -441,9 +441,10 @@
       "impact": 0.35,
       "sparkle": 0.2,
       "tick": 0.14,
-      "mouse": 0.3
+      "mouse": 0.3,
+      "feutre": 0.14
     },
     "transition": "",
-    "_note": "Mix sobre : seuls les effets qui soulignent un moment cle restent (impact de l'accroche et de la revelation, pop des cartes, ding, scintillement du CTA, clic de souris). transition vide = aucun son aux changements de scene."
+    "_note": "Mix sobre : seuls les effets qui soulignent un moment cle restent (impact de l'accroche et de la revelation, pop des cartes, ding, scintillement du CTA, clic de souris, feutre des dessins et annotations). transition vide = aucun son aux changements de scene."
   }
 }

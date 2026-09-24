@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes texte animees, assets/anim/carte.html -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params).",
+  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes animees : texte, chiffre, comparaison, liste, schema dessine, conversation, scan ATS, impact -- assets/anim/ -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params).",
   "formats": [
     {
       "id": "demo_produit",
@@ -25,7 +25,7 @@
         "lettre",
         "candidature"
       ],
-      "structure": "Accroche annoncant le nombre d'erreurs (3 a 5 selon la duree). Une scene-carte par erreur : surtitre 'Erreur n°X', titre = l'erreur en 2 a 5 mots, texte = la correction en une phrase courte ; la voix explique pourquoi c'est une erreur et quoi faire a la place. Avant-derniere scene (sans carte) : montrer la fonctionnalite d'OpusCV qui detecte ou corrige ces erreurs. Derniere scene : CTA. Si une donnée chiffrée plausible appuie le propos, une carte type 'chiffre' peut ouvrir la liste.",
+      "structure": "Accroche annoncant le nombre d'erreurs (3 a 5 selon la duree). Une scene-carte par erreur : surtitre 'Erreur n°X', titre = l'erreur en 2 a 5 mots, texte = la correction en une phrase courte ; la voix explique pourquoi c'est une erreur et quoi faire a la place. Avant-derniere scene (sans carte) : montrer la fonctionnalite d'OpusCV qui detecte ou corrige ces erreurs. Derniere scene : CTA. Si une donnée chiffrée plausible appuie le propos, une carte type 'chiffre' peut ouvrir la liste. La pire erreur peut être résumée par une carte type 'impact'.",
       "ton": "énergique et direct, comme un créateur TikTok qui interpelle, débit posé et naturel, avec de courtes pauses entre les phrases"
     },
     {
@@ -70,7 +70,7 @@
         "linkedin",
         "candidature"
       ],
-      "structure": "Accroche. Une seule astuce expliquee en etapes : une scene-carte par etape (surtitre 'Étape X', titre = l'action). Une scene sans carte montre la fonctionnalite d'OpusCV liee. Derniere scene : CTA.",
+      "structure": "Accroche. Une seule astuce expliquee en etapes : une scene-carte par etape (surtitre 'Étape X', titre = l'action). Une scene sans carte montre la fonctionnalite d'OpusCV liee. Derniere scene : CTA. Les étapes peuvent être dessinées dans une carte type 'schema'.",
       "ton": "complice, comme un conseil entre amis, débit posé et naturel, avec de courtes pauses entre les phrases"
     },
     {
@@ -83,7 +83,7 @@
         "candidature",
         "ats"
       ],
-      "structure": "Accroche. On decortique l'offre_emploi fournie : une scene-carte par expression de l'offre (surtitre 'Dans l'offre', titre = l'expression entre guillemets, texte = ce qu'elle veut vraiment dire et le mot-cle a reprendre dans son CV). Une scene sans carte montre OpusCV qui adapte le CV a cette offre. Derniere scene : CTA.",
+      "structure": "Accroche. On decortique l'offre_emploi fournie : une scene-carte par expression de l'offre (surtitre 'Dans l'offre', titre = l'expression entre guillemets, texte = ce qu'elle veut vraiment dire et le mot-cle a reprendre dans son CV). Une scene sans carte montre OpusCV qui adapte le CV a cette offre. Derniere scene : CTA. Une carte type 'scan' peut conclure : les mots-clés de l'offre trouvés / manquants dans un CV type.",
       "ton": "posé et analytique, sûr de lui, débit posé et naturel, avec de courtes pauses entre les phrases"
     },
     {
@@ -231,7 +231,7 @@
         "candidature",
         "entretien"
       ],
-      "structure": "Accroche « POV : ... » qui plonge le spectateur dans une situation vécue (ex : tu envoies ta 50e candidature). Les scènes racontent la situation puis révèlent la vraie cause et la solution concrète. Dernière scène : CTA.",
+      "structure": "Accroche « POV : ... » qui plonge le spectateur dans une situation vécue (ex : tu envoies ta 50e candidature). Les scènes racontent la situation puis révèlent la vraie cause et la solution concrète. Dernière scène : CTA. Une carte type 'conversation' peut montrer le message reçu (fictif).",
       "ton": "immersif et complice, comme une histoire qu'on vit ensemble, débit posé et naturel, avec de courtes pauses entre les phrases"
     },
     {
@@ -245,7 +245,7 @@
         "ats",
         "candidature"
       ],
-      "structure": "Accroche : « Voilà ce que le recruteur voit vraiment sur ton CV ». Chaque scène oppose ce que le candidat croit montrer et ce que le recruteur (ou l'ATS) comprend réellement (cartes avant/apres ou comparaison). Dernière scène : CTA.",
+      "structure": "Accroche : « Voilà ce que le recruteur voit vraiment sur ton CV ». Chaque scène oppose ce que le candidat croit montrer et ce que le recruteur (ou l'ATS) comprend réellement (cartes avant/apres ou comparaison). Dernière scène : CTA. Une carte type 'scan' peut montrer ce que l'ATS trouve (et ne trouve pas) dans le CV.",
       "ton": "révélateur, un peu malicieux, débit posé et naturel, avec de courtes pauses entre les phrases"
     },
     {
@@ -290,6 +290,49 @@
       ],
       "structure": "Accroche : « Trouve l'erreur dans ce CV en 3 secondes ». Une carte frappe montre une ligne de CV ou de lettre qui contient une erreur ; la voix laisse un instant de réflexion ; la scène suivante révèle l'erreur (effet suspense) et la correction. Deux ou trois manches. Dernière scène : CTA.",
       "ton": "joueur, comme un animateur de quiz, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "tableau_blanc",
+      "nom": "Je t'explique au tableau",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "sujets": [
+        "cv",
+        "ats",
+        "candidature",
+        "entretien",
+        "lettre"
+      ],
+      "structure": "Accroche. Le reel explique UN mécanisme (ex : comment l'ATS trie les CV, ce que regarde un recruteur, pourquoi une candidature reste sans réponse) comme un prof au tableau : 2 ou 3 scènes-cartes type 'schema' qui le dessinent étape par étape avec des icônes (marque 'barre' sur l'étape d'échec, 'coche' sur la bonne pratique), puis une carte type 'impact' avec la phrase à retenir. Scène preuve : OpusCV qui agit sur ce mécanisme. Dernière scène : CTA.",
+      "ton": "pédagogue et posé, comme un prof sympa au tableau, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "dm_recruteur",
+      "nom": "Le message du recruteur",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "sujets": [
+        "candidature",
+        "entretien",
+        "cv",
+        "linkedin"
+      ],
+      "structure": "Accroche. Une scène-carte type 'conversation' montre un échange FICTIF et réaliste entre un candidat et un recruteur (2 à 4 messages courts) qui révèle une erreur ou une bonne pratique. Les scènes suivantes décryptent (cartes texte, avant/après, comparaison) ce qu'il fallait comprendre et comment faire. Scène preuve. Dernière scène : CTA. Ne présente jamais la conversation comme réelle : c'est un exemple.",
+      "ton": "complice et un peu malicieux, comme si on lisait un message ensemble, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "scanner_ats",
+      "nom": "Ton CV au scanner ATS",
+      "categorie": "produit",
+      "poids": 2,
+      "cartes": "autorisees",
+      "sujets": [
+        "produit"
+      ],
+      "structure": "Accroche sur les mots-clés qui manquent à la plupart des CV. Une scène-carte type 'scan' passe un CV au scanner face à l'offre_emploi fournie (mots-clés de l'offre trouvés / manquants, repris de l'offre). Puis les scènes montrent dans OpusCV comment adapter le CV à cette offre et ajouter les mots-clés manquants (fonctionnalités adapter, checklist...), avec une annotation au feutre sur l'écran clé. Dernière scène : CTA.",
+      "ton": "direct et concret, comme une démonstration entre amis, débit posé et naturel, avec de courtes pauses entre les phrases"
     }
   ]
 }

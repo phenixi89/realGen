@@ -1,0 +1,78 @@
+<!doctype html>
+<!--
+  Carte "impact" (typographie cinetique) : la phrase-cle du reel claque mot
+  par mot, en tres grand, chaque ligne a la taille qui remplit la largeur ;
+  le mot fort (le plus long, ou ?mot=) est surligne au feutre aux couleurs du
+  theme. Une seule par reel : c'est la phrase que le spectateur doit retenir.
+  Parametres : texte (4 a 10 mots), mot (mot fort, optionnel), bg, dur + theme.
+  Instants partages avec scripts/sound_design.py : FIRST_AT (premier mot).
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card_base.css">
+<style>
+  #stage{position:absolute;left:60px;right:60px;top:0;height:1920px;display:flex;flex-direction:column;justify-content:center;align-items:center;
+    padding-bottom:260px;box-sizing:border-box;transform-origin:50% 45%}
+  .line{display:flex;gap:.22em;white-space:nowrap;line-height:1.1;font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;text-transform:uppercase}
+  .w{display:inline-block;position:relative}
+  .hot{color:var(--c1fg);z-index:1}
+  .hot::before{content:"";position:absolute;left:-.12em;right:-.12em;top:.12em;bottom:.02em;z-index:-1;background:var(--c1);
+    transform:skewX(-8deg) scaleX(var(--s,0));transform-origin:0 50%;border-radius:.08em;box-shadow:0 .08em .3em rgba(0,0,0,.35)}
+  #flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--c2) 45%,transparent),transparent 60%);opacity:0}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="grid"></div><div id="flash"></div>
+<div id="stage"></div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>
+  const DUR = num("dur", 4), FIRST_AT = 0.12, MAXW = 940, MAXH = 1250;
+  const text = param("texte", "Personne ne lit ton CV en entier");
+  const words = text.split(/\s+/).filter(Boolean).slice(0, 12);
+  const clean = (w) => w.replace(/[^\p{L}\p{N}%]/gu, "");
+  const forced = clean(param("mot", "")).toLowerCase();
+  let hot = words.findIndex((w) => forced && clean(w).toLowerCase() === forced);
+  if (hot < 0) words.forEach((w, i) => { if (clean(w).length >= 4 && (hot < 0 || clean(w).length >= clean(words[hot]).length)) hot = i; });
+  const bg = param("bg", ""); let bgReady = null;
+  if (bg) { document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
+
+  FONTS_READY.then(() => {
+    // Lignes de 1 a 2 mots (3 si tres courts), chacune a la taille qui remplit la largeur.
+    const ctx = document.createElement("canvas").getContext("2d");
+    const width = (s, size) => { ctx.font = `800 ${size}px TitleFont, "DejaVu Sans"`; return ctx.measureText(s.toUpperCase()).width; };
+    const lines = [];
+    words.forEach((w, i) => {
+      const cur = lines[lines.length - 1];
+      const joined = cur ? cur.words.map((k) => words[k]).concat(w).join(" ") : "";
+      if (cur && cur.words.length < 3 && joined.length <= 13 && i !== hot && !cur.words.includes(hot)) cur.words.push(i);
+      else lines.push({ words: [i] });
+    });
+    lines.forEach((l) => { const s = l.words.map((k) => words[k]).join(" ");
+      l.size = Math.max(90, Math.min(250, (MAXW / width(s, 100)) * 100 * 0.94)); });
+    const total = lines.reduce((a, l) => a + l.size * 1.04, 0);
+    const k = Math.min(1, MAXH / total);
+    const stage = document.getElementById("stage"), els = [];
+    lines.forEach((l, li) => {
+      const div = document.createElement("div"); div.className = "line"; div.style.fontSize = `${l.size * k}px`;
+      if (li % 2 === 1 && !l.words.includes(hot)) div.style.color = "color-mix(in srgb,var(--cfg) 72%,var(--c2))";
+      l.words.forEach((i) => { const s = document.createElement("span"); s.className = i === hot ? "w hot" : "w"; s.textContent = words[i]; div.appendChild(s); els[i] = s; });
+      stage.appendChild(div);
+    });
+    const gap = Math.min(0.32, Math.max(0.12, (DUR * 0.55) / words.length));
+    const tl = gsap.timeline({ paused: true }).fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0);
+    els.forEach((el, i) => {
+      const t = FIRST_AT + i * gap;
+      tl.fromTo(el, { scale: 2.3, opacity: 0, filter: "blur(10px)", y: -20 },
+        { scale: 1, opacity: 1, filter: "blur(0px)", y: 0, duration: 0.22, ease: "power4.out" }, t)
+        .fromTo("#stage", { scale: 1.035 }, { scale: 1, duration: 0.25, ease: "power2.out", immediateRender: false }, t);
+    });
+    const hotAt = FIRST_AT + hot * gap;
+    if (els[hot]) tl.fromTo(els[hot], { "--s": 0 }, { "--s": 1, duration: 0.3, ease: "power3.out", immediateRender: false }, hotAt + 0.18)
+      .fromTo("#flash", { opacity: 0.9 }, { opacity: 0, duration: 0.5, ease: "power2.out", immediateRender: false }, hotAt + 0.18)
+      .to("#stage", { keyframes: { x: [0, -12, 10, -6, 0] }, duration: 0.28 }, hotAt + 0.18);
+    const end = FIRST_AT + words.length * gap + 0.3;
+    tl.to("#stage", { scale: 1.05, duration: Math.max(DUR - end, 1), ease: "sine.inOut" }, end);
+    addAmbient(tl, 10);
+    expose(tl, bgReady);
+    window.DURATION = Math.min(end + 0.4, DUR);
+  });
+</script></body></html>

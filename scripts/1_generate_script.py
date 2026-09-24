@@ -78,6 +78,9 @@ FAST_WORDS_PER_SECOND = 3.4
 MAX_ATTEMPTS = 3
 ACCROCHE_MAX_WORDS = 8
 ANIM_KEYS = ("anim", "overlay")
+# Annotations au feutre sur les captures (assets/anim/annotation.html).
+ANNOTATION_MAX_WORDS = 6
+MAX_ANNOTATIONS = 2
 # Sans aucun de ces caracteres sur tout un script, le texte a ete ecrit sans
 # accents : les sous-titres (texte exact du script) seraient faux.
 ACCENT_RE = re.compile(r"[éèêëàâùûüîïôçœÉÈÊÀÂÙÛÎÔÇ]")
@@ -199,6 +202,7 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
     else:
         variety_rule = "varie les fonctionnalités montrées, jamais la même dans deux scènes consécutives ;"
 
+    icons = " ; ".join(f"{k} = {v['nom']}" for k, v in catalog.icons().items())
     if fmt["cartes"] == "aucune":
         cards_rule = "Aucune scène n'a de carte : chaque scène montre uniquement la fonctionnalité."
     else:
@@ -217,6 +221,22 @@ capture, qui résume visuellement ce que dit la voix :
     "carte": {{"type": "comparaison", "surtitre": "...", "avant": "formulation faible", "apres": "formulation forte"}}
   - carte liste (2 à 5 points qui se cochent un par un, pour une checklist ou un récapitulatif) :
     "carte": {{"type": "liste", "surtitre": "...", "titre": "...", "points": ["...", "..."]}}
+  - carte schéma (explication DESSINÉE À LA MAIN, comme au tableau : 1 à 3 étapes-icônes reliées par des
+    flèches, idéale pour expliquer un mécanisme : le tri par l'ATS, le trajet d'une candidature, ce que
+    regarde un recruteur) :
+    "carte": {{"type": "schema", "surtitre": "...", "titre": "2 à 6 mots",
+               "etapes": [{{"icone": "<id>", "label": "2 à 5 mots"}}, ...],
+               "marque": "barre" (dernière étape = l'échec) | "coche" (= la réussite) | "entoure" (pour insister) | ""}}
+    icônes disponibles (champ "icone") : {icons}
+  - carte conversation (échange de messages FICTIF et réaliste, 2 à 4 messages de 12 mots max, entre le candidat
+    "moi" et un interlocuteur, ex : la réponse d'un recruteur) :
+    "carte": {{"type": "conversation", "contact": "Recruteur", "messages": [{{"de": "recruteur", "texte": "..."}},
+               {{"de": "moi", "texte": "..."}}]}}
+  - carte scan (le CV passé au scanner ATS face à l'offre : mots-clés de l'offre trouvés / manquants, 3 à 6 au
+    total, repris de "offre_emploi") :
+    "carte": {{"type": "scan", "surtitre": "...", "titre": "...", "trouves": ["..."], "manquants": ["..."]}}
+  - carte impact (LA phrase à retenir, qui claque mot par mot en très grand ; UNE SEULE par reel, pour le
+    message clé) : "carte": {{"type": "impact", "texte": "4 à 9 mots", "mot": "le mot fort de la phrase"}}
 Varie les types de cartes dans un même reel quand le contenu s'y prête.
 Effets d'apparition du titre (cartes texte) : "frappe" (tapé au clavier, idéal pour une citation, une formulation
 de CV ou une phrase d'offre), "suspense" (titre caché puis révélé avec un impact : UNE SEULE fois
@@ -225,6 +245,11 @@ Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus
 Le texte de la carte ne recopie PAS la voix : il la résume. Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée)."""
 
+    annotation_rule = """
+ANNOTATION AU FEUTRE : sur la scène preuve (s'il y en a une) et au plus une autre scène SANS carte qui montre
+OpusCV, ajoute "annotation": 2 à 5 mots manuscrits sur un post-it qui pointe l'élément clé de l'écran
+(ex : « tes mots-clés manquants », « le bouton magique »), en tutoyant. Jamais sur la scène 1 ni la dernière.
+"""
     proof_rule = ""
     if wants_proof(fmt):
         proof_rule = """
@@ -261,7 +286,7 @@ Fonctionnalités filmables (utilise UNIQUEMENT ces ids, champ "feature") :
 {catalog_features}
 
 {cards_rule}
-{proof_rule}
+{proof_rule}{annotation_rule}
 Contraintes :
 - entre {lo_s} et {hi_s} scènes ;
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
@@ -308,7 +333,8 @@ Recopie à l'identique les textes imposés ; écris uniquement les textes manqua
     prompt += """
 Réponds UNIQUEMENT en JSON valide :
 {"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."], "offre_emploi": "...",
- "theme_style": "...", "scenes": [{"feature": "<id>", "texte": "...", "carte": {...} (optionnel), "preuve": true (optionnel)}]}
+ "theme_style": "...", "scenes": [{"feature": "<id>", "texte": "...", "carte": {...} (optionnel), "preuve": true (optionnel),
+ "annotation": "..." (optionnel)}]}
 """
     return prompt
 
@@ -320,6 +346,10 @@ def clean_card(raw) -> dict | None:
       chiffre     : surtitre, valeur, unite, titre         (chiffre.html)
       comparaison : surtitre, avant, apres                 (comparaison.html)
       liste       : surtitre, titre, points[2-5]           (liste.html)
+      schema      : surtitre, titre, etapes[1-3] {icone, label}, marque   (schema.html)
+      conversation: surtitre, contact, messages[2-4] {de: recruteur|moi, texte}   (conversation.html)
+      scan        : surtitre, titre, trouves, manquants (6 mots-cles max)  (scan.html)
+      impact      : texte, mot                              (impact.html)
     Champs obligatoires absents -> None (scene sans carte).
     """
     if not isinstance(raw, dict):
@@ -341,6 +371,38 @@ def clean_card(raw) -> dict | None:
         if len(points) < 2:
             return None
         return {"type": "liste", "surtitre": txt("surtitre"), "titre": txt("titre"), "points": points}
+    if kind == "schema":
+        steps = []
+        for step in raw.get("etapes") or []:
+            if not isinstance(step, dict) or not str(step.get("label") or "").strip():
+                continue
+            icon = str(step.get("icone") or "").strip().lower()
+            steps.append({"icone": icon if icon in catalog.icons() else closest_icon(icon),
+                          "label": str(step["label"]).strip()})
+        if not steps or not txt("titre"):
+            return None
+        marque = txt("marque").lower()
+        return {"type": "schema", "surtitre": txt("surtitre"), "titre": txt("titre"), "etapes": steps[:3],
+                "marque": marque if marque in catalog.SCHEMA_MARKS else ""}
+    if kind == "conversation":
+        msgs = [{"de": "moi" if str(m.get("de") or "").strip().lower() in ("moi", "candidat", "m") else "recruteur",
+                 "texte": str(m.get("texte") or "").strip()}
+                for m in raw.get("messages") or [] if isinstance(m, dict) and str(m.get("texte") or "").strip()]
+        if len(msgs) < 2:
+            return None
+        return {"type": "conversation", "surtitre": txt("surtitre"), "contact": txt("contact") or "Recruteur",
+                "messages": msgs[:4]}
+    if kind == "scan":
+        words = lambda k: [str(w).strip() for w in raw.get(k) or [] if str(w).strip()]
+        found, missing = words("trouves"), words("manquants")
+        if not found and not missing:
+            return None
+        return {"type": "scan", "surtitre": txt("surtitre"), "titre": txt("titre"),
+                "trouves": found[:4], "manquants": missing[:4]}
+    if kind == "impact":
+        if not txt("texte"):
+            return None
+        return {"type": "impact", "texte": txt("texte"), "mot": txt("mot")}
     if not txt("titre"):
         return None
     style, effet = txt("style").lower() or "normal", txt("effet").lower() or "standard"
@@ -352,6 +414,14 @@ def clean_card(raw) -> dict | None:
         "texte": txt("texte"),
         "style": style if style in catalog.CARD_STYLES else "normal",
     }
+
+
+def closest_icon(name: str) -> str:
+    """Icone inventee par l'IA -> la plus proche du catalogue (par le nom), sinon "question"."""
+    import difflib
+    ids = list(catalog.icons())
+    match = difflib.get_close_matches(catalog._norm(name), ids, n=1, cutoff=0.6)
+    return match[0] if match else "question"
 
 
 def wants_proof(fmt: dict) -> bool:
@@ -390,6 +460,9 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
         scene.update({k: raw[k] for k in ANIM_KEYS if raw.get(k)})
         if raw.get("preuve") is True and proof:
             scene["preuve"] = True
+        annotation = " ".join(str(raw.get("annotation") or "").split())
+        if annotation and "carte" not in scene:
+            scene["annotation"] = " ".join(annotation.split()[:ANNOTATION_MAX_WORDS])
         scenes.append(scene)
 
     if forced:
@@ -402,8 +475,21 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
                     scene["texte"] = imposed["texte"]
                 if imposed.get("carte"):
                     scene["carte"] = imposed["carte"]
-                scene.update({k: imposed[k] for k in ANIM_KEYS if imposed.get(k)})
+                    scene.pop("annotation", None)
+                scene.update({k: imposed[k] for k in ANIM_KEYS + ("annotation", "preuve") if imposed.get(k)})
 
+    # Carte impact = LA phrase a retenir : une seule par reel (les suivantes -> cartes texte).
+    impacts = [s for s in scenes if s.get("carte", {}).get("type") == "impact"]
+    for extra in impacts[1:]:
+        extra["carte"] = {"type": "texte", "effet": "standard", "surtitre": "", "titre": extra["carte"]["texte"],
+                          "texte": "", "style": "normal"}
+    # Annotations au feutre : ni accroche ni CTA, 2 par reel au plus (la preuve d'abord).
+    for i in (0, len(scenes) - 1):
+        if scenes and "annotation" in scenes[i]:
+            del scenes[i]["annotation"]
+    annotated = sorted((i for i, s in enumerate(scenes) if s.get("annotation")), key=lambda i: not scenes[i].get("preuve"))
+    for i in annotated[MAX_ANNOTATIONS:]:
+        del scenes[i]["annotation"]
     # Suspense = effet de revelation : un seul par reel, sinon il s'use.
     suspense = [s for s in scenes if s.get("carte", {}).get("effet") == "suspense"]  # noqa: E501
     for extra in suspense[1:]:
@@ -528,7 +614,8 @@ def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
     Scenarios ecrits a la main : chaque scene doit nommer une feature du
     catalogue ; le texte est optionnel (l'IA completera). Champs optionnels
     repris tels quels : format, theme, hook, accroche_ecran, legende,
-    hashtags ; par scene : carte, anim, overlay.
+    hashtags ; par scene : carte, anim, overlay, annotation (post-it au feutre),
+    preuve.
     """
     raw = json.loads(path.read_text(encoding="utf-8"))
     items = raw if isinstance(raw, list) else [raw]
@@ -545,6 +632,10 @@ def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
             card = clean_card(s.get("carte"))
             if card:
                 scene["carte"] = card
+            if str(s.get("annotation") or "").strip() and not card:
+                scene["annotation"] = " ".join(str(s["annotation"]).split()[:ANNOTATION_MAX_WORDS])
+            if s.get("preuve") is True and not card:
+                scene["preuve"] = True
             scenes.append(scene)
         if not scenes:
             raise ValueError(f"{path} scenario {n} : aucune scene")

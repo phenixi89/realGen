@@ -125,6 +125,35 @@ python scripts/render_js_anim.py --spec cta --duration 4 --out /tmp/cta.mp4
 Nouveau gabarit : une page 1080×1920 qui charge `vendor/gsap.min.js` et `common.js`, construit une
 timeline GSAP en pause et appelle `expose(tl)` (voir `common.js` pour le contrat).
 
+### Dessin à la main (`sketch.js`)
+
+Les cartes `schema` et les annotations sont **dessinées à la main** : chaque trait se trace
+(`stroke-dashoffset`), un feutre (ou une craie) suit la pointe du trait, le texte s'écrit à la plume
+(police manuscrite libre Kalam). Le support dépend du thème (`dessin` dans `themes.json`) :
+
+| `dessin` | Rendu | Thèmes |
+|---|---|---|
+| `papier` | feutre sombre sur une feuille lignée scotchée, traits légèrement tremblés | par défaut |
+| `craie` | craie blanche granuleuse sur un tableau vert encadré | `craie_tableau` |
+| `neon` | traits lumineux aux couleurs du thème | `neon_nuit`, `verre_givre` |
+
+Le dessin est accéléré (effet « timelapse ») pour être fini à 80 % de la scène, et reste
+déterministe (bruit SVG à graine fixe) : deux rendus donnent les mêmes images. Les 29 icônes
+dessinables (CV, robot ATS, poubelle, loupe, cible, horloge, ampoule, recruteur, entonnoir,
+trophée…) sont dans `assets/anim/icones.js` : ajouter une icône = ajouter une entrée (traits SVG
+dans une boîte 100×100 ; JSON strict, validé par `python scripts/catalog.py` et listé à Gemini).
+
+**Annotations au feutre sur les captures** (`assets/anim/annotation.html`, `--annotate` de 3b) :
+sur la scène preuve, et sur une autre scène au plus quand le scénario le demande
+(`"annotation": "2 à 5 mots"`, écrit par Gemini ou dans un scénario `--scenario`), le bouton montré (`focus`) est entouré au feutre rouge, puis une
+flèche dessinée le relie à un post-it manuscrit. L'annotation se pose sur la dernière capture de la
+scène (l'écran de résultat), donc après le clic du curseur de la scène preuve. Mode `screenshots`
+uniquement.
+
+```bash
+python scripts/render_js_anim.py --spec "schema?titre=Le tri ATS&etapes=cv:Ton CV|robot:Le filtre|poubelle:Rejeté&marque=barre&dur=5&dessin=craie" --duration 5 --out /tmp/schema.mp4
+```
+
 `highlight` a besoin de la position des cartes, enregistrée dans `captures.json` par les captures
 récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
@@ -135,10 +164,10 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine 4 choix pris da
 
 | Fichier | Contenu | Exemples |
 |---|---|---|
-| `catalog/formats.json` | **Structure** de la vidéo (20 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), usage des cartes texte, ton de lecture | voir le tableau ci-dessous |
+| `catalog/formats.json` | **Structure** de la vidéo (23 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), usage des cartes animées, ton de lecture | voir le tableau ci-dessous |
 | `catalog/sujets.json` | **De quoi** parle la vidéo, avec des tags croisés avec les formats | titre du CV, ATS, résultats chiffrés, lettre, entretien, LinkedIn… |
 | `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe… |
-| `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, accord de la musique | violet nuit, corail, vert, bleu corporate |
+| `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`) | violet nuit, corail, vert, bleu corporate… |
 | `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), scène preuve, phrases bannies | |
 
 ### Les capsules (`formats.json`)
@@ -160,11 +189,14 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine 4 choix pris da
 | conseil | Tier list (`tier_list`) | erreurs classées du rang C au rang S |
 | conseil | Red flag / Green flag (`red_green_flag`) | verdicts alternés |
 | conseil | Quiz trouve l'erreur (`trouve_erreur`) | ligne piégée puis révélation |
+| conseil | Je t'explique au tableau (`tableau_blanc`) | le mécanisme dessiné à la main (cartes schéma), puis la phrase à retenir (carte impact) |
+| conseil | Le message du recruteur (`dm_recruteur`) | un échange de messages fictif (carte conversation), puis le décryptage |
 | produit | Démo produit (`demo_produit`) | une fonctionnalité réelle par scène |
 | produit | Témoignage (`temoignage_produit`) | récit fictif à la 1re personne |
 | produit | Avant / Après avec OpusCV (`split_avant_apres`) | comparaison puis le chemin dans l'outil |
 | produit | Défi chrono (`defi_chrono`) | chronomètre, CV corrigé en direct |
 | produit | Le recruteur a 6 s (`reaction_recruteur`) | décompte, erreur repérée puis corrigée |
+| produit | Ton CV au scanner ATS (`scanner_ats`) | scan des mots-clés de l'offre (carte scan), puis l'ajout des manquants dans OpusCV |
 
 Tester une capsule précise : `--format tier_list` (champ `format` du workflow).
 
@@ -181,9 +213,10 @@ offre d'emploi fictive et un style de CV pour la démo. Les textes sont en fran�
 un script sans accents est renvoyé à Gemini), car les sous-titres affichent le texte exact.
 
 **Promotion de l'outil (~35 à 40 % du contenu)** : en plus des formats `produit` (démo, avant/après
-avec OpusCV, défi chronométré, « le recruteur a 6 secondes »), chaque reel `conseil` contient une
-**scène preuve** (`"preuve": true`) où le conseil est appliqué en direct dans OpusCV, avec le curseur
-qui clique (`preuve_produit` dans `config.json` pour la désactiver). Le CTA dit et le CTA animé
+avec OpusCV, défi chronométré, « le recruteur a 6 secondes », scanner ATS), chaque reel `conseil`
+contient une **scène preuve** (`"preuve": true`) où le conseil est appliqué en direct dans OpusCV,
+avec le curseur qui clique puis le bouton entouré au feutre avec un post-it (`preuve_produit` dans
+`config.json` pour la désactiver). Le CTA dit et le CTA animé
 sont tirés parmi plusieurs variantes.
 
 **Originalité** : formats POV, « ce que le recruteur voit vraiment », tier list, red flag / green flag,
@@ -191,8 +224,19 @@ quiz « trouve l'erreur » ; Gemini doit apporter un élément concret par scèn
 cas précis), les conseils génériques de `phrases_bannies` sont refusés, et la dernière phrase répond
 à l'accroche pour que la vidéo boucle naturellement.
 
-Les formats `conseil` utilisent des **cartes texte animées** (`assets/anim/carte.html` : styles
-`normal`, `mythe`, `realite`, `avant`, `apres`) à la place des captures, en `--capture-mode screenshots`.
+Les formats à cartes affichent des **cartes animées** à la place des captures (en
+`--capture-mode screenshots`), dont Gemini choisit le type selon le contenu :
+
+| Type (`carte.type`) | Gabarit | Effet |
+|---|---|---|
+| `texte` | `carte.html` | surtitre, titre, texte ; styles `normal`, `mythe`, `realite`, `avant`, `apres` ; effets `standard`, `frappe`, `suspense` |
+| `chiffre` | `chiffre.html` | un grand nombre qui compte jusqu'à sa valeur |
+| `comparaison` | `comparaison.html` | avant/après sur le même écran, rideau qui révèle l'après |
+| `liste` | `liste.html` | 2 à 5 points qui se cochent un par un |
+| `schema` | `schema.html` | explication **dessinée à la main** : 1 à 3 icônes reliées par des flèches, légendes manuscrites, marque finale (`barre`, `coche`, `entoure`) |
+| `conversation` | `conversation.html` | échange de messages fictif sur un téléphone : « écrit… », bulles qui poussent les précédentes |
+| `scan` | `scan.html` | CV passé sous un rayon laser : mots-clés de l'offre trouvés (vert) / manquants (rouge), score final |
+| `impact` | `impact.html` | typographie cinétique : la phrase-clé claque mot par mot en très grand, mot fort surligné (une par reel) |
 
 Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--hook pov` (aussi dans le
 workflow). Vérifier le catalogue après modification : `python scripts/catalog.py`.
@@ -221,8 +265,9 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
   (3 max par 10 s ; `whoosh`, `click`, `tick`, `buzz`, `riser` dans `bannis`, aucun son de
   transition). Pour un rendu plus nerveux, retirer des effets de `bannis` dans `audio.json`.
 - **Effets sonores** calés sur le montage (`scripts/sound_design.py`) : impact sur l'accroche et
-  la révélation du suspense, pop à l'apparition d'une carte, ding (réalité/après), scintillement
-  sur le CTA, clic de souris du curseur. Disponibles mais bannis par défaut : whoosh/tick aux
+  la révélation du suspense, pop à l'apparition d'une carte et de chaque message d'une conversation,
+  ding (réalité/après, bon score au scan), scintillement sur le CTA, clic de souris du curseur,
+  frottement de feutre pendant les dessins et les annotations (`feutre`). Disponibles mais bannis par défaut : whoosh/tick aux
   changements de scène, clics de clavier, buzz, montée de tension. Garde-fous dans `audio.json` : volumes par effet, écart minimal, maximum par 10 s,
   liste `bannis` pour désactiver un effet.
 - **Effets de carte** (`"effet"`, choisi par Gemini) : `standard`, `frappe` (texte tapé au clavier)
@@ -258,9 +303,14 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
 - **Curseur animé** (`--anims cursor`) : une flèche vient cliquer sur ce bouton, avec un son de
   clic de souris. Avec `highlight`, les deux alternent d'une scène à l'autre.
 - **Transitions par thème** (`transitions` dans `themes.json`, transitions ffmpeg xfade).
-- **Nouvelles cartes** (choisies par Gemini) : `chiffre` (nombre qui compte), `comparaison`
-  (avant/après sur le même écran), `liste` (points qui se cochent), en plus des cartes texte.
+- **8 types de cartes** (choisis par Gemini, voir le tableau des cartes) : texte, chiffre,
+  comparaison, liste, schéma dessiné à la main, conversation, scan ATS, typographie cinétique.
+- **Dessin à la main** : cartes schéma et annotations au feutre sur les captures (voir « Dessin à
+  la main »), sur papier, tableau à craie ou néon selon le thème.
 - **Texture** : grain de film léger et particules lentes sur les cartes et le CTA.
+- **Contraste automatique** : sur les thèmes à couleur principale claire (jaune craie, cyan néon,
+  bleu givré, jaune affiche), le texte posé sur cette couleur (pastilles, accroche, bouton du CTA,
+  bulles, mot fort) passe en sombre (`--c1fg` calculé dans `assets/anim/common.js`).
 - **Voix en rotation** (`--voice auto`, `catalog/voix.json`) et **ton de lecture par format**
   (`ton` dans `formats.json`).
 - **Mode sans voix** (`--sans-voix`, case « sans_voix » du workflow) : texte à l'écran + musique,

@@ -1,0 +1,115 @@
+<!doctype html>
+<!--
+  Carte "schema" (explication au tableau) : un mecanisme dessine a la main,
+  etape par etape -- titre ecrit a la plume, 1 a 3 icones (icones.js) reliees
+  par des fleches, legende manuscrite a cote de chaque icone, et une marque
+  finale sur la derniere etape. Le feutre (ou la craie) suit la pointe du trait.
+  Support selon le theme (?dessin=papier|craie|neon, cf. sketch.js) : feuille
+  de papier, tableau a craie ou traits neon.
+  Parametres : surtitre, titre, etapes ("icone:legende|icone:legende..."),
+  marque (entoure | barre | coche | vide), dur + theme.
+  Le dessin est accelere pour etre fini a ~80 % de la scene (DRAW_END) ;
+  scripts/sound_design.py cale le son du feutre sur ces memes bornes.
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card_base.css">
+<style>
+  #stage{position:absolute;inset:0;transform-origin:50% 45%}
+  #sheet{position:absolute;left:56px;right:56px;top:210px;height:1330px;border-radius:10px;display:none}
+  [data-dessin="papier"] #sheet{display:block;background:
+      linear-gradient(90deg,transparent 104px,rgba(239,68,68,.35) 104px 107px,transparent 107px),
+      repeating-linear-gradient(180deg,transparent 0 76px,rgba(59,130,246,.16) 76px 79px),#fbf8f1;
+    box-shadow:0 34px 90px rgba(0,0,0,.55),inset 0 0 120px rgba(120,90,40,.10)}
+  [data-dessin="papier"] #stage{transform:rotate(-.8deg)}
+  .tape{position:absolute;top:-26px;width:190px;height:58px;background:rgba(255,255,255,.55);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+  .tape.l{left:70px;transform:rotate(-7deg)} .tape.r{right:70px;transform:rotate(6deg)}
+  [data-dessin="craie"] #sheet{display:block;left:34px;right:34px;top:190px;height:1370px;border-radius:14px;
+    background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.07),transparent 45%),
+      radial-gradient(circle at 75% 70%,rgba(255,255,255,.05),transparent 40%),#1d3a2c;
+    border:22px solid #6b4a2e;box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 0 90px rgba(0,0,0,.45)}
+  [data-dessin="craie"] .tape{display:none}
+  svg{position:absolute;left:0;top:0;overflow:visible}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="grid"></div>
+<div id="stage">
+  <div id="sheet"><div class="tape l"></div><div class="tape r"></div></div>
+  <svg id="svg" width="1080" height="1920"></svg>
+</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script src="icones.js"></script>
+<script src="sketch.js"></script>
+<script>
+  const DUR = num("dur", 4.5), DRAW_START = 0.15, DRAW_END = Math.max(DUR * 0.8 - 0.2, 1.4);
+  const steps = param("etapes", "cv:Ton CV|robot:Le filtre ATS|poubelle:Rejeté sans être lu").split("|")
+    .map((s) => { const i = s.indexOf(":"); return i < 0 ? { icone: "question", label: s } : { icone: s.slice(0, i).trim(), label: s.slice(i + 1).trim() }; })
+    .filter((s) => s.icone || s.label).slice(0, 3);
+  const MARK = param("marque", "");
+  const bg = param("bg", ""); let bgReady = null;
+  if (bg) { document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
+
+  Promise.all([FONTS_READY, HAND_READY]).then(() => {
+    const sk = new Sketch(document.getElementById("svg"), { seed: steps.length * 7 + (param("titre", "").length || 1) });
+    const papier = DESSIN === "papier";
+    let y = papier ? 330 : (param("surtitre", "") ? 320 : 380);
+    const kicker = param("surtitre", "");
+    if (kicker) {
+      // Sur papier : encre d'accent sur surligneur jaune ; craie/neon : encre claire (le surligneur est deja colore).
+      const k = sk.text(kicker.toUpperCase(), 540, y, { size: 46, color: papier ? "a1" : "ink", anchor: "middle", speed: 30, pen: false, at: 0 });
+      const l = k.lines[0];
+      sk.highlight(l.x - 18, l.y - 44, l.w + 36, 58, { at: 0.05, pen: false });
+      y += 110;
+    }
+    const title = sk.text(param("titre", "Comment l'ATS lit ton CV"), 540, y + 40, { size: 84, anchor: "middle", maxWidth: 860, speed: 26 });
+    const tl0 = title.lines[title.lines.length - 1];
+    const uw = Math.min(Math.max(tl0.w, 360), 720);
+    sk.underline(540 - uw / 2, 540 + uw / 2, title.bottom + 22, { color: "a1", width: 9 });
+
+    const top = title.bottom + 90, bottom = papier ? 1480 : 1500, n = steps.length;
+    const markLast = (cx, cy, size, labelEnd) => {
+      if (MARK === "entoure") sk.loop(cx, cy, size * 0.7, size * 0.64, { color: "a1", width: 9 });
+      else if (MARK === "barre") sk.cross(cx, cy, size * 1.05, { width: 14 });
+      else if (MARK === "coche") sk.check(labelEnd ? labelEnd.x : cx + size * 0.45, labelEnd ? labelEnd.y : cy + size * 0.4, labelEnd ? 110 : size * 0.6, { width: 14 });
+    };
+    if (n === 1) {
+      // Icone seule, en grand ; la boucle "entoure" deborde de l'icone (0.66 x size).
+      const size = Math.min(420, bottom - top - 330), cy = top + size * 0.66 + 30;
+      sk.icon(steps[0].icone, 540, cy, size, { width: 10 });
+      markLast(540, cy, size);
+      sk.text(steps[0].label, 540, cy + size * 0.66 + 110, { size: 66, anchor: "middle", maxWidth: 880, color: "a1" });
+    } else {
+      const rowH = (bottom - top) / n, size = Math.min(rowH * 0.84, 300), ix = papier ? 275 : 255;
+      steps.forEach((s, i) => {
+        const cy = top + rowH * (i + 0.5);
+        sk.icon(s.icone, ix, cy, size, { width: 9 });
+        const lx = ix + size / 2 + 56;
+        const lab = sk.text(s.label, lx, cy, { size: 60, maxWidth: 1000 - lx, valign: "middle", color: i === n - 1 ? "a1" : "ink" });
+        if (i === n - 1) {
+          const last = lab.lines[lab.lines.length - 1];
+          markLast(ix, cy, size, MARK === "coche" ? { x: Math.min(last.x + last.w + 70, 980), y: last.y - 22 } : null);
+        } else {
+          // Fleche courbe par la gauche, de l'icone a la suivante.
+          const ax = ix - size * 0.46;
+          sk.arrow(ax, cy + size * 0.36, ax + 6, cy + rowH - size * 0.4, { color: "a1", bend: 0.42, width: 8 });
+        }
+      });
+    }
+
+    // Dessin accelere pour tenir dans [DRAW_START, DRAW_END] (effet "timelapse").
+    const draw = sk.draw, natural = draw.duration();
+    draw.timeScale(Math.max(1, natural / (DRAW_END - DRAW_START)));
+    const tl = gsap.timeline({ paused: true })
+      .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
+      .from("#sheet", { y: 60, opacity: 0, duration: 0.35, ease: "power3.out" }, 0)
+      .add(draw, DRAW_START)
+      .to("#stage", { scale: 1.02, duration: 3, ease: "sine.inOut" }, DRAW_END);
+    addAmbient(tl, 8);
+    expose(tl, bgReady);
+    const baseSeek = window.seek;
+    // Temps du dessin NON borne (draw.time() l'est) : le feutre doit pouvoir sortir du cadre a la fin.
+    window.seek = (t) => { baseSeek(t); sk.updatePen((t - DRAW_START) * draw.timeScale()); };
+    window.DURATION = Math.min(DRAW_END + 0.6, DUR);
+    window.seek(0);
+  });
+</script></body></html>

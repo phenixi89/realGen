@@ -19,7 +19,12 @@ typeInterval) et cta.html :
     carte chiffre            -> clics pendant le comptage, impact a l'arrivee
     carte comparaison        -> buzz sur l'Avant, ding sur l'Apres
     carte liste              -> pop a chaque point coche
+    carte schema (dessin)    -> feutre pendant le dessin (schema.html DRAW_START/DRAW_END)
+    carte conversation       -> pop a chaque message (conversation.html msgAt)
+    carte scan               -> pop, puis ding (score >= 80 %) ou buzz au score (scan.html RESULT_AT)
+    carte impact             -> impact doux au premier mot
     curseur anime            -> clic de souris (ajoute par run_pipeline.py)
+    annotation au feutre     -> feutre (ajoute par run_pipeline.py, instants connus apres 3b)
 """
 from urllib.parse import parse_qsl
 
@@ -82,6 +87,22 @@ def card_cues(card: dict, start: float, dur: float) -> list[dict]:
     return cues
 
 
+def conversation_times(messages: list[str], dur: float) -> list[float]:
+    """conversation.html : FIRST_AT, slot(n), msgAt(i) ("r:..." attend que l'interlocuteur ecrive)."""
+    first, n = 0.35, max(len(messages), 1)
+    slot = min(1.8, max(0.8, (dur * 0.85 - first) / n))
+    return [first + i * slot + (max(0.35, slot * 0.45) if m.startswith("r:") else 0.15) for i, m in enumerate(messages)]
+
+
+def scan_score(params: dict) -> float:
+    """scan.html : mots-cles trouves/manquants alternes, 6 au plus -> part de trouves."""
+    found = [w for w in params.get("trouves", "").split("|") if w.strip()]
+    missing = [w for w in params.get("manquants", "").split("|") if w.strip()]
+    order = [ok for i in range(max(len(found), len(missing)))
+             for ok, words in ((True, found), (False, missing)) if i < len(words)][:6]
+    return sum(order) / max(len(order), 1)
+
+
 def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[dict]:
     """
     scene_anims : {index de scene: "gabarit?params"} (cf. run_pipeline.plan_montage),
@@ -116,4 +137,20 @@ def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[d
             cues += [{"t": start + 0.6 + k * gap + 0.2, "name": "pop"} for k in range(n)]
         elif name == "cta":
             cues.append({"t": start + CTA_BUTTON_AT, "name": "sparkle"})
+        elif name == "schema":
+            d = float(params.get("dur", dur))
+            draw_end = max(d * 0.8 - 0.2, 1.4)
+            cues.append({"t": start + 0.15, "name": "feutre", "duration": min(draw_end - 0.15, 2.5)})
+        elif name == "conversation":
+            messages = [m for m in params.get("messages", "").split("|") if m.strip()][:4]
+            cues += [{"t": start + t, "name": "pop", "gain": 0.7}
+                     for t in conversation_times(messages, float(params.get("dur", dur)))]
+        elif name == "scan":
+            d = float(params.get("dur", dur))
+            result_at = 0.55 + min(1.8, max(1.0, d * 0.35)) + 0.25
+            good = scan_score(params) >= 0.8
+            cues += [{"t": start + 0.08, "name": "pop"},
+                     {"t": start + result_at, "name": "ding" if good else "buzz", "gain": 1.0 if good else 0.6}]
+        elif name == "impact":
+            cues.append({"t": start + 0.12, "name": "impact", "gain": 0.45})
     return cues

@@ -30,7 +30,7 @@
   #grid{position:absolute;inset:0;opacity:.07;background-image:linear-gradient(var(--cfg) 1px,transparent 1px),linear-gradient(90deg,var(--cfg) 1px,transparent 1px);background-size:90px 90px}
   #box{position:absolute;left:90px;right:90px;top:600px}
   #kicker{display:inline-flex;align-items:center;gap:22px;font-weight:800;font-size:44px;letter-spacing:.06em;text-transform:uppercase;
-    padding:16px 34px;border-radius:99px;background:var(--accent);color:#fff;box-shadow:0 12px 40px color-mix(in srgb,var(--accent) 55%,transparent)}
+    padding:16px 34px;border-radius:99px;background:var(--accent);color:var(--accentfg);box-shadow:0 12px 40px color-mix(in srgb,var(--accent) 55%,transparent)}
   #icon{display:none;width:54px;height:54px;border-radius:50%;background:#fff;color:var(--accent);font-size:40px;line-height:54px;text-align:center;font-weight:900}
   #title{position:relative;margin-top:60px;font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:108px;line-height:1.08;letter-spacing:-.01em}
   #title span{display:inline-block;margin-right:.24em}
@@ -57,6 +57,7 @@
   const STYLE = param("style", "normal");
   const accents = { mythe: "#ef4444", avant: "#e5484d", realite: "#10b981", apres: "#10b981" };
   document.documentElement.style.setProperty("--accent", accents[STYLE] || getComputedStyle(document.documentElement).getPropertyValue("--c1"));
+  document.documentElement.style.setProperty("--accentfg", accents[STYLE] ? "#fff" : "var(--c1fg)");
   const icon = document.getElementById("icon");
   if (STYLE === "mythe" || STYLE === "avant") { icon.textContent = "✕"; icon.style.display = "inline-block"; }
   if (STYLE === "realite" || STYLE === "apres") { icon.textContent = "✓"; icon.style.display = "inline-block"; }

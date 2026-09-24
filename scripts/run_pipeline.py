@@ -117,7 +117,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
             # Jamais sur la 1re scene (accroche) ni sur un plan deja anime
             # (carte, CTA), ni sur la scene preuve (le produit doit s'y voir),
             # ni avec un habillage (chrono) qui occupe deja le haut de l'ecran.
-            free = [i for i in range(1, len(t_scenes)) if i not in scene_anims and not scenes[i].get("preuve")]
+            free = [i for i in range(1, len(t_scenes)) if i not in scene_anims and not scenes[i].get("preuve")
+                    and not scenes[i].get("annotation")]
             default = next((i for i in free if t_scenes[i].get("feature") in OVERLAY_FEATURES), free[0] if free else None)
             overlays = {default: DEFAULT_OVERLAY} if default is not None else {}
         for i, spec in overlays.items():
@@ -129,9 +130,15 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
 
     # Scene "preuve" (reels conseil) : le curseur clique dans l'outil, meme
     # sans --anims cursor -- c'est le moment ou le produit se montre en action.
+    # Preuve et scenes "annotation" : l'element cle est entoure au feutre,
+    # avec un post-it manuscrit (assets/anim/annotation.html).
     for i, s in enumerate(scenes):
-        if s.get("preuve") and i not in scene_anims and cards:
+        if not cards or i in scene_anims:
+            continue
+        if s.get("preuve"):
             video_args += ["--cursor-scene", str(i)]
+        if (s.get("preuve") or s.get("annotation")) and 0 < i < last and i not in overlays:
+            video_args += ["--annotate", f"{i}={s.get('annotation', '')}"]
     if "cursor" in kinds:
         video_args.append("--cursor")
     if "highlight" in kinds:
@@ -163,9 +170,20 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
 
 
 def card_spec(card: dict, duration: float) -> str:
-    """Carte du scenario -> "gabarit?params" (type -> gabarit, listes en a|b|c)."""
+    """
+    Carte du scenario -> "gabarit?params" (type -> gabarit, listes en a|b|c ;
+    etapes d'un schema en "icone:legende", messages en "r:texte" / "m:texte").
+    """
     template = catalog.CARD_TYPES.get(card.get("type", "texte"), "carte")
-    params = {k: "|".join(v) if isinstance(v, list) else v for k, v in card.items() if k != "type"}
+    params = {}
+    for key, value in card.items():
+        if key == "type":
+            continue
+        if key == "etapes":
+            value = [f"{e.get('icone', 'question')}:{e.get('label', '')}" for e in value]
+        elif key == "messages":
+            value = [f"{'m' if m.get('de') == 'moi' else 'r'}:{m.get('texte', '')}" for m in value]
+        params[key] = "|".join(str(v).replace("|", "/") for v in value) if isinstance(value, list) else value
     return f"{template}?" + urlencode({**params, "dur": f"{duration:.2f}"})
 
 
@@ -405,11 +423,13 @@ def main():
                 continue
             video_path = videos[0]
 
-        # Effets sonores : plan + clics du curseur anime (connus apres 3b).
+        # Effets sonores : plan + clics du curseur anime et traits des
+        # annotations au feutre (connus apres 3b).
         events_path = video_path.with_suffix(".events.json")
         if sfx_cues and events_path.exists():
-            sfx_cues = sfx_cues + [{"t": t, "name": "mouse"}
-                                   for t in json.loads(events_path.read_text(encoding="utf-8")).get("clics", [])]
+            events = json.loads(events_path.read_text(encoding="utf-8"))
+            sfx_cues = (sfx_cues + [{"t": t, "name": "mouse"} for t in events.get("clics", [])]
+                        + [{"t": t, "name": "feutre", "duration": 0.7} for t in events.get("feutre", [])])
         if sfx_cues:
             sfx_path.write_text(json.dumps(sfx_cues), encoding="utf-8")
             anim_assemble_args += ["--sfx", str(sfx_path)]

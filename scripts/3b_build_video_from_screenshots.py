@@ -37,14 +37,20 @@ ZOOM_MAX = 1.18
 # Le souligne attend la fin du fondu d'entree du clip (timeline.XFADE_DURATION).
 HIGHLIGHT_DELAY_S = 0.45
 CURSOR_CLICK_AT = 1.0  # assets/anim/cursor.html CLICK_AT
+# Annotation au feutre (assets/anim/annotation.html) : apres le fondu d'entree,
+# ou juste apres le clic quand le curseur anime est sur le meme plan.
+ANNOTATION_DELAY_S = 0.45
+ANNOTATION_AFTER_CLICK_S = 0.3
+ANNOTATION_MIN_VISIBLE_S = 1.3
 
 
 def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool,
-               overlay_frames: Path | None = None, focus: tuple[float, float] | None = None):
+               overlay_frames: Path | list[Path] | None = None, focus: tuple[float, float] | None = None):
     """
     focus : point vise par le zoom (fractions du cadre, captures.json "focus"),
-    sinon le centre. overlay_frames : dossier de PNG transparents (souligne anime, cf.
-    render_js_anim.py) incrustes par-dessus le zoom, image par image.
+    sinon le centre. overlay_frames : dossier(s) de PNG transparents (souligne,
+    curseur, annotation... cf. render_js_anim.py) incrustes par-dessus le zoom,
+    image par image, dans l'ordre de la liste.
     """
     frames = int(seconds * FPS)
     fx, fy = focus or (0.5, 0.5)
@@ -76,10 +82,13 @@ def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool
         f"y='max(0,min(ih-ih/zoom,ih*{fy:.4f}-ih/zoom/2))':fps={FPS}"
     )
     inputs = ["-loop", "1", "-i", str(image_path)]
-    if overlay_frames is not None:
-        inputs += ["-framerate", str(FPS), "-i", str(overlay_frames / "%05d.png")]
-        filters = ["-filter_complex", f"[0:v]{vf}[bg];[bg][1:v]overlay=eof_action=pass,format=yuv420p[v]",
-                   "-map", "[v]"]
+    layers = [overlay_frames] if isinstance(overlay_frames, Path) else list(overlay_frames or [])
+    if layers:
+        chain = [f"[0:v]{vf}[l0]"]
+        for k, frames_dir in enumerate(layers, 1):
+            inputs += ["-framerate", str(FPS), "-i", str(frames_dir / "%05d.png")]
+            chain.append(f"[l{k - 1}][{k}:v]overlay=eof_action=pass" + (",format=yuv420p[v]" if k == len(layers) else f"[l{k}]"))
+        filters = ["-filter_complex", ";".join(chain), "-map", "[v]"]
     else:
         filters = ["-vf", f"{vf},format=yuv420p"]
     cmd = [
@@ -144,7 +153,8 @@ def build_video_from_screenshots(screens_dir: Path, out_path: Path, clip_seconds
 def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                             scene_anims: dict[int, str] | None = None, highlight: bool = False,
                             highlight_skip: set[int] | None = None, theme: dict | None = None,
-                            cursor: bool = False, cursor_scenes: set[int] | None = None) -> list[float]:
+                            cursor: bool = False, cursor_scenes: set[int] | None = None,
+                            annotations: dict[int, str] | None = None) -> dict[str, list[float]]:
     """
     Montage cale sur la voix : chaque scene du scenario affiche les captures
     de SA fonctionnalite (captures.json, ecrit par 3_record_demo.py) pendant
@@ -160,10 +170,15 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
     cursor : curseur anime qui clique sur le bouton d'action (captures.json
     "focus") ; avec highlight, les deux alternent d'une scene a l'autre.
     cursor_scenes : scenes qui ont le curseur meme sans cursor (scene "preuve").
+    annotations : {index de scene: texte du post-it ("" = cercle seul)} -- la
+    derniere capture de la scene est annotee au feutre (bouton "focus" entoure,
+    sinon la carte nette), apres le clic du curseur s'il est sur le meme plan.
     Chaque capture avec "focus" est zoomee vers ce point.
-    -> instants des clics du curseur (effet sonore, cf. run_pipeline.py).
+    -> {"clics": instants des clics du curseur, "feutre": debuts des annotations}
+       (effets sonores, cf. run_pipeline.py).
     """
     clicks: list[float] = []
+    strokes: list[float] = []
     theme_params = catalog.anim_params(theme)
     captures = json.loads((screens_dir / "captures.json").read_text(encoding="utf-8"))
     media_by_feature: dict[str, list[Path]] = {}
@@ -211,7 +226,6 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                 print(f"Scene {scene_index} : animation '{name}' ({length:.1f}s)")
                 render_clip(name, {**theme_params, **params}, clip, length)
             else:
-                overlay = None
                 card = card_by_file.get(media.name)
                 focus = focus_by_file.get(media.name)
                 fxy = (focus[0] / OUT_SIZE[0], focus[1] / OUT_SIZE[1]) if focus else None
@@ -221,16 +235,31 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                 # Curseur si possible ; avec le souligne aussi actif, une scene sur deux.
                 use_cursor = focus and first_of_scene and (
                     (cursor and (not highlight or scene_index % 2 == 0)) or scene_index in (cursor_scenes or set()))
+                # Annotation sur la DERNIERE capture de la scene (l'ecran de resultat, apres
+                # le clic du curseur sur la premiere) ; scene d'une seule capture : apres le clic.
+                last_of_scene = i == len(plan) - 1 or plan[i + 1][2] != scene_index
+                annotate = last_of_scene and scene_index in (annotations or {}) and bool(focus or card)
+                overlay = []
                 if use_cursor:
-                    overlay = Path(tmp) / f"cur_{i:02d}"
+                    overlay.append(Path(tmp) / f"cur_{i:02d}")
                     render_frames("cursor", {**theme_params, **zoom_params, "x": focus[0], "y": focus[1],
-                                             "delay": HIGHLIGHT_DELAY_S}, overlay)
+                                             "delay": HIGHLIGHT_DELAY_S}, overlay[-1])
                     clicks.append(sum(durations[:i]) + HIGHLIGHT_DELAY_S + CURSOR_CLICK_AT)
-                elif highlight and card and first_of_scene:
-                    overlay = Path(tmp) / f"hl_{i:02d}"
+                elif highlight and card and first_of_scene and not annotate:
+                    overlay.append(Path(tmp) / f"hl_{i:02d}")
                     x, y, w, h = card
                     render_frames("highlight", {**theme_params, **zoom_params, "x": x, "y": y, "w": w, "h": h,
-                                                "delay": HIGHLIGHT_DELAY_S}, overlay)
+                                                "delay": HIGHLIGHT_DELAY_S}, overlay[-1])
+                if annotate:
+                    delay = annotation_delay(length, bool(use_cursor))
+                    strokes.append(sum(durations[:i]) + delay)
+                    target = {"x": focus[0], "y": focus[1]} if focus else dict(zip(("rx", "ry", "rw", "rh"), card))
+                    overlay.append(Path(tmp) / f"ann_{i:02d}")
+                    print(f"Scene {scene_index} : annotation au feutre ({annotations[scene_index] or 'cercle seul'})")
+                    # Rendu sur toute la duree du plan : l'annotation reste jusqu'au fondu suivant.
+                    render_frames("annotation", {**theme_params, **zoom_params, **target, "delay": f"{delay:.2f}",
+                                                 "texte": annotations[scene_index], "pen": 0 if use_cursor else 1},
+                                  overlay[-1], duration=length)
                 source = media
                 if card and theme and theme.get("cadre", "navigateur") == "navigateur":
                     # Habillage du theme (fond + fenetre de navigateur), carte a la meme place.
@@ -240,7 +269,24 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
             previous_scene = scene_index
             clips.append(clip)
         concat_with_xfade(clips, durations, out_path, (theme or {}).get("transitions"))
-    return clicks
+    return {"clics": clicks, "feutre": strokes}
+
+
+def annotation_delay(clip_length: float, after_cursor: bool) -> float:
+    """Debut du trace (s, dans le plan) ; garde au moins ANNOTATION_MIN_VISIBLE_S d'annotation finie."""
+    wanted = HIGHLIGHT_DELAY_S + CURSOR_CLICK_AT + ANNOTATION_AFTER_CLICK_S if after_cursor else ANNOTATION_DELAY_S
+    return max(0.2, min(wanted, clip_length - ANNOTATION_MIN_VISIBLE_S))
+
+
+def parse_annotations(values: list[str]) -> dict[int, str]:
+    """["3=Clique ici", "5="] -> {3: "Clique ici", 5: ""}"""
+    out = {}
+    for value in values:
+        index, sep, text = value.partition("=")
+        if not sep:
+            raise ValueError(f"--annotate attend INDEX=texte, recu '{value}'")
+        out[int(index)] = text.strip()
+    return out
 
 
 def parse_scene_anims(values: list[str]) -> dict[int, str]:
@@ -273,6 +319,9 @@ def main():
                          help="Curseur anime qui clique sur le bouton d'action des captures (avec --timeline)")
     parser.add_argument("--cursor-scene", action="append", type=int, default=[], metavar="INDEX",
                          help="Curseur anime sur cette scene meme sans --cursor (scene preuve) ; repetable")
+    parser.add_argument("--annotate", action="append", default=[], metavar="INDEX=TEXTE",
+                         help="Annotation au feutre sur la derniere capture de la scene INDEX (cercle + post-it TEXTE, "
+                              "vide = cercle seul) ; repetable (avec --timeline)")
     parser.add_argument("--highlight-skip", action="append", type=int, default=[], metavar="INDEX",
                          help="Scene sans cadre anime (--highlight) ; repetable")
     parser.add_argument("--force", action="store_true",
@@ -287,12 +336,13 @@ def main():
     screens_dir = Path(args.screens)
     timeline = load_timeline(args.timeline)
     if timeline and (screens_dir / "captures.json").exists():
-        clicks = build_video_on_timeline(screens_dir, out_path, timeline, cursor=args.cursor,
+        events = build_video_on_timeline(screens_dir, out_path, timeline, cursor=args.cursor,
                                 scene_anims=parse_scene_anims(args.scene_anim), highlight=args.highlight,
                                 highlight_skip=set(args.highlight_skip), cursor_scenes=set(args.cursor_scene),
+                                annotations=parse_annotations(args.annotate),
                                 theme=catalog.get_theme(args.theme) if args.theme else None)
-        # Instants des clics du curseur, pour l'effet sonore (run_pipeline.py -> 5_assemble.py).
-        out_path.with_suffix(".events.json").write_text(json.dumps({"clics": clicks}), encoding="utf-8")
+        # Instants des clics du curseur et des annotations, pour les effets sonores (run_pipeline.py -> 5_assemble.py).
+        out_path.with_suffix(".events.json").write_text(json.dumps(events), encoding="utf-8")
     else:
         build_video_from_screenshots(screens_dir, out_path, args.clip_seconds)
     print(f"OK -> {out_path}")

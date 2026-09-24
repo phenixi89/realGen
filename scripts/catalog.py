@@ -27,11 +27,19 @@ ROOT = Path(__file__).resolve().parent.parent
 CATALOG_DIR = ROOT / "catalog"
 FONTS_DIR = ROOT / "assets" / "fonts"
 DEFAULT_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+# Police manuscrite des dessins (cartes schema, annotations) -- OFL, assets/fonts/.
+HAND_FONT = "Kalam-Bold.ttf"
+DESSIN_SUPPORTS = ("papier", "craie", "neon")
 CARD_MODES = ("aucune", "autorisees", "majoritaires")
 CARD_STYLES = ("normal", "mythe", "realite", "avant", "apres")
 CARD_EFFECTS = ("standard", "frappe", "suspense")
 # Type de carte -> gabarit assets/anim/<gabarit>.html
-CARD_TYPES = {"texte": "carte", "chiffre": "chiffre", "comparaison": "comparaison", "liste": "liste"}
+CARD_TYPES = {"texte": "carte", "chiffre": "chiffre", "comparaison": "comparaison", "liste": "liste",
+              "schema": "schema", "conversation": "conversation", "scan": "scan", "impact": "impact"}
+# Marque dessinee sur la derniere etape d'une carte schema (assets/anim/schema.html).
+SCHEMA_MARKS = ("entoure", "barre", "coche")
+ICONS_JS = ROOT / "assets" / "anim" / "icones.js"
+
 # Fenetre sur laquelle on mesure le mix conseil/produit deja publie.
 MIX_WINDOW = 10
 
@@ -59,6 +67,15 @@ def hooks() -> list[dict]:
 
 def themes() -> list[dict]:
     return _load("themes")["themes"]
+
+
+@lru_cache(maxsize=None)
+def icons() -> dict[str, dict]:
+    """Icones dessinables des cartes schema : assets/anim/icones.js (JSON apres "window.ICONES = ")."""
+    text = ICONS_JS.read_text(encoding="utf-8")
+    start = re.search(r"^window\.ICONES = ", text, re.M).end()  # en debut de ligne (pas celui du commentaire)
+    body = text[start:].strip().removesuffix(";")
+    return json.loads(body)
 
 
 def _by_id(items: list[dict], item_id: str, kind: str) -> dict:
@@ -126,6 +143,8 @@ def anim_params(theme: dict | None) -> dict[str, str]:
     return {
         "c1": c["primaire"], "c2": c["secondaire"], "cbg": c["fond"], "cfg": c["texte"], "chl": c["surligne"],
         "ftitle": Path(font_path(theme, "titre")).as_uri(), "ftext": Path(font_path(theme, "texte")).as_uri(),
+        # Dessin a la main (assets/anim/sketch.js) : support et police manuscrite.
+        "dessin": theme.get("dessin", "papier"), "fhand": (FONTS_DIR / HAND_FONT).as_uri(),
     }
 
 
@@ -251,6 +270,8 @@ def validate_catalog() -> list[str]:
                 errors.append(f"theme {t['id']} : ambiance '{amb}' absente de audio.json")
         if t.get("sous_titres", {}).get("style", "karaoke") not in ("karaoke", "encadre", "boite", "mot"):
             errors.append(f"theme {t['id']} : sous_titres.style inconnu")
+        if t.get("dessin", "papier") not in DESSIN_SUPPORTS:
+            errors.append(f"theme {t['id']} : dessin doit valoir {DESSIN_SUPPORTS}")
         for role in ("titre", "texte"):
             name = t.get(f"police_{role}")
             if name and not (FONTS_DIR / name).exists():
@@ -261,6 +282,14 @@ def validate_catalog() -> list[str]:
             errors.append(f"theme {t['id']} : transitions doit etre une liste de noms xfade")
     if not voices():
         errors.append("voix.json : aucune voix")
+    try:
+        bad = [k for k, v in icons().items() if not v.get("nom") or not v.get("d")]
+        if bad:
+            errors.append(f"icones.js : nom ou traits manquants pour {bad}")
+    except (ValueError, OSError) as e:
+        errors.append(f"icones.js illisible (JSON strict attendu apres 'window.ICONES = ') : {e}")
+    if not (FONTS_DIR / HAND_FONT).exists():
+        errors.append(f"police manuscrite {HAND_FONT} absente de assets/fonts/")
     if set(config()["mix"]) - {f["categorie"] for f in formats()}:
         errors.append("config.json : mix cite une categorie sans aucun format")
     return errors
@@ -270,7 +299,8 @@ if __name__ == "__main__":
     problems = validate_catalog()
     for p in problems:
         print(f"ERREUR: {p}", file=sys.stderr)
-    print(f"{len(formats())} formats, {len(sujets())} sujets, {len(hooks())} accroches, {len(themes())} themes")
+    print(f"{len(formats())} formats, {len(sujets())} sujets, {len(hooks())} accroches, {len(themes())} themes, "
+          f"{len(icons())} icones")
     for f in formats():
         print(f"  {f['id']:18} [{f['categorie']}] {len(compatible_sujets(f))} sujets compatibles")
     sys.exit(1 if problems else 0)

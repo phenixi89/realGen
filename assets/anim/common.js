@@ -17,6 +17,15 @@ window.READY = false;
   const css = document.documentElement.style;
   const colors = { c1: "#6c47ff", c2: "#b547ff", cbg: "#140f2e", cfg: "#ffffff", chl: "#ffd700" };
   for (const [k, d] of Object.entries(colors)) css.setProperty(`--${k}`, /^#[0-9a-f]{6}$/i.test(P[k] || "") ? P[k] : d);
+  // --c1fg : texte pose sur la couleur primaire -- sombre si elle est tres claire
+  // (jaune craie, cyan neon, bleu givre...), blanc sinon (luminance relative sRGB).
+  const c1 = /^#[0-9a-f]{6}$/i.test(P.c1 || "") ? P.c1 : colors.c1;
+  const lum = [1, 3, 5].map((i) => parseInt(c1.slice(i, i + 2), 16) / 255)
+    .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  const light = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2] > 0.5;
+  css.setProperty("--c1fg", light ? "#111827" : "#ffffff");
+  // --c1hl : trait de soulignement pose sur la couleur primaire (surligne du theme, ou sombre si elle est claire).
+  css.setProperty("--c1hl", light ? "#111827" : "var(--chl)");
   const fonts = [["TitleFont", P.ftitle], ["TextFont", P.ftext]].filter(([, url]) => url)
     .map(([name, url]) => new FontFace(name, `url("${url}")`).load().then((f) => document.fonts.add(f)).catch(() => null));
   window.FONTS_READY = Promise.all(fonts);
