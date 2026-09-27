@@ -83,6 +83,35 @@ def align_to_reference(whisper_words: list[dict], reference_words: list[str]) ->
     ]
 
 
+OPENING_PUNCT = {"«", "“", "(", "—", "–"}
+
+
+def glue_punctuation(words: list[dict]) -> list[dict]:
+    """
+    Ponctuation isolee par une espace (typographie francaise : « mot », « : »,
+    « ? ») -> collee au mot voisin par une espace insecable. Sinon le decoupage
+    en cues de quelques mots laisse un « ou un » seul a l'ecran.
+    """
+    out: list[dict] = []
+    pending: dict | None = None  # ponctuation ouvrante en attente du mot suivant
+    for w in words:
+        text = w["text"]
+        is_punct = not any(ch.isalnum() for ch in text)
+        if is_punct and text in OPENING_PUNCT:
+            pending = {**w, "text": (pending["text"] + "\u00a0" if pending else "") + text}
+            continue
+        if is_punct and out and not pending:
+            out[-1] = {**out[-1], "text": out[-1]["text"] + "\u00a0" + text, "end": w["end"]}
+            continue
+        if pending:
+            w = {**w, "text": pending["text"] + "\u00a0" + text, "start": pending["start"]}
+            pending = None
+        out.append(w)
+    if pending:
+        out.append(pending)
+    return out
+
+
 def chunk_words(words: list[dict], max_words: int = MAX_WORDS_PER_CUE) -> list[dict]:
     """
     Regroupe les mots en cues courtes -- une phrase entiere en une seule cue
@@ -197,7 +226,7 @@ def main():
     # coupe d'image, il change en meme temps que la fonctionnalite montree.
     cues = []
     for a, b in scene_ranges([len(s["texte"].split()) for s in scenes]):
-        cues.extend(chunk_words(aligned[a:b]))
+        cues.extend(chunk_words(glue_punctuation(aligned[a:b])))
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(cues, ensure_ascii=False, indent=2), encoding="utf-8")

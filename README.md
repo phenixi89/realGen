@@ -346,7 +346,8 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
 - **Sous-titres** : 4 styles par thème (`sous_titres.style`) : `karaoke` (mot prononcé coloré et
   agrandi), `encadre` (mot prononcé sur une pastille), `boite` (phrase sur un bandeau), `mot` (un
   seul mot à la fois, en très grand). Les **mots-clés** choisis par Gemini (`mots_cles`) s'affichent
-  dans la couleur d'accent du thème (`couleurs.mot_cle`).
+  dans la couleur d'accent du thème (`couleurs.mot_cle`). La ponctuation isolée par une espace
+  (« », :, ?, !) reste collée à son mot : jamais de guillemet seul à l'écran.
 - **Captures habillées** (`cadre` dans `themes.json`, `navigateur` par défaut) : la capture est posée
   dans une fenêtre de navigateur, avec ombre et liseré, sur un fond aux couleurs du thème.
 - **Accroche « pattern interrupt »** : le texte claque (flash, secousse), le mot fort est souligné ;
