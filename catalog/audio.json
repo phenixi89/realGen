@@ -417,6 +417,51 @@
         "volume": 1.0,
         "tonalite": -2
       }
+    },
+    {
+      "id": "comique_sautillant",
+      "nom": "Comique sautillant",
+      "bpm": 124,
+      "instrument": "pluck",
+      "arpege": "0.2.1.3.",
+      "basse_type": "douce",
+      "accords": [
+        [
+          60,
+          64,
+          67,
+          72
+        ],
+        [
+          65,
+          69,
+          72,
+          77
+        ],
+        [
+          67,
+          71,
+          74,
+          77
+        ],
+        [
+          60,
+          64,
+          67,
+          72
+        ]
+      ],
+      "basse": 0.24,
+      "filtre_hz": 7500,
+      "batterie": {
+        "kick": "x.....x...x.....",
+        "clap": "....x.......x...",
+        "shaker": "..x...x...x...x."
+      },
+      "effets": {
+        "volume": 1.0,
+        "tonalite": 3
+      }
     }
   ],
   "effets": {

@@ -1,9 +1,14 @@
 {
-  "_doc": "Reglages de la selection de contenu. mix = part cible de chaque categorie de format sur les reels generes (conseil = contenu utile, produit = demo). historique_* = nombre d'elements recents evites. similarite_max = au-dela (0-1), une accroche trop proche d'une ancienne est refusee et l'IA recommence. ctas_* : variantes d'appel a l'action, une tiree par reel. preuve_produit : les reels conseil contiennent une scene 'preuve' ou le conseil est applique en direct dans OpusCV (false = desactive). phrases_bannies : conseils generiques refuses dans les textes (l'IA recommence).",
+  "_doc": "Reglages de la selection de contenu. mix = part cible de chaque categorie de format sur les reels generes (conseil = contenu utile, produit = demo). historique_* = nombre d'elements recents evites. similarite_max = au-dela (0-1), une accroche trop proche d'une ancienne est refusee et l'IA recommence. ctas_* : variantes d'appel a l'action, une tiree par reel. preuve_produit : les reels conseil contiennent une scene 'preuve' ou le conseil est applique en direct dans OpusCV (false = desactive). phrases_bannies : conseils generiques refuses dans les textes (l'IA recommence). registres : part cible de chaque registre d'ecriture (serieux / humour), tiree comme le mix. historique_registres : fenetre de mesure. consigne_humour : regles d'ecriture donnees a l'IA en registre humour. ton_humour : ton de lecture par defaut en registre humour. instagram : legende et hashtags propres a Instagram (hashtags_max), phrase d'appel a enregistrer (cta_legende), textes de la derniere diapositive du carrousel (carrousel_fin).",
   "mix": {
     "conseil": 0.65,
     "produit": 0.35
   },
+  "registres": {
+    "serieux": 0.7,
+    "humour": 0.3
+  },
+  "historique_registres": 10,
   "historique_formats": 3,
   "historique_hooks": 4,
   "historique_themes": 2,
@@ -52,12 +57,35 @@
     "soigne ton CV",
     "sois toi-même",
     "mets en valeur tes compétences",
-    
     "relis-toi bien",
     "fais attention aux fautes",
     "sois authentique",
     "démarque-toi",
     "un CV clair et concis",
     "n'oublie pas de"
-  ]
+  ],
+  "consigne_humour": "Le reel doit faire sourire ET rester utile : chaque blague porte un vrai conseil (on rit, puis on apprend). Procédés : exagération d'une situation que tout candidat a vécue, autodérision, décalage, dialogue absurde mais crédible, chute inattendue en fin de scène. Au moins deux chutes dans le reel, courtes, placées en fin de phrase. Humour bienveillant : on rit des situations, jamais des personnes ; aucun stéréotype (âge, origine, genre, handicap, religion, physique), rien de vulgaire, aucune moquerie envers les chômeurs ni un métier ; pas de « mdr », pas de jeu de mots forcé. Le conseil final reste précis et actionnable.",
+  "ton_humour": "pince-sans-rire et complice, avec un sourire dans la voix, courte pause avant chaque chute, débit posé et naturel, avec de courtes pauses entre les phrases",
+  "instagram": {
+    "hashtags_max": 5,
+    "cta_legende": [
+      "Enregistre ce post pour ta prochaine candidature.",
+      "Enregistre-le et envoie-le à quelqu'un qui cherche un job.",
+      "Garde-le sous le coude : enregistre ce post."
+    ],
+    "carrousel_fin": [
+      {
+        "titre": "Enregistre ce post",
+        "texte": "Et teste ton CV gratuitement : lien en bio."
+      },
+      {
+        "titre": "Ton CV mérite mieux",
+        "texte": "Analyse gratuite avec OpusCV, lien en bio."
+      },
+      {
+        "titre": "Tu as tout retenu ?",
+        "texte": "Vérifie ton CV gratuitement : lien en bio."
+      }
+    ]
+  }
 }

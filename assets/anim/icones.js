@@ -32,5 +32,9 @@ window.ICONES = {
   "coeur": {"nom": "un cœur (motivation, envie)", "d": ["M50 86 C18 62 8 42 18 28 C28 14 46 18 50 32 C54 18 72 14 82 28 C92 42 82 62 50 86 Z"]},
   "question": {"nom": "un point d'interrogation (doute)", "d": ["M32 32 C32 10 68 10 68 32 C68 48 50 48 50 64", "M50 80 V82"]},
   "exclamation": {"nom": "un point d'exclamation (attention)", "d": ["M50 12 V62", "M50 80 V82"]},
-  "feu": {"nom": "une flamme (tendance, urgent)", "d": ["M50 92 C26 92 18 68 30 50 C32 62 40 66 40 66 C36 44 46 24 58 10 C60 30 82 42 78 64 C76 84 64 92 50 92 Z"]}
+  "feu": {"nom": "une flamme (tendance, urgent)", "d": ["M50 92 C26 92 18 68 30 50 C32 62 40 66 40 66 C36 44 46 24 58 10 C60 30 82 42 78 64 C76 84 64 92 50 92 Z"]},
+  "fantome": {"nom": "un fantôme (ghosting, plus de nouvelles)", "d": ["M28 88 V46 C28 18 72 18 72 46 V88 L64 80 L57 88 L50 80 L43 88 L36 80 Z", "M39 44 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0", "M53 44 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0", "M45 60 a5 7 0 1 0 10 0 a5 7 0 1 0 -10 0"]},
+  "cafe": {"nom": "une tasse de café (nuit blanche, pause)", "d": ["M20 40 H68 V68 C68 80 60 88 50 88 H38 C28 88 20 80 20 68 Z", "M68 48 C80 48 80 68 68 68", "M34 30 C28 24 40 18 34 10", "M48 30 C42 24 54 18 48 10", "M14 94 H74"]},
+  "lune": {"nom": "une lune (la nuit, 2 h du matin)", "d": ["M60 12 C30 16 18 50 34 74 C48 94 76 90 88 70 C66 76 44 62 46 38 C48 26 54 18 60 12 Z", "M20 18 V30", "M14 24 H26", "M80 30 V38", "M76 34 H84"]},
+  "rire": {"nom": "un visage qui rit (humour, soulagement)", "d": ["M14 50 C14 4 86 4 86 50 C86 96 14 96 14 50 Z", "M30 40 C34 32 42 32 46 40", "M54 40 C58 32 66 32 70 40", "M30 56 H70 C68 80 32 80 30 56 Z"]}
 };

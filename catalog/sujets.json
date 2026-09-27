@@ -592,6 +592,107 @@
         "produit"
       ],
       "texte": "un étudiant qui fait son premier CV avec l'outil, de zéro au PDF"
+    },
+    {
+      "id": "jargon_offres",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "décoder le jargon des offres d'emploi (« environnement dynamique », « esprit start-up », « poste évolutif ») et quoi en faire dans sa candidature"
+    },
+    {
+      "id": "ghosting_recruteur",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "quand le recruteur ne donne plus de nouvelles : quand et comment relancer sans être lourd"
+    },
+    {
+      "id": "competences_bateau",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "ats"
+      ],
+      "texte": "les compétences bateau (« Pack Office », « rigoureux », « travail en équipe ») : ce qu'elles disent vraiment et comment les remplacer"
+    },
+    {
+      "id": "enjoliver_mentir",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "entretien"
+      ],
+      "texte": "enjoliver ou mentir sur son CV : où est la limite, et comment valoriser sans inventer"
+    },
+    {
+      "id": "cv_la_veille",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "le CV fait la veille à minuit : les erreurs typiques de l'urgence et la vérification en 5 minutes"
+    },
+    {
+      "id": "questions_pieges_entretien",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "les questions pièges d'entretien (« Où vous voyez-vous dans cinq ans ? », « Votre plus grand défaut ? ») et ce que le recruteur cherche vraiment"
+    },
+    {
+      "id": "linkedin_trop",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin"
+      ],
+      "texte": "le profil LinkedIn qui en fait trop : titres ronflants, jargon, posts creux — et la version qui attire les recruteurs"
+    },
+    {
+      "id": "adresse_mail_pro",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "l'adresse mail, le nom du fichier et l'objet du mail : les détails pas pros qui font sourire le recruteur (pas dans le bon sens)"
+    },
+    {
+      "id": "cv_fantaisie",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "ats"
+      ],
+      "texte": "polices fantaisie, CV arc-en-ciel, jauges de compétences : l'originalité qui dessert (et celle qui marche)"
+    },
+    {
+      "id": "lettre_copier_coller",
+      "categorie": "conseil",
+      "tags": [
+        "lettre"
+      ],
+      "texte": "la lettre de motivation copiée-collée (et le nom de la mauvaise entreprise dedans) : comment personnaliser vite"
+    },
+    {
+      "id": "galere_mise_en_page",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "la galère de la mise en page sous Word (marges, colonnes, version finale-v7) contre la mise en page automatique d'OpusCV"
+    },
+    {
+      "id": "page_blanche_lettre",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "l'angoisse de la page blanche devant la lettre de motivation, réglée par la lettre générée d'après l'offre et le CV"
     }
   ]
 }

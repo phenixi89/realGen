@@ -6,10 +6,15 @@ editorial (catalog/, cf. catalog.py) :
   sujet   -> de quoi elle parle (conseil utile ou produit)
   accroche-> style des 2 premieres secondes (question choc, chiffre, POV...)
   theme   -> couleurs/polices/musique du montage
+  registre-> serieux ou humour (config.json "registres") : filtre formats,
+             accroches et themes, ajoute les regles d'ecriture humoristique
 
 Chaque choix evite ce qui a ete publie recemment (output/content_history.json)
-et respecte le mix conseil/produit de catalog/config.json : c'est ce qui
-empeche les reels de tous se ressembler.
+et respecte le mix conseil/produit et le mix de registres de
+catalog/config.json : c'est ce qui empeche les reels de tous se ressembler.
+
+Le scenario porte aussi ses textes Instagram (legende_instagram,
+hashtags_instagram, carrousel), exploites par scripts/instagram.py.
 
 Un scenario est une suite de scenes ; chaque scene = une fonctionnalite reelle
 d'OpusCV (id du catalogue features.py, montree a l'ecran) OU une carte texte
@@ -17,9 +22,11 @@ animee (conseil, mythe/realite, avant/apres...), + la phrase dite par la voix :
 
     {
       "format": "liste_erreurs", "categorie": "conseil", "sujet": "titre_cv",
-      "hook": "erreur", "theme": "corail_energie",
+      "hook": "erreur", "theme": "corail_energie", "registre": "serieux",
       "titre": "...", "accroche_ecran": "Ton CV fait cette erreur",
       "legende": "...", "hashtags": ["#cv", ...], "duree_cible_s": 30,
+      "legende_instagram": "...", "hashtags_instagram": ["#cv", ...],
+      "carrousel": [{"titre": "...", "texte": "..."}, ...],
       "scenes": [
         {"feature": "dashboard", "texte": "Tu fais sûrement cette erreur sur ton CV."},
         {"feature": "checklist", "texte": "...", "carte": {"surtitre": "Erreur n°1", "titre": "...", "texte": "...", "style": "normal"}},
@@ -35,6 +42,7 @@ bonne fonctionnalite (ou la carte) exactement pendant que la voix en parle.
 Parametrable :
   --duration 15|30|45|60...  duree cible (nombre de scenes et de mots en decoulent)
   --format / --theme / --hook   impose un element du catalogue (sinon choix automatique)
+  --registre serieux|humour  impose le registre (sinon mix de config.json "registres")
   --angle "..."              sujet libre (sinon choisi dans catalog/sujets.json)
   --scenario fichier.json    scenario ecrit a la main (objet ou liste d'objets).
                              Scenes avec "texte" -> gardees telles quelles (aucun
@@ -81,6 +89,8 @@ ANIM_KEYS = ("anim", "overlay")
 # Annotations au feutre sur les captures (assets/anim/annotation.html).
 ANNOTATION_MAX_WORDS = 6
 MAX_ANNOTATIONS = 2
+# Carrousel Instagram : diapositives ecrites par l'IA (hors diapositive finale, ajoutee au rendu).
+CARROUSEL_MIN, CARROUSEL_MAX = 4, 8
 # Sans aucun de ces caracteres sur tout un script, le texte a ete ecrit sans
 # accents : les sous-titres (texte exact du script) seraient faux.
 ACCENT_RE = re.compile(r"[éèêëàâùûüîïôçœÉÈÊÀÂÙÛÎÔÇ]")
@@ -154,28 +164,37 @@ bien fonctionner avec ce format. Réponds UNIQUEMENT en JSON : {{"id": "...", "r
 
 
 def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_id: str | None,
-               theme_id: str | None, hook_id: str | None, angle: str | None) -> list[dict]:
-    """Un plan par reel ; chaque choix tient compte des precedents (historique + ce lot)."""
+               theme_id: str | None, hook_id: str | None, angle: str | None,
+               registre_id: str | None = None) -> list[dict]:
+    """
+    Un plan par reel ; chaque choix tient compte des precedents (historique + ce lot).
+    Le registre (serieux/humour) est choisi d'abord : il filtre formats, accroches et themes.
+    Format impose sans registre impose : registre tire parmi ceux du format.
+    """
     plans = []
     working = list(history)
     for _ in range(n):
-        fmt = catalog.get_format(format_id) if format_id else (
-            catalog.get_format("demo_produit") if angle else catalog.pick_format(working, rng))
+        forced_fmt = catalog.get_format(format_id) if format_id else (
+            catalog.get_format("demo_produit") if angle else None)
+        registre = registre_id or catalog.pick_registre(
+            working, rng, catalog.registres_of(forced_fmt) if forced_fmt else None)
+        fmt = forced_fmt or catalog.pick_format(working, rng, registre)
         if angle:
             sujet = {"id": "", "texte": angle}
         else:
             sujet = choose_sujet(client, fmt, catalog.recent_sujets(working), rng)
-        hook = catalog.get_hook(hook_id) if hook_id else catalog.pick_hook(working, rng)
-        theme = catalog.get_theme(theme_id) if theme_id else catalog.pick_theme(working, rng)
+        hook = catalog.get_hook(hook_id) if hook_id else catalog.pick_hook(working, rng, registre)
+        theme = catalog.get_theme(theme_id) if theme_id else catalog.pick_theme(working, rng, registre)
         voice = catalog.pick_voice(working, rng)
         cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
         ambiance = catalog.pick_ambiance(theme, working, rng)
-        plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice,
+        plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice, "registre": registre,
                 "cta": cta, "cta_anim": cta_anim, "ambiance": ambiance,
                 "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None}
         plans.append(plan)
         working.append({"format": fmt["id"], "categorie": fmt["categorie"], "sujet": sujet["id"],
-                        "hook": hook["id"], "theme": theme["id"], "voix": voice["id"], "ambiance": ambiance})
+                        "hook": hook["id"], "theme": theme["id"], "voix": voice["id"], "ambiance": ambiance,
+                        "registre": registre})
     return plans
 
 
@@ -186,8 +205,9 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
 def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback: str | None,
                  recent_hooks: list[str]) -> str:
     fmt, hook = plan["format"], plan["hook"]
+    humour = plan.get("registre") == "humour"
     catalog_features = "\n".join(f'- "{fid}" : {f.description}' for fid, f in available_features().items())
-    target, lo_w, hi_w = word_budget(duration, fmt.get("ton", ""))
+    target, lo_w, hi_w = word_budget(duration, catalog.tone_for(fmt, plan.get("registre")))
     lo_s, hi_s = scene_bounds(duration)
     cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
     structure = fmt["structure"].replace("{episode}", str(plan["episode"] or 1))
@@ -203,6 +223,11 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
         variety_rule = "varie les fonctionnalités montrées, jamais la même dans deux scènes consécutives ;"
 
     icons = " ; ".join(f"{k} = {v['nom']}" for k, v in catalog.icons().items())
+    meme_card = """
+  - carte mème (format mème pour faire rire : en haut une situation vécue, une icône dessinée au milieu,
+    en bas la chute en grosses lettres ; 1 à 3 par reel) :
+    "carte": {"type": "meme", "haut": "la situation, 12 mots max (ex : Quand l'offre demande 5 ans d'expérience pour un stage)",
+              "icone": "<id d'icône>", "bas": "la chute, 7 mots max (ex : Moi, né l'an dernier)"}""" if humour else ""
     if fmt["cartes"] == "aucune":
         cards_rule = "Aucune scène n'a de carte : chaque scène montre uniquement la fonctionnalité."
     else:
@@ -236,7 +261,7 @@ capture, qui résume visuellement ce que dit la voix :
     total, repris de "offre_emploi") :
     "carte": {{"type": "scan", "surtitre": "...", "titre": "...", "trouves": ["..."], "manquants": ["..."]}}
   - carte impact (LA phrase à retenir, qui claque mot par mot en très grand ; UNE SEULE par reel, pour le
-    message clé) : "carte": {{"type": "impact", "texte": "4 à 9 mots", "mot": "le mot fort de la phrase"}}
+    message clé) : "carte": {{"type": "impact", "texte": "4 à 9 mots", "mot": "le mot fort de la phrase"}}{meme_card}
 Varie les types de cartes dans un même reel quand le contenu s'y prête.
 Effets d'apparition du titre (cartes texte) : "frappe" (tapé au clavier, idéal pour une citation, une formulation
 de CV ou une phrase d'offre), "suspense" (titre caché puis révélé avec un impact : UNE SEULE fois
@@ -261,8 +286,15 @@ applique ce conseil (ex : "checklist" pour les erreurs détectées, "adapter" po
 """
     intent = ("contenu utile : le spectateur doit apprendre quelque chose, le produit n'est qu'un outil"
               if fmt["categorie"] == "conseil" else "démonstration du produit")
+    registre_rule = ""
+    if humour:
+        registre_rule = f"""
+REGISTRE : HUMOUR. {catalog.config().get("consigne_humour", "")}
+Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
+"""
     avoid_hooks = "\n".join(f"- {h}" for h in recent_hooks[-12:]) or "(aucune)"
     banned = " ; ".join(f"« {b} »" for b in catalog.config().get("phrases_bannies", []))
+    insta_max = (catalog.config().get("instagram") or {}).get("hashtags_max", 5)
     prompt = f"""Tu es copywriter spécialisé en contenu court viral (TikTok/Instagram Reels) pour chercheurs d'emploi.
 Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonctionnalité :
 
@@ -272,7 +304,7 @@ Tu écris le SCÉNARIO d'un reel vertical de {duration} secondes, en français.
 
 FORMAT : {fmt['nom']} ({intent}).
 Structure attendue : {structure}
-
+{registre_rule}
 SUJET : {plan['sujet']['texte']}
 
 ACCROCHE (scène 1, décisive pour la rétention) : style « {hook['id']} » — {hook['consigne']}
@@ -292,7 +324,7 @@ Contraintes :
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
 - scène 1 = l'accroche (12 mots max), sur une fonctionnalité visuellement riche (pas "dashboard",
   dont la capture est une simple ligne) ; dernière scène = CTA court, dans l'esprit : « {cta} » ;
-- 1 à 2 phrases par scène, ton oral et naturel, tutoiement, pas publicitaire ;
+- 1 à 2 phrases par scène, ton oral et naturel, tutoiement, pas publicitaire{"" if not humour else ", drôle"} ;
 - {variety_rule}
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est
   affiché tel quel en sous-titres ;
@@ -309,8 +341,16 @@ Fournis aussi :
   complémentaire de la voix (pas forcément identique), qui donne envie de rester ;
 - "mots_cles" : 3 à 6 mots-clés du texte dit (mots isolés, tels qu'écrits dans les textes des scènes),
   mis en couleur dans les sous-titres — les mots qui portent le message (ex : "ATS", "chiffrés", "recruteur") ;
-- "legende" : la description de la publication (1 à 2 phrases + une question pour faire commenter) ;
-- "hashtags" : 4 à 6 hashtags pertinents (ex : #cv, #emploi, #recherchedemploi) ;
+- "legende" : la description de la publication TikTok (1 à 2 phrases + une question pour faire commenter) ;
+- "hashtags" : 4 à 6 hashtags pertinents pour TikTok (ex : #cv, #emploi, #recherchedemploi) ;
+- "legende_instagram" : la description Instagram, plus riche : une 1re ligne accrocheuse (visible avant « plus »),
+  puis 2 à 4 phrases courtes qui résument les conseils du reel, une question pour faire commenter, et une
+  invitation à enregistrer le post (sauts de ligne autorisés, pas d'emoji) ;
+- "hashtags_instagram" : {insta_max} hashtags au plus, précis et en français (Instagram en limite le nombre) ;
+- "carrousel" : la déclinaison du reel en carrousel Instagram, {CARROUSEL_MIN} à {CARROUSEL_MAX} diapositives
+  [{{"titre": "4 à 9 mots", "texte": "1 à 2 phrases, 30 mots max"}}] : la 1re = la couverture (promesse forte,
+  "texte" = sous-titre court), puis une idée concrète par diapositive (lisible sans le son ni la vidéo) ;
+  pas de diapositive d'appel à l'action (ajoutée automatiquement) ;
 - "offre_emploi" : une offre d'emploi fictive courte (2 à 4 phrases : intitulé, missions, exigences clés)
   plausible pour ce sujet — utilisée dans les démos « adapter le CV » et « lettre de motivation ».
   Varie le métier/secteur d'un scénario à l'autre ;
@@ -332,7 +372,8 @@ Recopie à l'identique les textes imposés ; écris uniquement les textes manqua
 
     prompt += """
 Réponds UNIQUEMENT en JSON valide :
-{"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."], "offre_emploi": "...",
+{"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."],
+ "legende_instagram": "...", "hashtags_instagram": ["#..."], "carrousel": [{"titre": "...", "texte": "..."}], "offre_emploi": "...",
  "theme_style": "...", "scenes": [{"feature": "<id>", "texte": "...", "carte": {...} (optionnel), "preuve": true (optionnel),
  "annotation": "..." (optionnel)}]}
 """
@@ -350,6 +391,7 @@ def clean_card(raw) -> dict | None:
       conversation: surtitre, contact, messages[2-4] {de: recruteur|moi, texte}   (conversation.html)
       scan        : surtitre, titre, trouves, manquants (6 mots-cles max)  (scan.html)
       impact      : texte, mot                              (impact.html)
+      meme        : haut, bas, icone                        (meme.html)
     Champs obligatoires absents -> None (scene sans carte).
     """
     if not isinstance(raw, dict):
@@ -403,6 +445,12 @@ def clean_card(raw) -> dict | None:
         if not txt("texte"):
             return None
         return {"type": "impact", "texte": txt("texte"), "mot": txt("mot")}
+    if kind == "meme":
+        if not txt("haut") or not txt("bas"):
+            return None
+        icon = txt("icone").lower()
+        return {"type": "meme", "haut": txt("haut"), "bas": txt("bas"),
+                "icone": icon if icon in catalog.icons() else closest_icon(icon)}
     if not txt("titre"):
         return None
     style, effet = txt("style").lower() or "normal", txt("effet").lower() or "standard"
@@ -555,7 +603,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
             feedback = "ta réponse n'était pas du JSON valide"
             continue
         scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks, wants_proof(fmt),
-                                    fmt.get("ton", ""))
+                                    catalog.tone_for(fmt, plan.get("registre")))
         if scenes:
             best, best_data = scenes, data
         if not problems:
@@ -576,15 +624,41 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         if isinstance(best_data.get("mots_cles"), list) else [],
         "offre_emploi": str(best_data.get("offre_emploi") or "").strip(),
         "theme_style": str(best_data.get("theme_style") or "").strip(),
+        **instagram_fields(best_data),
         **plan_fields(plan),
     })
+
+
+def _hashtags(raw, limit: int | None = None) -> list[str]:
+    tags = []
+    for h in raw if isinstance(raw, list) else []:
+        tag = "#" + str(h).strip().lstrip("#").replace(" ", "")
+        if len(tag) > 1 and tag.lower() not in [t.lower() for t in tags]:
+            tags.append(tag)
+    return tags[:limit] if limit else tags
+
+
+def clean_carrousel(raw) -> list[dict]:
+    """Diapositives du carrousel Instagram {titre, texte} ; moins de CARROUSEL_MIN -> [] (derive au rendu)."""
+    slides = [{"titre": str(d.get("titre") or "").strip(), "texte": str(d.get("texte") or "").strip()}
+              for d in raw or [] if isinstance(d, dict) and str(d.get("titre") or "").strip()]
+    return slides[:CARROUSEL_MAX] if len(slides) >= CARROUSEL_MIN else []
+
+
+def instagram_fields(data: dict) -> dict:
+    """Textes Instagram du scenario (legende, hashtags limites par config.json, carrousel)."""
+    limit = (catalog.config().get("instagram") or {}).get("hashtags_max", 5)
+    return {"legende_instagram": str(data.get("legende_instagram") or "").strip(),
+            "hashtags_instagram": _hashtags(data.get("hashtags_instagram"), limit),
+            "carrousel": clean_carrousel(data.get("carrousel"))}
 
 
 def plan_fields(plan: dict) -> dict:
     return {"format": plan["format"]["id"], "categorie": plan["format"]["categorie"],
             "sujet": plan["sujet"]["id"], "hook": plan["hook"]["id"], "theme": plan["theme"]["id"],
             "episode": plan["episode"], "voix": plan["voix"]["id"],
-            "ton": plan["format"].get("ton") or catalog.default_tone(),
+            "registre": plan.get("registre") or "serieux",
+            "ton": catalog.tone_for(plan["format"], plan.get("registre")),
             "cta_anim": plan.get("cta_anim") or {},
             "ambiance": plan.get("ambiance"),
             **({"habillage": plan["format"]["habillage"], "habillage_params": plan["format"].get("habillage_params", {})}
@@ -602,9 +676,11 @@ def finalize(scenario: dict) -> dict:
     scenario["duree_estimee_s"] = round(words / WORDS_PER_SECOND, 1)
     # Absents (scenario impose sans appel IA, ou champ vide renvoye) : la
     # demo retombe alors sur les valeurs par defaut cote features.py.
-    for key in ("offre_emploi", "theme_style", "accroche_ecran", "legende"):
+    for key in ("offre_emploi", "theme_style", "accroche_ecran", "legende", "legende_instagram"):
         scenario.setdefault(key, "")
     scenario.setdefault("hashtags", [])
+    scenario.setdefault("hashtags_instagram", [])
+    scenario.setdefault("carrousel", [])
     scenario.setdefault("mots_cles", [])
     return scenario
 
@@ -613,8 +689,8 @@ def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
     """
     Scenarios ecrits a la main : chaque scene doit nommer une feature du
     catalogue ; le texte est optionnel (l'IA completera). Champs optionnels
-    repris tels quels : format, theme, hook, accroche_ecran, legende,
-    hashtags ; par scene : carte, anim, overlay, annotation (post-it au feutre),
+    repris tels quels : format, theme, hook, registre, accroche_ecran, legende,
+    hashtags, legende_instagram, hashtags_instagram, carrousel ; par scene : carte, anim, overlay, annotation (post-it au feutre),
     preuve.
     """
     raw = json.loads(path.read_text(encoding="utf-8"))
@@ -644,8 +720,10 @@ def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
             "titre": item.get("titre", ""),
             "duree_cible_s": int(item.get("duree_cible_s") or default_duration),
             "scenes": scenes,
-            **{k: item[k] for k in ("format", "theme", "hook", "accroche_ecran", "legende", "hashtags", "mots_cles")
+            **{k: item[k] for k in ("format", "theme", "hook", "registre", "accroche_ecran", "legende", "hashtags",
+                                    "mots_cles", "legende_instagram", "hashtags_instagram")
                if item.get(k)},
+            **({"carrousel": clean_carrousel(item["carrousel"])} if item.get("carrousel") else {}),
         })
     return scenarios
 
@@ -669,6 +747,8 @@ def main():
     parser.add_argument("--format", type=str, default=None, help="Format impose (catalog/formats.json)")
     parser.add_argument("--theme", type=str, default=None, help="Theme visuel impose (catalog/themes.json)")
     parser.add_argument("--hook", type=str, default=None, help="Style d'accroche impose (catalog/hooks.json)")
+    parser.add_argument("--registre", type=str, default=None, choices=catalog.REGISTRES,
+                         help="Registre impose (serieux / humour) ; sinon mix de catalog/config.json 'registres'")
     parser.add_argument("--seed", type=int, default=None, help="Graine du tirage (reproductibilite)")
     parser.add_argument("--scenario", type=str, default=None,
                          help="Fichier JSON de scenario(s) ecrit(s) a la main (voir scenarios/exemple.json)")
@@ -707,7 +787,8 @@ def main():
     if args.scenario:
         for i, item in enumerate(load_scenario_file(Path(args.scenario), args.duration), 1):
             plan = plan_reels(None, 1, history, rng, item.get("format") or args.format or "demo_produit",
-                              item.get("theme") or args.theme, item.get("hook") or args.hook, item["angle"])[0]
+                              item.get("theme") or args.theme, item.get("hook") or args.hook, item["angle"],
+                              item.get("registre") or args.registre)[0]
             if all(s["texte"] for s in item["scenes"]):
                 print(f"[{i}] scenario impose, entierement redige : aucun appel IA")
                 scenarios.append(finalize({**plan_fields(plan), **item}))
@@ -721,8 +802,9 @@ def main():
         client = get_client()
         print(f"Plan editorial de {args.n} reel(s)...")
         for i, plan in enumerate(plan_reels(client, args.n, history, rng, args.format, args.theme,
-                                            args.hook, args.angle), 1):
-            print(f"[{i}/{args.n}] {args.duration}s | format {plan['format']['id']} | accroche {plan['hook']['id']} "
+                                            args.hook, args.angle, args.registre), 1):
+            print(f"[{i}/{args.n}] {args.duration}s | {plan['registre']} | format {plan['format']['id']} "
+                  f"| accroche {plan['hook']['id']} "
                   f"| theme {plan['theme']['id']} | sujet : {plan['sujet']['texte']}")
             scenario = generate_scenario(client, plan, args.duration, recent_hooks)
             recent_hooks = recent_hooks + [scenario["accroche_ecran"], scenario["scenes"][0]["texte"]]
@@ -738,7 +820,7 @@ def main():
     catalog.save_history(history_path, history + [
         {"format": s.get("format"), "categorie": s.get("categorie"), "sujet": s.get("sujet"),
          "hook": s.get("hook"), "theme": s.get("theme"), "voix": s.get("voix"), "ambiance": s.get("ambiance"),
-         "titre": s.get("titre"),
+         "registre": s.get("registre"), "titre": s.get("titre"),
          "accroche": s.get("accroche_ecran") or (s["scenes"][0]["texte"] if s["scenes"] else "")}
         for s in scenarios])
     print(f"OK -> {out_path} ({len(scenarios)} scenarios)")

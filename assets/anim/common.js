@@ -9,6 +9,8 @@ window.P = Object.fromEntries(new URLSearchParams(location.search));
 window.param = (k, d) => (P[k] !== undefined && P[k] !== "" ? P[k] : d);
 window.num = (k, d) => (isNaN(parseFloat(P[k])) ? d : parseFloat(P[k]));
 window.READY = false;
+// Typographie francaise : espace insecable avant ? ! : ; » et apres « (un "?" ne passe jamais seul a la ligne).
+window.frTypo = (s) => String(s).replace(/ +([?!:;»])/g, "\u00a0$1").replace(/« +/g, "«\u00a0");
 
 // Theme (catalog/themes.json, passe par catalog.anim_params) : couleurs en
 // variables CSS (--c1 primaire, --c2 secondaire, --cbg fond, --cfg texte,

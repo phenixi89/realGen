@@ -1,5 +1,5 @@
 {
-  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'. dessin : support des cartes dessinees a la main et des annotations (assets/anim/sketch.js) -- 'papier' (feutre sur feuille), 'craie' (tableau), 'neon' (traits lumineux).",
+  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'. dessin : support des cartes dessinees a la main et des annotations (assets/anim/sketch.js) -- 'papier' (feutre sur feuille), 'craie' (tableau), 'neon' (traits lumineux). registres : registres d'ecriture ou le theme peut etre tire ('serieux' et/ou 'humour', absent = les deux).",
   "themes": [
     {
       "id": "violet_nuit",
@@ -466,6 +466,85 @@
         "smoothleft",
         "squeezeh",
         "fadeblack"
+      ],
+      "dessin": "papier"
+    },
+    {
+      "id": "bd_pop",
+      "nom": "Bande dessinée pop",
+      "poids": 3,
+      "registres": [
+        "humour"
+      ],
+      "couleurs": {
+        "primaire": "#ffd400",
+        "secondaire": "#ff4d4d",
+        "fond": "#141414",
+        "texte": "#ffffff",
+        "surligne": "#ffd400",
+        "contour": "#000000",
+        "pastille": "#1f1f1f",
+        "mot_cle": "#ffd400"
+      },
+      "police_titre": "Bangers-Regular.ttf",
+      "police_texte": "Poppins-ExtraBold.ttf",
+      "sous_titres": {
+        "taille": 64,
+        "majuscules": true,
+        "contour": 6,
+        "style": "mot"
+      },
+      "ambiance": "comique_sautillant",
+      "transitions": [
+        "pixelize",
+        "slideleft",
+        "circleopen",
+        "squeezeh"
+      ],
+      "ambiances": [
+        "comique_sautillant",
+        "pop_energie",
+        "trap_legere"
+      ],
+      "dessin": "papier"
+    },
+    {
+      "id": "sitcom_pastel",
+      "nom": "Sitcom pastel",
+      "poids": 2,
+      "registres": [
+        "humour",
+        "serieux"
+      ],
+      "couleurs": {
+        "primaire": "#ff7eb6",
+        "secondaire": "#7ee0c3",
+        "fond": "#1d1b2f",
+        "texte": "#ffffff",
+        "surligne": "#ffe27a",
+        "contour": "#000000",
+        "pastille": "#2a2640",
+        "mot_cle": "#7ee0c3"
+      },
+      "police_titre": "Poppins-ExtraBold.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {
+        "taille": 60,
+        "majuscules": false,
+        "contour": 4,
+        "style": "encadre"
+      },
+      "ambiance": "comique_sautillant",
+      "transitions": [
+        "fade",
+        "smoothup",
+        "circleopen",
+        "slideright"
+      ],
+      "ambiances": [
+        "comique_sautillant",
+        "acoustique",
+        "house_douce"
       ],
       "dessin": "papier"
     }

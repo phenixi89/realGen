@@ -23,6 +23,7 @@ typeInterval) et cta.html :
     carte conversation       -> pop a chaque message (conversation.html msgAt)
     carte scan               -> pop, puis ding (score >= 80 %) ou buzz au score (scan.html RESULT_AT)
     carte impact             -> impact doux au premier mot
+    carte meme               -> pop, feutre pendant le dessin, impact a la chute (meme.html PUNCH_AT)
     curseur anime            -> clic de souris (ajoute par run_pipeline.py)
     annotation au feutre     -> feutre (ajoute par run_pipeline.py, instants connus apres 3b)
 """
@@ -85,6 +86,11 @@ def card_cues(card: dict, start: float, dur: float) -> list[dict]:
     elif style == "avant":
         cues.append({"t": end + 0.05, "name": "buzz", "gain": 0.6})
     return cues
+
+
+def meme_punch_at(dur: float) -> float:
+    """meme.html : PUNCH_AT, instant ou la chute claque."""
+    return min(max(dur * 0.45, 1.1), 2.4)
 
 
 def conversation_times(messages: list[str], dur: float) -> list[float]:
@@ -153,4 +159,9 @@ def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[d
                      {"t": start + result_at, "name": "ding" if good else "buzz", "gain": 1.0 if good else 0.6}]
         elif name == "impact":
             cues.append({"t": start + 0.12, "name": "impact", "gain": 0.45})
+        elif name == "meme":
+            punch = meme_punch_at(float(params.get("dur", dur)))
+            cues += [{"t": start + 0.08, "name": "pop"},
+                     {"t": start + 0.35, "name": "feutre", "duration": max(punch - 0.45, 0.4)},
+                     {"t": start + punch, "name": "impact", "gain": 0.6}]
     return cues

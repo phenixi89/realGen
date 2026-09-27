@@ -38,6 +38,9 @@ button:disabled{opacity:.5;cursor:default}
 .steps{font-size:12px;color:var(--muted);margin-top:3px}
 .reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .reel video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}
+.reel img{width:100%;border-radius:10px;display:block}
+.reel .strip{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory}
+.reel .strip img{flex:0 0 85%;aspect-ratio:4/5;object-fit:cover;scroll-snap-align:start}
 .reel pre{white-space:pre-wrap;font:12px/1.4 inherit;background:var(--bg);padding:8px;border-radius:8px;max-height:160px;overflow:auto}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .hidden{display:none}
@@ -64,6 +67,10 @@ button:disabled{opacity:.5;cursor:default}
     <div><label>Durée</label><select id="f_duration"><option>15</option><option selected>30</option><option>45</option><option>60</option></select></div>
     <div><label>Format <small>vide = auto</small></label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
     <div><label>Thème visuel <small>vide = rotation</small></label><select id="f_theme"><option value="">Rotation automatique</option></select></div>
+    <div><label>Registre</label><select id="f_registre"><option value="">Automatique (mix sérieux / humour)</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
+    <div><label>Plateformes</label><select id="f_plateformes">
+      <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
+      <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
     <div><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
     <div><label>Capture</label><select id="f_capture_mode">
       <option value="video">Vidéo mobile</option><option value="screenshots">Captures desktop + zoom (animations complètes)</option><option value="video_desktop">Vidéo desktop recadrée</option></select></div>
@@ -137,12 +144,12 @@ async function catFile(name){
 async function loadCatalog(){
   const [f, t, v, s, h] = await Promise.all(["formats","themes","voix","sujets","hooks"].map(n => catFile(n).catch(() => ({}))));
   CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [] };
-  for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie})`, x.id));
+  for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${(x.registres || []).includes("humour") ? ", humour" : ""})`, x.id));
   for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
   for (const x of CAT.voix) $("f_voice").add(new Option(`${x.id} : ${x.description}`, x.id));
   const sw = c => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:middle;background:${esc(c)}"></span>`;
   $("catalog").innerHTML =
-    `<h3>Formats (${CAT.formats.length})</h3>` + CAT.formats.map(x => `<p><b>${esc(x.nom)}</b> <span class="tag">${esc(x.categorie)}</span> <span class="tag">cartes : ${esc(x.cartes)}</span><br><span class="muted">${esc(x.structure)}</span></p>`).join("") +
+    `<h3>Formats (${CAT.formats.length})</h3>` + CAT.formats.map(x => `<p><b>${esc(x.nom)}</b> <span class="tag">${esc(x.categorie)}</span> <span class="tag">${esc((x.registres || ["serieux"]).join(" + "))}</span> <span class="tag">cartes : ${esc(x.cartes)}</span><br><span class="muted">${esc(x.structure)}</span></p>`).join("") +
     `<h3>Thèmes (${CAT.themes.length})</h3>` + CAT.themes.map(x => `<p>${Object.values(x.couleurs || {}).slice(0, 5).map(sw).join(" ")} <b>${esc(x.nom)}</b> <span class="tag">${esc(x.ambiance || "")}</span></p>`).join("") +
     `<h3>Sujets (${CAT.sujets.length})</h3><p>` + CAT.sujets.map(x => `<span class="tag" title="${esc(x.texte)}">${esc(x.id)}</span>`).join("") + `</p>` +
     `<h3>Hooks (${CAT.hooks.length})</h3><p>` + CAT.hooks.map(x => `<span class="tag" title="${esc(x.consigne)}">${esc(x.id)}</span>`).join("") + `</p>`;
@@ -150,7 +157,7 @@ async function loadCatalog(){
 
 async function launch(){
   const inputs = { n: String($("f_n").value || 3) };
-  for (const k of ["duration","format","theme","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
+  for (const k of ["duration","format","theme","registre","plateformes","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
   for (const k of ["sfx","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
   if (inputs.from_step === "script" && !confirm("from_step = script : nouveaux textes ET nouvelles voix (appels Gemini). Continuer ?")) return;
   $("go").disabled = true;
@@ -216,6 +223,8 @@ async function loadReels(){
     const zip = await JSZip.loadAsync(await (await gh(`/actions/artifacts/${art.id}/zip`)).blob());
     const vids = Object.keys(zip.files).filter(p => /final\/reel_\d+\.mp4$/.test(p)).sort();
     st.textContent = `${vids.length} reel(s)`;
+    const imgUrl = async p => { const u = URL.createObjectURL(new Blob([await zip.file(p).async("arraybuffer")], { type: p.endsWith(".png") ? "image/png" : "image/jpeg" })); blobUrls.push(u); return u; };
+    const copyBtn = (label, text) => { const b = document.createElement("button"); b.textContent = label; b.onclick = () => navigator.clipboard.writeText(text).then(() => toast("Légende copiée")); return b; };
     for (const p of vids) {
       const url = URL.createObjectURL(new Blob([await zip.file(p).async("arraybuffer")], { type: "video/mp4" })); blobUrls.push(url);
       const txtF = zip.file(p.replace(/\.mp4$/, ".txt")), txt = txtF ? await txtF.async("string") : "";
@@ -225,6 +234,20 @@ async function loadReels(){
         <pre>${esc(txt) || "<i>pas de légende</i>"}</pre>
         <div class="row"><button class="copy">📋 Copier la légende</button><a href="${url}" download="${esc(name)}"><button>⬇ Télécharger</button></a></div>`;
       div.querySelector(".copy").onclick = () => navigator.clipboard.writeText(txt).then(() => toast("Légende copiée"));
+      // Declinaisons Instagram (scripts/instagram.py) : legende, couverture, carrousel 4:5.
+      const stem = p.replace(/\.mp4$/, ""), igF = zip.file(stem + ".instagram.txt"), coverF = zip.file(stem + ".couverture.jpg");
+      const slides = Object.keys(zip.files).filter(k => k.startsWith(stem + "_carrousel/") && k.endsWith(".png")).sort();
+      if (igF || coverF || slides.length) {
+        const ig = document.createElement("div"), igTxt = igF ? await igF.async("string") : "";
+        ig.innerHTML = `<b>Instagram</b>` + (coverF ? `<p class="muted">Couverture</p><img src="${await imgUrl(coverF.name)}" alt="Couverture Instagram">` : "") +
+          (slides.length ? `<p class="muted">Carrousel (${slides.length} diapositives, glisse)</p><div class="strip">${(await Promise.all(slides.map(imgUrl))).map(u => `<img src="${u}" alt="Diapositive">`).join("")}</div>` : "") +
+          (igTxt ? `<pre>${esc(igTxt)}</pre>` : "");
+        const row = document.createElement("div"); row.className = "row";
+        if (igTxt) row.appendChild(copyBtn("📋 Copier la légende Instagram", igTxt));
+        const dl = document.createElement("button"); dl.textContent = "⬇ Images Instagram";
+        dl.onclick = async () => { for (const k of [coverF && coverF.name, ...slides].filter(Boolean)) { const a = document.createElement("a"); a.href = await imgUrl(k); a.download = k.split("/").slice(-2).join("_"); a.click(); } };
+        row.appendChild(dl); ig.appendChild(row); div.appendChild(ig);
+      }
       $("reels").appendChild(div);
     }
   } catch (e) {

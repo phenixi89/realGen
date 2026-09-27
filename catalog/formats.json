@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes animees : texte, chiffre, comparaison, liste, schema dessine, conversation, scan ATS, impact -- assets/anim/ -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params).",
+  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes animees : texte, chiffre, comparaison, liste, schema dessine, conversation, scan ATS, impact -- assets/anim/ -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params). registres : registres d'ecriture compatibles, 'serieux' et/ou 'humour' (absent = ['serieux']) ; le registre de chaque reel est tire selon config.json 'registres'. ton_humour : ton de lecture quand le format est joue en registre humour (sinon config.json 'ton_humour'). Carte 'meme' (assets/anim/meme.html) : texte du haut (la situation), icone dessinee, chute en bas -- proposee a l'IA en registre humour.",
   "formats": [
     {
       "id": "demo_produit",
@@ -26,7 +26,11 @@
         "candidature"
       ],
       "structure": "Accroche annoncant le nombre d'erreurs (3 a 5 selon la duree). Une scene-carte par erreur : surtitre 'Erreur n°X', titre = l'erreur en 2 a 5 mots, texte = la correction en une phrase courte ; la voix explique pourquoi c'est une erreur et quoi faire a la place. Avant-derniere scene (sans carte) : montrer la fonctionnalite d'OpusCV qui detecte ou corrige ces erreurs. Derniere scene : CTA. Si une donnée chiffrée plausible appuie le propos, une carte type 'chiffre' peut ouvrir la liste. La pire erreur peut être résumée par une carte type 'impact'.",
-      "ton": "énergique et direct, comme un créateur TikTok qui interpelle, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "énergique et direct, comme un créateur TikTok qui interpelle, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "mythe_realite",
@@ -41,7 +45,11 @@
         "candidature"
       ],
       "structure": "Accroche. Puis 2 ou 3 paires de scenes-cartes : une carte style 'mythe' (surtitre 'Idée reçue', titre = l'idee fausse) suivie d'une carte style 'realite' (surtitre 'Réalité', titre = la verite, texte = le conseil concret). Une scene sans carte montre OpusCV qui applique le bon reflexe. Derniere scene : CTA.",
-      "ton": "complice puis affirmé sur la réalité, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "complice puis affirmé sur la réalité, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "avant_apres",
@@ -146,7 +154,11 @@
         "linkedin"
       ],
       "structure": "Accroche. Alternance de scènes-cartes : style 'mythe' (surtitre 'À ne jamais faire', titre = la mauvaise pratique) puis style 'realite' (surtitre 'À faire', titre = la bonne pratique), 2 ou 3 paires. Une scène sans carte montre OpusCV. Dernière scène : CTA.",
-      "ton": "tranché et dynamique, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "tranché et dynamique, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "cas_pratique",
@@ -218,7 +230,11 @@
         "down": "1"
       },
       "structure": "Accroche : un recruteur passe en moyenne quelques secondes sur un CV (sans chiffre inventé précis). Une scène montre ce qu'il remarque en premier (erreur visible), puis les scènes suivantes montrent comment OpusCV le repère et le corrige. Dernière scène : CTA.",
-      "ton": "tendu puis soulagé, voix de recruteur qui juge vite, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "tendu puis soulagé, voix de recruteur qui juge vite, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "pov_situation",
@@ -232,7 +248,11 @@
         "entretien"
       ],
       "structure": "Accroche « POV : ... » qui plonge le spectateur dans une situation vécue (ex : tu envoies ta 50e candidature). Les scènes racontent la situation puis révèlent la vraie cause et la solution concrète. Dernière scène : CTA. Une carte type 'conversation' peut montrer le message reçu (fictif).",
-      "ton": "immersif et complice, comme une histoire qu'on vit ensemble, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "immersif et complice, comme une histoire qu'on vit ensemble, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "vu_par_recruteur",
@@ -246,7 +266,11 @@
         "candidature"
       ],
       "structure": "Accroche : « Voilà ce que le recruteur voit vraiment sur ton CV ». Chaque scène oppose ce que le candidat croit montrer et ce que le recruteur (ou l'ATS) comprend réellement (cartes avant/apres ou comparaison). Dernière scène : CTA. Une carte type 'scan' peut montrer ce que l'ATS trouve (et ne trouve pas) dans le CV.",
-      "ton": "révélateur, un peu malicieux, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "révélateur, un peu malicieux, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "tier_list",
@@ -260,7 +284,11 @@
         "candidature"
       ],
       "structure": "Accroche : tier list des erreurs, de la moins grave à la pire. Chaque scène classe une erreur (surtitre « Rang C », « Rang B », « Rang A », « Rang S ») avec une explication courte ; la pire à la fin avec l'effet suspense. Dernière scène : CTA.",
-      "ton": "tranché, drôle et assumé, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "tranché, drôle et assumé, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "red_green_flag",
@@ -275,7 +303,11 @@
         "candidature"
       ],
       "structure": "Accroche : red flags et green flags pour les recruteurs. Les scènes alternent un red flag (carte style mythe, surtitre « Red flag ») et un green flag (carte style realite, surtitre « Green flag »), chacun concret. Dernière scène : CTA.",
-      "ton": "vif et tranché, verdicts nets, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "vif et tranché, verdicts nets, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "trouve_erreur",
@@ -289,7 +321,11 @@
         "candidature"
       ],
       "structure": "Accroche : « Trouve l'erreur dans ce CV en 3 secondes ». Une carte frappe montre une ligne de CV ou de lettre qui contient une erreur ; la voix laisse un instant de réflexion ; la scène suivante révèle l'erreur (effet suspense) et la correction. Deux ou trois manches. Dernière scène : CTA.",
-      "ton": "joueur, comme un animateur de quiz, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "joueur, comme un animateur de quiz, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "tableau_blanc",
@@ -320,7 +356,11 @@
         "linkedin"
       ],
       "structure": "Accroche. Une scène-carte type 'conversation' montre un échange FICTIF et réaliste entre un candidat et un recruteur (2 à 4 messages courts) qui révèle une erreur ou une bonne pratique. Les scènes suivantes décryptent (cartes texte, avant/après, comparaison) ce qu'il fallait comprendre et comment faire. Scène preuve. Dernière scène : CTA. Ne présente jamais la conversation comme réelle : c'est un exemple.",
-      "ton": "complice et un peu malicieux, comme si on lisait un message ensemble, débit posé et naturel, avec de courtes pauses entre les phrases"
+      "ton": "complice et un peu malicieux, comme si on lisait un message ensemble, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "scanner_ats",
@@ -333,6 +373,201 @@
       ],
       "structure": "Accroche sur les mots-clés qui manquent à la plupart des CV. Une scène-carte type 'scan' passe un CV au scanner face à l'offre_emploi fournie (mots-clés de l'offre trouvés / manquants, repris de l'offre). Puis les scènes montrent dans OpusCV comment adapter le CV à cette offre et ajouter les mots-clés manquants (fonctionnalités adapter, checklist...), avec une annotation au feutre sur l'écran clé. Dernière scène : CTA.",
       "ton": "direct et concret, comme une démonstration entre amis, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "sketch_duo",
+      "nom": "Sketch : le candidat et le recruteur",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "autorisees",
+      "registres": [
+        "humour"
+      ],
+      "sujets": [
+        "cv",
+        "entretien",
+        "candidature"
+      ],
+      "structure": "Mini-sketch en 3 ou 4 répliques entre un candidat et un recruteur (fictifs), qui pousse jusqu'à l'absurde une erreur réelle du sujet. Les répliques passent par des cartes type 'conversation' (contact = « Recruteur ») ou des cartes texte à effet 'frappe'. La voix joue les deux rôles en les annonçant (« Le recruteur : ... »). Puis une scène « Blague à part » donne le vrai conseil concret. Une scène sans carte montre OpusCV qui évite l'erreur. Dernière scène : CTA qui rappelle la chute du sketch.",
+      "ton": "pince-sans-rire, comme un sketch à deux voix, petite pause avant chaque chute, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "attentes_realite",
+      "nom": "Attentes vs réalité",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "registres": [
+        "humour"
+      ],
+      "sujets": [
+        "cv",
+        "candidature",
+        "entretien",
+        "linkedin"
+      ],
+      "structure": "Accroche. Puis 2 ou 3 paires : une carte style 'mythe' (surtitre 'Attente', titre = ce que le candidat imagine, idéalisé) suivie d'une carte style 'realite' (surtitre 'Réalité', titre = ce qui se passe vraiment, avec autodérision). La voix tire de chaque paire un conseil concret. Une carte type 'comparaison' peut remplacer une paire. Une scène sans carte montre OpusCV qui rapproche l'attente de la réalité. Dernière scène : CTA.",
+      "ton": "ironique et complice, léger décalage entre l'attente rêveuse et la réalité blasée, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "traducteur_rh",
+      "nom": "Le traducteur du jargon",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "registres": [
+        "humour",
+        "serieux"
+      ],
+      "sujets": [
+        "candidature",
+        "cv"
+      ],
+      "structure": "Accroche du type « Je traduis les phrases des offres d'emploi (ou des CV) ». Pour 3 expressions toutes faites : une carte texte style 'avant' (surtitre 'Ce qui est écrit', titre = l'expression entre guillemets, effet 'frappe') suivie d'une carte style 'realite' (surtitre 'Traduction', titre = ce que ça veut vraiment dire, avec une pointe d'ironie). La voix ajoute à chaque fois quoi en faire dans sa candidature. Une scène sans carte montre OpusCV (adapter le CV à l'offre ou points à corriger). Dernière scène : CTA.",
+      "ton": "sérieux comme un interprète officiel, avec un sourire dans la voix sur chaque traduction, débit posé et naturel, avec de courtes pauses entre les phrases",
+      "ton_humour": "faussement solennel, comme un interprète officiel qui traduit des absurdités, petite pause avant chaque traduction, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "starter_pack",
+      "nom": "Starter pack du CV raté",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "registres": [
+        "humour"
+      ],
+      "sujets": [
+        "cv",
+        "lettre",
+        "linkedin",
+        "candidature"
+      ],
+      "structure": "Accroche « Le starter pack de ... » (le CV raté, la lettre copiée-collée, le profil LinkedIn vide...). Une carte type 'liste' présente 3 à 5 éléments typiques du pack, exagérés mais reconnaissables. Puis une carte par élément (surtitre 'Dans le pack', ou carte type 'meme') avec la voix qui explique en une phrase pourquoi ça dessert et quoi mettre à la place. Une scène sans carte montre OpusCV qui repère ces éléments. Dernière scène : CTA.",
+      "ton": "moqueur mais bienveillant, comme un ami qui te taquine, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "si_mon_cv_parlait",
+      "nom": "Si ton CV pouvait parler",
+      "categorie": "conseil",
+      "poids": 1,
+      "cartes": "autorisees",
+      "registres": [
+        "humour"
+      ],
+      "sujets": [
+        "cv",
+        "ats"
+      ],
+      "structure": "Le CV parle à la première personne (« Salut, je suis ton CV. ») et se plaint avec humour de ce qu'on lui fait subir : 3 griefs concrets tirés du sujet (ex : « tu m'as mis ta photo de mariage »). Cartes texte ou 'meme' pour les griefs. Puis le CV dit ce qu'il voudrait à la place (le vrai conseil). Une scène sans carte montre OpusCV qui le « soigne ». Dernière scène : CTA prononcé par le CV.",
+      "ton": "voix de personnage un peu vexé puis reconnaissant, théâtral mais naturel, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "meme_quand",
+      "nom": "Format mème : « Quand... »",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "registres": [
+        "humour"
+      ],
+      "sujets": [
+        "cv",
+        "candidature",
+        "entretien",
+        "linkedin"
+      ],
+      "structure": "Accroche. Puis 2 ou 3 cartes type 'meme' : en haut une situation que tout candidat a vécue (« Quand le recruteur dit : on vous rappellera »), une icône dessinée, en bas la chute. Après chaque mème, la voix donne le vrai réflexe à adopter, concret. Une scène sans carte montre OpusCV. Dernière scène : CTA.",
+      "ton": "complice et amusé, comme quand on partage un mème à un ami, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "sketch_word_vs_opuscv",
+      "nom": "Moi sous Word vs moi avec OpusCV",
+      "categorie": "produit",
+      "poids": 2,
+      "cartes": "autorisees",
+      "registres": [
+        "humour"
+      ],
+      "sujets": [
+        "produit"
+      ],
+      "structure": "Accroche sur la galère vécue (« Moi, à deux heures du matin, qui décale une marge sous Word »). Une ou deux scènes-cartes (type 'meme' ou 'comparaison') exagèrent la galère : mise en page qui saute, cinquième version du fichier, faute vue après l'envoi. Puis les scènes suivantes montrent la même chose dans OpusCV, simplement, avec un soulagement comique. Dernière scène : CTA.",
+      "ton": "dramatique et exagéré sur la galère, puis soulagé et fier, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "commentateur_sportif",
+      "nom": "Commenté comme un match",
+      "categorie": "produit",
+      "poids": 1,
+      "cartes": "aucune",
+      "registres": [
+        "humour"
+      ],
+      "sujets": [
+        "produit"
+      ],
+      "structure": "La voix commente l'optimisation d'un CV dans OpusCV comme un commentateur sportif en direct (« Il importe son CV... l'analyse démarre... et c'est la faute repérée ! »). Chaque scène est une action réelle dans OpusCV (import, points à corriger, réécriture, aperçu), racontée au présent avec des expressions de match, sans en faire trop. Dernière scène : « Victoire ! », puis CTA.",
+      "ton": "commentateur sportif enthousiaste mais articulé, montée d'énergie sur les temps forts, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "trois_niveaux",
+      "nom": "Débutant, confirmé, expert",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "sujets": [
+        "cv",
+        "lettre",
+        "linkedin",
+        "entretien"
+      ],
+      "structure": "Accroche. La même ligne (de CV, de lettre, de réponse d'entretien ou de titre LinkedIn) écrite à trois niveaux : une carte texte surtitre 'Niveau débutant' (style 'avant'), puis 'Niveau confirmé' (style 'normal'), puis 'Niveau expert' (style 'apres', effet 'suspense' possible). La voix explique ce qui fait monter d'un niveau. Une scène sans carte montre OpusCV qui aide à passer au niveau expert. Dernière scène : CTA.",
+      "ton": "pédagogue et un peu joueur, comme un jeu vidéo qui passe au niveau supérieur, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "vrai_ou_faux",
+      "nom": "Vrai ou faux ?",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "sujets": [
+        "cv",
+        "ats",
+        "entretien",
+        "candidature",
+        "lettre"
+      ],
+      "structure": "Accroche qui lance le quiz (« Vrai ou faux : ... »). 3 affirmations répandues : pour chacune, une carte texte (surtitre 'Vrai ou faux ?', titre = l'affirmation, effet 'suspense' sur une seule) laisse une seconde au spectateur, puis une carte style 'realite' ou 'mythe' donne la réponse et la voix l'explique concrètement. Une scène sans carte montre OpusCV. Dernière scène : CTA qui demande son score en commentaire.",
+      "ton": "animateur de quiz, joueur, petite pause avant chaque réponse, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "question_de_tous",
+      "nom": "La question que tout le monde se pose",
+      "categorie": "conseil",
+      "poids": 1,
+      "cartes": "autorisees",
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "sujets": [
+        "cv",
+        "ats",
+        "lettre",
+        "entretien",
+        "linkedin",
+        "candidature"
+      ],
+      "structure": "Accroche = une question précise que beaucoup de candidats se posent sur le sujet (sans prétendre qu'on l'a reçue en commentaire). Réponse courte et tranchée d'abord (carte 'impact' possible), puis 2 ou 3 scènes de nuances concrètes (cartes texte, liste ou schéma), une scène sans carte montre OpusCV. Dernière scène : CTA qui invite à poser sa propre question en commentaire.",
+      "ton": "direct et rassurant, comme une réponse de grand frère ou grande sœur, débit posé et naturel, avec de courtes pauses entre les phrases"
     }
   ]
 }

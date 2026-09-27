@@ -15,6 +15,7 @@ from urllib.parse import urlencode
 
 import catalog
 import sound_design
+from instagram import parse_plateformes
 from script_text import script_to_text
 
 ROOT = Path(__file__).parent
@@ -241,6 +242,12 @@ def main():
                          help="Sans effets sonores (la musique reste) ; reglages fins : catalog/audio.json")
     parser.add_argument("--no-hook-overlay", action="store_true",
                          help="N'affiche pas l'accroche en grand au debut de la video")
+    parser.add_argument("--registre", type=str, default=None, choices=catalog.REGISTRES,
+                         help="Registre impose (serieux / humour) ; sinon mix de catalog/config.json 'registres'")
+    parser.add_argument("--plateformes", type=parse_plateformes, default=["tiktok", "instagram", "carrousel"],
+                         help="Declinaisons a produire, separees par des virgules : tiktok (legende .txt), "
+                              "instagram (legende .instagram.txt + couverture .jpg), carrousel (carrousel 4:5) ; "
+                              "ou all (defaut)")
     args = parser.parse_args()
 
     screen_only = [k for k in args.anims if k in ("scene", "highlight", "cursor")]
@@ -259,7 +266,8 @@ def main():
         existing = json.loads(scripts_path.read_text(encoding="utf-8"))
         stale_duration = any(s.get("duree_cible_s") != args.duration for s in existing) and not args.scenario
         stale_catalog = any(v and any(sc.get(k) != v for sc in existing)
-                            for k, v in (("format", args.format), ("theme", args.theme), ("hook", args.hook)))
+                            for k, v in (("format", args.format), ("theme", args.theme), ("hook", args.hook),
+                                         ("registre", args.registre)))
         if args.scenario or args.angle or stale_duration or stale_catalog:
             print("Parametres de scenario differents de la derniere execution -> regeneration complete")
             from_index = 0
@@ -289,7 +297,8 @@ def main():
         scenario_args += ["--angle", args.angle]
     if args.scenario:
         scenario_args += ["--scenario", args.scenario]
-    for flag, value in (("--format", args.format), ("--theme", args.theme), ("--hook", args.hook)):
+    for flag, value in (("--format", args.format), ("--theme", args.theme), ("--hook", args.hook),
+                        ("--registre", args.registre)):
         if value:
             scenario_args += [flag, value]
     run([sys.executable, str(ROOT / "1_generate_script.py"),
@@ -306,11 +315,12 @@ def main():
     # scenarios) laisse ses reels excedentaires dans output/ indefiniment --
     # ils ne correspondent plus a rien de ce qui est demande maintenant.
     for sub, pattern in ((out / "video", "reel_*"), (out / "audio", "reel_*.*"),
-                         (out / "subs", "reel_*.*"), (out / "final", "reel_*.*")):
+                         (out / "subs", "reel_*.*"), (out / "final", "reel_*")):
         if not sub.exists():
             continue
         for path in sub.glob(pattern):
-            stem = path.stem.split(".")[0]  # reel_04.timeline -> reel_04
+            # reel_04.timeline -> reel_04 ; reel_04_carrousel (dossier) -> reel_04
+            stem = path.name.split(".")[0].removesuffix("_carrousel")
             try:
                 idx = int(stem.removeprefix("reel_"))
             except ValueError:
@@ -442,7 +452,14 @@ def main():
              "--subs", str(subs_path), "--out", str(final_path), *anim_assemble_args,
              *(force_flag_for("assemble") or subs_force or anims_force)])
         anims_marker.write_text(anims_signature, encoding="utf-8")
-        write_caption_file(scripts[i - 1], final_path.with_suffix(".txt"))
+        # Declinaisons : legende TikTok, et pour Instagram legende + couverture
+        # (instagram) et carrousel 4:5 (carrousel), cf. instagram.py.
+        if "tiktok" in args.plateformes:
+            write_caption_file(scripts[i - 1], final_path.with_suffix(".txt"))
+        insta = [k for k in args.plateformes if k != "tiktok"]
+        if insta:
+            run([sys.executable, str(ROOT / "instagram.py"), "--scripts", str(scripts_path), "--index", str(i),
+                 "--final", str(final_path), "--plateformes", ",".join(insta)])
 
     print(f"\nTermine. {args.n} reel(s) dans output/final/")
 

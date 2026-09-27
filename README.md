@@ -60,6 +60,8 @@ Principales options de `run_pipeline.py` :
 | `--angle` | — | Impose un angle marketing (sinon choisi stratégiquement, voir plus bas) |
 | `--scenario` | — | Fichier JSON de scénario écrit à la main (voir `scenarios/exemple.json`) |
 | `--format` / `--theme` / `--hook` | auto | Impose un élément du catalogue (voir « Ligne éditoriale ») |
+| `--registre` | auto | `serieux` ou `humour` (sinon mix de `config.json` `registres`, 70 / 30) — voir « Registre humour » |
+| `--plateformes` | `all` | Déclinaisons produites : `tiktok` (légende `.txt`), `instagram` (légende Instagram + couverture), `carrousel` (carrousel 4:5), séparées par des virgules — voir « Instagram » |
 | `--no-sfx` | — | Sans effets sonores (musique conservée) — case « sfx » dans le workflow |
 | `--no-hook-overlay` | — | N'affiche pas l'accroche en grand au début |
 | `--anims` | `none` | Animations HTML/JS intégrées au montage : `overlay`, `scene`, `highlight` (séparées par des virgules), `all` ou `none` — voir ci-dessous |
@@ -81,8 +83,10 @@ python scripts/4_generate_subtitles.py --audio output/audio/reel_01.mp3 --script
 python scripts/5_assemble.py --video output/video/reel_01/zoom.mp4 --audio output/audio/reel_01.mp3 --subs output/subs/reel_01.json --out output/final/reel_01.mp4
 ```
 
-Résultat final : `output/final/reel_XX.mp4`, prêt à uploader sur TikTok/Instagram (vertical 9:16,
-sous-titres karaoké brûlés, musique de fond, CTA final mis en avant, audio synchronisé).
+Résultat final : `output/final/reel_XX.mp4`, prêt à uploader sur TikTok et en Reel Instagram (vertical 9:16,
+sous-titres karaoké brûlés, musique de fond, CTA final mis en avant, audio synchronisé)., avec à côté ses déclinaisons (voir « Instagram ») :
+`reel_XX.txt` (légende TikTok), `reel_XX.instagram.txt`, `reel_XX.couverture.jpg` et le dossier
+`reel_XX_carrousel/`.
 
 Entre deux exécutions, `run_pipeline.py` nettoie automatiquement ce qui ne correspond plus à la
 demande courante : reels excédentaires d'un run précédent avec un `--n` plus grand, fichiers d'un
@@ -114,7 +118,9 @@ Le scénario peut placer lui-même les animations et régler leurs textes et val
 ```
 
 Paramètres des gabarits : `score_ats` (`from`, `to`, `label`, `lines` séparées par `|`, `cta`),
-`cta` (`brand`, `title`, `sub`, `button`, `bg`). Pour prévisualiser un gabarit, ouvre simplement le
+`cta` (`brand`, `title`, `sub`, `button`, `bg`), `meme` (`haut`, `bas`, `icone`), `carrousel` (`kind` =
+`couverture`/`point`/`fin`, `n`, `total`, `titre`, `texte`, `bouton`), `couverture` (`titre`, `surtitre`, `bg`).
+Image fixe (état final du gabarit, taille libre) : `--out fichier.png --size 1080x1350`. Pour prévisualiser un gabarit, ouvre simplement le
 fichier `.html` dans un navigateur (lecture en boucle) ; pour le rendre à part :
 
 ```bash
@@ -138,9 +144,9 @@ Les cartes `schema` et les annotations sont **dessinées à la main** : chaque t
 | `neon` | traits lumineux aux couleurs du thème | `neon_nuit`, `verre_givre` |
 
 Le dessin est accéléré (effet « timelapse ») pour être fini à 80 % de la scène, et reste
-déterministe (bruit SVG à graine fixe) : deux rendus donnent les mêmes images. Les 29 icônes
+déterministe (bruit SVG à graine fixe) : deux rendus donnent les mêmes images. Les 33 icônes
 dessinables (CV, robot ATS, poubelle, loupe, cible, horloge, ampoule, recruteur, entonnoir,
-trophée…) sont dans `assets/anim/icones.js` : ajouter une icône = ajouter une entrée (traits SVG
+trophée, fantôme, tasse de café, lune, visage qui rit…) sont dans `assets/anim/icones.js` : ajouter une icône = ajouter une entrée (traits SVG
 dans une boîte 100×100 ; JSON strict, validé par `python scripts/catalog.py` et listé à Gemini).
 
 **Annotations au feutre sur les captures** (`assets/anim/annotation.html`, `--annotate` de 3b) :
@@ -159,16 +165,16 @@ récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
 ## Ligne éditoriale : le catalogue (`catalog/`)
 
-Pour éviter que les reels se ressemblent, chaque vidéo combine 4 choix pris dans des fichiers JSON
-éditables (aucun code à toucher pour enrichir) :
+Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre** (sérieux ou humour) et
+4 choix pris dans des fichiers JSON éditables (aucun code à toucher pour enrichir) :
 
 | Fichier | Contenu | Exemples |
 |---|---|---|
-| `catalog/formats.json` | **Structure** de la vidéo (23 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), usage des cartes animées, ton de lecture | voir le tableau ci-dessous |
+| `catalog/formats.json` | **Structure** de la vidéo (34 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
 | `catalog/sujets.json` | **De quoi** parle la vidéo, avec des tags croisés avec les formats | titre du CV, ATS, résultats chiffrés, lettre, entretien, LinkedIn… |
-| `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe… |
-| `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`) | violet nuit, corail, vert, bleu corporate… |
-| `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), scène preuve, phrases bannies | |
+| `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
+| `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`), `registres` (absent = tous) | violet nuit, corail, vert, bleu corporate, bande dessinée pop, sitcom pastel… |
+| `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), mix de registres (`registres` : sérieux 70 % / humour 30 %), règles d'écriture humoristique (`consigne_humour`, `ton_humour`), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), textes Instagram (`instagram`), scène preuve, phrases bannies | |
 
 ### Les capsules (`formats.json`)
 
@@ -197,18 +203,38 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine 4 choix pris da
 | produit | Défi chrono (`defi_chrono`) | chronomètre, CV corrigé en direct |
 | produit | Le recruteur a 6 s (`reaction_recruteur`) | décompte, erreur repérée puis corrigée |
 | produit | Ton CV au scanner ATS (`scanner_ats`) | scan des mots-clés de l'offre (carte scan), puis l'ajout des manquants dans OpusCV |
+| conseil | Débutant, confirmé, expert (`trois_niveaux`) | la même ligne écrite à trois niveaux, jusqu'à la version experte |
+| conseil | Vrai ou faux ? (`vrai_ou_faux`) | quiz en 3 affirmations, réponse révélée après une seconde |
+| conseil | La question que tout le monde se pose (`question_de_tous`) | réponse tranchée d'abord, puis les nuances concrètes |
+| conseil · humour | Le traducteur du jargon (`traducteur_rh`) | « ce qui est écrit » puis « la traduction », pour les offres ou les CV |
+| conseil · humour | Sketch : le candidat et le recruteur (`sketch_duo`) | mini-sketch poussé jusqu'à l'absurde, puis « blague à part », le vrai conseil |
+| conseil · humour | Attentes vs réalité (`attentes_realite`) | ce que le candidat imagine / ce qui se passe vraiment |
+| conseil · humour | Starter pack du CV raté (`starter_pack`) | les éléments typiques, exagérés, puis quoi mettre à la place |
+| conseil · humour | Si ton CV pouvait parler (`si_mon_cv_parlait`) | le CV se plaint à la 1re personne de ce qu'on lui fait subir |
+| conseil · humour | Format mème « Quand… » (`meme_quand`) | 2 ou 3 cartes mème, chacune suivie du vrai réflexe |
+| produit · humour | Moi sous Word vs moi avec OpusCV (`sketch_word_vs_opuscv`) | la galère exagérée, puis la même chose simplement dans OpusCV |
+| produit · humour | Commenté comme un match (`commentateur_sportif`) | l'optimisation du CV commentée en direct façon match |
+
+Registres (`registres` du format) : les capsules marquées « humour » ne sortent qu'en registre humour ;
+`traducteur_rh`, `trois_niveaux`, `vrai_ou_faux`, `question_de_tous` et plusieurs capsules historiques
+(liste d'erreurs, idée reçue, à faire / à ne jamais faire, POV, vu par le recruteur, tier list,
+red flag, trouve l'erreur, message du recruteur, le recruteur a 6 s) existent dans les deux registres.
 
 Tester une capsule précise : `--format tier_list` (champ `format` du workflow).
 
 Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
-- le **format** est pris dans la catégorie la plus en retard sur le mix cible, en évitant les derniers utilisés ;
+- le **registre** (sérieux / humour) est le plus en retard sur `config.json` `registres` (mesuré sur les
+  10 derniers reels) ; il filtre ensuite formats, accroches et thèmes ;
+- le **format** est pris dans la catégorie la plus en retard sur le mix cible (mesuré au sein du registre),
+  en évitant les derniers utilisés ;
 - le **sujet** est choisi par Gemini parmi ceux compatibles avec le format et non traités récemment ;
 - l'**accroche** et le **thème** tournent (tirage pondéré par `poids`, sans les plus récents) ;
 - une accroche trop proche d'une accroche déjà publiée est refusée et Gemini recommence ;
 - tout est historisé dans `output/content_history.json` (persisté entre les runs CI par le cache).
 
 Chaque scénario contient aussi l'**accroche affichée** en grand dès la première image (pas de fondu
-depuis le noir), une **légende** et des **hashtags** (écrits dans `output/final/reel_XX.txt`), une
+depuis le noir), une **légende** et des **hashtags** (écrits dans `output/final/reel_XX.txt`), leurs
+équivalents Instagram et le texte du carrousel (voir « Instagram »), une
 offre d'emploi fictive et un style de CV pour la démo. Les textes sont en français accentué (vérifié :
 un script sans accents est renvoyé à Gemini), car les sous-titres affichent le texte exact.
 
@@ -237,21 +263,60 @@ Les formats à cartes affichent des **cartes animées** à la place des captures
 | `conversation` | `conversation.html` | échange de messages fictif sur un téléphone : « écrit… », bulles qui poussent les précédentes |
 | `scan` | `scan.html` | CV passé sous un rayon laser : mots-clés de l'offre trouvés (vert) / manquants (rouge), score final |
 | `impact` | `impact.html` | typographie cinétique : la phrase-clé claque mot par mot en très grand, mot fort surligné (une par reel) |
+| `meme` | `meme.html` | format mème (registre humour) : la situation en haut, une icône dessinée à la main, la chute qui claque en bas (`haut`, `icone`, `bas`) |
 
-Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--hook pov` (aussi dans le
-workflow). Vérifier le catalogue après modification : `python scripts/catalog.py`.
+Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--hook pov`, `--registre humour`
+(aussi dans le workflow ; un format imposé sans registre prend un des registres qu'il accepte). Vérifier le catalogue après modification : `python scripts/catalog.py`.
 
 Ajouter par exemple un format : une entrée dans `formats.json` avec `id`, `nom`, `categorie`,
 `poids`, `cartes` (`aucune`/`autorisees`/`majoritaires`), `sujets` (tags) et `structure` (consigne
 donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"serie": true`). Option
 `habillage` : surimpression sur tout le reel, ex. `"chrono"` (chronomètre, `habillage_params` :
-`label`, `from`, `down`).
+`label`, `from`, `down`). Options `registres` (`["serieux"]` par défaut, `["humour"]` ou les deux) et
+`ton_humour` (ton de lecture quand un format des deux registres est joué en humour).
+
+### Registre humour
+
+Environ 30 % des reels sont écrits sur un ton humoristique (`config.json` `registres`, ou
+`--registre humour` pour l'imposer). En registre humour :
+- seuls les formats, accroches et thèmes compatibles sont tirés (`registres`) — dont les capsules
+  sketch, attentes vs réalité, starter pack, mème, traducteur du jargon, « si ton CV pouvait parler »,
+  Word vs OpusCV et le match commenté ;
+- Gemini reçoit `consigne_humour` : chaque blague porte un vrai conseil, au moins deux chutes,
+  humour bienveillant (on rit des situations, jamais des personnes ; aucun stéréotype, rien de vulgaire) ;
+  la scène preuve et le CTA restent ;
+- la carte **mème** lui est proposée (situation / icône dessinée / chute) ;
+- la voix lit avec le `ton` du format humoristique, ou `ton_humour` (format ou `config.json`) pour un
+  format des deux registres ;
+- thèmes dédiés : **bande dessinée pop** (`bd_pop`, police Bangers, sous-titres mot à mot) et **sitcom
+  pastel** (`sitcom_pastel`, aussi en sérieux), sur l'ambiance **comique sautillante**.
+
+## Instagram (`--plateformes`)
+
+Le même reel vertical 9:16 sert de Reel Instagram ; `scripts/instagram.py` (appelé par
+`run_pipeline.py` après l'assemblage) produit en plus, à côté de `output/final/reel_XX.mp4` :
+
+| Plateforme | Fichiers | Contenu |
+|---|---|---|
+| `tiktok` | `reel_XX.txt` | légende courte + 4 à 6 hashtags |
+| `instagram` | `reel_XX.instagram.txt` | légende Instagram (1re ligne accrocheuse visible avant « plus », résumé des conseils, question, invitation à enregistrer) + 5 hashtags au plus (`instagram.hashtags_max`) |
+| `instagram` | `reel_XX.couverture.jpg` | couverture 1080×1920 : l'accroche en grand sur une image floutée du reel, texte dans la zone commune aux recadrages de la grille (3:4 et carré) |
+| `carrousel` | `reel_XX_carrousel/01.png…` + `legende.txt` | carrousel 4:5 (1080×1350) : couverture, une idée par diapositive (numéro, barre de progression, « Glisse → »), diapositive finale d'appel à l'action (`instagram.carrousel_fin`) |
+
+Les textes Instagram et les 4 à 8 diapositives du carrousel sont écrits par Gemini avec le scénario
+(`legende_instagram`, `hashtags_instagram`, `carrousel`) ; à défaut (ancien scénario, scénario manuel
+sans ces champs), ils sont dérivés de la légende TikTok et des cartes du reel. Les couleurs et polices
+sont celles du thème du reel. Refaire seulement les déclinaisons d'un reel :
+
+```bash
+python scripts/instagram.py --scripts output/scripts.json --index 1 --final output/final/reel_01.mp4
+```
 
 ## Son et effets (`catalog/audio.json`)
 
-- **Musique** synthétisée (aucun droit à gérer) : 10 ambiances (lo-fi piano, pop énergique,
+- **Musique** synthétisée (aucun droit à gérer) : 11 ambiances (lo-fi piano, pop énergique,
   corporate, tension tech, minimal pulsé, house douce, piano minimal, synthwave, acoustique, trap
-  légère), avec 4 instruments (`nappe`, `piano`, `pluck`, `synth`), basses (`pulse`, `808`, `douce`)
+  légère, comique sautillant), avec 4 instruments (`nappe`, `piano`, `pluck`, `synth`), basses (`pulse`, `808`, `douce`)
   et batterie (kick, snare, hat, clap, shaker). Chaque thème liste ses ambiances compatibles
   (`"ambiances"`), une est tirée par reel sans reprendre les plus récentes. La musique baisse
   automatiquement quand la voix parle.
@@ -265,7 +330,7 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
   (3 max par 10 s ; `whoosh`, `click`, `tick`, `buzz`, `riser` dans `bannis`, aucun son de
   transition). Pour un rendu plus nerveux, retirer des effets de `bannis` dans `audio.json`.
 - **Effets sonores** calés sur le montage (`scripts/sound_design.py`) : impact sur l'accroche et
-  la révélation du suspense, pop à l'apparition d'une carte et de chaque message d'une conversation,
+  la révélation du suspense et la chute d'un mème, pop à l'apparition d'une carte et de chaque message d'une conversation,
   ding (réalité/après, bon score au scan), scintillement sur le CTA, clic de souris du curseur,
   frottement de feutre pendant les dessins et les annotations (`feutre`). Disponibles mais bannis par défaut : whoosh/tick aux
   changements de scène, clics de clavier, buzz, montée de tension. Garde-fous dans `audio.json` : volumes par effet, écart minimal, maximum par 10 s,
@@ -292,8 +357,9 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
   régénère tout (scénarios, voix, captures), même en reprise.
 - **Surimpression score ATS** (`--anims overlay`) : jamais sur l'accroche, une carte, le CTA, la scène
   preuve, ni dans un reel à habillage (chrono), pour ne rien masquer.
-- **13 thèmes**, dont verre givré, éditorial magazine, néon nuit, tableau à la craie et affiche
-  impact (polices libres Playfair Display, Space Grotesk, DM Sans, Kalam, Bebas Neue).
+- **15 thèmes**, dont verre givré, éditorial magazine, néon nuit, tableau à la craie, affiche
+  impact, bande dessinée pop et sitcom pastel (polices libres Playfair Display, Space Grotesk, DM Sans,
+  Kalam, Bebas Neue, Bangers).
 - **Barre de progression** fine en haut de l'écran, aux couleurs du thème (`--no-progress-bar` dans
   `5_assemble.py` pour la retirer).
 - **Fin en boucle** : les dernières images se fondent dans la première (accroche comprise), la
@@ -303,8 +369,8 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
 - **Curseur animé** (`--anims cursor`) : une flèche vient cliquer sur ce bouton, avec un son de
   clic de souris. Avec `highlight`, les deux alternent d'une scène à l'autre.
 - **Transitions par thème** (`transitions` dans `themes.json`, transitions ffmpeg xfade).
-- **8 types de cartes** (choisis par Gemini, voir le tableau des cartes) : texte, chiffre,
-  comparaison, liste, schéma dessiné à la main, conversation, scan ATS, typographie cinétique.
+- **9 types de cartes** (choisis par Gemini, voir le tableau des cartes) : texte, chiffre,
+  comparaison, liste, schéma dessiné à la main, conversation, scan ATS, typographie cinétique, mème.
 - **Dessin à la main** : cartes schéma et annotations au feutre sur les captures (voir « Dessin à
   la main »), sur papier, tableau à craie ou néon selon le thème.
 - **Texture** : grain de film léger et particules lentes sur les cartes et le CTA.
@@ -312,7 +378,7 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
   bleu givré, jaune affiche), le texte posé sur cette couleur (pastilles, accroche, bouton du CTA,
   bulles, mot fort) passe en sombre (`--c1fg` calculé dans `assets/anim/common.js`).
 - **Voix en rotation** (`--voice auto`, `catalog/voix.json`) et **ton de lecture par format**
-  (`ton` dans `formats.json`).
+  (`ton` dans `formats.json`, `ton_humour` en registre humour).
 - **Mode sans voix** (`--sans-voix`, case « sans_voix » du workflow) : texte à l'écran + musique,
   pour le public qui regarde sans le son.
 
@@ -328,7 +394,8 @@ Liste les fonctionnalités qu'un scénario peut montrer (`checklist`, `fonctions
 ## Automatisation via GitHub Actions
 
 Le workflow `.github/workflows/generate-reels.yml` tourne chaque lundi (et manuellement via
-l'onglet Actions, avec les mêmes options que `run_pipeline.py`).
+l'onglet Actions, avec les mêmes options que `run_pipeline.py`, dont `registre` et `plateformes`).
+Les déclinaisons Instagram sont dans l'artefact `output`, sous `final/`.
 
 À configurer dans le repo GitHub (Settings → Secrets and variables → Actions) :
 - **Secrets** : `GEMINI_API_KEY`, `DEMO_EMAIL`, `DEMO_PASSWORD`
@@ -347,8 +414,9 @@ si le premier chargement dépasse le délai habituel.
 
 ## Console web (docs/index.html)
 
-Interface pour lancer le workflow, suivre les runs et regarder/télécharger les
-reels avec leur légende. Page statique : activer GitHub Pages (Settings → Pages →
+Interface pour lancer le workflow (dont le registre et les plateformes), suivre les runs et
+regarder/télécharger les reels avec leur légende, et pour chacun ses déclinaisons Instagram
+(couverture, carrousel à faire défiler, légende Instagram à copier, images à télécharger). Page statique : activer GitHub Pages (Settings → Pages →
 branche `main`, dossier `/docs`, dépôt public ou compte payant) ou ouvrir
 `docs/index.html` en local. Le token reste dans le navigateur.
 

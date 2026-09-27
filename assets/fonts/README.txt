@@ -6,6 +6,7 @@ Polices Google Fonts sous licence SIL Open Font License 1.1 (LICENSE-OFL-*.txt) 
 - Space Grotesk (Florian Karsten) -- instance statique Bold (wght 700)
 - DM Sans (Colophon) -- instance statique Bold (wght 700)
 - Kalam (Indian Type Foundry)
+- Bangers (Vernon Adams) -- police bande dessinee du theme bd_pop
 Instances statiques extraites des polices variables avec
 `fonttools varLib.instancer <police>.ttf wght=700 -o <Police>-Bold.ttf`.
 Ajouter une police : deposer le .ttf ici et la referencer dans catalog/themes.json.

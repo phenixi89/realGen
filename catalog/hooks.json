@@ -1,5 +1,5 @@
 {
-  "_doc": "Styles d'accroche (2 premieres secondes). Un style est tire par reel en evitant les plus recents, et impose a Gemini pour la scene 1 et le texte affiche a l'ecran (accroche_ecran). Ajouter un style = ajouter une entree.",
+  "_doc": "Styles d'accroche (2 premieres secondes). Un style est tire par reel en evitant les plus recents, et impose a Gemini pour la scene 1 et le texte affiche a l'ecran (accroche_ecran). Ajouter un style = ajouter une entree. registres : registres compatibles ('serieux' et/ou 'humour', absent = ['serieux']) : un reel humour ne tire que des accroches marquees 'humour'.",
   "hooks": [
     {
       "id": "question_choc",
@@ -24,7 +24,11 @@
     {
       "id": "pov",
       "consigne": "Format 'POV :' qui met le spectateur dans une situation vécue.",
-      "exemple": "POV : tu as postulé à 50 offres et zéro réponse."
+      "exemple": "POV : tu as postulé à 50 offres et zéro réponse.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "promesse",
@@ -39,7 +43,11 @@
     {
       "id": "liste_numerotee",
       "consigne": "Annoncer un nombre précis d'éléments, pour promettre une vidéo structurée et courte.",
-      "exemple": "3 phrases à supprimer de ton CV aujourd'hui."
+      "exemple": "3 phrases à supprimer de ton CV aujourd'hui.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "interpellation_metier",
@@ -49,7 +57,11 @@
     {
       "id": "avant_apres_express",
       "consigne": "Montrer d'entrée le contraste avant/après en une phrase.",
-      "exemple": "Même expérience, deux CV : un seul décroche l'entretien."
+      "exemple": "Même expérience, deux CV : un seul décroche l'entretien.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "confidence_recruteur",
@@ -59,37 +71,123 @@
     {
       "id": "defi",
       "consigne": "Lancer un défi ou un test au spectateur.",
-      "exemple": "Ouvre ton CV. Si tu vois ce mot, supprime-le."
+      "exemple": "Ouvre ton CV. Si tu vois ce mot, supprime-le.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "stop",
       "consigne": "Un ordre bref qui interrompt le scroll (« Stop. », « Arrête tout. ») suivi immédiatement de la raison concrète.",
-      "exemple": "Stop. Relis la première ligne de ton CV."
+      "exemple": "Stop. Relis la première ligne de ton CV.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "arrete_ca",
       "consigne": "Interdire une habitude très répandue et présentée comme évidente.",
-      "exemple": "Arrête de mettre « dynamique et motivé » sur ton CV."
+      "exemple": "Arrête de mettre « dynamique et motivé » sur ton CV.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "erreur_visible",
       "consigne": "Décrire une erreur que le spectateur a probablement sous les yeux en ce moment, sur son propre CV.",
-      "exemple": "Regarde ton CV : si ton titre est « CV », on a un problème."
+      "exemple": "Regarde ton CV : si ton titre est « CV », on a un problème.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "verdict",
       "consigne": "Un verdict tranché, comme un jury, dès les premiers mots.",
-      "exemple": "Ton CV ? Recalé en six secondes."
+      "exemple": "Ton CV ? Recalé en six secondes.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "scenario_catastrophe",
       "consigne": "Une mini-scène concrète qui finit mal, racontée en une phrase au présent.",
-      "exemple": "Le recruteur ouvre ton CV, fronce les sourcils, et ferme l'onglet."
+      "exemple": "Le recruteur ouvre ton CV, fronce les sourcils, et ferme l'onglet.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     },
     {
       "id": "comparaison_inattendue",
       "consigne": "Comparer le CV à quelque chose d'inattendu du quotidien pour surprendre.",
-      "exemple": "Ton CV, c'est une bande-annonce, pas le film entier."
+      "exemple": "Ton CV, c'est une bande-annonce, pas le film entier.",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
+    },
+    {
+      "id": "autoderision",
+      "registres": [
+        "humour"
+      ],
+      "consigne": "Autodérision : le narrateur se moque gentiment de lui-même dans une situation de candidature que tout le monde a vécue.",
+      "exemple": "Moi qui mets « maîtrise d'Excel » alors que je cherche encore la touche somme."
+    },
+    {
+      "id": "personne_moi",
+      "registres": [
+        "humour"
+      ],
+      "consigne": "Format « Personne : … / Moi : … » qui moque gentiment un réflexe de candidat (écrit sur une seule ligne).",
+      "exemple": "Personne : … Moi sur mon CV : « passionné par les défis »."
+    },
+    {
+      "id": "fausse_pub",
+      "registres": [
+        "humour"
+      ],
+      "consigne": "Parodie d'une publicité enthousiaste qui vante une mauvaise pratique, pour mieux la démonter ensuite.",
+      "exemple": "Nouveau : le CV de quatre pages, pour épuiser le recruteur dès la deuxième."
+    },
+    {
+      "id": "exageration",
+      "registres": [
+        "humour"
+      ],
+      "consigne": "Pousser une situation vécue jusqu'à l'absurde, en une phrase courte et visuelle.",
+      "exemple": "J'ai relu mon CV tellement de fois qu'il me connaît par cœur."
+    },
+    {
+      "id": "replique_absurde",
+      "registres": [
+        "humour"
+      ],
+      "consigne": "Une réplique absurde mais crédible, entre guillemets, d'une offre, d'un recruteur ou d'un candidat.",
+      "exemple": "« Junior, cinq ans d'expérience exigés. » On en parle ?"
+    },
+    {
+      "id": "plot_twist",
+      "registres": [
+        "humour",
+        "serieux"
+      ],
+      "consigne": "Une mini-histoire banale qui se termine par un retournement inattendu, en une ou deux phrases.",
+      "exemple": "Il avait le CV parfait. Sauf son adresse mail."
+    },
+    {
+      "id": "question_ouverte_commentaires",
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "consigne": "Une question qui oblige à réagir, posée comme un débat (pour faire commenter).",
+      "exemple": "CV d'une page ou de deux ? Il y a une bonne réponse."
     }
   ]
 }

@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+  Carte "meme" (registre humour) : format mème classique -- en haut la
+  situation (« Quand le recruteur dit : on vous rappellera »), au milieu une
+  icone dessinee a la main (icones.js, sur papier / tableau / neon selon le
+  theme), en bas la chute qui claque en grandes lettres a PUNCH_AT.
+  Tout reste au-dessus de la zone des sous-titres (82 % de la hauteur).
+  Parametres : haut, bas, icone (id de icones.js), dur + theme.
+  Instants partages avec scripts/sound_design.py : PUNCH_AT (chute).
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card_base.css">
+<style>
+  #stage{position:absolute;inset:0;transform-origin:50% 45%}
+  #haut{position:absolute;left:80px;right:80px;top:250px;height:330px;display:flex;align-items:flex-end;justify-content:center;
+    text-align:center;font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:78px;line-height:1.1}
+  #haut span{display:inline-block;margin:0 .12em}
+  #panel{position:absolute;left:170px;right:170px;top:630px;height:600px;border-radius:18px;overflow:hidden}
+  [data-dessin="papier"] #panel{background:#fbf8f1;box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 0 90px rgba(120,90,40,.12);transform:rotate(1.2deg)}
+  [data-dessin="craie"] #panel{background:#1d3a2c;border:18px solid #6b4a2e;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  [data-dessin="neon"] #panel{background:rgba(0,0,0,.35);border:3px solid color-mix(in srgb,var(--c1) 60%,transparent);box-shadow:0 0 60px color-mix(in srgb,var(--c1) 35%,transparent)}
+  svg{position:absolute;left:0;top:0;overflow:visible}
+  #bas{position:absolute;left:60px;right:60px;top:1270px;height:250px;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:96px;line-height:1.05;text-transform:uppercase;color:var(--chl);
+    -webkit-text-stroke:5px #000;paint-order:stroke fill;text-shadow:0 10px 30px rgba(0,0,0,.55);opacity:0}
+  #flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 70%,color-mix(in srgb,var(--c2) 45%,transparent),transparent 60%);opacity:0}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="grid"></div><div id="flash"></div>
+<div id="stage">
+  <div id="haut"></div>
+  <div id="panel"></div>
+  <svg id="svg" width="1080" height="1920"></svg>
+  <div id="bas"></div>
+</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script src="icones.js"></script>
+<script src="sketch.js"></script>
+<script>
+  const DUR = num("dur", 4);
+  // Constante partagee avec scripts/sound_design.py (meme_punch_at).
+  const PUNCH_AT = Math.min(Math.max(DUR * 0.45, 1.1), 2.4), DRAW_START = 0.35;
+  const haut = frTypo(param("haut", "Quand le recruteur dit : « on vous rappellera »"));
+  const bas = frTypo(param("bas", "Moi, trois mois plus tard"));
+  const icone = param("icone", "fantome");
+  const hautEl = document.getElementById("haut"), basEl = document.getElementById("bas");
+  const hw = haut.split(/ +/).filter(Boolean);
+  const box = document.createElement("div");
+  hw.forEach((w) => { const s = document.createElement("span"); s.textContent = w; box.appendChild(s); });
+  hautEl.appendChild(box);
+  if (haut.length > 70) hautEl.style.fontSize = "62px";
+  basEl.textContent = bas;
+  if (bas.length > 40) basEl.style.fontSize = "74px";
+  const bg = param("bg", ""); let bgReady = null;
+  if (bg) { document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
+
+  Promise.all([FONTS_READY, HAND_READY]).then(() => {
+    const sk = new Sketch(document.getElementById("svg"), { seed: haut.length + bas.length * 3 });
+    sk.icon(ICONES[icone] ? icone : "question", 540, 930, 560, { width: 12 });
+    const draw = sk.draw, natural = draw.duration();
+    draw.timeScale(Math.max(1, natural / Math.max(PUNCH_AT - 0.1 - DRAW_START, 0.6)));
+    const tl = gsap.timeline({ paused: true })
+      .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
+      .from("#haut span", { y: 50, opacity: 0, duration: 0.35, stagger: 0.04, ease: "power3.out" }, 0.05)
+      .from("#panel", { y: 60, opacity: 0, scale: 0.94, duration: 0.35, ease: "power3.out" }, 0.15)
+      .add(draw, DRAW_START)
+      .fromTo("#bas", { opacity: 0, scale: 1.8, rotate: -4 }, { opacity: 1, scale: 1, rotate: -2, duration: 0.3, ease: "back.out(2.4)", immediateRender: false }, PUNCH_AT)
+      .fromTo("#flash", { opacity: 0.9 }, { opacity: 0, duration: 0.45, ease: "power2.out", immediateRender: false }, PUNCH_AT)
+      .fromTo("#stage", { x: -16 }, { x: 0, duration: 0.35, ease: "elastic.out(1.2,.3)", immediateRender: false }, PUNCH_AT)
+      .to("#stage", { scale: 1.03, duration: 2.5, ease: "sine.inOut" }, PUNCH_AT + 0.4);
+    addAmbient(tl, 8);
+    expose(tl, bgReady);
+    const baseSeek = window.seek;
+    window.seek = (t) => { baseSeek(t); sk.updatePen((t - DRAW_START) * draw.timeScale()); };
+    window.DURATION = Math.min(PUNCH_AT + 1.2, Math.max(DUR, PUNCH_AT + 0.6));
+    window.seek(0);
+  });
+</script></body></html>

@@ -62,6 +62,26 @@ on:
         description: "Theme visuel impose (catalog/themes.json), vide = rotation"
         required: false
         default: ""
+      registre:
+        description: "Registre d'ecriture impose (vide = mix de catalog/config.json 'registres')"
+        type: choice
+        options:
+          - ""
+          - serieux
+          - humour
+        required: false
+        default: ""
+      plateformes:
+        description: "Declinaisons : tiktok (legende), instagram (legende + couverture), carrousel (carrousel 4:5)"
+        type: choice
+        options:
+          - all
+          - tiktok
+          - tiktok,instagram
+          - instagram,carrousel
+          - carrousel
+        required: false
+        default: all
       from_step:
         description: "Regenerer a partir de cette etape (et les suivantes), ignore le cache pour elles. Vide = reprise normale."
         type: choice
@@ -158,12 +178,14 @@ jobs:
           INPUT_SCENARIO: ${{ github.event.inputs.scenario }}
           INPUT_FORMAT: ${{ github.event.inputs.format }}
           INPUT_THEME: ${{ github.event.inputs.theme }}
+          INPUT_REGISTRE: ${{ github.event.inputs.registre }}
         run: |
           extra=()
           [ -n "$INPUT_ANGLE" ] && extra+=(--angle "$INPUT_ANGLE")
           [ -n "$INPUT_SCENARIO" ] && extra+=(--scenario "$INPUT_SCENARIO")
           [ -n "$INPUT_FORMAT" ] && extra+=(--format "$INPUT_FORMAT")
           [ -n "$INPUT_THEME" ] && extra+=(--theme "$INPUT_THEME")
+          [ -n "$INPUT_REGISTRE" ] && extra+=(--registre "$INPUT_REGISTRE")
           python scripts/run_pipeline.py \
             --n "${{ github.event.inputs.n || '3' }}" \
             --duration "${{ github.event.inputs.duration || '30' }}" \
@@ -171,6 +193,7 @@ jobs:
             --voice "${{ github.event.inputs.voice || 'auto' }}" \
             --capture-mode "${{ github.event.inputs.capture_mode || 'video' }}" \
             --anims "${{ github.event.inputs.anims || 'none' }}" \
+            --plateformes "${{ github.event.inputs.plateformes || 'all' }}" \
             "${extra[@]}" \
             ${{ github.event.inputs.from_step && format('--from-step {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }} \

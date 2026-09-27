@@ -7,7 +7,8 @@ Catalogue editorial et visuel des reels (dossier catalog/ a la racine) :
     themes.json   couleurs, polices, style des sous-titres, ambiance musicale
     audio.json    ambiances musicales et effets sonores (scripts/audio_gen.py)
     voix.json     voix TTS en rotation et ton de lecture par defaut
-    config.json   mix conseil/produit, anti-redondance
+    config.json   mix conseil/produit, registres serieux/humour, anti-redondance,
+                  textes propres a Instagram
 
 Tout s'enrichit en editant ces JSON, sans toucher au code : ce module les
 charge, les valide (python catalog.py) et fait les choix "intelligents" --
@@ -35,13 +36,17 @@ CARD_STYLES = ("normal", "mythe", "realite", "avant", "apres")
 CARD_EFFECTS = ("standard", "frappe", "suspense")
 # Type de carte -> gabarit assets/anim/<gabarit>.html
 CARD_TYPES = {"texte": "carte", "chiffre": "chiffre", "comparaison": "comparaison", "liste": "liste",
-              "schema": "schema", "conversation": "conversation", "scan": "scan", "impact": "impact"}
+              "schema": "schema", "conversation": "conversation", "scan": "scan", "impact": "impact",
+              "meme": "meme"}
 # Marque dessinee sur la derniere etape d'une carte schema (assets/anim/schema.html).
 SCHEMA_MARKS = ("entoure", "barre", "coche")
 ICONS_JS = ROOT / "assets" / "anim" / "icones.js"
 
 # Fenetre sur laquelle on mesure le mix conseil/produit deja publie.
 MIX_WINDOW = 10
+# Registres d'ecriture : "registres" des formats, accroches et themes ; part
+# cible de chacun dans config.json "registres".
+REGISTRES = ("serieux", "humour")
 
 
 @lru_cache(maxsize=None)
@@ -114,6 +119,18 @@ def get_theme(tid: str | None) -> dict:
     return _by_id(themes(), tid, "theme") if tid else themes()[0]
 
 
+def registres_of(item: dict, default: tuple[str, ...] = ("serieux",)) -> list[str]:
+    """Registres d'un format ou d'une accroche (defaut : serieux) ou d'un theme (defaut : tous)."""
+    return list(item.get("registres") or default)
+
+
+def tone_for(fmt: dict, registre: str | None) -> str:
+    """Ton de lecture (TTS) : celui du format, sa variante humour si le reel est en registre humour."""
+    if registre == "humour" and "serieux" in registres_of(fmt):
+        return fmt.get("ton_humour") or config().get("ton_humour") or fmt.get("ton") or default_tone()
+    return fmt.get("ton") or default_tone()
+
+
 def compatible_sujets(fmt: dict) -> list[dict]:
     tags = set(fmt["sujets"])
     return [s for s in sujets() if s["categorie"] == fmt["categorie"] and tags & set(s["tags"])]
@@ -174,28 +191,50 @@ def weighted_pick(items: list[dict], avoid: list[str], rng: random.Random) -> di
     return rng.choices(pool, weights=[max(float(i.get("poids", 1)), 0.01) for i in pool])[0]
 
 
-def pick_format(history: list[dict], rng: random.Random) -> dict:
+def _most_behind(targets: dict[str, float], recent: list[str], rng: random.Random) -> str:
+    """Valeur la plus en retard sur sa part cible, mesuree sur les elements recents."""
+    total = len(recent) + 1
+    deficit = {k: share - recent.count(k) / total for k, share in targets.items()}
+    return max(deficit, key=lambda k: (deficit[k], rng.random()))
+
+
+def pick_registre(history: list[dict], rng: random.Random, allowed: list[str] | None = None) -> str:
+    """
+    Registre le plus en retard sur config.json "registres" (serieux / humour),
+    parmi `allowed` (ex : registres d'un format impose).
+    """
+    targets = {k: v for k, v in (config().get("registres") or {"serieux": 1.0}).items()
+               if k in REGISTRES and (allowed is None or k in allowed)}
+    if not targets:
+        return (allowed or ["serieux"])[0]
+    return _most_behind(targets, _recent(history, "registre", config().get("historique_registres", MIX_WINDOW)), rng)
+
+
+def pick_format(history: list[dict], rng: random.Random, registre: str | None = None) -> dict:
     """
     Categorie la plus en retard sur le mix cible (config.json "mix"), mesure
-    sur les derniers reels ; puis format pondere de cette categorie, en
+    sur les derniers reels, parmi celles qui ont un format du registre
+    demande ; puis format pondere de cette categorie et de ce registre, en
     evitant les formats utilises tout recemment.
     """
-    mix = config()["mix"]
-    recent_cats = _recent(history, "categorie", MIX_WINDOW)
-    total = len(recent_cats) + 1
-    available = {f["categorie"] for f in formats()}
-    deficit = {cat: share - recent_cats.count(cat) / total for cat, share in mix.items() if cat in available}
-    category = max(deficit, key=lambda cat: (deficit[cat], rng.random()))
-    candidates = [f for f in formats() if f["categorie"] == category]
+    pool = [f for f in formats() if registre is None or registre in registres_of(f)] or formats()
+    available = {f["categorie"] for f in pool}
+    targets = {cat: share for cat, share in config()["mix"].items() if cat in available} or {pool[0]["categorie"]: 1.0}
+    # Mix mesure au sein du registre : sinon les reels humour absorberaient le retard de toute une categorie.
+    same = [h for h in history if registre is None or h.get("registre", "serieux") == registre]
+    category = _most_behind(targets, _recent(same, "categorie", MIX_WINDOW), rng)
+    candidates = [f for f in pool if f["categorie"] == category]
     return weighted_pick(candidates, _recent(history, "format", config()["historique_formats"]), rng)
 
 
-def pick_hook(history: list[dict], rng: random.Random) -> dict:
-    return weighted_pick(hooks(), _recent(history, "hook", config()["historique_hooks"]), rng)
+def pick_hook(history: list[dict], rng: random.Random, registre: str | None = None) -> dict:
+    pool = [h for h in hooks() if registre is None or registre in registres_of(h)] or hooks()
+    return weighted_pick(pool, _recent(history, "hook", config()["historique_hooks"]), rng)
 
 
-def pick_theme(history: list[dict], rng: random.Random) -> dict:
-    return weighted_pick(themes(), _recent(history, "theme", config()["historique_themes"]), rng)
+def pick_theme(history: list[dict], rng: random.Random, registre: str | None = None) -> dict:
+    pool = [t for t in themes() if registre is None or registre in registres_of(t, REGISTRES)] or themes()
+    return weighted_pick(pool, _recent(history, "theme", config()["historique_themes"]), rng)
 
 
 def pick_cta(categorie: str, rng: random.Random) -> tuple[str, dict]:
@@ -276,6 +315,21 @@ def validate_catalog() -> list[str]:
             name = t.get(f"police_{role}")
             if name and not (FONTS_DIR / name).exists():
                 errors.append(f"theme {t['id']} : police {name} absente de assets/fonts/")
+    for kind, items in (("format", formats()), ("accroche", hooks()), ("theme", themes())):
+        for item in items:
+            bad = [r for r in item.get("registres") or [] if r not in REGISTRES]
+            if bad or ("registres" in item and not item["registres"]):
+                errors.append(f"{kind} {item['id']} : registres doit etre une liste non vide parmi {REGISTRES}")
+    for reg in config().get("registres") or {}:
+        if reg not in REGISTRES:
+            errors.append(f"config.json : registre inconnu '{reg}' (choix : {REGISTRES})")
+        elif not any(reg in registres_of(f) for f in formats()):
+            errors.append(f"config.json : registre '{reg}' sans aucun format")
+        elif not any(reg in registres_of(h) for h in hooks()):
+            errors.append(f"config.json : registre '{reg}' sans aucune accroche")
+    insta = config().get("instagram") or {}
+    if insta and not all(isinstance(s, dict) and s.get("titre") for s in insta.get("carrousel_fin") or [{"titre": "x"}]):
+        errors.append("config.json : instagram.carrousel_fin doit lister des {titre, texte}")
     for t in themes():
         tr = t.get("transitions", [])
         if not isinstance(tr, list) or not all(isinstance(x, str) and x for x in tr):
@@ -302,5 +356,5 @@ if __name__ == "__main__":
     print(f"{len(formats())} formats, {len(sujets())} sujets, {len(hooks())} accroches, {len(themes())} themes, "
           f"{len(icons())} icones")
     for f in formats():
-        print(f"  {f['id']:18} [{f['categorie']}] {len(compatible_sujets(f))} sujets compatibles")
+        print(f"  {f['id']:22} [{f['categorie']}/{'+'.join(registres_of(f))}] {len(compatible_sujets(f))} sujets compatibles")
     sys.exit(1 if problems else 0)
