@@ -279,7 +279,8 @@ donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"ser
 
 Environ 30 % des reels sont écrits sur un ton humoristique (`config.json` `registres`, ou
 `--registre humour` pour l'imposer). En registre humour :
-- seuls les formats, accroches et thèmes compatibles sont tirés (`registres`) — dont les capsules
+- seuls les formats, accroches et thèmes compatibles sont tirés (`registres`), les capsules purement
+  humoristiques avec un poids doublé face à celles des deux registres — dont les capsules
   sketch, attentes vs réalité, starter pack, mème, traducteur du jargon, « si ton CV pouvait parler »,
   Word vs OpusCV et le match commenté ;
 - Gemini reçoit `consigne_humour` : chaque blague porte un vrai conseil, au moins deux chutes,
@@ -406,6 +407,11 @@ Les vidéos générées sont récupérables dans l'onglet Actions → run → Ar
 si le premier chargement dépasse le délai habituel.
 
 ## Notes
+
+- La capture ouvre OpusCV **en français** quelle que soit la langue du navigateur (`locale` fr-FR,
+  `Accept-Language` et préférence `locale` posée dans le stockage de l'app, `3_record_demo.py`) :
+  l'app est traduite et Chromium headless annonce l'anglais, ce qui cassait le parcours (libellés
+  français attendus) et aurait filmé une interface anglaise.
 
 - Le modèle TTS Gemini est en statut *preview* côté Google (pas de SLA garanti) — teste régulièrement la qualité de sortie.
 - Whisper tourne en CPU (`--model small` par défaut) ; largement suffisant pour des reels de 15-30s.

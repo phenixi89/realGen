@@ -224,7 +224,12 @@ def pick_format(history: list[dict], rng: random.Random, registre: str | None = 
     same = [h for h in history if registre is None or h.get("registre", "serieux") == registre]
     category = _most_behind(targets, _recent(same, "categorie", MIX_WINDOW), rng)
     candidates = [f for f in pool if f["categorie"] == category]
-    return weighted_pick(candidates, _recent(history, "format", config()["historique_formats"]), rng)
+    if registre == "humour":
+        # Les capsules ecrites pour faire rire l'emportent sur celles des deux registres
+        # (poids double) : un format serieux "joue en humour" fait nettement moins sourire.
+        candidates = [{**f, "poids": float(f.get("poids", 1)) * (2 if registres_of(f) == ["humour"] else 1)}
+                      for f in candidates]
+    return get_format(weighted_pick(candidates, _recent(history, "format", config()["historique_formats"]), rng)["id"])
 
 
 def pick_hook(history: list[dict], rng: random.Random, registre: str | None = None) -> dict:

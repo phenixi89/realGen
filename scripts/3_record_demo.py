@@ -275,7 +275,14 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
                 record_video_dir=str(out_dir),
                 record_video_size=RECORD_SIZE,
             )
+        # Interface d'OpusCV en francais : l'app choisit sa langue d'apres
+        # ?lang=, puis localStorage "locale", puis navigator.language -- et
+        # Chromium headless annonce en-US, ce qui l'ouvrait en anglais (le
+        # parcours, qui cible des libelles francais, echouait au bouton de
+        # connexion). Langue du navigateur ET preference stockee forcees.
+        context_kwargs.update(locale="fr-FR", extra_http_headers={"Accept-Language": "fr-FR,fr;q=0.9"})
         context = await browser.new_context(**context_kwargs)
+        await context.add_init_script("try { localStorage.setItem('locale', 'fr'); } catch (e) {}")
         page = await context.new_page()
         # Capture la console/les erreurs JS de la page : en cas d'echec, ca
         # dit si l'app a plante cote client au lieu de deviner a l'aveugle.
