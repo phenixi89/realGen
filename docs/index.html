@@ -36,6 +36,11 @@ button:disabled{opacity:.5;cursor:default}
 .dot{width:10px;height:10px;border-radius:50%;flex:none}
 .run .info{flex:1;min-width:180px}
 .steps{font-size:12px;color:var(--muted);margin-top:3px}
+.detail{flex-basis:100%;background:var(--bg);border-radius:10px;padding:10px 12px;font-size:13px}
+.step{display:flex;gap:8px;padding:2px 0}.step .d{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+.log{white-space:pre-wrap;word-break:break-word;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--line);padding:8px;border-radius:8px;max-height:420px;overflow:auto;margin:8px 0 0}
+.log .err{color:var(--ko);font-weight:600}
+.warn{color:var(--ko)}
 .reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .reel video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}
 .reel img{width:100%;border-radius:10px;display:block}
@@ -142,13 +147,14 @@ async function catFile(name){
   return r.json();
 }
 async function loadCatalog(){
-  const [f, t, v, s, h] = await Promise.all(["formats","themes","voix","sujets","hooks"].map(n => catFile(n).catch(() => ({}))));
+  const errs = [];
+  const [f, t, v, s, h] = await Promise.all(["formats","themes","voix","sujets","hooks"].map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
   CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [] };
   for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${(x.registres || []).includes("humour") ? ", humour" : ""})`, x.id));
   for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
   for (const x of CAT.voix) $("f_voice").add(new Option(`${x.id} : ${x.description}`, x.id));
   const sw = c => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:middle;background:${esc(c)}"></span>`;
-  $("catalog").innerHTML =
+  $("catalog").innerHTML = (errs.length ? `<p class="warn">Catalogue illisible (${errs.length}/5 fichiers). Cause la plus fréquente : le token n'a pas la permission <b>Contents : Read-only</b> (GitHub → Settings → Developer settings → Fine-grained tokens → le token → Edit → Repository permissions). Les listes Format, Thème et Voix de l'onglet Lancer restent alors vides.</p><pre class="log">${esc(errs.join("\n"))}</pre>` : "") +
     `<h3>Formats (${CAT.formats.length})</h3>` + CAT.formats.map(x => `<p><b>${esc(x.nom)}</b> <span class="tag">${esc(x.categorie)}</span> <span class="tag">${esc((x.registres || ["serieux"]).join(" + "))}</span> <span class="tag">cartes : ${esc(x.cartes)}</span><br><span class="muted">${esc(x.structure)}</span></p>`).join("") +
     `<h3>Thèmes (${CAT.themes.length})</h3>` + CAT.themes.map(x => `<p>${Object.values(x.couleurs || {}).slice(0, 5).map(sw).join(" ")} <b>${esc(x.nom)}</b> <span class="tag">${esc(x.ambiance || "")}</span></p>`).join("") +
     `<h3>Sujets (${CAT.sujets.length})</h3><p>` + CAT.sujets.map(x => `<span class="tag" title="${esc(x.texte)}">${esc(x.id)}</span>`).join("") + `</p>` +
@@ -178,7 +184,7 @@ async function loadRuns(){
     fillRunPick(runs);
     const html = await Promise.all(runs.map(async r => {
       let steps = "";
-      if (r.status !== "completed") {
+      if (r.status !== "completed" && r.id !== openRun) {
         try {
           const { jobs } = await ghJson(`/actions/runs/${r.id}/jobs`);
           const st = (jobs[0]?.steps || []), cur = st.find(s => s.status === "in_progress");
@@ -189,15 +195,49 @@ async function loadRuns(){
       return `<div class="run"><span class="dot" style="background:${COLOR(r)}"></span>
         <div class="info"><b>#${r.run_number}</b> · ${LABEL(r)} · ${mins} min <span class="muted">· ${new Date(r.created_at).toLocaleString("fr-FR")} · ${esc(r.event)}</span>
         <div class="steps">${steps}</div></div>
+        <button onclick="toggleRun(${r.id})">${r.id === openRun ? "▲ Masquer" : "📋 Étapes / logs"}</button>
         ${r.conclusion === "success" ? `<button onclick="openReels(${r.id})">🎬 Reels</button>` : ""}
         ${r.status !== "completed" ? `<button onclick="cancelRun(${r.id})">Annuler</button>` : ""}
-        <a href="${r.html_url}" target="_blank" rel="noopener"><button>GitHub ↗</button></a></div>`;
+        <a href="${r.html_url}" target="_blank" rel="noopener"><button>GitHub ↗</button></a>
+        ${r.id === openRun ? `<div class="detail">${await runDetail(r)}</div>` : ""}</div>`;
     }));
     $("runs").innerHTML = html.join("") || "Aucun run.";
     const active = runs.some(r => r.status !== "completed");
     $("refresh").textContent = active ? "· actualisation auto toutes les 15 s" : "";
     if (active) timer = setInterval(() => !$("tab-runs").classList.contains("hidden") && loadRuns(), 15000);
   } catch (e) { $("runs").textContent = e.message; }
+}
+// Detail d'un run : etapes du job (API jobs) et, job termine, son log.
+// L'API ne fournit le log qu'une fois le job fini ; en direct : bouton GitHub.
+let openRun = null; const LOGS = {};
+const ICON = s => s.status === "in_progress" ? "⏳" : s.status !== "completed" ? "·" : ({success:"✔",failure:"✖",skipped:"⤼",cancelled:"⊘"}[s.conclusion] || "?");
+const dur = (a, b) => { if (!a) return ""; const t = Math.round(((b ? new Date(b) : new Date()) - new Date(a)) / 1000); return t < 60 ? `${t} s` : `${Math.floor(t / 60)} min ${String(t % 60).padStart(2, "0")}`; };
+function toggleRun(id){ openRun = openRun === id ? null : id; loadRuns(); }
+async function runDetail(r){
+  try {
+    const { jobs } = await ghJson(`/actions/runs/${r.id}/jobs`);
+    if (!jobs.length) return `<span class="muted">En attente d'un runner…</span>`;
+    return jobs.map(j => {
+      const st = (j.steps || []).map(s => `<div class="step"><span>${ICON(s)}</span><span>${esc(s.name)}</span><span class="d">${dur(s.started_at, s.completed_at)}</span></div>`).join("");
+      const logBtn = j.status === "completed"
+        ? `<div class="row" style="margin-top:8px"><button onclick="loadLog(${j.id}, ${r.id})">📄 ${LOGS[j.id] ? "Recharger" : "Afficher"} le log</button></div>${LOGS[j.id] ? logHtml(LOGS[j.id], j.conclusion !== "success") : ""}`
+        : `<p class="muted" style="margin:8px 0 0">Log disponible à la fin du job ; en direct : bouton GitHub ↗.</p>`;
+      return `<b>${esc(j.name)}</b> <span class="muted">· ${dur(j.started_at, j.completed_at)}</span>${st}${logBtn}`;
+    }).join("<hr>");
+  } catch (e) { return esc(e.message); }
+}
+function logHtml(txt, failed){
+  // Horodatage ISO en tete de ligne retire ; lignes d'erreur en rouge.
+  const lines = txt.replace(/\r/g, "").split("\n").map(l => l.replace(/^\d{4}-\d\d-\d\dT[\d:.]+Z /, ""));
+  const tail = failed ? lines.slice(-200) : lines;
+  const body = tail.map(l => /##\[error\]|Traceback|Error:/.test(l) ? `<span class="err">${esc(l)}</span>` : esc(l)).join("\n");
+  return (failed && lines.length > 200 ? `<p class="muted" style="margin:8px 0 0">Échec : 200 dernières lignes sur ${lines.length}.</p>` : "") + `<pre class="log">${body}</pre>`;
+}
+async function loadLog(jobId, runId){
+  try { toast("Téléchargement du log…", 2000); LOGS[jobId] = await (await gh(`/actions/jobs/${jobId}/logs`)).text(); }
+  catch (e) { return toast(e.message, 8000); }
+  await loadRuns();
+  const pre = document.querySelector(".detail .log"); if (pre) pre.scrollTop = pre.scrollHeight;
 }
 async function cancelRun(id){ if (!confirm("Annuler ce run ?")) return; try { await gh(`/actions/runs/${id}/cancel`, { method: "POST" }); toast("Annulation demandée"); loadRuns(); } catch (e) { toast(e.message); } }
 

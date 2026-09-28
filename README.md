@@ -469,11 +469,18 @@ si le premier chargement dépasse le délai habituel.
 
 ## Console web (docs/index.html)
 
-Interface pour lancer le workflow (dont le registre et les plateformes), suivre les runs et
+Interface pour lancer le workflow (dont le registre et les plateformes), suivre les runs
+(bouton « 📋 Étapes / logs » : étapes du job avec état et durée, rafraîchies toutes les 15 s ;
+log du job une fois celui-ci terminé, limité aux 200 dernières lignes pour un échec, erreurs
+en rouge — l'API GitHub ne donne pas le log en direct, pour cela le bouton « GitHub ↗ ») et
 regarder/télécharger les reels avec leur légende, et pour chacun ses déclinaisons Instagram
 (couverture, carrousel à faire défiler, légende Instagram à copier, images à télécharger). Page statique : activer GitHub Pages (Settings → Pages →
 branche `main`, dossier `/docs`, dépôt public ou compte payant) ou ouvrir
-`docs/index.html` en local. Le token reste dans le navigateur.
+`docs/index.html` en local dans un navigateur. Le token reste dans le navigateur. L'aperçu de
+fichiers de l'app Claude (ou d'un téléphone) bloque les appels réseau (« Failed to fetch ») :
+ouvrir la page dans Chrome, Firefox ou Edge. Si l'onglet Catalogue (et les listes Format,
+Thème, Voix) reste vide, la console affiche l'erreur : le plus souvent, le token n'a pas la
+permission *Contents : Read-only*.
 
 ### Créer le token GitHub (fine-grained)
 
