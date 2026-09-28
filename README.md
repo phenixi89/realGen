@@ -171,7 +171,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 | Fichier | Contenu | Exemples |
 |---|---|---|
 | `catalog/formats.json` | **Structure** de la vidéo (34 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
-| `catalog/sujets.json` | **De quoi** parle la vidéo, avec des tags croisés avec les formats | titre du CV, ATS, résultats chiffrés, lettre, entretien, LinkedIn… |
+| `catalog/sujets.json` | **De quoi** parle la vidéo (95 sujets), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, familles produit… |
 | `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
 | `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`), `registres` (absent = tous) | violet nuit, corail, vert, bleu corporate, bande dessinée pop, sitcom pastel… |
 | `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), mix de registres (`registres` : sérieux 70 % / humour 30 %), règles d'écriture humoristique (`consigne_humour`, `ton_humour`), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), textes Instagram (`instagram`), scène preuve, phrases bannies | |
@@ -227,7 +227,12 @@ Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
   10 derniers reels) ; il filtre ensuite formats, accroches et thèmes ;
 - le **format** est pris dans la catégorie la plus en retard sur le mix cible (mesuré au sein du registre),
   en évitant les derniers utilisés ;
-- le **sujet** est choisi par Gemini parmi ceux compatibles avec le format et non traités récemment ;
+- la **famille** du sujet (`famille` dans `sujets.json`) tourne : la moins récemment traitée passe en
+  premier, celles des `historique_familles` (5) derniers reels sont écartées — l'ATS ou le chiffrage des
+  résultats ne reviennent donc plus reel après reel ;
+- le **sujet** est choisi par Gemini dans cette famille, parmi ceux compatibles avec le format et non traités
+  récemment ; hors des familles ATS / rédaction, le prompt lui interdit de dériver vers l'ATS, les mots-clés
+  ou le chiffrage des résultats ;
 - l'**accroche** et le **thème** tournent (tirage pondéré par `poids`, sans les plus récents) ;
 - une accroche trop proche d'une accroche déjà publiée est refusée et Gemini recommence ;
 - tout est historisé dans `output/content_history.json` (persisté entre les runs CI par le cache).

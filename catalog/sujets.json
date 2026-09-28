@@ -1,5 +1,5 @@
 {
-  "_doc": "Sujets des reels. categorie : 'conseil' ou 'produit' (doit correspondre a la categorie du format). tags : croises avec formats.json 'sujets'. Un sujet est choisi par Gemini parmi ceux compatibles avec le format, en evitant les plus recents. Ajouter un sujet = ajouter une entree (id unique).",
+  "_doc": "Sujets des reels. categorie : 'conseil' ou 'produit' (doit correspondre a la categorie du format). tags : croises avec formats.json 'sujets'. Un sujet est choisi par Gemini parmi ceux compatibles avec le format, en evitant les plus recents. Ajouter un sujet = ajouter une entree (id unique). famille : grand theme du sujet (ats_mots_cles, redaction_cv, forme_cv, parcours, candidature, lettre, entretien, linkedin, recherche, produit_*) : les familles tournent (la moins recemment traitee passe en premier, config.json historique_familles), pour qu'un theme ne revienne pas reel apres reel.",
   "sujets": [
     {
       "id": "avant_apres_produit",
@@ -7,7 +7,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "avant/après : CV mal fait vs CV optimisé par l'outil (points à corriger, relecture, aperçu final)"
+      "texte": "avant/après : CV mal fait vs CV optimisé par l'outil (points à corriger, relecture, aperçu final)",
+      "famille": "produit_analyse"
     },
     {
       "id": "trois_erreurs_produit",
@@ -15,7 +16,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "3 erreurs de CV que les recruteurs détestent, + comment l'outil les corrige"
+      "texte": "3 erreurs de CV que les recruteurs détestent, + comment l'outil les corrige",
+      "famille": "produit_analyse"
     },
     {
       "id": "un_cv_par_offre",
@@ -23,7 +25,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "un CV par offre : adapter son CV et sa lettre de motivation à chaque candidature en quelques secondes"
+      "texte": "un CV par offre : adapter son CV et sa lettre de motivation à chaque candidature en quelques secondes",
+      "famille": "produit_candidature"
     },
     {
       "id": "temoignage_ats",
@@ -31,7 +34,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "témoignage type : 'mon CV était invisible pour les ATS, maintenant je décroche des entretiens'"
+      "texte": "témoignage type : 'mon CV était invisible pour les ATS, maintenant je décroche des entretiens'",
+      "famille": "produit_analyse"
     },
     {
       "id": "comparatif_main_ia",
@@ -39,7 +43,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "comparatif : réécrire son CV à la main (long, stressant) vs l'optimiser avec l'IA (rapide)"
+      "texte": "comparatif : réécrire son CV à la main (long, stressant) vs l'optimiser avec l'IA (rapide)",
+      "famille": "produit_analyse"
     },
     {
       "id": "themes_design",
@@ -47,7 +52,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "33 thèmes de mise en page : un CV qui sort du lot sans sacrifier la lisibilité ATS"
+      "texte": "33 thèmes de mise en page : un CV qui sort du lot sans sacrifier la lisibilité ATS",
+      "famille": "produit_mise_en_page"
     },
     {
       "id": "edition_envoi",
@@ -55,7 +61,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "de l'édition à l'envoi : relecture, aperçu PDF fidèle, partage par lien"
+      "texte": "de l'édition à l'envoi : relecture, aperçu PDF fidèle, partage par lien",
+      "famille": "produit_mise_en_page"
     },
     {
       "id": "kf_lettre",
@@ -63,7 +70,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : la lettre de motivation générée par l'IA, calée sur l'offre et le CV, en quelques secondes"
+      "texte": "killer feature : la lettre de motivation générée par l'IA, calée sur l'offre et le CV, en quelques secondes",
+      "famille": "produit_candidature"
     },
     {
       "id": "kf_entretien",
@@ -71,7 +79,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : la simulation d'entretien IA, qui anticipe les questions du recruteur avant le grand jour"
+      "texte": "killer feature : la simulation d'entretien IA, qui anticipe les questions du recruteur avant le grand jour",
+      "famille": "produit_candidature"
     },
     {
       "id": "kf_partage",
@@ -79,7 +88,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : partager son CV par un simple lien, sans pièce jointe ni compte côté recruteur"
+      "texte": "killer feature : partager son CV par un simple lien, sans pièce jointe ni compte côté recruteur",
+      "famille": "produit_mise_en_page"
     },
     {
       "id": "kf_glisser_deposer",
@@ -87,7 +97,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : réorganiser tout son CV par glisser-déposer, sans mise en page à refaire à la main"
+      "texte": "killer feature : réorganiser tout son CV par glisser-déposer, sans mise en page à refaire à la main",
+      "famille": "produit_mise_en_page"
     },
     {
       "id": "kf_apercu_pdf",
@@ -95,7 +106,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : l'aperçu PDF fidèle en un clic, zéro surprise à l'impression ou à l'envoi"
+      "texte": "killer feature : l'aperçu PDF fidèle en un clic, zéro surprise à l'impression ou à l'envoi",
+      "famille": "produit_mise_en_page"
     },
     {
       "id": "ats_fonctionnement",
@@ -103,7 +115,8 @@
       "tags": [
         "ats"
       ],
-      "texte": "comment un logiciel ATS lit (et rejette) un CV avant qu'un humain le voie"
+      "texte": "comment un logiciel ATS lit (et rejette) un CV avant qu'un humain le voie",
+      "famille": "ats_mots_cles"
     },
     {
       "id": "ats_mise_en_page",
@@ -112,7 +125,8 @@
         "ats",
         "cv"
       ],
-      "texte": "les mises en page qui cassent la lecture ATS : colonnes, tableaux, icônes, texte dans des images"
+      "texte": "les mises en page qui cassent la lecture ATS : colonnes, tableaux, icônes, texte dans des images",
+      "famille": "ats_mots_cles"
     },
     {
       "id": "mots_cles_offre",
@@ -121,7 +135,8 @@
         "ats",
         "candidature"
       ],
-      "texte": "reprendre les bons mots-clés de l'offre dans son CV sans faire de copier-coller"
+      "texte": "reprendre les bons mots-clés de l'offre dans son CV sans faire de copier-coller",
+      "famille": "ats_mots_cles"
     },
     {
       "id": "titre_cv",
@@ -129,7 +144,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "le titre du CV : la ligne la plus lue, et la plus souvent ratée"
+      "texte": "le titre du CV : la ligne la plus lue, et la plus souvent ratée",
+      "famille": "redaction_cv"
     },
     {
       "id": "resultats_chiffres",
@@ -137,7 +153,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "transformer ses missions en résultats chiffrés (verbes d'action, impact, chiffres)"
+      "texte": "transformer ses missions en résultats chiffrés (verbes d'action, impact, chiffres)",
+      "famille": "redaction_cv"
     },
     {
       "id": "verbes_faibles",
@@ -146,7 +163,8 @@
         "cv",
         "lettre"
       ],
-      "texte": "les mots et formules creuses à bannir d'un CV (dynamique, motivé, force de proposition...)"
+      "texte": "les mots et formules creuses à bannir d'un CV (dynamique, motivé, force de proposition...)",
+      "famille": "redaction_cv"
     },
     {
       "id": "photo_cv",
@@ -154,7 +172,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "photo sur le CV en France : quand la mettre, quand l'enlever"
+      "texte": "photo sur le CV en France : quand la mettre, quand l'enlever",
+      "famille": "forme_cv"
     },
     {
       "id": "longueur_cv",
@@ -162,7 +181,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "une ou deux pages : la vraie règle selon l'expérience"
+      "texte": "une ou deux pages : la vraie règle selon l'expérience",
+      "famille": "forme_cv"
     },
     {
       "id": "trous_cv",
@@ -171,7 +191,8 @@
         "cv",
         "entretien"
       ],
-      "texte": "expliquer un trou dans son CV sans se justifier"
+      "texte": "expliquer un trou dans son CV sans se justifier",
+      "famille": "parcours"
     },
     {
       "id": "reconversion",
@@ -180,7 +201,8 @@
         "cv",
         "candidature"
       ],
-      "texte": "faire un CV de reconversion : mettre en avant les compétences transférables"
+      "texte": "faire un CV de reconversion : mettre en avant les compétences transférables",
+      "famille": "parcours"
     },
     {
       "id": "competences",
@@ -189,7 +211,8 @@
         "cv",
         "ats"
       ],
-      "texte": "la section compétences : hard skills, soft skills et ce que les recruteurs cherchent vraiment"
+      "texte": "la section compétences : hard skills, soft skills et ce que les recruteurs cherchent vraiment",
+      "famille": "redaction_cv"
     },
     {
       "id": "lettre_structure",
@@ -197,7 +220,8 @@
       "tags": [
         "lettre"
       ],
-      "texte": "une lettre de motivation courte qui se fait lire : la structure vous / moi / nous"
+      "texte": "une lettre de motivation courte qui se fait lire : la structure vous / moi / nous",
+      "famille": "lettre"
     },
     {
       "id": "entretien_defauts",
@@ -205,7 +229,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "répondre à 'quels sont vos défauts ?' sans réponse bateau"
+      "texte": "répondre à 'quels sont vos défauts ?' sans réponse bateau",
+      "famille": "entretien"
     },
     {
       "id": "entretien_presentez_vous",
@@ -213,7 +238,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "'présentez-vous' : le pitch de 60 secondes qui donne envie"
+      "texte": "'présentez-vous' : le pitch de 60 secondes qui donne envie",
+      "famille": "entretien"
     },
     {
       "id": "relance",
@@ -221,7 +247,8 @@
       "tags": [
         "candidature"
       ],
-      "texte": "relancer après une candidature sans réponse : quand et comment"
+      "texte": "relancer après une candidature sans réponse : quand et comment",
+      "famille": "candidature"
     },
     {
       "id": "linkedin_coherence",
@@ -230,7 +257,8 @@
         "linkedin",
         "cv"
       ],
-      "texte": "rendre son profil LinkedIn cohérent avec son CV (titre, résumé, expériences)"
+      "texte": "rendre son profil LinkedIn cohérent avec son CV (titre, résumé, expériences)",
+      "famille": "linkedin"
     },
     {
       "id": "candidature_masse",
@@ -238,7 +266,8 @@
       "tags": [
         "candidature"
       ],
-      "texte": "pourquoi envoyer le même CV à 50 offres ne marche pas"
+      "texte": "pourquoi envoyer le même CV à 50 offres ne marche pas",
+      "famille": "candidature"
     },
     {
       "id": "premier_emploi",
@@ -247,7 +276,8 @@
         "cv",
         "candidature"
       ],
-      "texte": "premier emploi ou stage : remplir un CV quand on n'a (presque) pas d'expérience"
+      "texte": "premier emploi ou stage : remplir un CV quand on n'a (presque) pas d'expérience",
+      "famille": "parcours"
     },
     {
       "id": "alternance",
@@ -256,7 +286,8 @@
         "cv",
         "candidature"
       ],
-      "texte": "CV et candidature pour une alternance : ce que les écoles et entreprises attendent"
+      "texte": "CV et candidature pour une alternance : ce que les écoles et entreprises attendent",
+      "famille": "parcours"
     },
     {
       "id": "senior",
@@ -265,7 +296,8 @@
         "cv",
         "candidature"
       ],
-      "texte": "CV après 45 ans : valoriser l'expérience sans paraître dépassé"
+      "texte": "CV après 45 ans : valoriser l'expérience sans paraître dépassé",
+      "famille": "parcours"
     },
     {
       "id": "freelance_vers_cdi",
@@ -274,7 +306,8 @@
         "cv",
         "reconversion"
       ],
-      "texte": "passer de freelance à CDI : présenter ses missions sans effrayer le recruteur"
+      "texte": "passer de freelance à CDI : présenter ses missions sans effrayer le recruteur",
+      "famille": "parcours"
     },
     {
       "id": "soft_skills_preuves",
@@ -283,7 +316,8 @@
         "cv",
         "entretien"
       ],
-      "texte": "prouver ses soft skills avec des exemples concrets au lieu de les lister"
+      "texte": "prouver ses soft skills avec des exemples concrets au lieu de les lister",
+      "famille": "redaction_cv"
     },
     {
       "id": "centres_interet",
@@ -291,7 +325,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "la rubrique centres d'intérêt : utile ou à supprimer ?"
+      "texte": "la rubrique centres d'intérêt : utile ou à supprimer ?",
+      "famille": "forme_cv"
     },
     {
       "id": "email_candidature",
@@ -300,7 +335,8 @@
         "candidature",
         "lettre"
       ],
-      "texte": "le mail d'envoi de candidature : objet, corps et pièce jointe qui donnent envie d'ouvrir"
+      "texte": "le mail d'envoi de candidature : objet, corps et pièce jointe qui donnent envie d'ouvrir",
+      "famille": "candidature"
     },
     {
       "id": "nom_fichier",
@@ -309,7 +345,8 @@
         "ats",
         "candidature"
       ],
-      "texte": "le nom du fichier et le format PDF : le détail qui fait pro (ou pas)"
+      "texte": "le nom du fichier et le format PDF : le détail qui fait pro (ou pas)",
+      "famille": "candidature"
     },
     {
       "id": "candidature_spontanee",
@@ -318,7 +355,8 @@
         "candidature",
         "lettre"
       ],
-      "texte": "réussir une candidature spontanée qui obtient une réponse"
+      "texte": "réussir une candidature spontanée qui obtient une réponse",
+      "famille": "candidature"
     },
     {
       "id": "entretien_pretentions",
@@ -326,7 +364,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "répondre à la question des prétentions salariales sans se sous-vendre"
+      "texte": "répondre à la question des prétentions salariales sans se sous-vendre",
+      "famille": "entretien"
     },
     {
       "id": "entretien_questions_fin",
@@ -334,7 +373,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "les questions à poser en fin d'entretien pour marquer des points"
+      "texte": "les questions à poser en fin d'entretien pour marquer des points",
+      "famille": "entretien"
     },
     {
       "id": "entretien_visio",
@@ -342,7 +382,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "entretien en visio : les erreurs techniques et de posture qui coûtent cher"
+      "texte": "entretien en visio : les erreurs techniques et de posture qui coûtent cher",
+      "famille": "entretien"
     },
     {
       "id": "linkedin_titre",
@@ -350,7 +391,8 @@
       "tags": [
         "linkedin"
       ],
-      "texte": "le titre LinkedIn qui attire les recruteurs (et les mots-clés à y mettre)"
+      "texte": "le titre LinkedIn qui attire les recruteurs (et les mots-clés à y mettre)",
+      "famille": "linkedin"
     },
     {
       "id": "linkedin_recommandations",
@@ -359,7 +401,8 @@
         "linkedin",
         "candidature"
       ],
-      "texte": "obtenir des recommandations LinkedIn qui pèsent vraiment"
+      "texte": "obtenir des recommandations LinkedIn qui pèsent vraiment",
+      "famille": "linkedin"
     },
     {
       "id": "orthographe",
@@ -368,7 +411,8 @@
         "cv",
         "lettre"
       ],
-      "texte": "les fautes d'orthographe qui éliminent un CV, et comment les éviter"
+      "texte": "les fautes d'orthographe qui éliminent un CV, et comment les éviter",
+      "famille": "redaction_cv"
     },
     {
       "id": "dates_format",
@@ -377,7 +421,8 @@
         "cv",
         "ats"
       ],
-      "texte": "dates, intitulés de poste et ordre chronologique : les conventions que les ATS comprennent"
+      "texte": "dates, intitulés de poste et ordre chronologique : les conventions que les ATS comprennent",
+      "famille": "ats_mots_cles"
     },
     {
       "id": "cv_ia_detecte",
@@ -386,7 +431,8 @@
         "cv",
         "lettre"
       ],
-      "texte": "CV et lettre écrits par IA : ce qui se voit et comment garder ta voix"
+      "texte": "CV et lettre écrits par IA : ce qui se voit et comment garder ta voix",
+      "famille": "redaction_cv"
     },
     {
       "id": "kf_relecture",
@@ -394,7 +440,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : la relecture orthographique et de style en un clic"
+      "texte": "killer feature : la relecture orthographique et de style en un clic",
+      "famille": "produit_analyse"
     },
     {
       "id": "kf_checklist",
@@ -402,7 +449,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : la checklist qui liste par priorité tout ce qui bloque ton CV"
+      "texte": "killer feature : la checklist qui liste par priorité tout ce qui bloque ton CV",
+      "famille": "produit_analyse"
     },
     {
       "id": "kf_adapter_offre",
@@ -410,7 +458,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : coller une offre et obtenir un CV adapté à ses mots-clés"
+      "texte": "killer feature : coller une offre et obtenir un CV adapté à ses mots-clés",
+      "famille": "produit_candidature"
     },
     {
       "id": "accroche_cv",
@@ -418,7 +467,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "la phrase d'accroche (profil) en haut du CV : la transformer en promesse concrète pour le poste"
+      "texte": "la phrase d'accroche (profil) en haut du CV : la transformer en promesse concrète pour le poste",
+      "famille": "redaction_cv"
     },
     {
       "id": "competences_techniques",
@@ -427,7 +477,8 @@
         "cv",
         "ats"
       ],
-      "texte": "présenter ses compétences techniques : niveaux, preuves, mots exacts de l'offre"
+      "texte": "présenter ses compétences techniques : niveaux, preuves, mots exacts de l'offre",
+      "famille": "redaction_cv"
     },
     {
       "id": "interim_missions_courtes",
@@ -435,7 +486,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "valoriser des missions courtes, de l'intérim ou des CDD sans avoir l'air instable"
+      "texte": "valoriser des missions courtes, de l'intérim ou des CDD sans avoir l'air instable",
+      "famille": "parcours"
     },
     {
       "id": "benevolat",
@@ -443,7 +495,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "faire compter le bénévolat et les projets perso comme de la vraie expérience"
+      "texte": "faire compter le bénévolat et les projets perso comme de la vraie expérience",
+      "famille": "parcours"
     },
     {
       "id": "acronymes_jargon",
@@ -452,7 +505,8 @@
         "cv",
         "ats"
       ],
-      "texte": "acronymes et jargon interne : ce que l'ATS et le recruteur ne comprennent pas"
+      "texte": "acronymes et jargon interne : ce que l'ATS et le recruteur ne comprennent pas",
+      "famille": "ats_mots_cles"
     },
     {
       "id": "langues_niveaux",
@@ -460,7 +514,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "indiquer ses niveaux de langue de façon crédible (CECRL, usages concrets)"
+      "texte": "indiquer ses niveaux de langue de façon crédible (CECRL, usages concrets)",
+      "famille": "forme_cv"
     },
     {
       "id": "diplome_place",
@@ -468,7 +523,8 @@
       "tags": [
         "cv"
       ],
-      "texte": "où placer la formation selon son expérience, et quand l'alléger"
+      "texte": "où placer la formation selon son expérience, et quand l'alléger",
+      "famille": "forme_cv"
     },
     {
       "id": "objet_mail",
@@ -476,7 +532,8 @@
       "tags": [
         "candidature"
       ],
-      "texte": "l'objet et les deux premières lignes du mail de candidature"
+      "texte": "l'objet et les deux premières lignes du mail de candidature",
+      "famille": "candidature"
     },
     {
       "id": "reseau_cooptation",
@@ -484,7 +541,8 @@
       "tags": [
         "candidature"
       ],
-      "texte": "passer par le réseau et la cooptation plutôt que postuler à froid"
+      "texte": "passer par le réseau et la cooptation plutôt que postuler à froid",
+      "famille": "candidature"
     },
     {
       "id": "jobboards_formulaires",
@@ -493,7 +551,8 @@
         "candidature",
         "ats"
       ],
-      "texte": "les formulaires des jobboards qui réécrivent ton CV : pièges et parades"
+      "texte": "les formulaires des jobboards qui réécrivent ton CV : pièges et parades",
+      "famille": "ats_mots_cles"
     },
     {
       "id": "entretien_echec",
@@ -501,7 +560,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "répondre à « parlez-moi d'un échec » sans se griller"
+      "texte": "répondre à « parlez-moi d'un échec » sans se griller",
+      "famille": "entretien"
     },
     {
       "id": "entretien_pourquoi_nous",
@@ -509,7 +569,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "préparer « pourquoi nous ? » avec une vraie recherche sur l'entreprise"
+      "texte": "préparer « pourquoi nous ? » avec une vraie recherche sur l'entreprise",
+      "famille": "entretien"
     },
     {
       "id": "entretien_telephonique",
@@ -517,7 +578,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "réussir le premier appel du recruteur, souvent imprévu"
+      "texte": "réussir le premier appel du recruteur, souvent imprévu",
+      "famille": "entretien"
     },
     {
       "id": "linkedin_open_to_work",
@@ -525,7 +587,8 @@
       "tags": [
         "linkedin"
       ],
-      "texte": "le badge Open to Work et les réglages de visibilité côté recruteurs"
+      "texte": "le badge Open to Work et les réglages de visibilité côté recruteurs",
+      "famille": "linkedin"
     },
     {
       "id": "lettre_premiere_phrase",
@@ -533,7 +596,8 @@
       "tags": [
         "lettre"
       ],
-      "texte": "la première phrase de la lettre de motivation : bannir « Madame, Monsieur, je me permets »"
+      "texte": "la première phrase de la lettre de motivation : bannir « Madame, Monsieur, je me permets »",
+      "famille": "lettre"
     },
     {
       "id": "reconversion_competences_transferables",
@@ -542,7 +606,8 @@
         "reconversion",
         "candidature"
       ],
-      "texte": "traduire ses compétences transférables dans le vocabulaire du nouveau métier"
+      "texte": "traduire ses compétences transférables dans le vocabulaire du nouveau métier",
+      "famille": "parcours"
     },
     {
       "id": "cv_international",
@@ -551,7 +616,8 @@
         "cv",
         "candidature"
       ],
-      "texte": "postuler à l'étranger : ce qui change sur un CV (photo, âge, format)"
+      "texte": "postuler à l'étranger : ce qui change sur un CV (photo, âge, format)",
+      "famille": "forme_cv"
     },
     {
       "id": "kf_score_ats",
@@ -559,7 +625,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : le score ATS et ce qui le fait monter, montré point par point"
+      "texte": "killer feature : le score ATS et ce qui le fait monter, montré point par point",
+      "famille": "produit_analyse"
     },
     {
       "id": "kf_themes_pdf",
@@ -567,7 +634,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : passer d'un CV Word banal à un PDF stylisé en changeant de thème"
+      "texte": "killer feature : passer d'un CV Word banal à un PDF stylisé en changeant de thème",
+      "famille": "produit_mise_en_page"
     },
     {
       "id": "une_offre_trois_minutes",
@@ -575,7 +643,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "une offre repérée, un CV adapté et une lettre prête en quelques minutes"
+      "texte": "une offre repérée, un CV adapté et une lettre prête en quelques minutes",
+      "famille": "produit_candidature"
     },
     {
       "id": "erreur_invisible_produit",
@@ -583,7 +652,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "l'erreur que tu ne vois pas sur ton propre CV, et comment l'outil la repère"
+      "texte": "l'erreur que tu ne vois pas sur ton propre CV, et comment l'outil la repère",
+      "famille": "produit_analyse"
     },
     {
       "id": "etudiant_premier_cv",
@@ -591,7 +661,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "un étudiant qui fait son premier CV avec l'outil, de zéro au PDF"
+      "texte": "un étudiant qui fait son premier CV avec l'outil, de zéro au PDF",
+      "famille": "produit_mise_en_page"
     },
     {
       "id": "jargon_offres",
@@ -599,7 +670,8 @@
       "tags": [
         "candidature"
       ],
-      "texte": "décoder le jargon des offres d'emploi (« environnement dynamique », « esprit start-up », « poste évolutif ») et quoi en faire dans sa candidature"
+      "texte": "décoder le jargon des offres d'emploi (« environnement dynamique », « esprit start-up », « poste évolutif ») et quoi en faire dans sa candidature",
+      "famille": "candidature"
     },
     {
       "id": "ghosting_recruteur",
@@ -607,7 +679,8 @@
       "tags": [
         "candidature"
       ],
-      "texte": "quand le recruteur ne donne plus de nouvelles : quand et comment relancer sans être lourd"
+      "texte": "quand le recruteur ne donne plus de nouvelles : quand et comment relancer sans être lourd",
+      "famille": "candidature"
     },
     {
       "id": "competences_bateau",
@@ -616,7 +689,8 @@
         "cv",
         "ats"
       ],
-      "texte": "les compétences bateau (« Pack Office », « rigoureux », « travail en équipe ») : ce qu'elles disent vraiment et comment les remplacer"
+      "texte": "les compétences bateau (« Pack Office », « rigoureux », « travail en équipe ») : ce qu'elles disent vraiment et comment les remplacer",
+      "famille": "redaction_cv"
     },
     {
       "id": "enjoliver_mentir",
@@ -625,7 +699,8 @@
         "cv",
         "entretien"
       ],
-      "texte": "enjoliver ou mentir sur son CV : où est la limite, et comment valoriser sans inventer"
+      "texte": "enjoliver ou mentir sur son CV : où est la limite, et comment valoriser sans inventer",
+      "famille": "redaction_cv"
     },
     {
       "id": "cv_la_veille",
@@ -634,7 +709,8 @@
         "cv",
         "candidature"
       ],
-      "texte": "le CV fait la veille à minuit : les erreurs typiques de l'urgence et la vérification en 5 minutes"
+      "texte": "le CV fait la veille à minuit : les erreurs typiques de l'urgence et la vérification en 5 minutes",
+      "famille": "forme_cv"
     },
     {
       "id": "questions_pieges_entretien",
@@ -642,7 +718,8 @@
       "tags": [
         "entretien"
       ],
-      "texte": "les questions pièges d'entretien (« Où vous voyez-vous dans cinq ans ? », « Votre plus grand défaut ? ») et ce que le recruteur cherche vraiment"
+      "texte": "les questions pièges d'entretien (« Où vous voyez-vous dans cinq ans ? », « Votre plus grand défaut ? ») et ce que le recruteur cherche vraiment",
+      "famille": "entretien"
     },
     {
       "id": "linkedin_trop",
@@ -650,7 +727,8 @@
       "tags": [
         "linkedin"
       ],
-      "texte": "le profil LinkedIn qui en fait trop : titres ronflants, jargon, posts creux — et la version qui attire les recruteurs"
+      "texte": "le profil LinkedIn qui en fait trop : titres ronflants, jargon, posts creux — et la version qui attire les recruteurs",
+      "famille": "linkedin"
     },
     {
       "id": "adresse_mail_pro",
@@ -659,7 +737,8 @@
         "cv",
         "candidature"
       ],
-      "texte": "l'adresse mail, le nom du fichier et l'objet du mail : les détails pas pros qui font sourire le recruteur (pas dans le bon sens)"
+      "texte": "l'adresse mail, le nom du fichier et l'objet du mail : les détails pas pros qui font sourire le recruteur (pas dans le bon sens)",
+      "famille": "candidature"
     },
     {
       "id": "cv_fantaisie",
@@ -668,7 +747,8 @@
         "cv",
         "ats"
       ],
-      "texte": "polices fantaisie, CV arc-en-ciel, jauges de compétences : l'originalité qui dessert (et celle qui marche)"
+      "texte": "polices fantaisie, CV arc-en-ciel, jauges de compétences : l'originalité qui dessert (et celle qui marche)",
+      "famille": "ats_mots_cles"
     },
     {
       "id": "lettre_copier_coller",
@@ -676,7 +756,8 @@
       "tags": [
         "lettre"
       ],
-      "texte": "la lettre de motivation copiée-collée (et le nom de la mauvaise entreprise dedans) : comment personnaliser vite"
+      "texte": "la lettre de motivation copiée-collée (et le nom de la mauvaise entreprise dedans) : comment personnaliser vite",
+      "famille": "lettre"
     },
     {
       "id": "galere_mise_en_page",
@@ -684,7 +765,8 @@
       "tags": [
         "produit"
       ],
-      "texte": "la galère de la mise en page sous Word (marges, colonnes, version finale-v7) contre la mise en page automatique d'OpusCV"
+      "texte": "la galère de la mise en page sous Word (marges, colonnes, version finale-v7) contre la mise en page automatique d'OpusCV",
+      "famille": "produit_mise_en_page"
     },
     {
       "id": "page_blanche_lettre",
@@ -692,7 +774,122 @@
       "tags": [
         "produit"
       ],
-      "texte": "l'angoisse de la page blanche devant la lettre de motivation, réglée par la lettre générée d'après l'offre et le CV"
+      "texte": "l'angoisse de la page blanche devant la lettre de motivation, réglée par la lettre générée d'après l'offre et le CV",
+      "famille": "produit_candidature"
+    },
+    {
+      "id": "organiser_recherche",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "organiser sa recherche d'emploi : un tableau de suivi, un rythme par semaine, fini les candidatures oubliées",
+      "famille": "recherche"
+    },
+    {
+      "id": "encaisser_refus",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "entretien"
+      ],
+      "texte": "encaisser les refus sans se décourager : ce qu'un « non » t'apprend vraiment et quoi en faire",
+      "famille": "recherche"
+    },
+    {
+      "id": "oser_postuler",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "oser postuler sans cocher 100 % des critères de l'offre : ce que les recruteurs acceptent vraiment",
+      "famille": "recherche"
+    },
+    {
+      "id": "marche_cache",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "le marché caché de l'emploi : les postes jamais publiés et comment y accéder",
+      "famille": "recherche"
+    },
+    {
+      "id": "forums_salons",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "entretien"
+      ],
+      "texte": "salons et forums emploi : préparer 3 phrases et repartir avec un contact, pas juste des flyers",
+      "famille": "recherche"
+    },
+    {
+      "id": "message_recruteur_linkedin",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin",
+        "candidature"
+      ],
+      "texte": "écrire à un recruteur ou un salarié sur LinkedIn sans paraître insistant : le message court qui obtient une réponse",
+      "famille": "linkedin"
+    },
+    {
+      "id": "negocier_offre",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "négocier une fois l'offre reçue : salaire, télétravail, date de début, sans risquer la proposition",
+      "famille": "entretien"
+    },
+    {
+      "id": "entretien_collectif",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "entretien collectif ou mise en situation : se démarquer sans écraser les autres",
+      "famille": "entretien"
+    },
+    {
+      "id": "apres_entretien",
+      "categorie": "conseil",
+      "tags": [
+        "entretien",
+        "candidature"
+      ],
+      "texte": "le mail de remerciement après l'entretien : trois phrases qui font la différence",
+      "famille": "entretien"
+    },
+    {
+      "id": "periode_essai",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "décrocher le poste puis réussir sa période d'essai : les premières semaines qui comptent",
+      "famille": "entretien"
+    },
+    {
+      "id": "syndrome_imposteur",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "entretien"
+      ],
+      "texte": "le syndrome de l'imposteur en recherche d'emploi : parler de ses réussites sans se sentir prétentieux",
+      "famille": "recherche"
+    },
+    {
+      "id": "lettre_reconversion",
+      "categorie": "conseil",
+      "tags": [
+        "lettre",
+        "reconversion"
+      ],
+      "texte": "la lettre de motivation de reconversion : raconter le changement comme un choix, pas une fuite",
+      "famille": "lettre"
     }
   ]
 }

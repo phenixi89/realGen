@@ -259,6 +259,24 @@ def pick_ambiance(theme: dict, history: list[dict], rng: random.Random) -> str |
     return rng.choice([a for a in options if a not in recent] or options)
 
 
+def famille_rotation(sujets_: list[dict], history: list[dict]) -> list[dict]:
+    """
+    Sujets de la famille la moins recemment traitee (sujets.json "famille"),
+    parmi ceux fournis : une famille jamais vue passe avant toutes, puis celle
+    vue il y a le plus longtemps. Les familles des config.json
+    historique_familles derniers reels sont ecartees tant qu'il en reste
+    d'autres -- sans ca, les themes les plus "viraux" (ATS, chiffres)
+    revenaient reel apres reel.
+    """
+    seen = [h.get("famille") for h in history if h.get("famille")]
+    last_seen = {f: i for i, f in enumerate(seen)}
+    blocked = set(seen[-config().get("historique_familles", 5):]) if seen else set()
+    familles = {s.get("famille", s["id"]) for s in sujets_}
+    pool = [f for f in familles if f not in blocked] or list(familles)
+    best = min(pool, key=lambda f: (last_seen.get(f, -1), f))
+    return [s for s in sujets_ if s.get("famille", s["id"]) == best]
+
+
 def recent_sujets(history: list[dict], n: int = 15) -> list[str]:
     return _recent(history, "sujet", n)
 
@@ -296,6 +314,9 @@ def validate_catalog() -> list[str]:
         ids = [i.get("id") for i in items]
         if len(ids) != len(set(ids)) or None in ids:
             errors.append(f"{name}.json : ids manquants ou en double")
+    for s in sujets():
+        if not s.get("famille"):
+            errors.append(f"sujet {s['id']} : famille manquante")
     for f in formats():
         for key in ("nom", "categorie", "structure", "sujets", "cartes"):
             if key not in f:

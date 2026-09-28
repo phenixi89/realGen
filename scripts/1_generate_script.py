@@ -132,14 +132,20 @@ def _gemini_json(client, prompt: str, temperature: float) -> dict:
 # Plan editorial : format, sujet, accroche, theme
 # ---------------------------------------------------------------------------
 
-def choose_sujet(client, fmt: dict, avoid: list[str], rng: random.Random) -> dict:
+def choose_sujet(client, fmt: dict, history: list[dict], rng: random.Random) -> dict:
     """
-    Reflexion strategique : Gemini choisit, parmi les sujets compatibles avec
-    le format, le plus prometteur maintenant (en evitant les recents).
-    Echec -> tirage aleatoire parmi les sujets non recents.
+    Famille de sujet imposee par la rotation (catalog.famille_rotation : la
+    moins recemment traitee), puis Gemini choisit dans cette famille le sujet
+    le plus prometteur (en evitant les sujets recents). Laisse libre sur tout
+    le catalogue, il reprenait toujours les themes "viraux" (ATS, chiffres).
+    Echec -> tirage aleatoire.
     """
+    avoid = catalog.recent_sujets(history)
     candidates = catalog.compatible_sujets(fmt)
     fresh = [s for s in candidates if s["id"] not in avoid] or candidates
+    fresh = catalog.famille_rotation(fresh, history)
+    if client is None or len(fresh) == 1:
+        return rng.choice(fresh)
     listing = "\n".join(f'- {s["id"]} : {s["texte"]}' for s in fresh)
     prompt = f"""Tu es stratège de contenu TikTok/Instagram pour OpusCV (optimisation de CV par IA).
 
@@ -182,7 +188,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         if angle:
             sujet = {"id": "", "texte": angle}
         else:
-            sujet = choose_sujet(client, fmt, catalog.recent_sujets(working), rng)
+            sujet = choose_sujet(client, fmt, working, rng)
         hook = catalog.get_hook(hook_id) if hook_id else catalog.pick_hook(working, rng, registre)
         theme = catalog.get_theme(theme_id) if theme_id else catalog.pick_theme(working, rng, registre)
         voice = catalog.pick_voice(working, rng)
@@ -193,6 +199,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
                 "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None}
         plans.append(plan)
         working.append({"format": fmt["id"], "categorie": fmt["categorie"], "sujet": sujet["id"],
+                        "famille": sujet.get("famille"),
                         "hook": hook["id"], "theme": theme["id"], "voix": voice["id"], "ambiance": ambiance,
                         "registre": registre})
     return plans
@@ -295,6 +302,11 @@ Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
     avoid_hooks = "\n".join(f"- {h}" for h in recent_hooks[-12:]) or "(aucune)"
     banned = " ; ".join(f"« {b} »" for b in catalog.config().get("phrases_bannies", []))
     insta_max = (catalog.config().get("instagram") or {}).get("hashtags_max", 5)
+    # Themes deja tres traites sur le compte : n'y revenir que s'ils SONT le sujet.
+    off_topic = ("ce sujet porte justement sur ce thème, traite-le à fond."
+                 if plan["sujet"].get("famille") in ("ats_mots_cles", "redaction_cv", "produit_analyse")
+                 else "ne dérive pas vers les logiciels ATS, les mots-clés ni le fait de chiffrer ses résultats "
+                      "(thèmes déjà très traités sur le compte) ; traite CE sujet, avec ses exemples propres.")
     prompt = f"""Tu es copywriter spécialisé en contenu court viral (TikTok/Instagram Reels) pour chercheurs d'emploi.
 Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonctionnalité :
 
@@ -330,8 +342,9 @@ Contraintes :
   affiché tel quel en sous-titres ;
 - pas d'emoji, pas de hashtag, pas d'indication de mise en scène dans les textes ;
 - ORIGINALITÉ : aucun conseil générique ou évident (interdit : {banned}) ;
-  chaque scène apporte un élément concret : un exemple de formulation, un chiffre plausible
-  et non inventé sur OpusCV, un cas précis ou une astuce actionnable immédiatement ;
+  chaque scène apporte un élément concret : un exemple de formulation, une phrase à dire ou à écrire,
+  un cas précis ou une astuce actionnable immédiatement ;
+- RESTE SUR LE SUJET : {off_topic}
 - RYTHME : phrases courtes et percutantes, une idée par scène, aucune phrase de transition creuse ;
 - BOUCLE : la dernière phrase répond ou fait écho à l'accroche, pour que la vidéo s'enchaîne
   naturellement si elle recommence.
@@ -340,7 +353,7 @@ Fournis aussi :
 - "accroche_ecran" : le texte affiché en GRAND à l'écran dès la première image ({ACCROCHE_MAX_WORDS} mots max),
   complémentaire de la voix (pas forcément identique), qui donne envie de rester ;
 - "mots_cles" : 3 à 6 mots-clés du texte dit (mots isolés, tels qu'écrits dans les textes des scènes),
-  mis en couleur dans les sous-titres — les mots qui portent le message (ex : "ATS", "chiffrés", "recruteur") ;
+  mis en couleur dans les sous-titres — les mots qui portent le message (ex : "relance", "pitch", "recruteur") ;
 - "legende" : la description de la publication TikTok (1 à 2 phrases + une question pour faire commenter) ;
 - "hashtags" : 4 à 6 hashtags pertinents pour TikTok (ex : #cv, #emploi, #recherchedemploi) ;
 - "legende_instagram" : la description Instagram, plus riche : une 1re ligne accrocheuse (visible avant « plus »),
@@ -655,7 +668,8 @@ def instagram_fields(data: dict) -> dict:
 
 def plan_fields(plan: dict) -> dict:
     return {"format": plan["format"]["id"], "categorie": plan["format"]["categorie"],
-            "sujet": plan["sujet"]["id"], "hook": plan["hook"]["id"], "theme": plan["theme"]["id"],
+            "sujet": plan["sujet"]["id"], "famille": plan["sujet"].get("famille"),
+            "hook": plan["hook"]["id"], "theme": plan["theme"]["id"],
             "episode": plan["episode"], "voix": plan["voix"]["id"],
             "registre": plan.get("registre") or "serieux",
             "ton": catalog.tone_for(plan["format"], plan.get("registre")),
@@ -818,7 +832,7 @@ def main():
     out_path.write_text(json.dumps(scenarios, ensure_ascii=False, indent=2), encoding="utf-8")
     # Historique : ce qui a ete genere nourrit l'anti-redondance des prochains runs.
     catalog.save_history(history_path, history + [
-        {"format": s.get("format"), "categorie": s.get("categorie"), "sujet": s.get("sujet"),
+        {"format": s.get("format"), "categorie": s.get("categorie"), "sujet": s.get("sujet"), "famille": s.get("famille"),
          "hook": s.get("hook"), "theme": s.get("theme"), "voix": s.get("voix"), "ambiance": s.get("ambiance"),
          "registre": s.get("registre"), "titre": s.get("titre"),
          "accroche": s.get("accroche_ecran") or (s["scenes"][0]["texte"] if s["scenes"] else "")}
