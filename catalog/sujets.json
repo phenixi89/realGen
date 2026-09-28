@@ -1,5 +1,5 @@
 {
-  "_doc": "Sujets des reels. categorie : 'conseil' ou 'produit' (doit correspondre a la categorie du format). tags : croises avec formats.json 'sujets'. Un sujet est choisi par Gemini parmi ceux compatibles avec le format, en evitant les plus recents. Ajouter un sujet = ajouter une entree (id unique). famille : grand theme du sujet (ats_mots_cles, redaction_cv, forme_cv, parcours, candidature, lettre, entretien, linkedin, recherche, produit_*) : les familles tournent (la moins recemment traitee passe en premier, config.json historique_familles), pour qu'un theme ne revienne pas reel apres reel.",
+  "_doc": "Sujets des reels. categorie : 'conseil' ou 'produit' (doit correspondre a la categorie du format). tags : croises avec formats.json 'sujets'. Un sujet est choisi par Gemini parmi ceux compatibles avec le format, en evitant les plus recents. Ajouter un sujet = ajouter une entree (id unique). famille : grand theme du sujet (ats_mots_cles, redaction_cv, forme_cv, parcours, candidature, lettre, entretien, linkedin, recherche, metiers, produit_*) : les familles tournent (la moins recemment traitee passe en premier, config.json historique_familles), pour qu'un theme ne revienne pas reel apres reel.",
   "sujets": [
     {
       "id": "avant_apres_produit",
@@ -890,6 +890,466 @@
       ],
       "texte": "la lettre de motivation de reconversion : raconter le changement comme un choix, pas une fuite",
       "famille": "lettre"
+    },
+    {
+      "id": "cv_commercial",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV de commercial : montrer un portefeuille, des objectifs atteints et une progression plutôt qu'une liste de clients",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_developpeur",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV de développeur : projets, stack et lien GitHub sans noyer le recruteur sous vingt technos",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_soignant",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV d'infirmier ou d'aide-soignant : services, gestes techniques et qualités humaines, sans liste de tâches",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_restauration",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV en restauration ou hôtellerie : rush, polyvalence et langues, ce que le manager lit en premier",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_logistique_btp",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV dans la logistique ou le BTP : habilitations, CACES, permis et sécurité tout en haut",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_vente_magasin",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV de vendeur en magasin : conseil client, objectifs et saisonnalité, racontés simplement",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_assistant_admin",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV d'assistant administratif : outils, organisation et fiabilité, prouvés par des exemples",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_marketing_com",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV en marketing ou communication : des campagnes et un portfolio plutôt que des adjectifs",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_compta_finance",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV en comptabilité ou finance : logiciels, clôtures, périmètre — la précision qui rassure",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_rh",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV en ressources humaines : quand le recruteur fait le même métier que toi, ce qu'il repère",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_creatif",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV de graphiste ou de créatif : le lien portfolio d'abord, un CV sobre ensuite",
+      "famille": "metiers"
+    },
+    {
+      "id": "cv_job_etudiant",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "CV pour un job étudiant ou saisonnier : disponibilités, mobilité et envie, sur une page",
+      "famille": "metiers"
+    },
+    {
+      "id": "rythme_candidatures",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "combien de candidatures par semaine : trouver le rythme entre l'envoi en masse et l'attente",
+      "famille": "recherche"
+    },
+    {
+      "id": "tenir_la_distance",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "garder la motivation après trois mois de recherche : petits objectifs et bilan de la semaine",
+      "famille": "recherche"
+    },
+    {
+      "id": "alertes_offres",
+      "categorie": "conseil",
+      "tags": [
+        "candidature"
+      ],
+      "texte": "alertes et veille d'offres : ne plus passer une heure par jour à scroller les sites d'emploi",
+      "famille": "recherche"
+    },
+    {
+      "id": "chercher_en_poste",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "entretien"
+      ],
+      "texte": "chercher un emploi quand on est déjà en poste : discrétion, disponibilités et entretiens",
+      "famille": "recherche"
+    },
+    {
+      "id": "surqualifie",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "cv"
+      ],
+      "texte": "« surqualifié » : postuler à un poste en dessous de son niveau sans faire peur au recruteur",
+      "famille": "candidature"
+    },
+    {
+      "id": "mobilite_interne",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "cv"
+      ],
+      "texte": "candidater en interne ou demander une mobilité : le CV et l'échange qui font la différence",
+      "famille": "candidature"
+    },
+    {
+      "id": "lien_portfolio",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "cv"
+      ],
+      "texte": "ajouter un lien (portfolio, GitHub, site) à sa candidature : où le placer pour qu'il soit cliqué",
+      "famille": "candidature"
+    },
+    {
+      "id": "references_employeurs",
+      "categorie": "conseil",
+      "tags": [
+        "candidature",
+        "entretien"
+      ],
+      "texte": "les références d'anciens employeurs : qui choisir et comment les prévenir avant l'appel",
+      "famille": "candidature"
+    },
+    {
+      "id": "methode_star",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "raconter une expérience en entretien avec la méthode STAR (situation, tâche, action, résultat) sans réciter",
+      "famille": "entretien"
+    },
+    {
+      "id": "trac_entretien",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "gérer le trac avant et pendant l'entretien : trois réflexes concrets",
+      "famille": "entretien"
+    },
+    {
+      "id": "tenue_entretien",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "que porter en entretien selon le secteur : start-up, banque, commerce, artisanat",
+      "famille": "entretien"
+    },
+    {
+      "id": "pourquoi_partir",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "« pourquoi quittez-vous votre poste ? » : répondre sans critiquer ton employeur",
+      "famille": "entretien"
+    },
+    {
+      "id": "question_sans_reponse",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "la question dont tu ne connais pas la réponse : quoi dire plutôt que d'improviser",
+      "famille": "entretien"
+    },
+    {
+      "id": "tests_techniques",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "tests techniques et cas pratiques à rendre : combien de temps y passer et comment les présenter",
+      "famille": "entretien"
+    },
+    {
+      "id": "rh_manager_final",
+      "categorie": "conseil",
+      "tags": [
+        "entretien"
+      ],
+      "texte": "entretien RH, entretien manager, entretien final : ce que chacun évalue vraiment",
+      "famille": "entretien"
+    },
+    {
+      "id": "lettre_encore_lue",
+      "categorie": "conseil",
+      "tags": [
+        "lettre",
+        "candidature"
+      ],
+      "texte": "la lettre de motivation est-elle encore lue ? quand l'écrire, quand s'en passer",
+      "famille": "lettre"
+    },
+    {
+      "id": "lettre_spontanee",
+      "categorie": "conseil",
+      "tags": [
+        "lettre",
+        "candidature"
+      ],
+      "texte": "la lettre de candidature spontanée : proposer une solution à l'entreprise plutôt que demander un poste",
+      "famille": "lettre"
+    },
+    {
+      "id": "mail_remplace_lettre",
+      "categorie": "conseil",
+      "tags": [
+        "lettre",
+        "candidature"
+      ],
+      "texte": "remplacer la lettre par un mail de cinq lignes quand l'offre ne la demande pas",
+      "famille": "lettre"
+    },
+    {
+      "id": "lettre_fin",
+      "categorie": "conseil",
+      "tags": [
+        "lettre"
+      ],
+      "texte": "finir sa lettre de motivation : une conclusion qui propose un échange, pas une formule de 1950",
+      "famille": "lettre"
+    },
+    {
+      "id": "linkedin_photo_banniere",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin"
+      ],
+      "texte": "photo et bannière LinkedIn : ce que le recruteur voit en premier dans les résultats de recherche",
+      "famille": "linkedin"
+    },
+    {
+      "id": "linkedin_infos",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin"
+      ],
+      "texte": "la section Infos de LinkedIn : raconter son parcours en cinq lignes qui donnent envie d'écrire",
+      "famille": "linkedin"
+    },
+    {
+      "id": "linkedin_publier",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin",
+        "candidature"
+      ],
+      "texte": "publier sur LinkedIn quand on cherche un emploi : un post utile par semaine, sans se mettre en scène",
+      "famille": "linkedin"
+    },
+    {
+      "id": "linkedin_candidature_simplifiee",
+      "categorie": "conseil",
+      "tags": [
+        "linkedin",
+        "candidature"
+      ],
+      "texte": "la candidature simplifiée LinkedIn : quand l'utiliser, quand passer par le site de l'entreprise",
+      "famille": "linkedin"
+    },
+    {
+      "id": "ordre_rubriques",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "l'ordre des rubriques du CV : ce qui doit être en haut selon ton profil",
+      "famille": "forme_cv"
+    },
+    {
+      "id": "coordonnees_cv",
+      "categorie": "conseil",
+      "tags": [
+        "cv"
+      ],
+      "texte": "les coordonnées sur le CV : ce qu'il faut (et ne faut plus) écrire — adresse, âge, situation familiale",
+      "famille": "forme_cv"
+    },
+    {
+      "id": "versions_cv",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "une version de CV par type de poste : organiser ses variantes sans s'y perdre",
+      "famille": "forme_cv"
+    },
+    {
+      "id": "retour_pause",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "entretien"
+      ],
+      "texte": "revenir après un congé parental ou une longue pause : présenter la période sans s'excuser",
+      "famille": "parcours"
+    },
+    {
+      "id": "reconversion_40",
+      "categorie": "conseil",
+      "tags": [
+        "reconversion",
+        "cv"
+      ],
+      "texte": "se reconvertir à 40 ans : un CV qui raconte une trajectoire, pas un recommencement",
+      "famille": "parcours"
+    },
+    {
+      "id": "apres_licenciement",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "entretien"
+      ],
+      "texte": "après un licenciement : en parler sereinement sur le CV et en entretien",
+      "famille": "parcours"
+    },
+    {
+      "id": "diplome_etranger",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "candidature"
+      ],
+      "texte": "un diplôme ou une expérience obtenus à l'étranger : les rendre lisibles pour un recruteur français",
+      "famille": "parcours"
+    },
+    {
+      "id": "entrepreneur_salarie",
+      "categorie": "conseil",
+      "tags": [
+        "cv",
+        "reconversion"
+      ],
+      "texte": "ancien entrepreneur qui redevient salarié : valoriser l'aventure et rassurer sur la stabilité",
+      "famille": "parcours"
+    },
+    {
+      "id": "variantes_dashboard",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "plusieurs versions de ton CV rangées au même endroit : dupliquer, renommer, adapter chacune à un type de poste",
+      "famille": "produit_mise_en_page"
+    },
+    {
+      "id": "reconversion_produit",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "une reconversion dans l'outil : réorganiser les blocs du CV puis l'adapter à une offre du nouveau métier",
+      "famille": "produit_candidature"
+    },
+    {
+      "id": "veille_entretien_produit",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "la veille d'un entretien : relire son CV et anticiper les questions probables avec la simulation d'entretien",
+      "famille": "produit_candidature"
+    },
+    {
+      "id": "salon_lien_produit",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "un recruteur rencontré sur un salon : lui envoyer ton CV par un lien, tout de suite, depuis le téléphone",
+      "famille": "produit_mise_en_page"
+    },
+    {
+      "id": "premier_cv_formation",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "un CV de jeune diplômé : mettre la formation en avant, corriger les fautes et vérifier la checklist avant d'envoyer",
+      "famille": "produit_analyse"
     }
   ]
 }
