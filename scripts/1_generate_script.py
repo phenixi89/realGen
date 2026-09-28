@@ -44,6 +44,9 @@ Parametrable :
   --format / --theme / --hook   impose un element du catalogue (sinon choix automatique)
   --registre serieux|humour  impose le registre (sinon mix de config.json "registres")
   --angle "..."              sujet libre (sinon choisi dans catalog/sujets.json)
+  --plan '[{...}, ...]'      combinaison imposee reel par reel (JSON, un objet par reel ;
+                             cles format, sujet, hook, theme, voix, registre, ambiance,
+                             angle ; absente ou vide = choix automatique ; --n = longueur)
   --scenario fichier.json    scenario ecrit a la main (objet ou liste d'objets).
                              Scenes avec "texte" -> gardees telles quelles (aucun
                              appel IA si toutes en ont un) ; scenes sans "texte"
@@ -183,30 +186,47 @@ bien fonctionner avec ce format. Réponds UNIQUEMENT en JSON : {{"id": "...", "r
 
 def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_id: str | None,
                theme_id: str | None, hook_id: str | None, angle: str | None,
-               registre_id: str | None = None, sans_captures: bool = False) -> list[dict]:
+               registre_id: str | None = None, sans_captures: bool = False,
+               overrides: list[dict] | None = None) -> list[dict]:
     """
     Un plan par reel ; chaque choix tient compte des precedents (historique + ce lot).
     Le registre (serieux/humour) est choisi d'abord : il filtre formats, accroches et themes.
     Format impose sans registre impose : registre tire parmi ceux du format.
     sans_captures : aucune capture de l'app (--capture-mode aucune) -> formats conseil a cartes.
+    overrides : combinaison imposee par reel (--plan) ; chaque cle renseignee
+    l'emporte sur les options globales, les autres restent automatiques.
     """
     plans = []
     working = list(history)
-    for _ in range(n):
-        forced_fmt = catalog.get_format(format_id) if format_id else (
-            catalog.get_format("demo_produit") if angle and not sans_captures else None)
-        registre = registre_id or catalog.pick_registre(
+    for i in range(n):
+        ov = (overrides[i] if overrides and i < len(overrides) else None) or {}
+        fid, reel_angle = ov.get("format") or format_id, ov.get("angle") or (None if ov.get("sujet") else angle)
+        forced_sujet = catalog.get_sujet(ov["sujet"]) if ov.get("sujet") else None
+        forced_fmt = catalog.get_format(fid) if fid else (
+            catalog.get_format("demo_produit") if reel_angle and not sans_captures else None)
+        registre = ov.get("registre") or registre_id or catalog.pick_registre(
             working, rng, catalog.registres_of(forced_fmt) if forced_fmt else None)
-        fmt = forced_fmt or catalog.pick_format(working, rng, registre, sans_captures)
-        if angle:
-            sujet = {"id": "", "texte": angle}
+        if forced_fmt:
+            fmt = forced_fmt
+        elif forced_sujet:  # sujet impose : format tire parmi ceux qui l'acceptent
+            ok = [f for f in catalog.formats() if forced_sujet in catalog.compatible_sujets(f)
+                  and (not sans_captures or catalog.sans_captures_ok(f))]
+            pool = [f for f in ok if registre in catalog.registres_of(f)] or ok
+            fmt = catalog.weighted_pick(pool, [], rng) if pool else catalog.pick_format(working, rng, registre, sans_captures)
+        else:
+            fmt = catalog.pick_format(working, rng, registre, sans_captures)
+        if forced_sujet:
+            sujet = forced_sujet
+        elif reel_angle:
+            sujet = {"id": "", "texte": reel_angle}
         else:
             sujet = choose_sujet(client, fmt, working, rng)
-        hook = catalog.get_hook(hook_id) if hook_id else catalog.pick_hook(working, rng, registre)
-        theme = catalog.get_theme(theme_id) if theme_id else catalog.pick_theme(working, rng, registre)
-        voice = catalog.pick_voice(working, rng)
+        hid, tid = ov.get("hook") or hook_id, ov.get("theme") or theme_id
+        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre)
+        theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre)
+        voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng)
         cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
-        ambiance = catalog.pick_ambiance(theme, working, rng)
+        ambiance = ov.get("ambiance") or catalog.pick_ambiance(theme, working, rng)
         plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice, "registre": registre,
                 "cta": cta, "cta_anim": cta_anim, "ambiance": ambiance,
                 "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None,
@@ -836,6 +856,9 @@ def main():
     parser.add_argument("--sans-captures", action="store_true",
                          help="Aucune capture de l'app (run_pipeline --capture-mode aucune) : formats conseil, "
                               "toutes les scenes en cartes animees")
+    parser.add_argument("--plan", type=str, default=None,
+                        help="Combinaison imposee reel par reel : JSON (liste d'objets format/sujet/hook/theme/"
+                             "voix/registre/ambiance/angle, vide = automatique) ; remplace --n")
     parser.add_argument("--seed", type=int, default=None, help="Graine du tirage (reproductibilite)")
     parser.add_argument("--scenario", type=str, default=None,
                          help="Fichier JSON de scenario(s) ecrit(s) a la main (voir scenarios/exemple.json)")
@@ -858,11 +881,21 @@ def main():
                 parser.error(str(e))
     if args.sans_captures and args.format and not catalog.sans_captures_ok(catalog.get_format(args.format)):
         parser.error(f"format '{args.format}' impossible sans captures (formats conseil avec cartes uniquement)")
+    overrides = None
+    if args.plan:
+        try:
+            overrides = json.loads(args.plan)
+        except json.JSONDecodeError as e:
+            parser.error(f"--plan : JSON invalide ({e})")
+        errors = catalog.validate_plan(overrides, args.sans_captures)
+        if errors:
+            parser.error("--plan : " + " ; ".join(errors))
+        args.n = len(overrides)
 
     out_path = Path(args.out)
     if not args.force and out_path.exists():
         existing = json.loads(out_path.read_text(encoding="utf-8"))
-        if len(existing) >= args.n and not args.scenario:
+        if len(existing) >= args.n and not args.scenario and not args.plan:
             print(f"REPRISE: {out_path} existe deja avec {len(existing)} scenario(s), on saute (--force pour regenerer)")
             return
 
@@ -892,7 +925,8 @@ def main():
         client = get_client()
         print(f"Plan editorial de {args.n} reel(s)...")
         for i, plan in enumerate(plan_reels(client, args.n, history, rng, args.format, args.theme,
-                                            args.hook, args.angle, args.registre, args.sans_captures), 1):
+                                            args.hook, args.angle, args.registre, args.sans_captures,
+                                            overrides), 1):
             print(f"[{i}/{args.n}] {args.duration}s | {plan['registre']} | format {plan['format']['id']} "
                   f"| accroche {plan['hook']['id']} "
                   f"| theme {plan['theme']['id']} | sujet : {plan['sujet']['texte']}")

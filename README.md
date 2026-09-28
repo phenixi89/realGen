@@ -61,6 +61,7 @@ Principales options de `run_pipeline.py` :
 | `--scenario` | — | Fichier JSON de scénario écrit à la main (voir `scenarios/exemple.json`) |
 | `--format` / `--theme` / `--hook` | auto | Impose un élément du catalogue (voir « Ligne éditoriale ») |
 | `--registre` | auto | `serieux` ou `humour` (sinon mix de `config.json` `registres`, 70 / 30) — voir « Registre humour » |
+| `--plan` | — | Combinaison imposée reel par reel (JSON, remplace `--n`) — voir « Combinaison par reel » |
 | `--plateformes` | `all` | Déclinaisons produites : `tiktok` (légende `.txt`), `instagram` (légende Instagram + couverture), `carrousel` (carrousel 4:5), séparées par des virgules — voir « Instagram » |
 | `--no-sfx` | — | Sans effets sonores (musique conservée) — case « sfx » dans le workflow |
 | `--no-hook-overlay` | — | N'affiche pas l'accroche en grand au début |
@@ -301,6 +302,23 @@ Les formats à cartes affichent des **cartes animées** à la place des captures
 Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--hook pov`, `--registre humour`
 (aussi dans le workflow ; un format imposé sans registre prend un des registres qu'il accepte). Vérifier le catalogue après modification : `python scripts/catalog.py`.
 
+### Combinaison par reel (`--plan`)
+
+`--plan` impose, reel par reel, tout ou partie de la combinaison : une liste JSON d'objets aux clés
+`format`, `sujet`, `hook`, `theme`, `voix`, `registre`, `ambiance` (id de `audio.json`) et `angle`
+(sujet libre, à la place de `sujet`). Une clé absente ou vide reste automatique (rotation
+anti-répétition habituelle) ; une clé renseignée l'emporte sur l'option globale correspondante. Le
+nombre de reels est la longueur de la liste. Sujet imposé sans format : le format est tiré parmi ceux
+qui acceptent ce sujet. Les ids sont vérifiés avant tout appel IA (`catalog.validate_plan`).
+
+```bash
+python scripts/run_pipeline.py --plan '[{"format": "mythe_realite", "hook": "question_choc"},
+  {"sujet": "retour_pause", "theme": "editorial", "voix": "Aoede"}, {"registre": "humour"}]'
+```
+
+Dans le workflow : champ `plan` (même JSON). La console le construit avec le compositeur (voir
+« Console web »).
+
 Ajouter par exemple un format : une entrée dans `formats.json` avec `id`, `nom`, `categorie`,
 `poids`, `cartes` (`aucune`/`autorisees`/`majoritaires`), `sujets` (tags) et `structure` (consigne
 donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"serie": true`). Option
@@ -444,7 +462,8 @@ Il dit aussi ce que l'outil ne fait pas : pas de score, jamais de chiffre invent
 ## Automatisation via GitHub Actions
 
 Le workflow `.github/workflows/generate-reels.yml` tourne chaque lundi (et manuellement via
-l'onglet Actions, avec les mêmes options que `run_pipeline.py`, dont `registre` et `plateformes`).
+l'onglet Actions, avec les mêmes options que `run_pipeline.py`, dont `registre`, `hook`, `plan` et
+`plateformes`).
 Les déclinaisons Instagram sont dans l'artefact `output`, sous `final/`.
 
 À configurer dans le repo GitHub (Settings → Secrets and variables → Actions) :
@@ -469,7 +488,8 @@ si le premier chargement dépasse le délai habituel.
 
 ## Console web (docs/index.html)
 
-Interface pour lancer le workflow (dont le registre et les plateformes), suivre les runs
+Interface pour lancer le workflow (dont le registre et les plateformes), composer les
+combinaisons, parcourir le catalogue, suivre les runs
 (bouton « 📋 Étapes / logs » : étapes du job avec état et durée, rafraîchies toutes les 15 s ;
 log du job une fois celui-ci terminé, limité aux 200 dernières lignes pour un échec, erreurs
 en rouge — l'API GitHub ne donne pas le log en direct, pour cela le bouton « GitHub ↗ ») et
@@ -481,6 +501,19 @@ fichiers de l'app Claude (ou d'un téléphone) bloque les appels réseau (« Fai
 ouvrir la page dans Chrome, Firefox ou Edge. Si l'onglet Catalogue (et les listes Format,
 Thème, Voix) reste vide, la console affiche l'erreur : le plus souvent, le token n'a pas la
 permission *Contents : Read-only*.
+
+- **Compositeur** (onglet 🚀 Lancer, case « Composer chaque reel moi-même ») : un bloc par reel
+  (jusqu'à 10) avec registre, format, sujet (groupés par famille, ou sujet libre), accroche, thème,
+  musique et voix. « Auto » laisse le générateur choisir. Les listes ne proposent que les choix
+  compatibles (sujet ↔ format, registre ↔ format/accroche/thème, musiques du thème, formats jouables
+  en capture `aucune`). Aperçu sous chaque bloc (structure du format, texte du sujet, exemple
+  d'accroche, couleurs du thème). 🎲 tire une combinaison compatible, ⧉ duplique. Envoyé au workflow
+  dans le champ `plan` ; les champs globaux Nombre, Format, Thème, Registre, Voix et Angle sont alors
+  masqués. La composition est mémorisée dans le navigateur.
+- **Catalogue** : fiches par type (formats, sujets, accroches, thèmes, ambiances, voix) avec recherche
+  et filtres catégorie / registre ; formats : structure, visuel, sujets compatibles (« Voir ses
+  sujets ») ; thèmes : nuancier, polices, musiques. « ➕ Composer » ajoute l'élément au compositeur
+  (dernier reel si ce champ y est libre, sinon nouveau reel).
 
 ### Créer le token GitHub (fine-grained)
 

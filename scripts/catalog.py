@@ -102,6 +102,14 @@ def pick_voice(history: list[dict], rng: random.Random) -> dict:
     return weighted_pick(voices(), _recent(history, "voix", config().get("historique_voix", 2)), rng)
 
 
+def get_voice(vid: str) -> dict:
+    return _by_id(voices(), vid, "voix")
+
+
+def ambiances() -> list[dict]:
+    return _load("audio")["ambiances"]
+
+
 def get_format(fid: str) -> dict:
     return _by_id(formats(), fid, "format")
 
@@ -258,6 +266,37 @@ def pick_cta(categorie: str, rng: random.Random) -> tuple[str, dict]:
     phrases = cfg.get(f"ctas_{categorie}") or cfg.get("ctas_produit") or ["Lien en bio."]
     anims = cfg.get("cta_anim") or [{}]
     return rng.choice(phrases), dict(rng.choice(anims))
+
+
+PLAN_KEYS = ("format", "sujet", "hook", "theme", "voix", "registre", "ambiance", "angle")
+
+
+def validate_plan(plan: list, sans_captures: bool = False) -> list[str]:
+    """Plan par reel (--plan, console) : liste d'objets aux cles PLAN_KEYS, vides = automatique."""
+    if not isinstance(plan, list) or not plan:
+        return ["le plan doit etre une liste non vide d'objets (un par reel)"]
+    getters = {"format": get_format, "sujet": get_sujet, "hook": get_hook, "theme": get_theme,
+               "voix": get_voice, "ambiance": lambda a: _by_id(ambiances(), a, "ambiance")}
+    errors = []
+    for i, item in enumerate(plan, 1):
+        if not isinstance(item, dict):
+            errors.append(f"reel {i} : objet attendu")
+            continue
+        errors += [f"reel {i} : cle inconnue '{k}' (autorisees : {', '.join(PLAN_KEYS)})" for k in item if k not in PLAN_KEYS]
+        for k, get in getters.items():
+            if item.get(k):
+                try:
+                    get(item[k])
+                except KeyError as e:
+                    errors.append(f"reel {i} : {e.args[0].split(' (disponibles')[0]}")
+        if item.get("registre") and item["registre"] not in REGISTRES:
+            errors.append(f"reel {i} : registre inconnu '{item['registre']}'")
+        if item.get("sujet") and item.get("angle"):
+            errors.append(f"reel {i} : sujet du catalogue OU angle libre, pas les deux")
+        if sans_captures and item.get("format") and item["format"] in {f["id"] for f in formats()} \
+                and not sans_captures_ok(get_format(item["format"])):
+            errors.append(f"reel {i} : format '{item['format']}' impossible sans captures")
+    return errors
 
 
 def pick_ambiance(theme: dict, history: list[dict], rng: random.Random) -> str | None:

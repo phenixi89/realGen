@@ -41,6 +41,25 @@ button:disabled{opacity:.5;cursor:default}
 .log{white-space:pre-wrap;word-break:break-word;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--line);padding:8px;border-radius:8px;max-height:420px;overflow:auto;margin:8px 0 0}
 .log .err{color:var(--ko);font-weight:600}
 .warn{color:var(--ko)}
+h3{font-size:14px;margin:16px 0 8px}
+.subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.subnav button{padding:6px 11px;font-size:13px}
+.subnav button.on{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:12px}
+@media (max-width:560px){.filters{grid-template-columns:1fr}}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.item{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--card)}
+.item h4{margin:0;font-size:15px}.item p{margin:0;font-size:13px;line-height:1.45}
+.item .quote{font-style:italic;color:var(--muted)}
+.item .foot{margin-top:auto;display:flex;gap:6px;flex-wrap:wrap;padding-top:4px}.item .foot button{padding:5px 10px;font-size:12px}
+.item .id{font:11px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+.swatches{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}.swatches span{flex:1}
+.tag.ok{border-color:var(--ok);color:var(--ok)}.tag.hum{border-color:var(--acc2);color:var(--acc2)}
+.reelplan{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--bg)}
+.reelplan .head{display:flex;align-items:center;gap:6px}.reelplan .head b{flex:1}
+.reelplan .head button{padding:4px 9px;font-size:12px}
+.reelplan .grid label{margin-top:6px}
+.preview{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}.preview b{color:var(--fg);font-weight:600}
+.preview .warn{font-weight:600}
 .reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .reel video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}
 .reel img{width:100%;border-radius:10px;display:block}
@@ -68,15 +87,15 @@ button:disabled{opacity:.5;cursor:default}
 <section id="tab-launch" class="card">
   <h2>Nouveau lot de reels</h2>
   <div class="grid">
-    <div><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
+    <div class="g-only"><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
     <div><label>Durée</label><select id="f_duration"><option>15</option><option selected>30</option><option>45</option><option>60</option></select></div>
-    <div><label>Format <small>vide = auto</small></label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
-    <div><label>Thème visuel <small>vide = rotation</small></label><select id="f_theme"><option value="">Rotation automatique</option></select></div>
-    <div><label>Registre</label><select id="f_registre"><option value="">Automatique (mix sérieux / humour)</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
+    <div class="g-only"><label>Format <small>vide = auto</small></label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
+    <div class="g-only"><label>Thème visuel <small>vide = rotation</small></label><select id="f_theme"><option value="">Rotation automatique</option></select></div>
+    <div class="g-only"><label>Registre</label><select id="f_registre"><option value="">Automatique (mix sérieux / humour)</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
     <div><label>Plateformes</label><select id="f_plateformes">
       <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
       <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
-    <div><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
+    <div class="g-only"><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
     <div><label>Capture</label><select id="f_capture_mode">
       <option value="video">Vidéo mobile</option><option value="screenshots">Captures desktop + zoom (animations complètes)</option><option value="video_desktop">Vidéo desktop recadrée</option><option value="aucune">Sans capture (conseils en cartes animées)</option></select></div>
     <div><label>Animations <small>scene/highlight : mode captures</small></label><select id="f_anims">
@@ -90,7 +109,14 @@ button:disabled{opacity:.5;cursor:default}
       <option value="subs">subs : sous-titres + montage</option>
       <option value="assemble">assemble : montage final seul</option></select></div>
   </div>
-  <label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS">
+  <div class="g-only"><label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS"></div>
+  <h3>Combinaison par reel</h3>
+  <label class="chk"><input id="f_compose" type="checkbox" onchange="setCompose(this.checked)"> Composer chaque reel moi-même (format, sujet, accroche, thème, ambiance, voix, registre)</label>
+  <div id="composer" class="hidden">
+    <p class="muted">Un bloc par reel. « Auto » laisse le générateur choisir (rotation anti-répétition). Les listes ne proposent que ce qui est compatible avec les choix déjà faits. Astuce : l'onglet 📚 Catalogue a un bouton « ➕ Composer » sur chaque élément.</p>
+    <div id="plan"></div>
+    <div class="row"><button onclick="addReel()">➕ Ajouter un reel</button><button onclick="rollAll()">🎲 Tout tirer au hasard</button><button onclick="resetPlan()">↺ Tout en automatique</button></div>
+  </div>
   <label>Scénario manuel <small>optionnel, chemin dans le dépôt</small></label><input id="f_scenario" placeholder="scenarios/exemple.json">
   <div class="grid" style="margin-top:8px">
     <label class="chk"><input id="f_sfx" type="checkbox" checked> Effets sonores</label>
@@ -110,7 +136,14 @@ button:disabled{opacity:.5;cursor:default}
   <div id="reels" class="reels"></div>
 </section>
 
-<section id="tab-catalog" class="card hidden"><h2>Catalogue</h2><div id="catalog">Chargement…</div></section>
+<section id="tab-catalog" class="card hidden"><h2>Catalogue</h2>
+  <div id="catErr"></div>
+  <div class="subnav" id="catNav"></div>
+  <div class="filters"><input id="catQ" type="search" placeholder="Rechercher (mot, id…)" oninput="renderCatalog()">
+    <select id="catCat" onchange="renderCatalog()"><option value="">Conseil + produit</option><option value="conseil">Conseil</option><option value="produit">Produit</option></select>
+    <select id="catReg" onchange="renderCatalog()"><option value="">Tous registres</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
+  <p class="muted" id="catInfo"></p>
+  <div id="catalog" class="cards">Chargement…</div></section>
 </div>
 </main>
 <div id="msg"></div>
@@ -147,24 +180,170 @@ async function catFile(name){
   return r.json();
 }
 async function loadCatalog(){
-  const errs = [];
-  const [f, t, v, s, h] = await Promise.all(["formats","themes","voix","sujets","hooks"].map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
-  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [] };
-  for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${(x.registres || []).includes("humour") ? ", humour" : ""})`, x.id));
+  const errs = [], names = ["formats","themes","voix","sujets","hooks","audio"];
+  const [f, t, v, s, h, a] = await Promise.all(names.map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
+  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [] };
+  for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${regs(x).includes("humour") ? ", humour" : ""})`, x.id));
   for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
   for (const x of CAT.voix) $("f_voice").add(new Option(`${x.id} : ${x.description}`, x.id));
-  const sw = c => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:middle;background:${esc(c)}"></span>`;
-  $("catalog").innerHTML = (errs.length ? `<p class="warn">Catalogue illisible (${errs.length}/5 fichiers). Cause la plus fréquente : le token n'a pas la permission <b>Contents : Read-only</b> (GitHub → Settings → Developer settings → Fine-grained tokens → le token → Edit → Repository permissions). Les listes Format, Thème et Voix de l'onglet Lancer restent alors vides.</p><pre class="log">${esc(errs.join("\n"))}</pre>` : "") +
-    `<h3>Formats (${CAT.formats.length})</h3>` + CAT.formats.map(x => `<p><b>${esc(x.nom)}</b> <span class="tag">${esc(x.categorie)}</span> <span class="tag">${esc((x.registres || ["serieux"]).join(" + "))}</span> <span class="tag">cartes : ${esc(x.cartes)}</span><br><span class="muted">${esc(x.structure)}</span></p>`).join("") +
-    `<h3>Thèmes (${CAT.themes.length})</h3>` + CAT.themes.map(x => `<p>${Object.values(x.couleurs || {}).slice(0, 5).map(sw).join(" ")} <b>${esc(x.nom)}</b> <span class="tag">${esc(x.ambiance || "")}</span></p>`).join("") +
-    `<h3>Sujets (${CAT.sujets.length})</h3><p>` + CAT.sujets.map(x => `<span class="tag" title="${esc(x.texte)}">${esc(x.id)}</span>`).join("") + `</p>` +
-    `<h3>Hooks (${CAT.hooks.length})</h3><p>` + CAT.hooks.map(x => `<span class="tag" title="${esc(x.consigne)}">${esc(x.id)}</span>`).join("") + `</p>`;
+  $("catErr").innerHTML = errs.length ? `<p class="warn">Catalogue illisible (${errs.length}/${names.length} fichiers). Cause la plus fréquente : le token n'a pas la permission <b>Contents : Read-only</b> (GitHub → Settings → Developer settings → Fine-grained tokens → le token → Edit → Repository permissions). Les listes Format, Thème et Voix de l'onglet Lancer restent alors vides.</p><pre class="log">${esc(errs.join("\n"))}</pre>` : "";
+  renderCatalog(); renderPlan();
+}
+
+// --- Regles du catalogue (miroir de scripts/catalog.py) ---
+const REG_LABEL = { serieux: "Sérieux", humour: "Humour" };
+const CARTES = { aucune: "captures de l'app seulement", autorisees: "cartes animées possibles", majoritaires: "surtout des cartes animées" };
+const regs = (x, dflt = ["serieux"]) => x.registres || dflt;                       // formats, accroches
+const themeRegs = x => x.registres || ["serieux", "humour"];                        // themes : tous par defaut
+const nice = id => { const t = String(id || "").replace(/_/g, " "); return t.charAt(0).toUpperCase() + t.slice(1); };
+const byId = (list, id) => list.find(x => x.id === id);
+const compatible = (fmt, suj) => fmt.categorie === suj.categorie && (fmt.sujets || []).some(t => (suj.tags || []).includes(t));
+const sansCapOk = fmt => fmt.categorie === "conseil" && fmt.cartes !== "aucune";
+const sansCap = () => $("f_capture_mode").value === "aucune";
+const ambName = id => (byId(CAT.ambiances, id) || {}).nom || nice(id);
+const colors = th => Object.values(th.couleurs || {}).filter(c => typeof c === "string" && c.startsWith("#")).slice(0, 6);
+
+// --- Onglet Catalogue : fiches lisibles, recherche, filtres ---
+let catKind = store.get("rg_cat") || "formats";
+const KINDS = { formats: "Formats", sujets: "Sujets", hooks: "Accroches", themes: "Thèmes", ambiances: "Ambiances", voix: "Voix" };
+const PLAN_FIELD = { formats: "format", sujets: "sujet", hooks: "hook", themes: "theme", ambiances: "ambiance", voix: "voix" };
+function setCatKind(k){ catKind = k; store.set("rg_cat", k); renderCatalog(); }
+function renderCatalog(){
+  $("catNav").innerHTML = Object.entries(KINDS).map(([k, l]) => `<button class="${k === catKind ? "on" : ""}" onclick="setCatKind('${k}')">${l} (${(CAT[k] || []).length})</button>`).join("");
+  const q = $("catQ").value.trim().toLowerCase(), cat = $("catCat").value, reg = $("catReg").value;
+  let items = CAT[catKind] || [];
+  if (q) items = items.filter(x => JSON.stringify(x).toLowerCase().includes(q));
+  if (cat && (catKind === "formats" || catKind === "sujets")) items = items.filter(x => x.categorie === cat);
+  if (reg && catKind === "formats") items = items.filter(x => regs(x).includes(reg));
+  if (reg && catKind === "hooks") items = items.filter(x => regs(x).includes(reg));
+  if (reg && catKind === "themes") items = items.filter(x => themeRegs(x).includes(reg));
+  if (catKind === "sujets") items = [...items].sort((a, b) => (a.famille || "").localeCompare(b.famille || ""));
+  $("catInfo").textContent = { formats: "Structure de la vidéo : comment le reel est construit.", sujets: "De quoi parle le reel. Un sujet ne va qu'avec les formats de même catégorie qui acceptent un de ses tags.", hooks: "Style des 2 premières secondes (décisives pour la rétention).", themes: "Couleurs, polices, style de sous-titres et musiques possibles.", ambiances: "Musique de fond synthétisée (aucun droit d'auteur). Chaque thème en propose quelques-unes.", voix: "Voix off Gemini." }[catKind]
+    + ` ${items.length} élément(s).`;
+  $("catalog").innerHTML = items.map(CARD[catKind]).join("") || `<p class="muted">Aucun résultat.</p>`;
+}
+const useBtn = (kind, id) => `<button onclick="useInPlan('${PLAN_FIELD[kind]}','${esc(id)}')">➕ Composer</button>`;
+const regTags = r => r.map(x => `<span class="tag${x === "humour" ? " hum" : ""}">${REG_LABEL[x] || x}</span>`).join("");
+const CARD = {
+  formats: x => { const n = CAT.sujets.filter(s => compatible(x, s)).length;
+    return `<div class="item"><h4>${esc(x.nom)}</h4><div><span class="tag">${esc(x.categorie)}</span>${regTags(regs(x))}${x.serie ? `<span class="tag">série</span>` : ""}${sansCapOk(x) ? `<span class="tag ok">sans capture ✔</span>` : ""}</div>
+      <p>${esc(x.structure)}</p><p class="muted">Visuel : ${esc(CARTES[x.cartes] || x.cartes)} · ${n} sujets compatibles</p><span class="id">${esc(x.id)}</span>
+      <div class="foot">${useBtn("formats", x.id)}<button onclick="showSujetsFor('${esc(x.id)}')">Voir ses sujets</button></div></div>`; },
+  sujets: x => { const n = CAT.formats.filter(f => compatible(f, x)).length;
+    return `<div class="item"><div><span class="tag">${esc(nice(x.famille || "divers"))}</span><span class="tag">${esc(x.categorie)}</span></div>
+      <p><b>${esc(x.texte)}</b></p><p class="muted">${n} format(s) compatible(s)</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("sujets", x.id)}</div></div>`; },
+  hooks: x => `<div class="item"><h4>${esc(nice(x.id))}</h4><div>${regTags(regs(x))}</div><p>${esc(x.consigne)}</p>
+      ${x.exemple ? `<p class="quote">« ${esc(x.exemple)} »</p>` : ""}<span class="id">${esc(x.id)}</span><div class="foot">${useBtn("hooks", x.id)}</div></div>`,
+  themes: x => `<div class="item"><div class="swatches">${colors(x).map(c => `<span style="background:${esc(c)}"></span>`).join("")}</div><h4>${esc(x.nom)}</h4>
+      <div>${regTags(themeRegs(x))}${x.dessin ? `<span class="tag">dessin : ${esc(x.dessin)}</span>` : ""}</div>
+      <p class="muted">Polices : ${esc((x.police_titre || "").replace(/\.ttf$/, ""))} / ${esc((x.police_texte || "").replace(/\.ttf$/, ""))} · sous-titres ${esc((x.sous_titres || {}).style || "")}</p>
+      <p class="muted">Musiques : ${esc((x.ambiances || [x.ambiance]).filter(Boolean).map(ambName).join(", "))}</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("themes", x.id)}</div></div>`,
+  ambiances: x => { const th = CAT.themes.filter(t => (t.ambiances || [t.ambiance]).includes(x.id)).map(t => t.nom);
+    return `<div class="item"><h4>${esc(x.nom || nice(x.id))}</h4><p class="muted">${x.bpm ? `${x.bpm} BPM` : ""}${x.instrument ? ` · ${esc(x.instrument)}` : ""}</p>
+      <p class="muted">Thèmes : ${esc(th.join(", ") || "aucun")}</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("ambiances", x.id)}</div></div>`; },
+  voix: x => `<div class="item"><h4>${esc(x.id)}</h4><p>${esc(x.description)}</p><div class="foot">${useBtn("voix", x.id)}</div></div>`,
+};
+function showSujetsFor(fid){ const f = byId(CAT.formats, fid); setCatKind("sujets"); $("catCat").value = f.categorie; $("catQ").value = "";
+  $("catalog").innerHTML = CAT.sujets.filter(x => compatible(f, x)).map(CARD.sujets).join(""); $("catInfo").textContent = `Sujets compatibles avec « ${f.nom} ».`; }
+
+// --- Compositeur : une combinaison par reel (input "plan" du workflow) ---
+const FIELDS = ["registre", "format", "sujet", "angle", "hook", "theme", "ambiance", "voix"];
+const blank = () => ({ ...Object.fromEntries(FIELDS.map(k => [k, ""])), libre: false });
+let PLAN = (() => { try { const p = JSON.parse(store.get("rg_plan")); return Array.isArray(p) && p.length ? p.map(r => ({ ...blank(), ...r })) : [blank()]; } catch { return [blank()]; } })();
+const savePlan = () => store.set("rg_plan", JSON.stringify(PLAN));
+function setCompose(on){
+  $("f_compose").checked = on; store.set("rg_compose", on ? "1" : "");
+  $("composer").classList.toggle("hidden", !on);
+  document.querySelectorAll("#tab-launch .g-only").forEach(e => e.classList.toggle("hidden", on));
+  renderPlan();
+}
+// Choix possibles d'un champ, compte tenu des autres champs du reel.
+function options(r, k){
+  const fmt = byId(CAT.formats, r.format), suj = byId(CAT.sujets, r.sujet), th = byId(CAT.themes, r.theme);
+  switch (k) {
+    case "format": return CAT.formats.filter(f => (!r.registre || regs(f).includes(r.registre)) && (!suj || compatible(f, suj)) && (!sansCap() || sansCapOk(f)));
+    case "sujet": return CAT.sujets.filter(x => !fmt || compatible(fmt, x));
+    case "hook": return CAT.hooks.filter(x => !r.registre || regs(x).includes(r.registre));
+    case "theme": return CAT.themes.filter(x => !r.registre || themeRegs(x).includes(r.registre));
+    case "ambiance": return th ? CAT.ambiances.filter(a => (th.ambiances || [th.ambiance]).includes(a.id)) : CAT.ambiances;
+    case "voix": return CAT.voix;
+  }
+}
+const OPT_LABEL = { format: x => `${x.nom} · ${x.categorie}`, hook: x => nice(x.id), theme: x => x.nom, ambiance: x => x.nom || nice(x.id), voix: x => `${x.id} : ${x.description}` };
+function selectHtml(i, k, r){
+  const auto = `<option value="">Auto</option>`;
+  if (k === "registre") return `<select onchange="setField(${i},'registre',this.value)">${auto}${["serieux","humour"].map(v => `<option value="${v}"${r.registre === v ? " selected" : ""}>${REG_LABEL[v]}</option>`).join("")}</select>`;
+  const opts = options(r, k);
+  if (k === "sujet") {
+    const fam = {}; for (const x of opts) (fam[x.famille || "divers"] ||= []).push(x);
+    return `<select onchange="setField(${i},'sujet',this.value)">${auto}<option value="__angle"${r.libre ? " selected" : ""}>✎ Sujet libre (angle écrit)…</option>` +
+      Object.keys(fam).sort().map(f => `<optgroup label="${esc(nice(f))}">${fam[f].map(x => `<option value="${esc(x.id)}"${r.sujet === x.id ? " selected" : ""}>${esc(x.texte.length > 90 ? x.texte.slice(0, 88) + "…" : x.texte)}</option>`).join("")}</optgroup>`).join("") + `</select>`;
+  }
+  return `<select onchange="setField(${i},'${k}',this.value)">${auto}${opts.map(x => `<option value="${esc(x.id)}"${r[k] === x.id ? " selected" : ""}>${esc(OPT_LABEL[k](x))}</option>`).join("")}</select>`;
+}
+function renderPlan(){
+  if (!$("f_compose").checked) return;
+  // Un choix devenu incompatible (registre, mode sans capture...) repasse en auto.
+  for (const r of PLAN) for (const k of ["format", "sujet", "hook", "theme", "ambiance"]) if (r[k] && CAT.formats.length && !options(r, k).some(x => x.id === r[k])) r[k] = "";
+  savePlan();
+  $("plan").innerHTML = PLAN.map((r, i) => {
+    const fmt = byId(CAT.formats, r.format), suj = byId(CAT.sujets, r.sujet), hk = byId(CAT.hooks, r.hook), th = byId(CAT.themes, r.theme);
+    const prev = [
+      fmt ? `<b>Format</b> ${esc(fmt.structure)}` : "",
+      suj ? `<b>Sujet</b> ${esc(suj.texte)}` : r.angle ? `<b>Sujet libre</b> ${esc(r.angle)}${fmt ? "" : " (format Démo produit par défaut)"}` : "",
+      hk ? `<b>Accroche</b> ${esc(hk.consigne)} <i>« ${esc(hk.exemple || "")} »</i>` : "",
+      th ? `<b>Thème</b> <span class="swatches" style="display:inline-flex;width:90px;height:12px;vertical-align:middle">${colors(th).map(c => `<span style="background:${esc(c)}"></span>`).join("")}</span> ${esc(th.nom)}` : "",
+    ].filter(Boolean).join("<br>");
+    return `<div class="reelplan"><div class="head"><b>Reel ${i + 1}</b>
+        <button title="Tirer une combinaison compatible au hasard" onclick="roll(${i})">🎲</button><button title="Dupliquer" onclick="dupReel(${i})">⧉</button>
+        <button title="Supprimer" onclick="delReel(${i})"${PLAN.length === 1 ? " disabled" : ""}>✖</button></div>
+      <div class="grid">${FIELDS.filter(k => k !== "angle").map(k => `<div><label>${{ registre: "Registre", format: "Format", sujet: "Sujet", hook: "Accroche", theme: "Thème", ambiance: "Musique", voix: "Voix" }[k]}</label>${selectHtml(i, k, r)}</div>`).join("")}</div>
+      ${r.libre ? `<label>Sujet libre</label><input value="${esc(r.angle)}" placeholder="ex : les jeunes diplômés face aux ATS" onchange="setField(${i},'angle',this.value)">` : ""}
+      <div class="preview">${prev || "Tout en automatique : le générateur choisit."}</div></div>`;
+  }).join("");
+}
+function setField(i, k, v){
+  const r = PLAN[i];
+  if (k === "sujet") { r.libre = v === "__angle"; r.sujet = r.libre ? "" : v; if (!r.libre) r.angle = ""; }
+  else if (k === "angle") r.angle = v.trim();
+  else r[k] = v;
+  if (k === "theme" && r.ambiance && !options(r, "ambiance").some(a => a.id === r.ambiance)) r.ambiance = "";
+  renderPlan();
+}
+const pick = list => list.length ? list[Math.floor(Math.random() * list.length)].id : "";
+function roll(i){
+  const r = blank();
+  r.registre = Math.random() < 0.3 ? "humour" : "serieux";
+  r.format = pick(options(r, "format")); r.sujet = pick(options(r, "sujet")); r.hook = pick(options(r, "hook"));
+  r.theme = pick(options(r, "theme")); r.ambiance = pick(options(r, "ambiance")); r.voix = pick(options(r, "voix"));
+  PLAN[i] = r; renderPlan();
+}
+function rollAll(){ PLAN.forEach((_, i) => roll(i)); }
+function addReel(){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.push(blank()); renderPlan(); }
+function dupReel(i){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.splice(i + 1, 0, { ...PLAN[i] }); renderPlan(); }
+function delReel(i){ PLAN.splice(i, 1); renderPlan(); }
+function resetPlan(){ PLAN = PLAN.map(blank); renderPlan(); }
+function useInPlan(k, id){
+  if (!$("f_compose").checked) { PLAN = [blank()]; setCompose(true); }
+  let i = PLAN.length - 1;
+  if (PLAN[i][k]) { if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.push(blank()); i++; }
+  PLAN[i][k] = id; if (k === "sujet") Object.assign(PLAN[i], { angle: "", libre: false });
+  renderPlan();
+  toast(PLAN[i][k] === id ? `Ajouté au reel ${i + 1} (onglet 🚀 Lancer)` : `Incompatible avec les choix du reel ${i + 1} : laissé en automatique`);
+}
+function planInput(){
+  return JSON.stringify(PLAN.map(r => Object.fromEntries(FIELDS.map(k => [k, String(r[k] || "").trim()]).filter(([, v]) => v))));
 }
 
 async function launch(){
   const inputs = { n: String($("f_n").value || 3) };
   for (const k of ["duration","format","theme","registre","plateformes","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
   for (const k of ["sfx","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
+  if ($("f_compose").checked) {
+    // Mode composition : une combinaison par reel ; les choix globaux cedent la place.
+    if (PLAN.some(r => r.libre && !r.angle)) return toast("Sujet libre choisi mais vide : écris-le ou repasse en Auto", 6000);
+    Object.assign(inputs, { plan: planInput(), n: String(PLAN.length), format: "", theme: "", registre: "", voice: "auto", angle: "" });
+  }
   if (inputs.from_step === "script" && !confirm("from_step = script : nouveaux textes ET nouvelles voix (appels Gemini). Continuer ?")) return;
   $("go").disabled = true;
   try {
@@ -302,5 +481,6 @@ async function start(){
   loadRuns();
   showTab(store.get("rg_tab") || "launch");
 }
-$("repo").value = REPO; start();
+$("f_capture_mode").addEventListener("change", renderPlan);
+$("repo").value = REPO; setCompose(!!store.get("rg_compose")); start();
 </script></body></html>

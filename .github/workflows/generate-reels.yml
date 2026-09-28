@@ -109,6 +109,14 @@ on:
         description: "Angle marketing libre (optionnel, sinon rotation automatique)"
         required: false
         default: ""
+      hook:
+        description: "Style d'accroche impose (catalog/hooks.json), vide = rotation"
+        required: false
+        default: ""
+      plan:
+        description: "Combinaison par reel (JSON, construit par la console) : [{format, sujet, hook, theme, voix, registre, ambiance, angle}, ...] ; remplace n"
+        required: false
+        default: ""
       scenario:
         description: "Chemin d'un scenario ecrit a la main dans le repo (optionnel, ex: scenarios/exemple.json)"
         required: false
@@ -181,6 +189,8 @@ jobs:
           INPUT_FORMAT: ${{ github.event.inputs.format }}
           INPUT_THEME: ${{ github.event.inputs.theme }}
           INPUT_REGISTRE: ${{ github.event.inputs.registre }}
+          INPUT_HOOK: ${{ github.event.inputs.hook }}
+          INPUT_PLAN: ${{ github.event.inputs.plan }}
         run: |
           extra=()
           [ -n "$INPUT_ANGLE" ] && extra+=(--angle "$INPUT_ANGLE")
@@ -188,6 +198,8 @@ jobs:
           [ -n "$INPUT_FORMAT" ] && extra+=(--format "$INPUT_FORMAT")
           [ -n "$INPUT_THEME" ] && extra+=(--theme "$INPUT_THEME")
           [ -n "$INPUT_REGISTRE" ] && extra+=(--registre "$INPUT_REGISTRE")
+          [ -n "$INPUT_HOOK" ] && extra+=(--hook "$INPUT_HOOK")
+          [ -n "$INPUT_PLAN" ] && extra+=(--plan "$INPUT_PLAN")
           python scripts/run_pipeline.py \
             --n "${{ github.event.inputs.n || '3' }}" \
             --duration "${{ github.event.inputs.duration || '30' }}" \

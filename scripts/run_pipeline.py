@@ -259,6 +259,9 @@ def main():
                          help="Theme visuel impose (catalog/themes.json) ; sinon rotation")
     parser.add_argument("--hook", type=str, default=None,
                          help="Style d'accroche impose (catalog/hooks.json) ; sinon rotation")
+    parser.add_argument("--plan", type=str, default=None,
+                        help="Combinaison imposee reel par reel (JSON, cf. 1_generate_script.py --plan) ; "
+                             "remplace --n (un reel par objet)")
     parser.add_argument("--no-sfx", action="store_true",
                          help="Sans effets sonores (la musique reste) ; reglages fins : catalog/audio.json")
     parser.add_argument("--no-hook-overlay", action="store_true",
@@ -294,7 +297,7 @@ def main():
                                          ("registre", args.registre)))
         # Scenarios ecrits pour des captures (features) != scenarios sans capture (cartes partout).
         stale_catalog = stale_catalog or any(bool(sc.get("sans_captures")) != sans_captures for sc in existing)
-        if args.scenario or args.angle or stale_duration or stale_catalog:
+        if args.scenario or args.angle or args.plan or stale_duration or stale_catalog:
             print("Parametres de scenario differents de la derniere execution -> regeneration complete")
             from_index = 0
 
@@ -323,6 +326,8 @@ def main():
         scenario_args += ["--angle", args.angle]
     if args.scenario:
         scenario_args += ["--scenario", args.scenario]
+    if args.plan:
+        scenario_args += ["--plan", args.plan]
     for flag, value in (("--format", args.format), ("--theme", args.theme), ("--hook", args.hook),
                         ("--registre", args.registre)):
         if value:
