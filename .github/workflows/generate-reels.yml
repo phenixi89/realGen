@@ -32,7 +32,7 @@ on:
           - video_desktop
           - aucune
         required: false
-        default: video
+        default: screenshots
       anims:
         description: "Animations HTML/JS (scene/highlight : capture_mode screenshots uniquement)"
         type: choice
@@ -205,7 +205,7 @@ jobs:
             --duration "${{ github.event.inputs.duration || '30' }}" \
             --saas-url "${{ vars.SAAS_URL }}" \
             --voice "${{ github.event.inputs.voice || 'auto' }}" \
-            --capture-mode "${{ github.event.inputs.capture_mode || 'video' }}" \
+            --capture-mode "${{ github.event.inputs.capture_mode || 'screenshots' }}" \
             --anims "${{ github.event.inputs.anims || 'none' }}" \
             --plateformes "${{ github.event.inputs.plateformes || 'all' }}" \
             "${extra[@]}" \

@@ -463,7 +463,8 @@ Il dit aussi ce que l'outil ne fait pas : pas de score, jamais de chiffre invent
 
 Le workflow `.github/workflows/generate-reels.yml` tourne chaque lundi (et manuellement via
 l'onglet Actions, avec les mêmes options que `run_pipeline.py`, dont `registre`, `hook`, `plan` et
-`plateformes`).
+`plateformes`). Capture par défaut du workflow (et donc du lancement du lundi) : `screenshots`, le seul
+mode avec capture qui affiche les cartes animées (`run_pipeline.py` seul garde `video` par défaut).
 Les déclinaisons Instagram sont dans l'artefact `output`, sous `final/`.
 
 À configurer dans le repo GitHub (Settings → Secrets and variables → Actions) :
@@ -509,7 +510,9 @@ permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en
   en capture `aucune`). Aperçu sous chaque bloc (structure du format, texte du sujet, exemple
   d'accroche, couleurs du thème). 🎲 tire une combinaison compatible, ⧉ duplique. Envoyé au workflow
   dans le champ `plan` ; les champs globaux Nombre, Format, Thème, Registre, Voix et Angle sont alors
-  masqués. La composition est mémorisée dans le navigateur.
+  masqués. Capture par défaut : « Captures desktop + zoom » (`screenshots`). Un format à cartes
+  choisi avec une capture vidéo (`video`, `video_desktop`) affiche un avertissement : ses cartes y
+  seraient remplacées par des captures. La composition est mémorisée dans le navigateur.
 - **Catalogue** : fiches par type (formats, sujets, accroches, thèmes, ambiances, voix) avec recherche
   et filtres catégorie / registre ; formats : structure, visuel, sujets compatibles (« Voir ses
   sujets ») ; thèmes : nuancier, polices, musiques. « ➕ Composer » ajoute l'élément au compositeur

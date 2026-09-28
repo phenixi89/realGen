@@ -97,7 +97,7 @@ h3{font-size:14px;margin:16px 0 8px}
       <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
     <div class="g-only"><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
     <div><label>Capture</label><select id="f_capture_mode">
-      <option value="video">Vidéo mobile</option><option value="screenshots">Captures desktop + zoom (animations complètes)</option><option value="video_desktop">Vidéo desktop recadrée</option><option value="aucune">Sans capture (conseils en cartes animées)</option></select></div>
+      <option value="screenshots" selected>Captures desktop + zoom (recommandé : cartes et animations complètes)</option><option value="video">Vidéo mobile (sans cartes animées)</option><option value="video_desktop">Vidéo desktop recadrée (sans cartes animées)</option><option value="aucune">Sans capture (conseils en cartes animées)</option></select></div>
     <div><label>Animations <small>scene/highlight : mode captures</small></label><select id="f_anims">
       <option value="none">Aucune</option><option value="all">Toutes</option><option>overlay</option><option>scene</option><option>highlight</option><option>cursor</option>
       <option>overlay,scene</option><option>overlay,highlight</option><option>scene,highlight</option><option>overlay,cursor</option><option>scene,cursor</option></select></div>
@@ -109,6 +109,7 @@ h3{font-size:14px;margin:16px 0 8px}
       <option value="subs">subs : sous-titres + montage</option>
       <option value="assemble">assemble : montage final seul</option></select></div>
   </div>
+  <p id="capWarn" class="warn hidden"></p>
   <div class="g-only"><label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS"></div>
   <h3>Combinaison par reel</h3>
   <label class="chk"><input id="f_compose" type="checkbox" onchange="setCompose(this.checked)"> Composer chaque reel moi-même (format, sujet, accroche, thème, ambiance, voix, registre)</label>
@@ -203,6 +204,13 @@ const byId = (list, id) => list.find(x => x.id === id);
 const compatible = (fmt, suj) => fmt.categorie === suj.categorie && (fmt.sujets || []).some(t => (suj.tags || []).includes(t));
 const sansCapOk = fmt => fmt.categorie === "conseil" && fmt.cartes !== "aucune";
 const sansCap = () => $("f_capture_mode").value === "aucune";
+// Cartes animees seulement en capture "screenshots" ou "aucune" (sinon la capture est montree a la place).
+const cartesPerdues = fmt => fmt && fmt.cartes !== "aucune" && !["screenshots", "aucune"].includes($("f_capture_mode").value);
+const CARTES_WARN = "⚠ Ce format a des cartes animées : elles ne seront pas affichées en capture vidéo (captures de l'app à la place). Choisis « Captures desktop + zoom » ou « Sans capture ».";
+function checkCapture(){
+  const f = byId(CAT.formats, $("f_format").value);
+  $("capWarn").textContent = CARTES_WARN; $("capWarn").classList.toggle("hidden", $("f_compose").checked || !cartesPerdues(f));
+}
 const ambName = id => (byId(CAT.ambiances, id) || {}).nom || nice(id);
 const colors = th => Object.values(th.couleurs || {}).filter(c => typeof c === "string" && c.startsWith("#")).slice(0, 6);
 
@@ -258,7 +266,7 @@ function setCompose(on){
   $("f_compose").checked = on; store.set("rg_compose", on ? "1" : "");
   $("composer").classList.toggle("hidden", !on);
   document.querySelectorAll("#tab-launch .g-only").forEach(e => e.classList.toggle("hidden", on));
-  renderPlan();
+  renderPlan(); checkCapture();
 }
 // Choix possibles d'un champ, compte tenu des autres champs du reel.
 function options(r, k){
@@ -296,6 +304,7 @@ function renderPlan(){
       suj ? `<b>Sujet</b> ${esc(suj.texte)}` : r.angle ? `<b>Sujet libre</b> ${esc(r.angle)}${fmt ? "" : " (format Démo produit par défaut)"}` : "",
       hk ? `<b>Accroche</b> ${esc(hk.consigne)} <i>« ${esc(hk.exemple || "")} »</i>` : "",
       th ? `<b>Thème</b> <span class="swatches" style="display:inline-flex;width:90px;height:12px;vertical-align:middle">${colors(th).map(c => `<span style="background:${esc(c)}"></span>`).join("")}</span> ${esc(th.nom)}` : "",
+      cartesPerdues(fmt) ? `<span class="warn">${CARTES_WARN}</span>` : "",
     ].filter(Boolean).join("<br>");
     return `<div class="reelplan"><div class="head"><b>Reel ${i + 1}</b>
         <button title="Tirer une combinaison compatible au hasard" onclick="roll(${i})">🎲</button><button title="Dupliquer" onclick="dupReel(${i})">⧉</button>
@@ -484,6 +493,7 @@ async function start(){
   loadRuns();
   showTab(store.get("rg_tab") || "launch");
 }
-$("f_capture_mode").addEventListener("change", renderPlan);
+$("f_capture_mode").addEventListener("change", () => { renderPlan(); checkCapture(); });
+$("f_format").addEventListener("change", checkCapture);
 $("repo").value = REPO; setCompose(!!store.get("rg_compose")); start();
 </script></body></html>
