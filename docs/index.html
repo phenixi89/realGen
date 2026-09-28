@@ -148,9 +148,12 @@ h3{font-size:14px;margin:16px 0 8px}
 </main>
 <div id="msg"></div>
 <script>
+// Erreur inattendue : message visible plutot qu'une page figee.
+window.addEventListener("error", e => { const m = document.getElementById("msg"); if (m) { m.textContent = `Erreur de la console : ${e.message}`; m.style.display = "block"; } });
 const WF = "generate-reels.yml";
 const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} }, del(k){ try{localStorage.removeItem(k)}catch{} } };
-let TOKEN = store.get("rg_token"), REPO = store.get("rg_repo") || "phenixi89/realGen", CAT = {}, timer = null, blobUrls = [];
+let TOKEN = store.get("rg_token"), REPO = store.get("rg_repo") || "phenixi89/realGen",
+    CAT = { formats: [], themes: [], voix: [], sujets: [], hooks: [], ambiances: [] }, timer = null, blobUrls = [];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(t, ms = 4000){ const m = $("msg"); m.textContent = t; m.style.display = "block"; clearTimeout(m._t); m._t = setTimeout(() => m.style.display = "none", ms); }

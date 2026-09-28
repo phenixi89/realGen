@@ -500,7 +500,7 @@ branche `main`, dossier `/docs`, dépôt public ou compte payant) ou ouvrir
 fichiers de l'app Claude (ou d'un téléphone) bloque les appels réseau (« Failed to fetch ») :
 ouvrir la page dans Chrome, Firefox ou Edge. Si l'onglet Catalogue (et les listes Format,
 Thème, Voix) reste vide, la console affiche l'erreur : le plus souvent, le token n'a pas la
-permission *Contents : Read-only*.
+permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en bas de l'écran.
 
 - **Compositeur** (onglet 🚀 Lancer, case « Composer chaque reel moi-même ») : un bloc par reel
   (jusqu'à 10) avec registre, format, sujet (groupés par famille, ou sujet libre), accroche, thème,
