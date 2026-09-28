@@ -24,12 +24,13 @@ on:
         required: false
         default: false
       capture_mode:
-        description: "video (mobile) / screenshots (desktop, zoom in/out) / video_desktop (desktop, recadre sur chaque fonctionnalite)"
+        description: "video (mobile) / screenshots (desktop, zoom in/out) / video_desktop (desktop, recadre sur chaque fonctionnalite) / aucune (sans capture de l'app : conseils en cartes animees)"
         type: choice
         options:
           - video
           - screenshots
           - video_desktop
+          - aucune
         required: false
         default: video
       anims:
@@ -139,6 +140,7 @@ jobs:
       # qu'il se reveille, au lieu d'attendre le cold-start plus tard,
       # bloquant en plein milieu du run, a l'etape 3 (Playwright).
       - name: Warm-up du service de demo (arriere-plan)
+        if: ${{ github.event.inputs.capture_mode != 'aucune' }}
         run: |
           # `disown` est un builtin bash absent du shell minimal de l'image
           # (`sh`/dash) et de toute facon inutile ici : un `&` simple suffit

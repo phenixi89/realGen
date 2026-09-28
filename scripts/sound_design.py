@@ -24,6 +24,7 @@ typeInterval) et cta.html :
     carte scan               -> pop, puis ding (score >= 80 %) ou buzz au score (scan.html RESULT_AT)
     carte impact             -> impact doux au premier mot
     carte meme               -> pop, feutre pendant le dessin, impact a la chute (meme.html PUNCH_AT)
+    plan illustration        -> feutre pendant le dessin (illustration.html DRAW_START)
     curseur anime            -> clic de souris (ajoute par run_pipeline.py)
     annotation au feutre     -> feutre (ajoute par run_pipeline.py, instants connus apres 3b)
 """
@@ -34,6 +35,7 @@ SUSPENSE_REVEAL = 1.2
 STANDARD_TITLE_END = 0.7
 CTA_BUTTON_AT = 1.45
 WHOOSH_LEAD = 0.12
+ILLUSTRATION_DRAW_START = 0.25  # illustration.html DRAW_START
 QUOTES = ' «»"“”'
 
 
@@ -143,6 +145,11 @@ def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[d
             cues += [{"t": start + 0.6 + k * gap + 0.2, "name": "pop"} for k in range(n)]
         elif name == "cta":
             cues.append({"t": start + CTA_BUTTON_AT, "name": "sparkle"})
+        elif name == "illustration":
+            # illustration.html : dessin de DRAW_START aux deux tiers de la scene.
+            d = float(params.get("dur", dur))
+            cues.append({"t": start + ILLUSTRATION_DRAW_START, "name": "feutre",
+                         "duration": min(max(d * 0.66 - ILLUSTRATION_DRAW_START, 0.6), 2.0)})
         elif name == "schema":
             d = float(params.get("dur", dur))
             draw_end = max(d * 0.8 - 0.2, 1.4)

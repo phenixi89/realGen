@@ -68,12 +68,24 @@ from pathlib import Path
 import catalog
 from features import available_features, normalize_feature_id
 
-PRODUCT_CONTEXT = """Produit : OpusCV (SaaS opuscv.tech), une application qui analyse un CV existant
-(PDF ou Word) via l'IA, détecte ce qui bloque le passage des filtres ATS des recruteurs,
-propose des corrections concrètes, puis régénère un PDF stylisé (33 thèmes).
-L'utilisateur peut aussi adapter son CV à une offre précise, générer une lettre de motivation,
-relire l'orthographe, et partager son CV par un lien public.
-Plan gratuit : 3 CV sauvegardés. Plan Pro : illimité.
+PRODUCT_CONTEXT = """Produit : OpusCV (SaaS opuscv.tech, application app.opuscv.tech), qui aide à sortir un CV prêt à envoyer,
+corrigé, mis en page et décliné par offre d'emploi.
+- Entrer : importer un CV existant (PDF ou Word) analysé par l'IA, partir d'un CV vierge, ou laisser l'IA
+  écrire un premier brouillon à partir de quelques phrases.
+- Corriger : une liste de « points à corriger » (profil trop court, mission sans résultat, coordonnée
+  manquante...), chacun expliqué en une phrase et relié au champ à réparer. PAS de note ni de score global.
+- Écrire : réécriture d'une section, relecture orthographique et grammaticale ; pour chiffrer une mission,
+  l'outil POSE DES QUESTIONS au candidat puis écrit la phrase avec SES réponses : il n'invente jamais un chiffre
+  ni un fait. Toute modification proposée passe par un avant/après à valider.
+- Mettre en page : 41 thèmes sur 6 mises en page (colonne, classique, minimal, bandeau, ATS sobre lisible
+  par les robots, frise chronologique), couleurs, polices, densité et réglages fins ; sections libres
+  (certifications, projets, bénévolat...) ; l'aperçu de l'éditeur est le PDF exact, au pixel près.
+- Sortir : PDF, Word (plan Pro), lien de partage public avec expiration et décompte des consultations.
+- Candidater : adapter le CV à une offre (enregistré en variante), lettre de motivation (téléchargeable en PDF
+  aux couleurs du CV), six questions d'entretien probables avec pistes de réponse.
+- Langues : CV en français, anglais, allemand ou espagnol, au format A4 ou Letter ; « Convertir » traduit un CV
+  en variante dans une autre langue ou un autre format.
+Plan gratuit pour commencer (quelques CV et actions IA), plan Pro illimité.
 Ton de marque : direct, concret, orienté résultat (décrocher des entretiens), jamais « corporate »."""
 
 MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
@@ -171,20 +183,21 @@ bien fonctionner avec ce format. Réponds UNIQUEMENT en JSON : {{"id": "...", "r
 
 def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_id: str | None,
                theme_id: str | None, hook_id: str | None, angle: str | None,
-               registre_id: str | None = None) -> list[dict]:
+               registre_id: str | None = None, sans_captures: bool = False) -> list[dict]:
     """
     Un plan par reel ; chaque choix tient compte des precedents (historique + ce lot).
     Le registre (serieux/humour) est choisi d'abord : il filtre formats, accroches et themes.
     Format impose sans registre impose : registre tire parmi ceux du format.
+    sans_captures : aucune capture de l'app (--capture-mode aucune) -> formats conseil a cartes.
     """
     plans = []
     working = list(history)
     for _ in range(n):
         forced_fmt = catalog.get_format(format_id) if format_id else (
-            catalog.get_format("demo_produit") if angle else None)
+            catalog.get_format("demo_produit") if angle and not sans_captures else None)
         registre = registre_id or catalog.pick_registre(
             working, rng, catalog.registres_of(forced_fmt) if forced_fmt else None)
-        fmt = forced_fmt or catalog.pick_format(working, rng, registre)
+        fmt = forced_fmt or catalog.pick_format(working, rng, registre, sans_captures)
         if angle:
             sujet = {"id": "", "texte": angle}
         else:
@@ -196,7 +209,8 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         ambiance = catalog.pick_ambiance(theme, working, rng)
         plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice, "registre": registre,
                 "cta": cta, "cta_anim": cta_anim, "ambiance": ambiance,
-                "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None}
+                "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None,
+                "sans_captures": sans_captures}
         plans.append(plan)
         working.append({"format": fmt["id"], "categorie": fmt["categorie"], "sujet": sujet["id"],
                         "famille": sujet.get("famille"),
@@ -235,10 +249,12 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
     en bas la chute en grosses lettres ; 1 à 3 par reel) :
     "carte": {"type": "meme", "haut": "la situation, 12 mots max (ex : Quand l'offre demande 5 ans d'expérience pour un stage)",
               "icone": "<id d'icône>", "bas": "la chute, 7 mots max (ex : Moi, né l'an dernier)"}""" if humour else ""
-    if fmt["cartes"] == "aucune":
+    sans_captures = bool(plan.get("sans_captures"))
+    if fmt["cartes"] == "aucune" and not sans_captures:
         cards_rule = "Aucune scène n'a de carte : chaque scène montre uniquement la fonctionnalité."
     else:
-        need = "la MAJORITÉ des scènes" if fmt["cartes"] == "majoritaires" else "les scènes où c'est utile"
+        need = ("CHAQUE scène sauf la première et la dernière" if sans_captures
+                else "la MAJORITÉ des scènes" if fmt["cartes"] == "majoritaires" else "les scènes où c'est utile")
         cards_rule = f"""Pour {need}, ajoute une "carte" : un écran texte animé affiché à la place de la
 capture, qui résume visuellement ce que dit la voix :
   - carte texte (par défaut) :
@@ -274,8 +290,8 @@ Effets d'apparition du titre (cartes texte) : "frappe" (tapé au clavier, idéal
 de CV ou une phrase d'offre), "suspense" (titre caché puis révélé avec un impact : UNE SEULE fois
 par reel, pour la révélation la plus forte, jamais sur deux cartes), sinon "standard". Varie-les.
 Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus) ni sur la dernière (CTA).
-Le texte de la carte ne recopie PAS la voix : il la résume. Une scène avec carte garde un champ "feature"
-(la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée)."""
+Le texte de la carte ne recopie PAS la voix : il la résume.""" + ("" if sans_captures else """ Une scène avec carte garde un champ "feature"
+(la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée).""")
 
     annotation_rule = """
 ANNOTATION AU FEUTRE : sur la scène preuve (s'il y en a une) et au plus une autre scène SANS carte qui montre
@@ -283,7 +299,9 @@ OpusCV, ajoute "annotation": 2 à 5 mots manuscrits sur un post-it qui pointe l'
 (ex : « tes mots-clés manquants », « le bouton magique »), en tutoyant. Jamais sur la scène 1 ni la dernière.
 """
     proof_rule = ""
-    if wants_proof(fmt):
+    if sans_captures:
+        annotation_rule = ""
+    elif wants_proof(fmt):
         proof_rule = """
 SCÈNE PREUVE (obligatoire, une seule) : l'avant-dernière ou l'antépénultième scène montre le conseil
 APPLIQUÉ EN DIRECT dans OpusCV : marque-la "preuve": true, SANS carte, avec la fonctionnalité qui
@@ -307,6 +325,24 @@ Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
                  if plan["sujet"].get("famille") in ("ats_mots_cles", "redaction_cv", "produit_analyse")
                  else "ne dérive pas vers les logiciels ATS, les mots-clés ni le fait de chiffrer ses résultats "
                       "(thèmes déjà très traités sur le compte) ; traite CE sujet, avec ses exemples propres.")
+    if sans_captures:
+        screen_rule = f"""Le reel est une suite de SCÈNES, SANS AUCUNE IMAGE DE L'APPLICATION : l'écran de chaque scène est
+une carte animée (ci-dessous) pendant que la voix off dit le texte de la scène. Pas de champ "feature".
+Scène 1 : pas de carte, mais un champ "illustration" = l'id d'une icône dessinée à la main sous l'accroche,
+en rapport avec le sujet (icônes disponibles : {", ".join(catalog.icons())}).
+Dernière scène : pas de carte (l'appel à l'action animé s'affiche automatiquement).
+Tu peux citer OpusCV à la fin comme l'outil qui aide, sans décrire d'écran que le spectateur ne voit pas.
+"""
+        scene1_rule = ""
+        variety_rule = "varie les types de cartes, jamais le même type dans deux scènes consécutives ;"
+    else:
+        screen_rule = f"""Le reel est une suite de SCÈNES. Pendant chaque scène, l'écran montre une fonctionnalité réelle
+d'OpusCV (capturée automatiquement dans l'application) et la voix off dit le texte de la scène.
+Fonctionnalités filmables (utilise UNIQUEMENT ces ids, champ "feature") :
+{catalog_features}
+"""
+        scene1_rule = (', sur une fonctionnalité visuellement riche (pas "dashboard",\n'
+                       '  dont la capture est une simple ligne)')
     prompt = f"""Tu es copywriter spécialisé en contenu court viral (TikTok/Instagram Reels) pour chercheurs d'emploi.
 Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonctionnalité :
 
@@ -324,18 +360,13 @@ Exemple de ton (ne pas recopier) : « {hook['exemple']} »
 Ne réutilise pas ces accroches déjà publiées, ni leur formulation :
 {avoid_hooks}
 
-Le reel est une suite de SCÈNES. Pendant chaque scène, l'écran montre une fonctionnalité réelle
-d'OpusCV (capturée automatiquement dans l'application) et la voix off dit le texte de la scène.
-Fonctionnalités filmables (utilise UNIQUEMENT ces ids, champ "feature") :
-{catalog_features}
-
+{screen_rule}
 {cards_rule}
 {proof_rule}{annotation_rule}
 Contraintes :
 - entre {lo_s} et {hi_s} scènes ;
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
-- scène 1 = l'accroche (12 mots max), sur une fonctionnalité visuellement riche (pas "dashboard",
-  dont la capture est une simple ligne) ; dernière scène = CTA court, dans l'esprit : « {cta} » ;
+- scène 1 = l'accroche (12 mots max){scene1_rule} ; dernière scène = CTA court, dans l'esprit : « {cta} » ;
 - 1 à 2 phrases par scène, ton oral et naturel, tutoiement, pas publicitaire{"" if not humour else ", drôle"} ;
 - {variety_rule}
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est
@@ -383,13 +414,15 @@ Recopie à l'identique les textes imposés ; écris uniquement les textes manqua
     if feedback:
         prompt += f"\nCORRECTION DEMANDÉE sur ta proposition précédente : {feedback}\n"
 
+    scene_json = ('{"illustration": "<id d\'icône>", "texte": "..."}, {"texte": "...", "carte": {...}}, ..., {"texte": "..."}]'
+                  if sans_captures else
+                  '{"feature": "<id>", "texte": "...", "carte": {...} (optionnel), "preuve": true (optionnel),\n'
+                  ' "annotation": "..." (optionnel)}]')
     prompt += """
 Réponds UNIQUEMENT en JSON valide :
 {"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."],
  "legende_instagram": "...", "hashtags_instagram": ["#..."], "carrousel": [{"titre": "...", "texte": "..."}], "offre_emploi": "...",
- "theme_style": "...", "scenes": [{"feature": "<id>", "texte": "...", "carte": {...} (optionnel), "preuve": true (optionnel),
- "annotation": "..." (optionnel)}]}
-"""
+ "theme_style": "...", "scenes": [""" + scene_json + "}\n"
     return prompt
 
 
@@ -497,8 +530,12 @@ def banned_phrases(text: str) -> list[str]:
 
 def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: str = "aucune",
              recent_hooks: list[str] | None = None, proof: bool = False,
-             tone: str = "") -> tuple[list[dict], list[str]]:
-    """Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA)."""
+             tone: str = "", sans_captures: bool = False) -> tuple[list[dict], list[str]]:
+    """
+    Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA).
+    sans_captures : pas de feature (""), une carte sur chaque scene sauf la 1re (icone
+    "illustration") et la derniere (CTA anime), ni preuve ni annotation.
+    """
     problems = []
     scenes = []
     for raw in data.get("scenes") or []:
@@ -506,19 +543,27 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
         fid = normalize_feature_id(raw.get("feature"))
         if not texte:
             continue
-        if fid is None:
+        if fid is None and sans_captures:
+            fid = ""
+        elif fid is None:
             # Sequence imposee : la feature est ecrasee plus bas, inutile de relancer pour ca.
             if not forced:
                 problems.append(f'feature inconnue "{raw.get("feature")}" (remplacée par apercu_cv)')
             fid = "apercu_cv"
         scene = {"feature": fid, "texte": texte}
         # Scene 1 = accroche : jamais de carte, l'accroche_ecran s'y affiche deja en grand.
-        card = clean_card(raw.get("carte")) if card_mode != "aucune" and scenes else None
+        card = clean_card(raw.get("carte")) if (card_mode != "aucune" or sans_captures) and scenes else None
         if card:
             scene["carte"] = card
         # Animations demandees par le scenario (run_pipeline.py --anims) :
         # conservees telles quelles, interpretees au montage.
         scene.update({k: raw[k] for k in ANIM_KEYS if raw.get(k)})
+        if sans_captures:
+            if not scenes:
+                icone = str(raw.get("illustration") or "").strip().lower()
+                scene["illustration"] = icone if icone in catalog.icons() else "cv"
+            scenes.append(scene)
+            continue
         if raw.get("preuve") is True and proof:
             scene["preuve"] = True
         annotation = " ".join(str(raw.get("annotation") or "").split())
@@ -539,6 +584,12 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
                     scene.pop("annotation", None)
                 scene.update({k: imposed[k] for k in ANIM_KEYS + ("annotation", "preuve") if imposed.get(k)})
 
+    if sans_captures and scenes:
+        scenes[-1].pop("carte", None)  # CTA anime
+        bare = [i for i in range(1, len(scenes) - 1) if "carte" not in scenes[i]]
+        if bare:
+            problems.append(f"sans capture de l'application, chaque scène sauf la 1re et la dernière a une carte "
+                            f"(manquante aux scènes {', '.join(str(i + 1) for i in bare)})")
     # Carte impact = LA phrase a retenir : une seule par reel (les suivantes -> cartes texte).
     impacts = [s for s in scenes if s.get("carte", {}).get("type") == "impact"]
     for extra in impacts[1:]:
@@ -586,7 +637,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
     all_text = " ".join([s["texte"] for s in scenes] + [str(data.get("accroche_ecran") or "")])
     if len(all_text.split()) >= MIN_WORDS_ACCENT_CHECK and not ACCENT_RE.search(all_text):
         problems.append("le texte est écrit sans accents : écris en français correct avec tous les accents")
-    if card_mode == "majoritaires" and scenes and sum("carte" in s for s in scenes) < len(scenes) / 2:
+    if card_mode == "majoritaires" and not sans_captures and scenes and sum("carte" in s for s in scenes) < len(scenes) / 2:
         problems.append("ce format demande une carte pour la majorité des scènes")
 
     accroche = str(data.get("accroche_ecran") or "").strip()
@@ -615,8 +666,10 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         except json.JSONDecodeError:
             feedback = "ta réponse n'était pas du JSON valide"
             continue
-        scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks, wants_proof(fmt),
-                                    catalog.tone_for(fmt, plan.get("registre")))
+        sans_captures = bool(plan.get("sans_captures"))
+        scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks,
+                                    wants_proof(fmt) and not sans_captures,
+                                    catalog.tone_for(fmt, plan.get("registre")), sans_captures)
         if scenes:
             best, best_data = scenes, data
         if not problems:
@@ -626,6 +679,9 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
 
     if not best:
         raise RuntimeError(f"Scénario inexploitable après {MAX_ATTEMPTS} tentatives (sujet : {plan['sujet']['texte']})")
+    if plan.get("sans_captures"):
+        for scene in best[1:-1]:
+            scene.setdefault("carte", fallback_card(scene["texte"]))
     hashtags = best_data.get("hashtags") or []
     return finalize({
         "angle": plan["sujet"]["texte"], "titre": best_data.get("titre", ""), "duree_cible_s": duration,
@@ -640,6 +696,15 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         **instagram_fields(best_data),
         **plan_fields(plan),
     })
+
+
+def fallback_card(texte: str) -> dict:
+    """Carte texte de secours (sans capture, l'IA n'en a pas donne) : la 1re phrase, 9 mots au plus."""
+    phrase = re.split(r"(?<=[.!?…])\s+", texte.strip())[0]
+    words = phrase.split()
+    titre = " ".join(words[:9]) + ("…" if len(words) > 9 else "")
+    return {"type": "texte", "surtitre": "", "titre": titre.rstrip(".") if len(words) <= 9 else titre,
+            "texte": "", "style": "normal", "effet": "standard"}
 
 
 def _hashtags(raw, limit: int | None = None) -> list[str]:
@@ -675,6 +740,7 @@ def plan_fields(plan: dict) -> dict:
             "ton": catalog.tone_for(plan["format"], plan.get("registre")),
             "cta_anim": plan.get("cta_anim") or {},
             "ambiance": plan.get("ambiance"),
+            **({"sans_captures": True} if plan.get("sans_captures") else {}),
             **({"habillage": plan["format"]["habillage"], "habillage_params": plan["format"].get("habillage_params", {})}
                if plan["format"].get("habillage") else {})}
 
@@ -683,7 +749,7 @@ def finalize(scenario: dict) -> dict:
     """Ajoute les champs derives : liste des features a capturer, estimation de duree."""
     seen = []
     for scene in scenario["scenes"]:
-        if scene["feature"] not in seen:
+        if scene["feature"] and scene["feature"] not in seen:
             seen.append(scene["feature"])
     scenario["features"] = seen
     words = sum(len(s["texte"].split()) for s in scenario["scenes"])
@@ -699,7 +765,7 @@ def finalize(scenario: dict) -> dict:
     return scenario
 
 
-def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
+def load_scenario_file(path: Path, default_duration: int, sans_captures: bool = False) -> list[dict]:
     """
     Scenarios ecrits a la main : chaque scene doit nommer une feature du
     catalogue ; le texte est optionnel (l'IA completera). Champs optionnels
@@ -714,7 +780,9 @@ def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
         scenes = []
         for s in item.get("scenes") or []:
             fid = normalize_feature_id(s.get("feature"))
-            if fid is None:
+            if fid is None and sans_captures:
+                fid = ""  # sans capture : la scene sans carte devient un plan illustre
+            elif fid is None:
                 raise ValueError(f"{path} scenario {n} : feature inconnue ou non autorisee '{s.get('feature')}' "
                                  f"(liste : python scripts/features.py)")
             scene = {"feature": fid, "texte": str(s.get("texte") or "").strip(),
@@ -726,6 +794,8 @@ def load_scenario_file(path: Path, default_duration: int) -> list[dict]:
                 scene["annotation"] = " ".join(str(s["annotation"]).split()[:ANNOTATION_MAX_WORDS])
             if s.get("preuve") is True and not card:
                 scene["preuve"] = True
+            if str(s.get("illustration") or "") in catalog.icons():
+                scene["illustration"] = s["illustration"]
             scenes.append(scene)
         if not scenes:
             raise ValueError(f"{path} scenario {n} : aucune scene")
@@ -763,6 +833,9 @@ def main():
     parser.add_argument("--hook", type=str, default=None, help="Style d'accroche impose (catalog/hooks.json)")
     parser.add_argument("--registre", type=str, default=None, choices=catalog.REGISTRES,
                          help="Registre impose (serieux / humour) ; sinon mix de catalog/config.json 'registres'")
+    parser.add_argument("--sans-captures", action="store_true",
+                         help="Aucune capture de l'app (run_pipeline --capture-mode aucune) : formats conseil, "
+                              "toutes les scenes en cartes animees")
     parser.add_argument("--seed", type=int, default=None, help="Graine du tirage (reproductibilite)")
     parser.add_argument("--scenario", type=str, default=None,
                          help="Fichier JSON de scenario(s) ecrit(s) a la main (voir scenarios/exemple.json)")
@@ -783,6 +856,8 @@ def main():
                 getter(value)
             except KeyError as e:
                 parser.error(str(e))
+    if args.sans_captures and args.format and not catalog.sans_captures_ok(catalog.get_format(args.format)):
+        parser.error(f"format '{args.format}' impossible sans captures (formats conseil avec cartes uniquement)")
 
     out_path = Path(args.out)
     if not args.force and out_path.exists():
@@ -799,10 +874,11 @@ def main():
     client = None
     scenarios = []
     if args.scenario:
-        for i, item in enumerate(load_scenario_file(Path(args.scenario), args.duration), 1):
-            plan = plan_reels(None, 1, history, rng, item.get("format") or args.format or "demo_produit",
+        for i, item in enumerate(load_scenario_file(Path(args.scenario), args.duration, args.sans_captures), 1):
+            plan = plan_reels(None, 1, history, rng,
+                              item.get("format") or args.format or ("liste_erreurs" if args.sans_captures else "demo_produit"),
                               item.get("theme") or args.theme, item.get("hook") or args.hook, item["angle"],
-                              item.get("registre") or args.registre)[0]
+                              item.get("registre") or args.registre, args.sans_captures)[0]
             if all(s["texte"] for s in item["scenes"]):
                 print(f"[{i}] scenario impose, entierement redige : aucun appel IA")
                 scenarios.append(finalize({**plan_fields(plan), **item}))
@@ -816,7 +892,7 @@ def main():
         client = get_client()
         print(f"Plan editorial de {args.n} reel(s)...")
         for i, plan in enumerate(plan_reels(client, args.n, history, rng, args.format, args.theme,
-                                            args.hook, args.angle, args.registre), 1):
+                                            args.hook, args.angle, args.registre, args.sans_captures), 1):
             print(f"[{i}/{args.n}] {args.duration}s | {plan['registre']} | format {plan['format']['id']} "
                   f"| accroche {plan['hook']['id']} "
                   f"| theme {plan['theme']['id']} | sujet : {plan['sujet']['texte']}")
@@ -826,7 +902,9 @@ def main():
 
     for i, s in enumerate(scenarios, 1):
         print(f"  reel {i} : [{s.get('format')}/{s.get('theme')}] {len(s['scenes'])} scenes, ~{s['duree_estimee_s']}s "
-              f"-> " + " | ".join(("carte:" if "carte" in sc else "") + sc["feature"] for sc in s["scenes"]))
+              f"-> " + " | ".join(("carte:" + sc["carte"].get("type", "texte") if "carte" in sc
+                                   else sc["feature"] or "illustration:" + sc.get("illustration", "cv"))
+                                  for sc in s["scenes"]))
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(scenarios, ensure_ascii=False, indent=2), encoding="utf-8")

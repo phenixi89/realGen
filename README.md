@@ -34,8 +34,8 @@ export $(cat .env | xargs)
 | Variable | Obligatoire | Description |
 |---|---|---|
 | `GEMINI_API_KEY` | oui | Clé API Gemini — [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) |
-| `SAAS_URL` | oui (ou `--saas-url`) | URL de démo d'OpusCV |
-| `DEMO_EMAIL` / `DEMO_PASSWORD` | selon le parcours | Identifiants du compte de démo (connexion réelle capturée) |
+| `SAAS_URL` | oui (ou `--saas-url`), sauf `--capture-mode aucune` | URL de démo d'OpusCV |
+| `DEMO_EMAIL` / `DEMO_PASSWORD` | selon le parcours | Identifiants du compte de démo (connexion réelle capturée). Un compte Pro évite le filigrane « OPUSCV.TECH » du plan gratuit sur l'aperçu capturé |
 | `GEMINI_MODEL` | non | Modèle texte (défaut : `gemini-flash-latest`) |
 | `GEMINI_TTS_MODEL` | non | Modèle voix off (défaut : `gemini-2.5-flash-preview-tts`) |
 | `ALLOW_AI_QUOTA_FEATURES` | non | `1` pour inclure la simulation d'entretien IA (consomme le quota IA du compte démo) |
@@ -54,7 +54,7 @@ Principales options de `run_pipeline.py` :
 |---|---|---|
 | `--n` | 3 | Nombre de reels à générer (ignoré avec `--scenario`) |
 | `--duration` | 30 | Durée cible de chaque reel, en secondes |
-| `--capture-mode` | `video` | `screenshots` (captures nettes composées, recommandé — voir ci-dessous), `video` (enregistrement mobile continu), `video_desktop` (enregistrement desktop recadré par fonctionnalité) |
+| `--capture-mode` | `video` | `screenshots` (captures nettes composées, recommandé — voir ci-dessous), `video` (enregistrement mobile continu), `video_desktop` (enregistrement desktop recadré par fonctionnalité), `aucune` (sans capture de l'app — voir « Mode sans captures ») |
 | `--voice` | auto | Voix TTS Gemini (`auto` = rotation par reel, `catalog/voix.json`) |
 | `--sans-voix` | — | Sans voix off : texte à l'écran + musique |
 | `--angle` | — | Impose un angle marketing (sinon choisi stratégiquement, voir plus bas) |
@@ -72,6 +72,31 @@ Principales options de `run_pipeline.py` :
 est capturée individuellement puis composée proprement (carte nette + fond flouté, zoom Ken Burns,
 transitions), au lieu d'un enregistrement continu qui peut laisser de grandes zones vides quand
 l'app garde une mise en page étroite même en résolution desktop.
+
+Les enregistrements vidéo (`video`, `video_desktop`) se font à la taille CSS de la fenêtre : Playwright
+n'agrandit pas l'image (une taille supérieure la laissait dans le coin haut gauche d'un cadre gris).
+La vidéo mobile (405×720) est ensuite agrandie en 1080×1920 par ffmpeg, donc moins nette que les
+captures du mode `screenshots`.
+
+### Mode sans captures (`--capture-mode aucune`)
+
+Aucune connexion à l'app ni compte de démo : le reel est fait uniquement de plans animés.
+
+- **Formats** : seulement les formats conseil qui ont des cartes (`catalog.sans_captures_ok`), une démo
+  produit sans image du produit ne montrerait rien ; `--format` d'un autre format est refusé.
+- **Scénario** : Gemini écrit une carte animée pour chaque scène sauf la 1re et la dernière. Il n'y a pas de
+  champ `feature`. La 1re scène porte `"illustration": "<id d'icône>"` : une icône dessinée à la main
+  (`assets/anim/illustration.html`) sous l'accroche. La dernière scène est le CTA animé.
+- **Secours** : une scène restée sans carte reçoit une carte texte (sa 1re phrase), sinon au montage
+  un plan illustré titré.
+- **Scénario écrit à la main** (`--scenario`) : la même forme, sans `feature` ; format par défaut
+  `liste_erreurs`.
+- **Reprise** : changer de mode (avec ou sans captures) régénère les scénarios (champ `sans_captures`
+  de `scripts.json`).
+
+```bash
+python scripts/run_pipeline.py --n 3 --capture-mode aucune
+```
 
 Ou étape par étape :
 
@@ -100,7 +125,7 @@ Trois modes, cumulables :
 
 | Mode | Gabarit par défaut | Effet | Capture |
 |---|---|---|---|
-| `overlay` | `score_ats` | Surimpression (jauge du score ATS qui monte de 42 à 94, coches) sur la scène qui parle d'ATS/optimisation, accélérée si besoin pour tenir dans sa scène | tous modes |
+| `overlay` | `points_corriger` | Surimpression « N points à corriger » : chaque point se coche et le compteur descend jusqu'à « Prêt à envoyer », sur la scène checklist/optimisation, accélérée si besoin pour tenir dans sa scène. Comme dans le produit, **pas de note globale** : l'ancien `score_ats` (jauge sur 100) reste disponible en gabarit explicite, mais ne décrit plus OpusCV | tous modes sauf `aucune` |
 | `scene` | `cta` | La dernière scène devient un plan animé plein cadre (logo, titre, bouton), sur fond de sa capture floutée | `screenshots` |
 | `highlight` | `highlight` | Cadre lumineux animé autour de la zone montrée, au début de chaque scène (suit le zoom) | `screenshots` |
 
@@ -113,18 +138,20 @@ Le scénario peut placer lui-même les animations et régler leurs textes et val
 `overlay` et `anim` d'une scène (`true`, `"gabarit?param=valeur"` ou un objet) :
 
 ```json
-{"feature": "checklist", "texte": "...", "overlay": {"template": "score_ats", "from": 35, "to": 92}},
+{"feature": "checklist", "texte": "...", "overlay": {"template": "points_corriger", "lines": "Profil trop court|Mission sans résultat"}},
 {"feature": "apercu_cv", "texte": "...", "anim": {"template": "cta", "title": "Ton CV en 2 minutes", "button": "Essaie OpusCV"}}
 ```
 
-Paramètres des gabarits : `score_ats` (`from`, `to`, `label`, `lines` séparées par `|`, `cta`),
+Paramètres des gabarits : `points_corriger` (`lines` séparées par `|`, 5 au plus, `from` = compteur de départ,
+`label`, `fin`, `cta`), `score_ats` (`from`, `to`, `label`, `lines` séparées par `|`, `cta`),
+`illustration` (`icone`, `titre` optionnel),
 `cta` (`brand`, `title`, `sub`, `button`, `bg`), `meme` (`haut`, `bas`, `icone`), `carrousel` (`kind` =
 `couverture`/`point`/`fin`, `n`, `total`, `titre`, `texte`, `bouton`), `couverture` (`titre`, `surtitre`, `bg`).
 Image fixe (état final du gabarit, taille libre) : `--out fichier.png --size 1080x1350`. Pour prévisualiser un gabarit, ouvre simplement le
 fichier `.html` dans un navigateur (lecture en boucle) ; pour le rendre à part :
 
 ```bash
-python scripts/render_js_anim.py --spec "score_ats?from=35&to=92" --out /tmp/frames   # PNG transparents
+python scripts/render_js_anim.py --spec "points_corriger?lines=Profil%20trop%20court|Titre%20vague" --out /tmp/frames   # PNG transparents
 python scripts/render_js_anim.py --spec cta --duration 4 --out /tmp/cta.mp4
 ```
 
@@ -133,7 +160,8 @@ timeline GSAP en pause et appelle `expose(tl)` (voir `common.js` pour le contrat
 
 ### Dessin à la main (`sketch.js`)
 
-Les cartes `schema` et les annotations sont **dessinées à la main** : chaque trait se trace
+Les cartes `schema` et `meme`, le plan `illustration` (mode sans captures) et les annotations sont
+**dessinés à la main** : chaque trait se trace
 (`stroke-dashoffset`), un feutre (ou une craie) suit la pointe du trait, le texte s'écrit à la plume
 (police manuscrite libre Kalam). Le support dépend du thème (`dessin` dans `themes.json`) :
 
@@ -171,7 +199,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 | Fichier | Contenu | Exemples |
 |---|---|---|
 | `catalog/formats.json` | **Structure** de la vidéo (34 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
-| `catalog/sujets.json` | **De quoi** parle la vidéo (143 sujets, 13 familles), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, métiers (CV de commercial, de développeur, de soignant…), familles produit… |
+| `catalog/sujets.json` | **De quoi** parle la vidéo (151 sujets, 13 familles), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, métiers (CV de commercial, de développeur, de soignant…), familles produit (dont les nouveautés : 6 mises en page, conversion de langue, chiffres sans invention, sections libres, lettre en PDF…) |
 | `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
 | `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`), `registres` (absent = tous) | violet nuit, corail, vert, bleu corporate, bande dessinée pop, sitcom pastel… |
 | `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), mix de registres (`registres` : sérieux 70 % / humour 30 %), règles d'écriture humoristique (`consigne_humour`, `ton_humour`), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), textes Instagram (`instagram`), scène preuve, phrases bannies | |
@@ -256,7 +284,7 @@ cas précis), les conseils génériques de `phrases_bannies` sont refusés, et l
 à l'accroche pour que la vidéo boucle naturellement.
 
 Les formats à cartes affichent des **cartes animées** à la place des captures (en
-`--capture-mode screenshots`), dont Gemini choisit le type selon le contenu :
+`--capture-mode screenshots` ou `aucune`), dont Gemini choisit le type selon le contenu :
 
 | Type (`carte.type`) | Gabarit | Effet |
 |---|---|---|
@@ -362,7 +390,7 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
   budget de mots calculé dessus ; un ton contenant « rapide » compte ≈ 3,4 mots/s).
 - **Durée** : 30 s ≈ 78 mots et 6 à 12 scènes ; 45 s ≈ 117 mots et 9 à 18 scènes. Changer la durée
   régénère tout (scénarios, voix, captures), même en reprise.
-- **Surimpression score ATS** (`--anims overlay`) : jamais sur l'accroche, une carte, le CTA, la scène
+- **Surimpression points à corriger** (`--anims overlay`) : jamais sur l'accroche, une carte, le CTA, la scène
   preuve, ni dans un reel à habillage (chrono), pour ne rien masquer.
 - **15 thèmes**, dont verre givré, éditorial magazine, néon nuit, tableau à la craie, affiche
   impact, bande dessinée pop et sitcom pastel (polices libres Playfair Display, Space Grotesk, DM Sans,
@@ -395,8 +423,23 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
 python scripts/features.py
 ```
 
-Liste les fonctionnalités qu'un scénario peut montrer (`checklist`, `fonctions_ia`, `design`,
-`entretien`, `partage`, etc.) — c'est ce catalogue que Gemini reçoit pour écrire le scénario.
+Liste les fonctionnalités qu'un scénario peut montrer — c'est ce catalogue que Gemini reçoit pour écrire
+le scénario. Il suit l'interface actuelle d'OpusCV (septembre 2026) :
+
+- **Le CV** : `checklist` (points à corriger, sans note), `identite`, `experiences` (tiroir des missions),
+  `formation`, `competences`, `langues`.
+- **Structure** : `structure` (ordre des blocs, langue et format du CV, pied de page), `sections_perso`
+  (section libre : certifications…).
+- **IA** : `relecture`, `fonctions_ia` (adapter à une offre), `lettre_motivation`, `entretien`.
+- **Diffusion** : `convertir` (variante en anglais, allemand, espagnol ou au format Letter), `partage`.
+- **Mise en page** : `apercu_pdf` (l'aperçu de l'éditeur est le PDF exact), `design` (41 thèmes en
+  pastilles), `mises_en_page` (6 structures, le CV en frise, classique puis minimal),
+  `personnalisation` (détails et réglages fins).
+- **Affichage** : `mode_sombre`, `apercu_cv`.
+
+Aucune capture ne déclenche d'appel IA, sauf `entretien` (`ALLOW_AI_QUOTA_FEATURES=1`). Le contexte
+produit donné à Gemini (`PRODUCT_CONTEXT` dans `1_generate_script.py`) décrit les mêmes fonctions.
+Il dit aussi ce que l'outil ne fait pas : pas de score, jamais de chiffre inventé.
 
 ## Automatisation via GitHub Actions
 
@@ -405,7 +448,7 @@ l'onglet Actions, avec les mêmes options que `run_pipeline.py`, dont `registre`
 Les déclinaisons Instagram sont dans l'artefact `output`, sous `final/`.
 
 À configurer dans le repo GitHub (Settings → Secrets and variables → Actions) :
-- **Secrets** : `GEMINI_API_KEY`, `DEMO_EMAIL`, `DEMO_PASSWORD`
+- **Secrets** : `GEMINI_API_KEY`, `DEMO_EMAIL`, `DEMO_PASSWORD` (ces deux derniers inutiles en `capture_mode` `aucune`)
 - **Variable** : `SAAS_URL` (l'URL de démo)
 
 Les vidéos générées sont récupérables dans l'onglet Actions → run → Artifacts. Le service de démo

@@ -44,10 +44,11 @@
   // "Opus" + "CV" en degrade : met en valeur la fin du nom de marque.
   document.getElementById("brand").innerHTML = brand.split("").map((c) => `<b>${c}</b>`).join("");
   document.querySelectorAll("#brand b").forEach((b, i) => { if (i >= brand.length - 2) b.innerHTML = `<i>${b.textContent}</i>`; });
-  const title = param("title", "Le CV qui passe les filtres ATS");
+  // frTypo : espace insecable avant ? ! : -- la ponctuation reste dans le mot (span) qui la precede.
+  const title = frTypo(param("title", "Ton CV prêt à envoyer"));
   document.getElementById("title").innerHTML = title.split(" ").map(() => "<span></span>").join("");
   document.querySelectorAll("#title span").forEach((s, i) => (s.textContent = title.split(" ")[i]));
-  document.getElementById("sub").textContent = param("sub", "Gratuit · lien en bio");
+  document.getElementById("sub").textContent = frTypo(param("sub", "Gratuit · lien en bio"));
   document.getElementById("btntxt").textContent = param("button", "Essaie OpusCV");
 
   const tl = gsap.timeline({ paused: true })

@@ -1,7 +1,7 @@
 """
 Enregistre un parcours utilisateur sur OpusCV via Playwright (headless Chromium) :
 connexion, ouverture de la modale d'analyse, mode demo (profil fictif local),
-puis apercu PDF fidele du CV genere.
+puis apercu du CV genere (le PDF exact).
 
 Usage:
     python 3_record_demo.py --url https://tonapp.com --out output/video/demo_raw.webm
@@ -11,6 +11,7 @@ import asyncio
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -23,10 +24,11 @@ import features as features_module
 # ce qui determine quelle version de l'UI (responsive) s'affiche).
 VIEWPORT = {"width": 405, "height": 720}
 
-# Resolution d'encodage de la video, independante du viewport CSS : Playwright
-# redimensionne les frames captures vers cette taille. 1080x1920 est le
-# standard recommande pour Reels/TikTok/Shorts -- enregistrer directement a
-# la taille du viewport (405x720) produisait une image ~2.7x trop petite.
+# Resolution finale de la video mobile (standard Reels/TikTok/Shorts).
+# Playwright n'agrandit pas l'enregistrement : les images restent a la taille
+# CSS du viewport, collees en haut a gauche d'un cadre plus grand (le reste
+# gris). On enregistre donc a la taille du viewport, puis upscale_video()
+# agrandit a cette taille.
 RECORD_SIZE = {"width": 1080, "height": 1920}
 
 # Viewport large ecran pour les modes "screenshots" et "video_desktop" :
@@ -88,7 +90,7 @@ async def play_demo_steps(page):
     Parcours OpusCV, une fois connecte : ouvre la modale d'analyse, bascule
     en mode demo (profil fictif genere localement, sans appel IA ni upload --
     rapide et deterministe pour un enregistrement automatise), puis affiche
-    l'apercu PDF fidele du CV genere.
+    l'apercu du CV genere (le PDF exact pour un compte).
     """
     # Une fois connecte, l'accueil (Home) laisse place au Dashboard : le CTA
     # n'est plus "Essayer (gratuitement)" mais le bouton "Analyser" de la nav
@@ -112,10 +114,9 @@ async def play_demo_steps(page):
     # Sur mobile, l'editeur s'ouvre sur le panneau de formulaire ; le <main>
     # qui contient le LivePreview (rendu stylise en direct du CV) reste
     # `hidden` tant qu'on n'a pas bascule via le bouton "Aperçu" (icone oeil)
-    # de l'en-tete mobile -- c'etait la vraie cause du timeout precedent, pas
-    # un probleme de doublon DOM. aria-label="Aperçu" est un match EXACT
-    # (contrairement a "Aperçu fidèle", plus long), donc pas d'ambiguite.
-    show_preview = page.locator("button[aria-label='Aperçu']:visible").first
+    # de l'en-tete mobile (MobilePanelHeader.jsx, aria-label "Aperçu et
+    # téléchargement (PDF, Word)" : on vise le debut du libelle).
+    show_preview = page.locator("button[aria-label^='Aperçu']:visible").first
 
     # L'editeur est charge en lazy (chunk JS a part) : premier fetch parfois
     # lent sur Render free tier, d'ou une marge large ici.
@@ -123,9 +124,8 @@ async def play_demo_steps(page):
     await page.wait_for_timeout(1000)
     await show_preview.click()
 
-    # <main> passe en overlay plein ecran et affiche le LivePreview stylise --
-    # c'est deja le plan le plus vendeur, pas besoin d'ouvrir en plus la
-    # modale "Aperçu fidèle".
+    # <main> passe en overlay plein ecran et affiche l'apercu du CV (le PDF
+    # exact pour un compte) -- c'est deja le plan le plus vendeur.
     await page.wait_for_timeout(2500)
     await page.mouse.wheel(0, 300)
     await page.wait_for_timeout(1500)
@@ -143,7 +143,9 @@ async def create_demo_cv(page):
     await page.wait_for_timeout(1500)
     await page.keyboard.press("Control+s")
     await page.wait_for_timeout(2000)
-    await page.goto(page.url.split("#")[0])
+    # L'editeur a sa propre URL (/cv/:id) : recharger la page y ramenerait.
+    # Retour au tableau de bord par la racine du site.
+    await page.goto(re.sub(r"(https?://[^/]+).*", r"\1/", page.url))
 
 
 async def walk_features(page, shoot, feature_ids: list[str] | None = None,
@@ -258,22 +260,17 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
             context_kwargs.update(
                 viewport=DESKTOP_VIEWPORT,
                 record_video_dir=str(out_dir),
-                # Explicitement egal a viewport*scale : sans ca, Playwright
-                # etirerait l'enregistrement vers une autre resolution, et
-                # les bbox (en pixels CSS) captures par capture_pc_video()
-                # ne correspondraient plus aux pixels reels de la video --
-                # le recadrage de 3c_build_video_from_recording.py viserait
-                # a cote de l'element.
-                record_video_size={
-                    "width": DESKTOP_VIEWPORT["width"] * DESKTOP_SCALE_FACTOR,
-                    "height": DESKTOP_VIEWPORT["height"] * DESKTOP_SCALE_FACTOR,
-                },
+                # Egal au viewport CSS : Playwright enregistre en pixels CSS
+                # (device_scale_factor ignore) et n'agrandit jamais -- une
+                # taille superieure laissait l'image dans le coin haut gauche
+                # d'un cadre gris, et le recadrage de 3c visait a cote.
+                record_video_size=dict(DESKTOP_VIEWPORT),
             )
         else:
             context_kwargs.update(
                 viewport=VIEWPORT,
                 record_video_dir=str(out_dir),
-                record_video_size=RECORD_SIZE,
+                record_video_size=dict(VIEWPORT),
             )
         # Interface d'OpusCV en francais : l'app choisit sa langue d'apres
         # ?lang=, puis localStorage "locale", puis navigator.language -- et
@@ -347,7 +344,8 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
             final_raw_path = out_dir / "raw.webm"
             raw_path.replace(final_raw_path)
             manifest = {
-                "device_scale_factor": context_kwargs["device_scale_factor"],
+                # Pixels de la video = pixels CSS (cf. record_video_size).
+                "device_scale_factor": 1,
                 "video_size": context_kwargs["record_video_size"],
                 "segments": segments,
             }
@@ -355,6 +353,23 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
                 json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
         await browser.close()
+
+    if mode == "video":
+        for video in out_dir.glob("*.webm"):
+            upscale_video(video)
+
+
+def upscale_video(path: Path):
+    """Video mobile enregistree a la taille du viewport -> RECORD_SIZE (lanczos)."""
+    tmp = path.with_suffix(".up.webm")
+    try:
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(path), "-vf",
+                        f"scale={RECORD_SIZE['width']}:{RECORD_SIZE['height']}:flags=lanczos,setsar=1",
+                        "-c:v", "libvpx", "-b:v", "8M", "-an", str(tmp)], check=True)
+        tmp.replace(path)
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        tmp.unlink(missing_ok=True)
+        print(f"ATTENTION: video non agrandie ({exc}), laissee a la taille du viewport", file=sys.stderr)
 
 
 def main():

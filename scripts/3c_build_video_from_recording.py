@@ -8,16 +8,17 @@ Playwright mobile ou le montage --mode screenshots.
 
 segments.json (ecrit par 3_record_demo.py) :
 {
-  "device_scale_factor": 2,
-  "video_size": {"width": 2880, "height": 1800},
+  "device_scale_factor": 1,
+  "video_size": {"width": 1440, "height": 900},
   "segments": [
     {"name": "mes_cvs", "start": 0.0, "end": 1.8, "bbox": {"x":.., "y":.., "width":.., "height":..}},
     ...
   ]
 }
 bbox est en pixels CSS (coordonnees Playwright bounding_box()) ; "video_size"
-est deja a l'echelle device_scale_factor -- d'ou le *scale ci-dessous pour
-retomber sur les pixels reels de la video.
+est a l'echelle device_scale_factor -- d'ou le *scale ci-dessous pour
+retomber sur les pixels reels de la video. Playwright enregistre en pixels
+CSS : 3_record_demo.py ecrit donc 1 (les anciens manifestes a 2 restent lus).
 
 Usage:
     python 3c_build_video_from_recording.py --dir output/video/reel_01 \

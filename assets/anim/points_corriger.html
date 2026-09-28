@@ -1,0 +1,87 @@
+<!doctype html>
+<!--
+  Surimpression "points a corriger" (mode overlay, defaut de --anims overlay) :
+  le vrai fonctionnement d'OpusCV -- pas de note globale, une liste de points
+  concrets. Le compteur part de ?from= points, chaque ligne (?lines= separees
+  par "|") se coche et le fait descendre, jusqu'au badge final (?fin=), puis
+  fondu de sortie -- se pose par-dessus la demo sans la masquer entierement.
+  Parametres : from (defaut = nombre de lignes), label, lines, fin, cta (vide = pas de bouton).
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden;font-family:TextFont,"DejaVu Sans",system-ui,sans-serif}
+  #layer{position:absolute;inset:0}
+  #dim{position:absolute;inset:0;background:radial-gradient(circle at 50% 36%,rgba(10,8,30,.45),rgba(10,8,30,.78))}
+  #card{position:absolute;left:110px;right:110px;top:260px;padding:64px 60px 56px;border-radius:60px;
+    background:rgba(24,20,48,.74);border:2px solid rgba(255,255,255,.18);
+    box-shadow:0 40px 90px rgba(0,0,0,.5);color:#fff}
+  #head{display:flex;align-items:center;justify-content:center;gap:34px;margin-bottom:40px}
+  #count{font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:170px;line-height:1;font-variant-numeric:tabular-nums;color:#ffb547}
+  #label{font-weight:800;font-size:46px;line-height:1.15;text-transform:uppercase;letter-spacing:.08em;max-width:420px}
+  .row{position:relative;display:flex;align-items:center;gap:28px;font-weight:700;font-size:42px;line-height:1.2;margin:26px 0}
+  .box{flex:none;width:60px;height:60px;border-radius:50%;border:5px solid rgba(255,255,255,.45);background:rgba(255,255,255,0);display:flex;align-items:center;justify-content:center;
+    font-size:36px;font-weight:800;color:transparent}
+  .strike{position:absolute;left:88px;top:50%;height:5px;width:0;background:rgba(255,255,255,.55);border-radius:3px}
+  #fin{margin:44px auto 0;display:table;padding:22px 52px;border-radius:99px;background:#22c58b;color:#fff;font-weight:800;font-size:50px;
+    box-shadow:0 14px 40px rgba(34,197,139,.45)}
+  #cta{position:absolute;left:0;right:0;top:1360px;text-align:center}
+  #cta span{position:relative;overflow:hidden;display:inline-block;font-weight:800;font-size:58px;color:var(--c1fg);padding:30px 70px;border-radius:99px;
+    background:linear-gradient(90deg,var(--c1),var(--c2));box-shadow:0 14px 40px color-mix(in srgb,var(--c1) 60%,transparent)}
+  #shine{position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%)}
+</style></head><body>
+<div id="layer">
+  <div id="dim"></div>
+  <div id="card">
+    <div id="head"><div id="count"></div><div id="label"></div></div>
+    <div id="rows"></div>
+    <div id="fin"></div>
+  </div>
+  <div id="cta"><span><b id="ctatxt"></b><div id="shine"></div></span></div>
+</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script>
+  const LINES = param("lines", "Profil trop court|Mission sans résultat|Coordonnées incomplètes").split("|").filter(Boolean).slice(0, 5);
+  const FROM = Math.max(num("from", LINES.length), LINES.length), CTA = param("cta", "");
+  document.getElementById("label").textContent = frTypo(param("label", "points à corriger"));
+  document.getElementById("fin").textContent = frTypo(param("fin", "Prêt à envoyer"));
+  document.getElementById("ctatxt").textContent = CTA;
+  if (!CTA) document.getElementById("cta").style.display = "none";
+  const rows = document.getElementById("rows");
+  LINES.forEach((l) => {
+    const r = document.createElement("div"); r.className = "row";
+    r.innerHTML = '<span class="box">✓</span><span class="txt"></span><span class="strike"></span>';
+    r.querySelector(".txt").textContent = frTypo(l);
+    rows.appendChild(r);
+  });
+  const countEl = document.getElementById("count"), state = { n: FROM };
+  const draw = () => {
+    countEl.textContent = Math.round(state.n);
+    countEl.style.color = state.n < 0.5 ? "#22c58b" : "#ffb547";
+  };
+
+  FONTS_READY.then(() => {
+    const tl = gsap.timeline({ paused: true, onUpdate: draw })
+      .from("#dim", { opacity: 0, duration: 0.35 })
+      .from("#card", { y: 120, scale: 0.9, opacity: 0, duration: 0.6, ease: "expo.out" }, "-=.15")
+      .from("#head", { opacity: 0, y: 30, duration: 0.4 }, "-=.3")
+      .from(".row", { x: -60, opacity: 0, duration: 0.35, stagger: 0.12, ease: "back.out(2)" }, "-=.1");
+    // Une ligne cochee a la fois : la case se remplit, le texte se barre, le compteur descend.
+    const rowsEls = [...document.querySelectorAll(".row")], step = (FROM - 0) / rowsEls.length;
+    rowsEls.forEach((r, i) => {
+      const at = `+=${i ? 0.18 : 0.35}`;
+      tl.to(r.querySelector(".box"), { backgroundColor: "#22c58b", borderColor: "#22c58b", color: "#ffffff", duration: 0.12 }, at)
+        .fromTo(r.querySelector(".box"), { scale: 0.6 }, { scale: 1, duration: 0.25, ease: "back.out(3)", immediateRender: false }, "<")
+        .to(r.querySelector(".strike"), { width: r.querySelector(".txt").offsetWidth, duration: 0.25, ease: "power2.out" }, "<")
+        .to(r.querySelector(".txt"), { opacity: 0.55, duration: 0.25 }, "<")
+        .to(state, { n: FROM - step * (i + 1), duration: 0.25, ease: "power2.out" }, "<");
+    });
+    tl.from("#fin", { scale: 0.4, opacity: 0, duration: 0.45, ease: "back.out(2.4)" }, "+=.1")
+      .to("#count", { scale: 1.2, duration: 0.18, yoyo: true, repeat: 1, ease: "power2.out" }, "<");
+    if (CTA) tl.from("#cta span", { y: 80, scale: 0.6, opacity: 0, duration: 0.55, ease: "back.out(2)" }, "-=.1")
+               .fromTo("#shine", { x: "-120%" }, { x: "120%", duration: 0.8, ease: "power1.inOut" }, "+=.1");
+    tl.to("#layer", { opacity: 0, y: -40, duration: 0.45, ease: "power2.in" }, "+=1.1");
+    expose(tl);
+    draw();
+  });
+</script></body></html>

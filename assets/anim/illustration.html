@@ -1,0 +1,63 @@
+<!doctype html>
+<!--
+  Plan "illustration" (--capture-mode aucune) : fond du theme + une icone
+  dessinee a la main (icones.js, sur papier / tableau / neon selon le theme)
+  dans la moitie basse, sous l'accroche (hook.html, surimpression en haut
+  des la premiere image). Sert a la scene 1 quand aucune capture de l'app
+  n'est disponible, et de plan de secours pour une scene sans carte.
+  Parametres : icone (id de icones.js), titre (optionnel, en haut : jamais
+  sur la scene 1, ou l'accroche l'occupe deja), dur + theme.
+  Instants partages avec scripts/sound_design.py : DRAW_START (feutre).
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card_base.css">
+<style>
+  #stage{position:absolute;inset:0;transform-origin:50% 60%}
+  #titre{position:absolute;left:80px;right:80px;top:260px;height:360px;display:flex;align-items:center;justify-content:center;
+    text-align:center;font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:84px;line-height:1.1}
+  #titre span{display:inline-block;margin:0 .12em}
+  #panel{position:absolute;left:150px;right:150px;top:760px;height:680px;border-radius:24px;overflow:hidden}
+  [data-dessin="papier"] #panel{background:#fbf8f1;box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 0 90px rgba(120,90,40,.12);transform:rotate(-1.2deg)}
+  [data-dessin="craie"] #panel{background:#1d3a2c;border:18px solid #6b4a2e;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  [data-dessin="neon"] #panel{background:rgba(0,0,0,.35);border:3px solid color-mix(in srgb,var(--c1) 60%,transparent);box-shadow:0 0 60px color-mix(in srgb,var(--c1) 35%,transparent)}
+  svg{position:absolute;left:0;top:0;overflow:visible}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="grid"></div>
+<div id="stage">
+  <div id="titre"></div>
+  <div id="panel"></div>
+  <svg id="svg" width="1080" height="1920"></svg>
+</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script src="icones.js"></script>
+<script src="sketch.js"></script>
+<script>
+  const DUR = num("dur", 3);
+  // Constante partagee avec scripts/sound_design.py (illustration).
+  const DRAW_START = 0.25;
+  const icone = param("icone", "cv"), titre = frTypo(param("titre", ""));
+  const titreEl = document.getElementById("titre");
+  titre.split(/ +/).filter(Boolean).forEach((w) => { const s = document.createElement("span"); s.textContent = w; titreEl.appendChild(s); });
+  if (titre.length > 60) titreEl.style.fontSize = "66px";
+
+  Promise.all([FONTS_READY, HAND_READY]).then(() => {
+    const sk = new Sketch(document.getElementById("svg"), { seed: icone.length * 7 + titre.length });
+    sk.icon(ICONES[icone] ? icone : "cv", 540, 1100, 600, { width: 12 });
+    const draw = sk.draw, natural = draw.duration();
+    // Le dessin tient dans les deux tiers de la scene, puis l'icone respire.
+    draw.timeScale(Math.max(1, natural / Math.max(DUR * 0.66 - DRAW_START, 0.6)));
+    const tl = gsap.timeline({ paused: true })
+      .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
+      .from("#panel", { y: 70, opacity: 0, scale: 0.94, duration: 0.35, ease: "power3.out" }, 0)
+      .add(draw, DRAW_START)
+      .to("#stage", { scale: 1.04, duration: Math.max(DUR, 3), ease: "sine.inOut" }, 0.3);
+    if (titre) tl.from("#titre span", { y: 50, opacity: 0, duration: 0.35, stagger: 0.04, ease: "power3.out" }, 0.05);
+    addAmbient(tl, 10);
+    expose(tl);
+    const baseSeek = window.seek;
+    window.seek = (t) => { baseSeek(t); sk.updatePen((t - DRAW_START) * draw.timeScale()); };
+    window.DURATION = Math.max(DUR, DRAW_START + natural / draw.timeScale() + 0.4);
+    window.seek(0);
+  });
+</script></body></html>

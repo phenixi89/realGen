@@ -210,14 +210,19 @@ def pick_registre(history: list[dict], rng: random.Random, allowed: list[str] | 
     return _most_behind(targets, _recent(history, "registre", config().get("historique_registres", MIX_WINDOW)), rng)
 
 
-def pick_format(history: list[dict], rng: random.Random, registre: str | None = None) -> dict:
+def pick_format(history: list[dict], rng: random.Random, registre: str | None = None,
+                sans_captures: bool = False) -> dict:
     """
     Categorie la plus en retard sur le mix cible (config.json "mix"), mesure
     sur les derniers reels, parmi celles qui ont un format du registre
     demande ; puis format pondere de cette categorie et de ce registre, en
     evitant les formats utilises tout recemment.
+    sans_captures (--capture-mode aucune) : formats compatibles seulement
+    (sans_captures_ok), une demo du produit sans image du produit ne dit rien.
     """
     pool = [f for f in formats() if registre is None or registre in registres_of(f)] or formats()
+    if sans_captures:
+        pool = [f for f in pool if sans_captures_ok(f)] or [f for f in formats() if sans_captures_ok(f)]
     available = {f["categorie"] for f in pool}
     targets = {cat: share for cat, share in config()["mix"].items() if cat in available} or {pool[0]["categorie"]: 1.0}
     # Mix mesure au sein du registre : sinon les reels humour absorberaient le retard de toute une categorie.
@@ -230,6 +235,11 @@ def pick_format(history: list[dict], rng: random.Random, registre: str | None = 
         candidates = [{**f, "poids": float(f.get("poids", 1)) * (2 if registres_of(f) == ["humour"] else 1)}
                       for f in candidates]
     return get_format(weighted_pick(candidates, _recent(history, "format", config()["historique_formats"]), rng)["id"])
+
+
+def sans_captures_ok(fmt: dict) -> bool:
+    """Format jouable sans aucune capture de l'app : contenu conseil, avec des cartes."""
+    return fmt.get("categorie") == "conseil" and fmt.get("cartes") != "aucune"
 
 
 def pick_hook(history: list[dict], rng: random.Random, registre: str | None = None) -> dict:

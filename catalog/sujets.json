@@ -52,7 +52,7 @@
       "tags": [
         "produit"
       ],
-      "texte": "33 thèmes de mise en page : un CV qui sort du lot sans sacrifier la lisibilité ATS",
+      "texte": "41 thèmes sur 6 mises en page : un CV qui sort du lot, ou une version ATS sobre quand l'offre passe par un robot",
       "famille": "produit_mise_en_page"
     },
     {
@@ -61,7 +61,7 @@
       "tags": [
         "produit"
       ],
-      "texte": "de l'édition à l'envoi : relecture, aperçu PDF fidèle, partage par lien",
+      "texte": "de l'édition à l'envoi : relecture, aperçu qui est déjà le PDF exact, export PDF ou Word, partage par lien",
       "famille": "produit_mise_en_page"
     },
     {
@@ -106,7 +106,7 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : l'aperçu PDF fidèle en un clic, zéro surprise à l'impression ou à l'envoi",
+      "texte": "killer feature : l'aperçu de l'éditeur est le PDF exact, au pixel près : zéro surprise au téléchargement",
       "famille": "produit_mise_en_page"
     },
     {
@@ -440,7 +440,7 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : la relecture orthographique et de style en un clic",
+      "texte": "killer feature : la relecture orthographique et grammaticale, chaque correction validée en un clic",
       "famille": "produit_analyse"
     },
     {
@@ -449,7 +449,7 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : la checklist qui liste par priorité tout ce qui bloque ton CV",
+      "texte": "killer feature : les points à corriger, chacun expliqué en une phrase et relié au champ à réparer (pas une note sur 100)",
       "famille": "produit_analyse"
     },
     {
@@ -458,7 +458,7 @@
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : coller une offre et obtenir un CV adapté à ses mots-clés",
+      "texte": "killer feature : coller une offre, valider les améliorations proposées, et garder une variante du CV pour ce poste",
       "famille": "produit_candidature"
     },
     {
@@ -620,12 +620,12 @@
       "famille": "forme_cv"
     },
     {
-      "id": "kf_score_ats",
+      "id": "kf_pas_de_note",
       "categorie": "produit",
       "tags": [
         "produit"
       ],
-      "texte": "killer feature : le score ATS et ce qui le fait monter, montré point par point",
+      "texte": "pourquoi l'outil ne te donne pas de note sur 100 : une liste de points concrets à corriger vaut mieux qu'un score",
       "famille": "produit_analyse"
     },
     {
@@ -1350,6 +1350,78 @@
       ],
       "texte": "un CV de jeune diplômé : mettre la formation en avant, corriger les fautes et vérifier la checklist avant d'envoyer",
       "famille": "produit_analyse"
+    },
+    {
+      "id": "kf_mises_en_page",
+      "texte": "killer feature : le même CV en six mises en page (colonne, classique, minimal, bandeau, ATS, frise) en un clic",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "famille": "produit_mise_en_page"
+    },
+    {
+      "id": "kf_convertir_langue",
+      "texte": "killer feature : décliner son CV en anglais, allemand ou espagnol (ou au format Letter) en variante, traduction relue passage par passage",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "famille": "produit_candidature"
+    },
+    {
+      "id": "kf_questions_chiffres",
+      "texte": "killer feature : chiffrer une mission sans rien inventer : l'outil pose les questions, tu donnes les chiffres, il écrit la phrase",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "famille": "produit_analyse"
+    },
+    {
+      "id": "kf_sections_libres",
+      "texte": "killer feature : ajouter ses propres sections (certifications, projets, bénévolat) en détaillé ou en liste",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "famille": "produit_mise_en_page"
+    },
+    {
+      "id": "kf_lettre_pdf",
+      "texte": "killer feature : la lettre de motivation téléchargée en PDF aux couleurs du CV, pour un dossier de candidature cohérent",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "famille": "produit_candidature"
+    },
+    {
+      "id": "kf_brouillon_ia",
+      "texte": "partir de rien : quelques phrases sur ton parcours, et l'IA écrit un premier brouillon de CV à relire",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "famille": "produit_analyse"
+    },
+    {
+      "id": "kf_reglages_fins",
+      "texte": "killer feature : faire tenir son CV sur une page avec les réglages fins (taille du texte, interligne, marges, espacements)",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "famille": "produit_mise_en_page"
+    },
+    {
+      "id": "kf_word_pdf",
+      "texte": "un CV à envoyer en PDF et en Word, identiques, quand le recruteur demande un .docx",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "famille": "produit_mise_en_page"
     }
   ]
 }

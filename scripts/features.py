@@ -234,9 +234,10 @@ def _make_section_capture(label: str, name: str):
 
 async def _capture_experiences(ctx: DemoContext):
     """
-    Liste repliee -> carte ouverte -> double-clic sur les missions dans
-    l'apercu en direct (LivePreview.jsx, data-exp-part="missions"), qui ouvre
-    MissionsModal directement : le geste utilisateur reel.
+    Liste repliee -> carte ouverte -> tiroir d'edition des missions, ouvert
+    par le bouton "Modifier les missions" de la carte (MissionsModal.jsx, un
+    Drawer role=dialog). L'apercu etant desormais le PDF exact (canvas), le
+    double-clic dans l'apercu n'a plus de cible DOM a viser.
     """
     if not await _click_dock(ctx, "Expériences"):
         return
@@ -249,62 +250,182 @@ async def _capture_experiences(ctx: DemoContext):
     await ctx.page.wait_for_timeout(500)
     await ctx.shoot("experiences_ouverte", ctx.form_panel)
 
-    mission_area = ctx.page.locator("[data-exp-part='missions']:visible").first
-    if await mission_area.count() == 0:
+    edit = ctx.form_panel.locator("button:visible").filter(has_text=re.compile(r"modifier les missions", re.I)).first
+    if await edit.count() == 0:
         return
-    await mission_area.dblclick()
+    await edit.click()
     dialog = ctx.page.locator("div[role='dialog']:visible").last
     await dialog.wait_for(state="visible", timeout=6000)
-    await ctx.page.wait_for_timeout(500)
+    await ctx.page.wait_for_timeout(600)
     await ctx.shoot("experiences_missions", dialog)
     await reset_state(ctx.page)
 
 
+async def _preview_page(page):
+    """
+    Premiere page du CV dans l'apercu : le PDF exact (ApercuExact.jsx, une
+    div blanche par page) pour un compte, sinon l'apercu HTML (<main>).
+    """
+    exact = page.locator(".apercu-exact > div").first
+    try:
+        # Pendant un nouveau rendu, l'apercu HTML reprend la place du PDF.
+        await exact.wait_for(state="visible", timeout=15000)
+        return exact
+    except Exception:
+        return page.locator("main").first
+
+
+async def _after_preview_refresh(page, action):
+    """
+    Lance action() et attend le nouveau rendu de l'apercu exact (POST
+    /api/apercu, puis dessin pdf.js) ; sans rendu serveur (apercu HTML),
+    simple pause.
+    """
+    try:
+        async with page.expect_response(lambda r: "/api/apercu" in r.url, timeout=20000):
+            await action()
+        # pdf.js ouvre le nouveau document puis redessine chaque page.
+        await page.wait_for_timeout(2500)
+    except Exception:
+        await page.wait_for_timeout(1200)
+
+
+async def _open_design(ctx: DemoContext) -> bool:
+    if not await _click_dock(ctx, "Design"):
+        return False
+    await ctx.page.wait_for_timeout(300)
+    return True
+
+
 async def _capture_design_themes(ctx: DemoContext):
     """
-    Panneau Design, puis deux themes appliques l'un apres l'autre : l'apercu
-    (<main>) change en direct -- le "avant/apres" le plus visuel du produit.
-    Rien n'est sauvegarde (pas de sauvegarde automatique dans l'editeur).
+    Panneau Design (structures en liste, themes en pastilles), puis deux
+    themes appliques l'un apres l'autre : l'apercu change en direct -- le
+    "avant/apres" le plus visuel du produit. Rien n'est sauvegarde.
     """
-    if not await _click_dock(ctx, "Design"):
+    if not await _open_design(ctx):
         return
-    # Le filtre de palette (bouton "Tous"/"Finance"/"Senior Auto"/...) est
-    # persiste par compte : un run precedent (manuel ou automatise) peut
-    # laisser un filtre sans theme correspondant selectionne, et la capture
-    # tomberait alors sur "Aucun theme pour ce filtre" au lieu du panneau
-    # normal. On revient explicitement sur "Tous" avant de shooter.
-    tous_filter = ctx.form_panel.locator("button:visible").filter(has_text=re.compile(r"^\s*Tous\s*$", re.I)).first
-    if await tous_filter.count() > 0:
-        await tous_filter.click()
-        await ctx.page.wait_for_timeout(300)
     await ctx.shoot("design_panneau", ctx.form_panel)
 
-    themes = ctx.form_panel.locator("button.border-2[title]")
+    # Pastilles de theme (DesignPanel.jsx) : seuls boutons aria-pressed a
+    # porter un title (le nom du theme) ; les structures n'en ont pas.
+    themes = ctx.form_panel.locator("button[aria-pressed][title]")
     count = await themes.count()
-    preview = ctx.page.locator("main").first
+    titles = [(await themes.nth(i).get_attribute("title") or "") for i in range(count)]
+    pressed = [await themes.nth(i).get_attribute("aria-pressed") == "true" for i in range(count)]
+    candidates = [i for i in range(count) if not pressed[i]]
 
-    picks = None
-    if ctx.theme_style and count > 2:
+    picks = []
+    if ctx.theme_style and candidates:
         # theme_style vient de 1_generate_script.py (Gemini), ex. "sobre et
-        # corporate" -- matching texte simple contre les titres REELS des
-        # themes affiches (donnee live, jamais invente), jamais le theme
-        # actif (index 0). Retombe sur le choix par index si rien ne matche.
+        # corporate" -- matching texte simple contre les noms REELS des
+        # themes affiches (donnee live, jamais inventee).
         style_words = {w for w in re.split(r"\W+", ctx.theme_style.lower()) if len(w) > 2}
-        titles = [(await themes.nth(i).get_attribute("title") or "").lower() for i in range(count)]
-        matched = [i for i in range(1, count) if any(w in titles[i] for w in style_words)]
-        if matched:
-            picks = sorted(dict.fromkeys(matched + [count - 1]))[:2] if len(matched) < 2 else sorted(matched[:2])
-
-    # Seuls les themes mis en avant sont affiches (4 a 12 selon la palette) :
-    # a defaut de correspondance avec theme_style, deux themes repartis dans
-    # ce qui est visible, jamais le theme actif (0).
-    picks = picks or sorted({i for i in (count // 2, count - 1) if 0 < i < count})
+        picks = [i for i in candidates if any(w in titles[i].lower() for w in style_words)][:2]
+    # A defaut : deux themes repartis dans la palette de la structure active.
+    for i in (candidates[len(candidates) // 2:] + candidates[:1]) if candidates else []:
+        if len(picks) >= 2:
+            break
+        if i not in picks:
+            picks.append(i)
     for n, idx in enumerate(picks):
         theme = themes.nth(idx)
         await theme.scroll_into_view_if_needed()
-        await theme.click()
-        await ctx.page.wait_for_timeout(1000)
-        await ctx.shoot(f"design_theme_{n + 1}", preview)
+        await _after_preview_refresh(ctx.page, theme.click)
+        await ctx.shoot(f"design_theme_{n + 1}", await _preview_page(ctx.page))
+
+
+# Structures montrees par "mises_en_page" (libelles de DesignPanel.jsx,
+# editor.designPanel.layouts), dans cet ordre ; la structure d'origine est
+# remise a la fin pour ne pas changer l'apparence des captures suivantes.
+LAYOUT_PICKS = ("Frise", "Classique", "Minimal")
+
+
+async def _capture_mises_en_page(ctx: DemoContext):
+    """Six structures (Colonne, Classique, Minimal, Bandeau, ATS, Frise) : trois appliquees tour a tour."""
+    if not await _open_design(ctx):
+        return
+    group = ctx.form_panel.locator("div[role='group'][aria-label='Structure']").first
+    if await group.count() == 0:
+        print("ATTENTION: liste des structures introuvable", file=sys.stderr)
+        return
+    buttons = group.locator("button")
+    initial = None
+    for k in range(await buttons.count()):
+        if await buttons.nth(k).get_attribute("aria-pressed") == "true":
+            initial = buttons.nth(k)
+    await ctx.shoot("mises_en_page_liste", group)
+    for n, label in enumerate(LAYOUT_PICKS):
+        button = buttons.filter(has_text=re.compile(rf"^\s*{label}", re.I)).first
+        if await button.count() == 0 or await button.get_attribute("aria-pressed") == "true":
+            continue
+        await _after_preview_refresh(ctx.page, button.click)
+        await ctx.shoot(f"mise_en_page_{n + 1}", await _preview_page(ctx.page))
+    if initial is not None:
+        await _after_preview_refresh(ctx.page, initial.click)
+
+
+async def _capture_personnalisation(ctx: DemoContext):
+    """Blocs "Details" (forme de la photo, langues en points, icones) et "Reglages fins" du panneau Design."""
+    if not await _open_design(ctx):
+        return
+    opened = []
+    for titre in ("Détails", "Réglages fins"):
+        toggle = ctx.form_panel.locator("button[aria-expanded]").filter(has_text=re.compile(rf"^\s*{titre}", re.I)).first
+        if await toggle.count() and await toggle.get_attribute("aria-expanded") != "true":
+            await toggle.click()
+            await ctx.page.wait_for_timeout(400)
+            opened.append(toggle)
+    if opened:
+        await opened[0].scroll_into_view_if_needed()
+        await ctx.page.wait_for_timeout(300)
+    await ctx.shoot("personnalisation", ctx.form_panel)
+    # Ferme ce qu'on a ouvert : l'etat des replis est retenu par le navigateur.
+    for toggle in opened:
+        await toggle.click()
+        await ctx.page.wait_for_timeout(200)
+
+
+async def _capture_sections_perso(ctx: DemoContext):
+    """Structure -> "Ajouter une section" -> titre tape (Certifications), sans la creer."""
+    if not await _click_dock(ctx, "Structure — ordre des blocs"):
+        return
+    add = ctx.form_panel.locator("button:visible").filter(has_text=re.compile(r"ajouter une section", re.I)).first
+    if await add.count() == 0:
+        return
+    await add.click()
+    await ctx.page.wait_for_timeout(400)
+    field = ctx.form_panel.locator("input[aria-label='Titre de la nouvelle section']").first
+    if await field.count():
+        await field.press_sequentially("Certifications", delay=40)
+        await ctx.page.wait_for_timeout(300)
+        await field.scroll_into_view_if_needed()
+    await ctx.shoot("sections_perso", ctx.form_panel)
+    if await field.count():
+        await field.fill("")
+        await field.press("Escape")
+
+
+async def _capture_convertir(ctx: DemoContext):
+    """Fenetre "Convertir le CV" : langue cible choisie (anglais), sans lancer la traduction (IA)."""
+    button = await _top_button(ctx.page, "Convertir le CV", "languages")
+    if button is None:
+        print("ATTENTION: bouton 'Convertir le CV' introuvable", file=sys.stderr)
+        return
+    dialog = await _open_dialog(ctx.page, button)
+    target = dialog.locator("button:visible, label:visible").filter(has_text=re.compile(r"^\s*english\s*$", re.I)).first
+    if await target.count():
+        await target.click()
+        await ctx.page.wait_for_timeout(400)
+    else:
+        select = dialog.locator("select").first
+        if await select.count():
+            try:
+                await select.select_option(label="English")
+            except Exception:
+                pass
+    await ctx.shoot("convertir", dialog)
+    await reset_state(ctx.page)
 
 
 async def _capture_checklist(ctx: DemoContext):
@@ -343,7 +464,11 @@ def _make_offer_modal_capture(title: str, icon: str, name: str):
 
 
 async def _capture_relecture(ctx: DemoContext):
-    """Fautes relevees a l'analyse initiale (pas d'appel IA a l'ouverture), puis une corrigee."""
+    """
+    Fenetre de relecture : les fautes deja relevees (analyse de l'import), une
+    corrigee en un clic ; sans faute relevee, l'invitation "Relisez votre CV"
+    (la relecture elle-meme est un appel IA, jamais lance ici).
+    """
     button = await _top_button(ctx.page, "Relecture orthographique", "spell-check-2")
     if button is None:
         return
@@ -368,22 +493,19 @@ async def _capture_partage(ctx: DemoContext):
 
 
 async def _capture_apercu_pdf(ctx: DemoContext):
-    button = ctx.page.locator('button[aria-label="Aperçu fidèle"]:visible').first
-    if await button.count() == 0:
-        return
-    dialog = await _open_dialog(ctx.page, button)
-    # Le PDF est genere cote serveur (lent sur Render free tier).
+    """
+    L'apercu de l'editeur EST le PDF (ApercuExact.jsx : rendu serveur dessine
+    par pdf.js, badge "PDF exact" dans la barre d'outils) : on capture la
+    colonne d'apercu entiere, barre comprise. L'ancienne fenetre "Apercu
+    fidele" n'existe plus.
+    """
+    page_el = ctx.page.locator(".apercu-exact > div").first
     try:
-        await dialog.locator("iframe").first.wait_for(state="visible", timeout=40000)
-    except Exception as exc:
-        print(f"ATTENTION: apercu PDF non charge a temps, capture de la modale telle quelle ({exc})", file=sys.stderr)
-    # Le viewer PDF integre de chromium (PDFium) peint dans un processus a
-    # part, sans element DOM observable depuis Playwright (pas d'"embed"/
-    # "canvas" accessible) : une pause fixe genereuse est le seul signal
-    # disponible pour laisser la premiere page se dessiner.
-    await ctx.page.wait_for_timeout(3000)
-    await ctx.shoot("apercu_pdf", dialog)
-    await reset_state(ctx.page)
+        await page_el.wait_for(state="visible", timeout=30000)
+    except Exception:
+        print("ATTENTION: apercu exact non affiche, capture de l'apercu HTML", file=sys.stderr)
+    await ctx.page.wait_for_timeout(800)
+    await ctx.shoot("apercu_pdf", ctx.page.locator("main").first)
 
 
 async def _capture_mode_sombre(ctx: DemoContext):
@@ -438,8 +560,8 @@ async def _capture_apercu_cv(ctx: DemoContext):
     if button is None:
         return
     await button.click()
-    await ctx.page.wait_for_timeout(1200)
-    await ctx.shoot("apercu_cv", ctx.page.locator("main").first)
+    await ctx.page.wait_for_timeout(1500)
+    await ctx.shoot("apercu_cv", await _preview_page(ctx.page))
 
 
 # ---------------------------------------------------------------------------
@@ -464,33 +586,38 @@ class Feature:
 # (3_record_demo.py), avant l'ouverture de l'editeur.
 FEATURES: dict[str, Feature] = {f.id: f for f in [
     Feature("dashboard", "Mes CVs", "le tableau de bord avec la liste des CV sauvegardes et leurs actions (renommer, dupliquer)", None),
-    Feature("checklist", "Checklist 'A corriger'", "la liste des points a corriger detectes sur le CV, classes par priorite, avec l'etat 'pret a envoyer'", _capture_checklist),
-    Feature("identite", "Identite / profil", "le formulaire identite : nom, poste vise, email, telephone, ville, resume", _make_section_capture("Identité", "identite")),
-    Feature("experiences", "Experiences + missions", "la liste des experiences, une experience depliee, puis la fenetre d'edition des missions ouverte par double-clic dans l'apercu", _capture_experiences),
+    Feature("checklist", "Points a corriger", "la liste des points a corriger detectes sur le CV (defauts, puis idees), chacun explique en une phrase -- pas de note globale", _capture_checklist),
+    Feature("identite", "Identite / profil", "le formulaire identite : photo, poste vise, nom, email, telephone, ville, LinkedIn, site, permis, resume", _make_section_capture("Identité", "identite")),
+    Feature("experiences", "Experiences + missions", "la liste des experiences, une experience depliee, puis le panneau d'edition de ses missions", _capture_experiences),
     Feature("formation", "Formation", "la section formation : diplomes, ecoles, dates", _make_section_capture("Formation", "formation")),
-    Feature("competences", "Competences", "les competences cles sous forme d'etiquettes", _make_section_capture("Compétences", "competences")),
+    Feature("competences", "Competences", "les competences par groupe, avec les competences proposees a ajouter en un clic", _make_section_capture("Compétences", "competences")),
     Feature("langues", "Langues", "les langues avec leur niveau", _make_section_capture("Langues", "langues")),
-    Feature("structure", "Structure", "l'ordre des blocs du CV, reorganisable par glisser-deposer", _make_section_capture("Structure — ordre des blocs", "structure")),
-    Feature("relecture", "Relecture orthographique", "les fautes d'orthographe detectees, puis une faute corrigee en un clic", _capture_relecture),
-    Feature("fonctions_ia", "Adapter a une offre (IA)", "la fenetre 'Adapter a une offre' : on colle une offre d'emploi, l'IA adapte le CV a ce poste", _capture_adapter),
-    Feature("lettre_motivation", "Lettre de motivation (IA)", "la fenetre de lettre de motivation : on colle l'offre, l'IA ecrit une lettre calee sur l'offre et le CV", _make_offer_modal_capture("Lettre de motivation", "mail", "lettre")),
+    Feature("structure", "Structure", "l'ordre des blocs du CV (glisser-deposer), la langue et le format de page du CV, le pied de page", _make_section_capture("Structure — ordre des blocs", "structure")),
+    Feature("sections_perso", "Sections libres", "l'ajout d'une section libre au CV (certifications, projets, benevolat...)", _capture_sections_perso),
+    Feature("relecture", "Relecture orthographique", "la fenetre de relecture : l'IA repere fautes d'orthographe, de grammaire et d'accord ; chaque correction se valide en un clic", _capture_relecture),
+    Feature("fonctions_ia", "Adapter a une offre (IA)", "la fenetre 'Adapter a une offre' : on colle une offre d'emploi, l'IA suggere les ameliorations et cree une variante du CV pour ce poste", _capture_adapter),
+    Feature("lettre_motivation", "Lettre de motivation (IA)", "la fenetre de lettre de motivation : on colle l'offre, l'IA ecrit une lettre calee sur l'offre et le CV, a telecharger en PDF aux couleurs du CV", _make_offer_modal_capture("Lettre de motivation", "mail", "lettre")),
+    Feature("convertir", "Convertir (langue, format)", "la fenetre 'Convertir le CV' : une variante en anglais, allemand ou espagnol, ou au format Letter (Etats-Unis, Canada)", _capture_convertir),
     Feature("partage", "Partage par lien", "le partage du CV par un lien public, consultable sans compte ni piece jointe", _capture_partage),
-    Feature("apercu_pdf", "Apercu PDF fidele", "le PDF exact tel qu'il sera telecharge", _capture_apercu_pdf),
-    Feature("design", "Themes (33) en direct", "le panneau Design puis le CV qui change de theme en un clic (33 themes)", _capture_design_themes),
+    Feature("apercu_pdf", "Apercu = PDF exact", "l'apercu de l'editeur, qui est le PDF exact tel qu'il sera telecharge, au pixel pres", _capture_apercu_pdf),
+    Feature("design", "Themes (41) en direct", "le panneau Design puis le CV qui change de theme en un clic (41 themes)", _capture_design_themes),
+    Feature("mises_en_page", "6 mises en page", "les six mises en page (colonne, classique, minimal, bandeau, ATS, frise), puis le meme CV en bandeau, en frise et en minimal", _capture_mises_en_page),
+    Feature("personnalisation", "Reglages fins", "les reglages de detail : forme de la photo, langues en points, icones des titres, taille du texte, interligne, marges", _capture_personnalisation),
     Feature("mode_sombre", "Mode sombre", "l'editeur complet en mode sombre", _capture_mode_sombre),
     Feature("entretien", "Simulation d'entretien (IA)", "six questions d'entretien probables generees depuis le CV, avec une piste de reponse", _capture_entretien, consumes_ai=True),
     Feature("apercu_cv", "Apercu plein ecran", "le rendu final du CV, stylise, en plein ecran", _capture_apercu_cv, must_be_last=True),
 ]}
 
 # Ordre de CAPTURE (dependances d'etat), independant de l'ordre d'affichage
-# dans le scenario. La checklist passe tot (elle s'ouvre seule), le theme et
-# le mode sombre tard (ils changent l'apparence des captures suivantes),
-# l'entretien juste avant la fin (sa confirmation de fermeture est la plus
-# susceptible de bloquer la suite).
+# dans le scenario. La checklist passe tot (elle s'ouvre seule), le design
+# et le mode sombre tard (ils changent l'apparence des captures suivantes),
+# mises_en_page apres les themes (changer de structure change de theme),
+# l'entretien juste avant la fin
+# (sa confirmation de fermeture est la plus susceptible de bloquer la suite).
 DEFAULT_FEATURE_ORDER = [
     "dashboard", "checklist", "identite", "experiences", "formation", "competences", "langues",
-    "structure", "relecture", "fonctions_ia", "lettre_motivation", "partage", "apercu_pdf",
-    "design", "mode_sombre", "entretien", "apercu_cv",
+    "structure", "sections_perso", "relecture", "fonctions_ia", "lettre_motivation", "convertir", "partage",
+    "apercu_pdf", "personnalisation", "design", "mises_en_page", "mode_sombre", "entretien", "apercu_cv",
 ]
 
 # Anciens ids (scripts.json generes avant le catalogue actuel).

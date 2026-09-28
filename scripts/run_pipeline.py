@@ -32,7 +32,7 @@ STEPS = ["script", "voice", "video", "subs", "assemble"]
 #   highlight -> cadre anime autour de la zone montree (3b, screenshots)
 #   cursor    -> curseur anime qui clique sur le bouton d'action (3b, screenshots)
 ANIM_KINDS = ["overlay", "scene", "highlight", "cursor"]
-DEFAULT_OVERLAY = "score_ats"
+DEFAULT_OVERLAY = "points_corriger"
 DEFAULT_SCENE_ANIM = "cta"
 CONSEIL_CTA = {"title": "Teste ton CV gratuitement", "sub": "Lien en bio · abonne-toi pour la suite",
                "button": "Essaie OpusCV"}
@@ -44,6 +44,9 @@ OVERLAY_DELAY_S = 0.3
 # Accroche d'ouverture : affichee pendant la 1re scene, dans ces bornes.
 HOOK_MIN_S = 1.6
 HOOK_MAX_S = 4.0
+# --capture-mode aucune : icone du plan illustre quand la scene n'en donne pas.
+ILLUSTRATION_DEFAULT = "cv"
+CAPTURE_MODES = ["video", "screenshots", "video_desktop", "aucune"]
 
 
 def parse_anims(value: str) -> list[str]:
@@ -70,7 +73,7 @@ def anim_spec(value, default_template: str) -> str:
 
 
 def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
-                 hook: bool) -> tuple[list[str], list[str], list[dict]]:
+                 hook: bool, sans_captures: bool = False) -> tuple[list[str], list[str], list[dict]]:
     """
     -> (arguments 3b, arguments 5_assemble, effets sonores) pour un reel.
 
@@ -78,9 +81,12 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
       assets/anim/carte.html, toujours (independant de --anims) ;
     - kinds (--anims) : le scenario peut placer les animations lui-meme
       (champs "anim"/"overlay" d'une scene, cf. scenarios/exemple.json) ;
-      sinon placement par defaut : CTA anime sur la derniere scene, score
-      ATS sur la scene ATS/optimisation ;
+      sinon placement par defaut : CTA anime sur la derniere scene, points a
+      corriger sur la scene checklist/optimisation ;
     - hook : accroche_ecran en grand des la 1re image, pendant la 1re scene ;
+    - sans_captures (--capture-mode aucune) : toute scene sans carte ni CTA
+      devient un plan illustre (assets/anim/illustration.html, icone
+      "illustration" de la scene, "cv" par defaut) -- aucune capture a montrer ;
     - theme du scenario transmis aux deux etapes.
     """
     scenes = [s for s in script.get("scenes", []) if s.get("texte", "").strip()]
@@ -108,6 +114,14 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         chosen = {last: "cta?" + urlencode(texts) if texts else DEFAULT_SCENE_ANIM}
     if "scene" in kinds or cards:
         scene_anims.update(chosen)
+    if sans_captures:
+        for i, t in enumerate(t_scenes):
+            if i not in scene_anims:
+                params = {"icone": scenes[i].get("illustration") or ILLUSTRATION_DEFAULT,
+                          "dur": f"{t['end'] - t['start']:.2f}"}
+                if i > 0:  # hors accroche : la phrase cle en titre, faute de carte
+                    params["titre"] = fallback_title(scenes[i].get("texte", ""))
+                scene_anims[i] = "illustration?" + urlencode(params)
     for i, spec in sorted(scene_anims.items()):
         video_args += ["--scene-anim", f"{i}={spec}"]
 
@@ -170,6 +184,11 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     return video_args, assemble_args, sfx_cues
 
 
+def fallback_title(texte: str, max_words: int = 9) -> str:
+    words = texte.split()
+    return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
+
+
 def card_spec(card: dict, duration: float) -> str:
     """
     Carte du scenario -> "gabarit?params" (type -> gabarit, listes en a|b|c ;
@@ -205,18 +224,20 @@ def run(cmd: list[str]):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, default=3, help="Nombre de reels a generer")
-    parser.add_argument("--saas-url", type=str, required=True, help="URL de demo de ton SaaS")
+    parser.add_argument("--saas-url", type=str, default="",
+                         help="URL de demo de ton SaaS (inutile avec --capture-mode aucune)")
     parser.add_argument("--voice", type=str, default="auto",
                          help="Voix Gemini ; 'auto' = rotation par reel (catalog/voix.json)")
     parser.add_argument("--sans-voix", action="store_true",
                          help="Sans voix off : texte a l'ecran (sous-titres) + musique uniquement")
     parser.add_argument("--whisper-model", type=str, default="small")
-    parser.add_argument("--capture-mode", type=str, default="video",
-                         choices=["video", "screenshots", "video_desktop"],
+    parser.add_argument("--capture-mode", type=str, default="video", choices=CAPTURE_MODES,
                          help="video = enregistrement mobile continu ; "
                               "screenshots = captures desktop animees en zoom in/out au montage ; "
                               "video_desktop = enregistrement desktop continu, recadre ensuite sur "
-                              "chaque fonctionnalite montree (mouvement reel, pas un zoom artificiel)")
+                              "chaque fonctionnalite montree (mouvement reel, pas un zoom artificiel) ; "
+                              "aucune = sans capture de l'app : formats conseil, toutes les scenes en "
+                              "cartes animees (ni connexion ni compte demo)")
     parser.add_argument("--duration", type=int, default=30, help="Duree cible de chaque reel, en secondes")
     parser.add_argument("--angle", type=str, default=None, help="Angle marketing impose pour les scenarios")
     parser.add_argument("--scenario", type=str, default=None,
@@ -228,7 +249,7 @@ def main():
                               "les etapes precedentes restent en reprise si deja presentes")
     parser.add_argument("--anims", type=parse_anims, default=[],
                          help="Animations HTML/JS a integrer, separees par des virgules : "
-                              "overlay (surimpression score ATS), scene (scene CTA animee), "
+                              "overlay (surimpression points a corriger), scene (scene CTA animee), "
                               "highlight (cadre anime sur la zone montree), cursor (curseur qui clique sur "
                               "le bouton d'action) ; ou all / none (defaut). "
                               "scene/highlight/cursor : --capture-mode screenshots uniquement")
@@ -249,8 +270,11 @@ def main():
                               "instagram (legende .instagram.txt + couverture .jpg), carrousel (carrousel 4:5) ; "
                               "ou all (defaut)")
     args = parser.parse_args()
+    if args.capture_mode != "aucune" and not args.saas_url:
+        parser.error("--saas-url est obligatoire, sauf avec --capture-mode aucune")
 
-    screen_only = [k for k in args.anims if k in ("scene", "highlight", "cursor")]
+    sans_captures = args.capture_mode == "aucune"
+    screen_only = [k for k in args.anims if k in (("highlight", "cursor") if sans_captures else ("scene", "highlight", "cursor"))]
     if screen_only and args.capture_mode != "screenshots":
         print(f"ATTENTION: --anims {','.join(screen_only)} ne s'applique qu'en --capture-mode screenshots -> ignore")
         args.anims = [k for k in args.anims if k not in screen_only]
@@ -268,6 +292,8 @@ def main():
         stale_catalog = any(v and any(sc.get(k) != v for sc in existing)
                             for k, v in (("format", args.format), ("theme", args.theme), ("hook", args.hook),
                                          ("registre", args.registre)))
+        # Scenarios ecrits pour des captures (features) != scenarios sans capture (cartes partout).
+        stale_catalog = stale_catalog or any(bool(sc.get("sans_captures")) != sans_captures for sc in existing)
         if args.scenario or args.angle or stale_duration or stale_catalog:
             print("Parametres de scenario differents de la derniere execution -> regeneration complete")
             from_index = 0
@@ -301,6 +327,8 @@ def main():
                         ("--registre", args.registre)):
         if value:
             scenario_args += [flag, value]
+    if sans_captures:
+        scenario_args.append("--sans-captures")
     run([sys.executable, str(ROOT / "1_generate_script.py"),
          "--n", str(args.n), *scenario_args, "--out", str(scripts_path), *force_flag_for("script")])
 
@@ -357,9 +385,14 @@ def main():
             demo_args += ["--job-offer", scripts[i - 1]["offre_emploi"]]
         if scripts[i - 1].get("theme_style"):
             demo_args += ["--theme-style", scripts[i - 1]["theme_style"]]
-        run([sys.executable, str(ROOT / "3_record_demo.py"),
-             "--url", args.saas_url, "--out", str(video_dir),
-             "--mode", args.capture_mode, *features_args, *demo_args, *force_flag_for("video")])
+        if sans_captures:
+            # Rien a capturer : 3b monte uniquement des plans animes (captures.json vide).
+            video_dir.mkdir(parents=True, exist_ok=True)
+            (video_dir / "captures.json").write_text("[]", encoding="utf-8")
+        else:
+            run([sys.executable, str(ROOT / "3_record_demo.py"),
+                 "--url", args.saas_url, "--out", str(video_dir),
+                 "--mode", args.capture_mode, *features_args, *demo_args, *force_flag_for("video")])
         if video_dir.exists():
             (video_dir / ".capture_mode").write_text(args.capture_mode, encoding="utf-8")
 
@@ -397,10 +430,11 @@ def main():
         if timeline_path.exists():
             anim_video_args, anim_assemble_args, sfx_cues = plan_montage(
                 scripts[i - 1], json.loads(timeline_path.read_text(encoding="utf-8")), args.anims,
-                cards=args.capture_mode == "screenshots", hook=not args.no_hook_overlay)
-            if args.capture_mode != "screenshots" and any(s.get("carte") for s in scripts[i - 1].get("scenes", [])):
+                cards=args.capture_mode in ("screenshots", "aucune"), hook=not args.no_hook_overlay,
+                sans_captures=sans_captures)
+            if args.capture_mode not in ("screenshots", "aucune") and any(s.get("carte") for s in scripts[i - 1].get("scenes", [])):
                 print(f"[{i}] cartes texte ignorees hors --capture-mode screenshots (captures montrees a la place)")
-        if args.capture_mode != "screenshots":
+        if args.capture_mode not in ("screenshots", "aucune"):
             # 3c / video mobile : pas de --scene-anim/--highlight/--theme cote montage.
             anim_video_args = []
         if args.no_sfx:
@@ -416,7 +450,7 @@ def main():
         # 3b/3c. Montage de la video muette, cale sur la timeline : apres les
         #    sous-titres parce qu'il en a besoin. Force des que la capture ou
         #    la timeline ont ete refaites (subs_force couvre les deux cas).
-        if args.capture_mode == "screenshots":
+        if args.capture_mode in ("screenshots", "aucune"):
             video_path = video_dir / "zoom.mp4"
             run([sys.executable, str(ROOT / "3b_build_video_from_screenshots.py"),
                  "--screens", str(video_dir), "--timeline", str(timeline_path),
@@ -461,7 +495,7 @@ def main():
             run([sys.executable, str(ROOT / "instagram.py"), "--scripts", str(scripts_path), "--index", str(i),
                  "--final", str(final_path), "--plateformes", ",".join(insta)])
 
-    print(f"\nTermine. {args.n} reel(s) dans output/final/")
+    print(f"\nTermine. {len(scripts)} reel(s) dans output/final/")
 
 
 if __name__ == "__main__":
