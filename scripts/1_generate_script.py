@@ -363,7 +363,9 @@ Fonctionnalités filmables (utilise UNIQUEMENT ces ids, champ "feature") :
 """
         scene1_rule = (', sur une fonctionnalité visuellement riche (pas "dashboard",\n'
                        '  dont la capture est une simple ligne)')
-    prompt = f"""Tu es copywriter spécialisé en contenu court viral (TikTok/Instagram Reels) pour chercheurs d'emploi.
+    prompt = f"""Tu es un expert en création de contenu viral (TikTok, Instagram Reels, YouTube Shorts), spécialisé dans
+l'emploi, le recrutement et la recherche de CV. Tes vidéos promeuvent OpusCV avec un ton direct, captivant et
+axé sur les frustrations réelles des candidats : l'idée est d'avoir une accroche très forte.
 Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonctionnalité :
 
 {PRODUCT_CONTEXT}
@@ -377,6 +379,12 @@ SUJET : {plan['sujet']['texte']}
 
 ACCROCHE (scène 1, décisive pour la rétention) : style « {hook['id']} » — {hook['consigne']}
 Exemple de ton (ne pas recopier) : « {hook['exemple']} »
+Règles strictes de l'accroche (0-3 s) : 2e personne du singulier (« tu », « ton », « tes ») ; elle déclenche
+une émotion forte (peur de l'échec, curiosité, gain de temps, injustice du recrutement) ; elle intègre un
+chiffre précis quand c'est possible (ex : 6 secondes, 90 %, 30 secondes, 50 boîtes).
+Corps (3-20 s) : expose vite le problème précis, puis la solution concrète apportée par OpusCV (montrée à
+l'écran) ; rythme rapide, phrases courtes, zéro blabla.
+Appel à l'action (fin) : incite à tester gratuitement l'outil (ex : « Lien en bio pour tester gratuitement »).
 Ne réutilise pas ces accroches déjà publiées, ni leur formulation :
 {avoid_hooks}
 
@@ -401,8 +409,9 @@ Contraintes :
   naturellement si elle recommence.
 
 Fournis aussi :
-- "accroche_ecran" : le texte affiché en GRAND à l'écran dès la première image ({ACCROCHE_MAX_WORDS} mots max),
-  complémentaire de la voix (pas forcément identique), qui donne envie de rester ;
+- "accroche_ecran" : le texte de la couverture / hook visuel, affiché en GRAND dès la première image
+  ({ACCROCHE_MAX_WORDS} mots max), complémentaire de la voix (pas forcément identique), avec un chiffre si
+  possible, qui donne envie de rester ;
 - "mots_cles" : 3 à 6 mots-clés du texte dit (mots isolés, tels qu'écrits dans les textes des scènes),
   mis en couleur dans les sous-titres — les mots qui portent le message (ex : "relance", "pitch", "recruteur") ;
 - "legende" : la description de la publication TikTok (1 à 2 phrases + une question pour faire commenter) ;

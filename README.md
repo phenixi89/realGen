@@ -266,6 +266,13 @@ Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
 - une accroche trop proche d'une accroche déjà publiée est refusée et Gemini recommence ;
 - tout est historisé dans `output/content_history.json` (persisté entre les runs CI par le cache).
 
+**Prompt du scénario** (`build_prompt`, `scripts/1_generate_script.py`) : Gemini joue un expert du contenu
+viral emploi/recrutement (TikTok, Reels, Shorts) avec des règles strictes : accroche (0-3 s) au tutoiement,
+émotion forte (peur de l'échec, curiosité, gain de temps, injustice du recrutement) et chiffre précis si
+possible ; corps (3-20 s) problème précis puis solution OpusCV montrée à l'écran, phrases courtes ; CTA
+« tester gratuitement » (lien en bio). Sujets dédiés : `meme_cv_50_boites`, `adapter_cv_30_secondes`,
+`recruteur_6_secondes`.
+
 Chaque scénario contient aussi l'**accroche affichée** en grand dès la première image (pas de fondu
 depuis le noir), une **légende** et des **hashtags** (écrits dans `output/final/reel_XX.txt`), leurs
 équivalents Instagram et le texte du carrousel (voir « Instagram »), une

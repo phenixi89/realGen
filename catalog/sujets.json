@@ -1422,6 +1422,33 @@
         "produit"
       ],
       "famille": "produit_mise_en_page"
+    },
+    {
+      "id": "meme_cv_50_boites",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "pourquoi envoyer le même CV à 50 boîtes est une erreur fatale, + comment OpusCV adapte le CV à chaque offre",
+      "famille": "produit_candidature"
+    },
+    {
+      "id": "adapter_cv_30_secondes",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "comment adapter son CV à une offre en 30 secondes chrono avec OpusCV (démonstration rapide)",
+      "famille": "produit_candidature"
+    },
+    {
+      "id": "recruteur_6_secondes",
+      "categorie": "produit",
+      "tags": [
+        "produit"
+      ],
+      "texte": "un recruteur met 6 secondes à jeter ton CV : voilà ce qu'il regarde, + comment OpusCV le corrige",
+      "famille": "produit_analyse"
     }
   ]
 }
