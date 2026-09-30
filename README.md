@@ -273,6 +273,11 @@ possible ; corps (3-20 s) problème précis puis solution OpusCV montrée à l'�
 « tester gratuitement » (lien en bio). Sujets dédiés : `meme_cv_50_boites`, `adapter_cv_30_secondes`,
 `recruteur_6_secondes`.
 
+**Relance « enregistre »** (`relance_enregistrer` dans `config.json`, activée par défaut) : sur les reels
+`conseil` en registre sérieux, la 1re phrase de la scène 2 invite en 5 à 7 mots à enregistrer la vidéo
+(« Enregistre-la, tu vas en avoir besoin. »), puis le contenu enchaîne. L'abonnement n'est demandé qu'à
+la fin : les CTA `ctas_conseil` associent « abonne-toi » et le test gratuit en bio.
+
 Chaque scénario contient aussi l'**accroche affichée** en grand dès la première image (pas de fondu
 depuis le noir), une **légende** et des **hashtags** (écrits dans `output/final/reel_XX.txt`), leurs
 équivalents Instagram et le texte du carrousel (voir « Instagram »), une

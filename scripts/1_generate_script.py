@@ -363,6 +363,11 @@ Fonctionnalités filmables (utilise UNIQUEMENT ces ids, champ "feature") :
 """
         scene1_rule = (', sur une fonctionnalité visuellement riche (pas "dashboard",\n'
                        '  dont la capture est une simple ligne)')
+    save_rule = ("""Relance juste après l'accroche : la 1re phrase de la scène 2 (juste après l'accroche)
+invite en 5 à 7 mots à enregistrer la vidéo pour ne pas la perdre, puis enchaîne aussitôt sur le
+contenu. Varie la formulation (ex : « Enregistre-la, tu vas en avoir besoin. », « Garde-la avant de
+postuler. ») ; ne demande PAS l'abonnement ici, il est réservé au CTA final.
+""" if wants_save_nudge(fmt, humour) else "")
     prompt = f"""Tu es un expert en création de contenu viral (TikTok, Instagram Reels, YouTube Shorts), spécialisé dans
 l'emploi, le recrutement et la recherche de CV. Tes vidéos promeuvent OpusCV avec un ton direct, captivant et
 axé sur les frustrations réelles des candidats : l'idée est d'avoir une accroche très forte.
@@ -385,7 +390,7 @@ chiffre précis quand c'est possible (ex : 6 secondes, 90 %, 30 secondes, 50 bo�
 Corps (3-20 s) : expose vite le problème précis, puis la solution concrète apportée par OpusCV (montrée à
 l'écran) ; rythme rapide, phrases courtes, zéro blabla.
 Appel à l'action (fin) : incite à tester gratuitement l'outil (ex : « Lien en bio pour tester gratuitement »).
-Ne réutilise pas ces accroches déjà publiées, ni leur formulation :
+{save_rule}Ne réutilise pas ces accroches déjà publiées, ni leur formulation :
 {avoid_hooks}
 
 {screen_rule}
@@ -550,6 +555,12 @@ def closest_icon(name: str) -> str:
 def wants_proof(fmt: dict) -> bool:
     """Reels conseil : une scene "preuve" montre le conseil applique dans OpusCV (config preuve_produit)."""
     return fmt.get("categorie") == "conseil" and bool(catalog.config().get("preuve_produit", True))
+
+
+def wants_save_nudge(fmt: dict, humour: bool) -> bool:
+    """Reels conseil serieux : relance "enregistre" juste apres l'accroche (config relance_enregistrer)."""
+    return (fmt.get("categorie") == "conseil" and not humour
+            and bool(catalog.config().get("relance_enregistrer", True)))
 
 
 def banned_phrases(text: str) -> list[str]:

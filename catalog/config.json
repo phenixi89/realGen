@@ -1,5 +1,5 @@
 {
-  "_doc": "Reglages de la selection de contenu. mix = part cible de chaque categorie de format sur les reels generes (conseil = contenu utile, produit = demo). historique_* = nombre d'elements recents evites. similarite_max = au-dela (0-1), une accroche trop proche d'une ancienne est refusee et l'IA recommence. ctas_* : variantes d'appel a l'action, une tiree par reel. preuve_produit : les reels conseil contiennent une scene 'preuve' ou le conseil est applique en direct dans OpusCV (false = desactive). phrases_bannies : conseils generiques refuses dans les textes (l'IA recommence). registres : part cible de chaque registre d'ecriture (serieux / humour), tiree comme le mix. historique_registres : fenetre de mesure. consigne_humour : regles d'ecriture donnees a l'IA en registre humour. ton_humour : ton de lecture par defaut en registre humour. instagram : legende et hashtags propres a Instagram (hashtags_max), phrase d'appel a enregistrer (cta_legende), textes de la derniere diapositive du carrousel (carrousel_fin). historique_familles : nombre de reels recents dont la famille de sujet (sujets.json famille) est evitee.",
+  "_doc": "Reglages de la selection de contenu. mix = part cible de chaque categorie de format sur les reels generes (conseil = contenu utile, produit = demo). historique_* = nombre d'elements recents evites. similarite_max = au-dela (0-1), une accroche trop proche d'une ancienne est refusee et l'IA recommence. ctas_* : variantes d'appel a l'action, une tiree par reel. preuve_produit : les reels conseil contiennent une scene 'preuve' ou le conseil est applique en direct dans OpusCV (false = desactive). relance_enregistrer : les reels conseil (registre serieux) glissent juste apres l'accroche une relance tres courte invitant a enregistrer la video (false = desactive) ; l'abonnement est demande dans le CTA final. phrases_bannies : conseils generiques refuses dans les textes (l'IA recommence). registres : part cible de chaque registre d'ecriture (serieux / humour), tiree comme le mix. historique_registres : fenetre de mesure. consigne_humour : regles d'ecriture donnees a l'IA en registre humour. ton_humour : ton de lecture par defaut en registre humour. instagram : legende et hashtags propres a Instagram (hashtags_max), phrase d'appel a enregistrer (cta_legende), textes de la derniere diapositive du carrousel (carrousel_fin). historique_familles : nombre de reels recents dont la famille de sujet (sujets.json famille) est evitee.",
   "mix": {
     "conseil": 0.65,
     "produit": 0.35
@@ -25,9 +25,9 @@
   ],
   "ctas_conseil": [
     "Abonne-toi pour la suite, et teste ton CV gratuitement avec le lien en bio.",
-    "Enregistre cette vidéo, et vérifie ton CV gratuitement avec le lien en bio.",
-    "Envoie ça à quelqu'un qui cherche un job, et teste ton CV en bio.",
-    "Tu veux savoir où en est ton CV ? Le test gratuit est en bio.",
+    "Abonne-toi pour d'autres astuces, et vérifie ton CV gratuitement avec le lien en bio.",
+    "Envoie ça à quelqu'un qui cherche un job, abonne-toi, et teste ton CV gratuitement en bio.",
+    "Abonne-toi pour la partie 2. Le test gratuit de ton CV est en bio.",
     "Abonne-toi pour ne rien rater, et passe ton CV au scanner via le lien en bio."
   ],
   "cta_anim": [
@@ -53,6 +53,7 @@
     }
   ],
   "preuve_produit": true,
+  "relance_enregistrer": true,
   "phrases_bannies": [
     "soignez votre CV",
     "soigne ton CV",
