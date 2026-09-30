@@ -183,7 +183,7 @@
       "sujets": [
         "produit"
       ],
-      "structure": "Récit à la première personne d'un utilisateur type ('J'ai envoyé 40 candidatures sans réponse...'), présenté comme un exemple et non comme un vrai client. Chaque scène montre la fonctionnalité d'OpusCV qui a changé la donne. Dernière scène : CTA.",
+      "structure": "Récit à la première personne d'un utilisateur type ('J'ai envoyé 40 candidatures sans réponse...'), présenté comme un exemple et non comme un vrai client. TOUTES les scènes, accroche comprise, restent à la première personne (« je »), jamais de « tu » avant le CTA. Chaque scène montre la fonctionnalité d'OpusCV qui a changé la donne. Dernière scène : CTA.",
       "ton": "sincère et naturel, à la première personne, débit posé et naturel, avec de courtes pauses entre les phrases"
     },
     {
@@ -283,7 +283,7 @@
         "lettre",
         "candidature"
       ],
-      "structure": "Accroche : tier list des erreurs, de la moins grave à la pire. Chaque scène classe une erreur (surtitre « Rang C », « Rang B », « Rang A », « Rang S ») avec une explication courte ; la pire à la fin avec l'effet suspense. Dernière scène : CTA.",
+      "structure": "Accroche : tier list des erreurs, de la moins grave à la pire (ici Rang S = l'erreur la PLUS GRAVE, dis-le clairement dès l'accroche, et le classement doit rester logique : chaque rang plus grave que le précédent). Chaque scène classe une erreur (surtitre « Rang C », « Rang B », « Rang A », « Rang S ») avec une explication courte ; la pire à la fin avec l'effet suspense. Dernière scène : CTA.",
       "ton": "tranché, drôle et assumé, débit posé et naturel, avec de courtes pauses entre les phrases",
       "registres": [
         "serieux",

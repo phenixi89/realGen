@@ -53,7 +53,7 @@ Principales options de `run_pipeline.py` :
 | Option | Défaut | Description |
 |---|---|---|
 | `--n` | 3 | Nombre de reels à générer (ignoré avec `--scenario`) |
-| `--duration` | 30 | Durée cible de chaque reel, en secondes |
+| `--duration` | 25 | Durée cible de chaque reel, en secondes |
 | `--capture-mode` | `video` | `screenshots` (captures nettes composées, recommandé — voir ci-dessous), `video` (enregistrement mobile continu), `video_desktop` (enregistrement desktop recadré par fonctionnalité), `aucune` (sans capture de l'app — voir « Mode sans captures ») |
 | `--voice` | auto | Voix TTS Gemini (`auto` = rotation par reel, `catalog/voix.json`) |
 | `--sans-voix` | — | Sans voix off : texte à l'écran + musique |
@@ -271,7 +271,9 @@ viral emploi/recrutement (TikTok, Reels, Shorts) avec des règles strictes : acc
 émotion forte (peur de l'échec, curiosité, gain de temps, injustice du recrutement) et chiffre précis si
 possible ; corps (3-20 s) problème précis puis solution OpusCV montrée à l'écran, phrases courtes ; CTA
 « tester gratuitement » (lien en bio). Sujets dédiés : `meme_cv_50_boites`, `adapter_cv_30_secondes`,
-`recruteur_6_secondes`.
+`recruteur_6_secondes`. Garde-fous : chiffres uniquement concrets ou vérifiables (jamais de statistique
+inventée), public = candidats (jamais « recruteurs » dans le CTA). Format `tier_list` : Rang S = l'erreur la
+plus grave, annoncé dès l'accroche ; `temoignage_produit` : tout à la 1re personne jusqu'au CTA.
 
 **Relance « enregistre »** (`relance_enregistrer` dans `config.json`, activée par défaut) : sur les reels
 `conseil` en registre sérieux, la 1re phrase de la scène 2 invite en 5 à 7 mots à enregistrer la vidéo
@@ -418,7 +420,7 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
   prononcé (`--no-punch` dans `5_assemble.py` pour les retirer).
 - **Rythme** : un changement de plan toutes les 2,5 à 5 s environ. Voix au débit posé (≈ 2,6 mots/s,
   budget de mots calculé dessus ; un ton contenant « rapide » compte ≈ 3,4 mots/s).
-- **Durée** : 30 s ≈ 78 mots et 6 à 12 scènes ; 45 s ≈ 117 mots et 9 à 18 scènes. Changer la durée
+- **Durée** (25 s par défaut, console et workflow) : 25 s ≈ 65 mots ; 30 s ≈ 78 mots et 6 à 12 scènes ; 45 s ≈ 117 mots et 9 à 18 scènes. Changer la durée
   régénère tout (scénarios, voix, captures), même en reprise.
 - **Surimpression points à corriger** (`--anims overlay`) : jamais sur l'accroche, une carte, le CTA, la scène
   preuve, ni dans un reel à habillage (chrono), pour ne rien masquer.

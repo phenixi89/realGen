@@ -40,7 +40,7 @@ dans l'audio quand commence chaque scene, et le montage (3b/3c) affiche la
 bonne fonctionnalite (ou la carte) exactement pendant que la voix en parle.
 
 Parametrable :
-  --duration 15|30|45|60...  duree cible (nombre de scenes et de mots en decoulent)
+  --duration 15|25|30|45|60...  duree cible (nombre de scenes et de mots en decoulent)
   --format / --theme / --hook   impose un element du catalogue (sinon choix automatique)
   --registre serieux|humour  impose le registre (sinon mix de config.json "registres")
   --angle "..."              sujet libre (sinon choisi dans catalog/sujets.json)
@@ -386,9 +386,13 @@ ACCROCHE (scène 1, décisive pour la rétention) : style « {hook['id']} » —
 Exemple de ton (ne pas recopier) : « {hook['exemple']} »
 Règles strictes de l'accroche (0-3 s) : 2e personne du singulier (« tu », « ton », « tes ») ; elle déclenche
 une émotion forte (peur de l'échec, curiosité, gain de temps, injustice du recrutement) ; elle intègre un
-chiffre précis quand c'est possible (ex : 6 secondes, 90 %, 30 secondes, 50 boîtes).
+chiffre précis quand c'est possible, mais UNIQUEMENT un chiffre concret ou vérifiable (une durée,
+un nombre de lignes, de boîtes, d'étapes : 6 secondes, 30 secondes, 3 lignes, 50 boîtes) ; JAMAIS de
+statistique ni de pourcentage inventé (« 80 % des candidats », « 4 candidats sur 5 »…).
 Corps (3-20 s) : expose vite le problème précis, puis la solution concrète apportée par OpusCV (montrée à
 l'écran) ; rythme rapide, phrases courtes, zéro blabla.
+Public : des CANDIDATS qui cherchent un emploi (jamais des recruteurs) ; le CTA parle de leur recherche
+(décrocher un entretien, un job), pas de « recrutements ».
 Appel à l'action (fin) : incite à tester gratuitement l'outil (ex : « Lien en bio pour tester gratuitement »).
 {save_rule}Ne réutilise pas ces accroches déjà publiées, ni leur formulation :
 {avoid_hooks}
@@ -865,7 +869,7 @@ def get_client():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, default=5, help="Nombre de scenarios a generer (ignore avec --scenario)")
-    parser.add_argument("--duration", type=int, default=30, help="Duree cible de chaque reel, en secondes")
+    parser.add_argument("--duration", type=int, default=25, help="Duree cible de chaque reel, en secondes")
     parser.add_argument("--angle", type=str, default=None,
                          help="Sujet libre impose (format demo_produit sauf --format) ; sinon catalog/sujets.json")
     parser.add_argument("--format", type=str, default=None, help="Format impose (catalog/formats.json)")

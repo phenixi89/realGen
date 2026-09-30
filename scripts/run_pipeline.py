@@ -238,7 +238,7 @@ def main():
                               "chaque fonctionnalite montree (mouvement reel, pas un zoom artificiel) ; "
                               "aucune = sans capture de l'app : formats conseil, toutes les scenes en "
                               "cartes animees (ni connexion ni compte demo)")
-    parser.add_argument("--duration", type=int, default=30, help="Duree cible de chaque reel, en secondes")
+    parser.add_argument("--duration", type=int, default=25, help="Duree cible de chaque reel, en secondes")
     parser.add_argument("--angle", type=str, default=None, help="Angle marketing impose pour les scenarios")
     parser.add_argument("--scenario", type=str, default=None,
                          help="Scenario(s) ecrit(s) a la main (JSON, voir scenarios/exemple.json) ; remplace --n")

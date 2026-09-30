@@ -100,11 +100,12 @@ on:
         type: choice
         options:
           - "15"
+          - "25"
           - "30"
           - "45"
           - "60"
         required: false
-        default: "30"
+        default: "25"
       angle:
         description: "Angle marketing libre (optionnel, sinon rotation automatique)"
         required: false
@@ -202,7 +203,7 @@ jobs:
           [ -n "$INPUT_PLAN" ] && extra+=(--plan "$INPUT_PLAN")
           python scripts/run_pipeline.py \
             --n "${{ github.event.inputs.n || '3' }}" \
-            --duration "${{ github.event.inputs.duration || '30' }}" \
+            --duration "${{ github.event.inputs.duration || '25' }}" \
             --saas-url "${{ vars.SAAS_URL }}" \
             --voice "${{ github.event.inputs.voice || 'auto' }}" \
             --capture-mode "${{ github.event.inputs.capture_mode || 'screenshots' }}" \
