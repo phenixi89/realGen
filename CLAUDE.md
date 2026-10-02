@@ -31,4 +31,7 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 ## Points ouverts (décisions utilisateur en attente)
 
 - Format `temoignage_produit` : ajouter la mention « histoire illustrative » ou le retirer.
-- `PRODUCT_CONTEXT` (`scripts/1_generate_script.py`) cite `opuscv.tech` ; le watermark utilise `opuscv.fr`.
+
+## Décisions prises
+
+- Domaines : `opuscv.tech` (`PRODUCT_CONTEXT`, bio) et `opuscv.fr` (watermark) sont conservés tous les deux, volontairement.
