@@ -18,6 +18,11 @@ on:
         type: boolean
         required: false
         default: false
+      musique:
+        description: "Musique de fond (décocher = sans musique ; voix et effets conservés)"
+        type: boolean
+        required: false
+        default: true
       force:
         description: "Ignorer toute reprise et tout regenerer depuis zero"
         type: boolean
@@ -213,6 +218,7 @@ jobs:
             ${{ github.event.inputs.from_step && format('--from-step {0}', github.event.inputs.from_step) || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
             ${{ github.event.inputs.sfx == 'false' && '--no-sfx' || '' }} \
+            ${{ github.event.inputs.musique == 'false' && '--no-music' || '' }} \
             ${{ github.event.inputs.sans_voix == 'true' && '--sans-voix' || '' }}
 
       # if: always() -- meme si le pipeline echoue en route (ex: etape 3),

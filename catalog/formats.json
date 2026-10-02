@@ -585,9 +585,10 @@
         "candidature",
         "entretien",
         "lettre",
-        "linkedin"
+        "linkedin",
+        "emploi"
       ],
-      "structure": "Mini dessin animé : Léa et Karim (personnages dessinés au trait) vivent une situation de candidat en 1 à 4 scènes dessinées, une par lieu ou moment (salle d'attente, café, salon, métro, bureau du recruteur, visio...). Scène 1 : l'accroche est la 1re réplique, dite par un personnage. Le problème se joue en situation, puis le conseil concret arrive dans le dialogue (l'un conseille l'autre, avec une phrase précise à dire ou à écrire). Dernière scène : un personnage dit l'appel à l'action pendant que l'écran d'appel à l'action s'affiche. Épisode d'une série : Karim cherche un job, d'épisode en épisode ; l'histoire suit la trame imposée et finit sur une chute avant l'appel à l'action.",
+      "structure": "Mini-série dessinée : Léa et Karim (personnages au trait) vivent une VRAIE scène de recherche d'emploi ou de vie professionnelle en 1 à 4 scènes dessinées, une par lieu ou moment (salle d'attente, café, salon, métro, bureau du recruteur, visio...). Le reel est un mini-scénario en 3 actes : (1) l'accroche, dite par un personnage, pose une envie et un obstacle ; (2) Karim tente, ça coince, un retournement apporte UN principe de conseil concret et retenable (une phrase à dire ou à écrire, une règle nommée) ; (3) Karim l'applique et ça marche, puis une chute qui redit le conseil de façon mémorable. Le sujet est le CONSEIL emploi/recrutement, jamais le produit : OpusCV n'apparaît que dans l'appel à l'action final, dit par un personnage pendant que l'écran d'appel à l'action s'affiche. Épisode d'une série : Karim cherche un job, d'épisode en épisode ; l'histoire suit la trame imposée.",
       "ton": "dialogue vivant et naturel entre deux amis, répliques bien distinctes, petite pause avant chaque chute",
       "serie": true
     }

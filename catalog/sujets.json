@@ -1,5 +1,5 @@
 {
-  "_doc": "Sujets des reels. categorie : 'conseil' ou 'produit' (doit correspondre a la categorie du format). tags : croises avec formats.json 'sujets'. Un sujet est choisi par Gemini parmi ceux compatibles avec le format, en evitant les plus recents. Ajouter un sujet = ajouter une entree (id unique). famille : grand theme du sujet (ats_mots_cles, redaction_cv, forme_cv, parcours, candidature, lettre, entretien, linkedin, recherche, metiers, produit_*) : les familles tournent (la moins recemment traitee passe en premier, config.json historique_familles), pour qu'un theme ne revienne pas reel apres reel.",
+  "_doc": "Sujets des reels. categorie : 'conseil' ou 'produit' (doit correspondre a la categorie du format). tags : croises avec formats.json 'sujets'. Un sujet est choisi par Gemini parmi ceux compatibles avec le format, en evitant les plus recents. Ajouter un sujet = ajouter une entree (id unique). famille : grand theme du sujet (ats_mots_cles, redaction_cv, forme_cv, parcours, candidature, lettre, entretien, linkedin, recherche, metiers, produit_*) : les familles tournent (la moins recemment traitee passe en premier, config.json historique_familles), pour qu'un theme ne revienne pas reel apres reel. Tag 'emploi' + famille 'carriere_emploi' : conseils emploi/carriere au sens large (negociation, demission, choix d'offre, premier jour...), au coeur du dessin anime, qui ne parle pas du produit.",
   "sujets": [
     {
       "id": "avant_apres_produit",
@@ -1449,6 +1449,132 @@
       ],
       "texte": "un recruteur met 6 secondes à jeter ton CV : voilà ce qu'il regarde, + comment OpusCV le corrige",
       "famille": "produit_analyse"
+    },
+    {
+      "id": "demission_preavis",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "démissionner proprement : l'annoncer au manager, négocier son préavis, partir sans brûler de ponts",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "choisir_deux_offres",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "deux offres en main : comparer salaire, mission, équipe et trajectoire pour choisir sans regret",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "offre_toxique",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "les signaux d'alerte d'une offre ou d'une entreprise qui va mal se passer (avant même de signer)",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "demander_augmentation",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "demander une augmentation ou une évolution : préparer ses preuves, choisir le moment, la phrase d'ouverture",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "refuser_offre",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "refuser une offre sans fermer la porte : le message qui laisse une excellente image",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "premier_jour",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "le premier jour dans un nouveau poste : les trois choses qui font bonne impression dès la première semaine",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "contrats_cdi_cdd_interim",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "CDI, CDD, intérim, alternance : ce que chaque contrat change vraiment pour toi (sans jargon juridique)",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "culture_entreprise",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "repérer la culture d'une entreprise avant l'entretien : ce que racontent ses offres, ses avis et ses salariés",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "recruteur_six_secondes",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "ce que fait un recruteur de ses 6 premières secondes par candidature, et comment les gagner",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "mythe_cv_parfait",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "le mythe du candidat parfait : pourquoi les recruteurs embauchent rarement le profil de l'offre à 100 %",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "reseau_cafe",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "demander un café virtuel à un professionnel : le message, la question à poser, le suivi qui crée une vraie relation",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "entretien_silence",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "gérer un silence ou une question déstabilisante en entretien : respirer, reformuler, répondre calmement",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "teletravail_offre",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "télétravail, horaires, mobilité : comment poser ses conditions sans faire fuir le recruteur",
+      "famille": "carriere_emploi"
+    },
+    {
+      "id": "feedback_refus",
+      "categorie": "conseil",
+      "tags": [
+        "emploi"
+      ],
+      "texte": "demander un retour après un refus : la question qui fait répondre le recruteur et nourrit la prochaine candidature",
+      "famille": "carriere_emploi"
     }
   ]
 }

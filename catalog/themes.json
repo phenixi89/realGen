@@ -33,7 +33,8 @@
       "ambiances": [
         "lofi_chill",
         "piano_minimal",
-        "synthwave"
+        "synthwave",
+        "ambient_matin"
       ],
       "dessin": "papier"
     },
@@ -69,7 +70,8 @@
       "ambiances": [
         "pop_energie",
         "house_douce",
-        "acoustique"
+        "acoustique",
+        "ukulele_bonne_humeur"
       ],
       "dessin": "papier"
     },
@@ -105,7 +107,9 @@
       "ambiances": [
         "corporate_positif",
         "acoustique",
-        "piano_minimal"
+        "piano_minimal",
+        "bossa_douce",
+        "ambient_matin"
       ],
       "dessin": "papier"
     },
@@ -141,7 +145,8 @@
       "ambiances": [
         "minimal_pulse",
         "corporate_positif",
-        "house_douce"
+        "house_douce",
+        "bossa_douce"
       ],
       "dessin": "papier"
     },
@@ -177,7 +182,9 @@
       "ambiances": [
         "tension_tech",
         "trap_legere",
-        "synthwave"
+        "synthwave",
+        "jazz_cafe",
+        "cinema_doux"
       ],
       "dessin": "papier"
     },
@@ -213,7 +220,8 @@
       "ambiances": [
         "pop_energie",
         "house_douce",
-        "trap_legere"
+        "trap_legere",
+        "ukulele_bonne_humeur"
       ],
       "dessin": "papier"
     },
@@ -249,7 +257,9 @@
       "ambiances": [
         "lofi_chill",
         "piano_minimal",
-        "minimal_pulse"
+        "minimal_pulse",
+        "ambient_matin",
+        "cinema_doux"
       ],
       "dessin": "papier"
     },
@@ -285,7 +295,9 @@
       "ambiances": [
         "pop_energie",
         "acoustique",
-        "house_douce"
+        "house_douce",
+        "ukulele_bonne_humeur",
+        "bossa_douce"
       ],
       "dessin": "papier"
     },
@@ -315,7 +327,9 @@
       "ambiances": [
         "piano_minimal",
         "house_douce",
-        "lofi_chill"
+        "lofi_chill",
+        "ambient_matin",
+        "bossa_douce"
       ],
       "transitions": [
         "hblur",
@@ -351,7 +365,9 @@
       "ambiances": [
         "piano_minimal",
         "acoustique",
-        "corporate_positif"
+        "corporate_positif",
+        "jazz_cafe",
+        "cinema_doux"
       ],
       "transitions": [
         "wipeleft",
@@ -387,7 +403,8 @@
       "ambiances": [
         "synthwave",
         "trap_legere",
-        "tension_tech"
+        "tension_tech",
+        "ambient_matin"
       ],
       "transitions": [
         "fadewhite",
@@ -423,7 +440,9 @@
       "ambiances": [
         "acoustique",
         "lofi_chill",
-        "piano_minimal"
+        "piano_minimal",
+        "ambient_matin",
+        "cinema_doux"
       ],
       "transitions": [
         "dissolve",
@@ -459,7 +478,8 @@
       "ambiances": [
         "trap_legere",
         "pop_energie",
-        "house_douce"
+        "house_douce",
+        "jazz_cafe"
       ],
       "transitions": [
         "slideleft",
@@ -504,7 +524,9 @@
       "ambiances": [
         "comique_sautillant",
         "pop_energie",
-        "trap_legere"
+        "trap_legere",
+        "ukulele_bonne_humeur",
+        "jazz_cafe"
       ],
       "dessin": "papier"
     },
@@ -544,7 +566,11 @@
       "ambiances": [
         "comique_sautillant",
         "acoustique",
-        "house_douce"
+        "house_douce",
+        "jazz_cafe",
+        "bossa_douce",
+        "ukulele_bonne_humeur",
+        "boite_a_musique"
       ],
       "dessin": "papier"
     }

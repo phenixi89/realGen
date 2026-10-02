@@ -38,6 +38,8 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
     varient avec la caméra ;
   - les répliques sont dites à voix haute : pas de « POV » ni de code des réseaux ; une accroche qui ne se
     dit pas porte `"dessin": false` dans `hooks.json` ;
+  - le dessin animé donne un conseil emploi / recrutement (écriture de scénariste, consigne `DRAMATURGIE`) :
+    OpusCV n'est cité que dans l'appel à l'action final, jamais dans une réplique de l'histoire ;
   - aucune fonction ni chiffre de performance inventé sur OpusCV dans la bouche d'un personnage ;
   - rien ne cache la scène : les bulles passent au-dessus des têtes, les gros plans (inserts) sous la
     zone des bulles, le nuage de pensée du côté libre ; aucun son au changement de scène.

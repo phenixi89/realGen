@@ -66,6 +66,7 @@ Principales options de `run_pipeline.py` :
 | `--plan` | — | Combinaison imposée reel par reel (JSON, remplace `--n`) — voir « Combinaison par reel » |
 | `--plateformes` | `all` | Déclinaisons produites : `tiktok` (légende `.txt`), `instagram` (légende Instagram + couverture), `carrousel` (carrousel 4:5), séparées par des virgules — voir « Instagram » |
 | `--no-sfx` | — | Sans effets sonores (musique conservée) — case « sfx » dans le workflow |
+| `--no-music` | — | Sans musique de fond (voix et effets conservés) — case « Musique de fond » dans le workflow et la console ; par reel : `"ambiance": "aucune"` dans `--plan` |
 | `--no-hook-overlay` | — | N'affiche pas l'accroche en grand au début |
 | `--anims` | `none` | Animations HTML/JS intégrées au montage : `overlay`, `scene`, `highlight` (séparées par des virgules), `all` ou `none` — voir ci-dessous |
 | `--from-step` | — | Reprend à partir d'une étape (`script`/`voice`/`video`/`subs`/`assemble`) sans tout regénérer |
@@ -326,10 +327,23 @@ assis) :
   workflow). Gemini rend aussi `resume_episode` (une phrase : ce qui arrive à Karim, où il en est) ; les 5
   derniers résumés sont rappelés à l'épisode suivant (continuité, clins d'œil, pas d'histoire refaite).
   Couverture : surtitre « Karim cherche un job · ép. N » (`serie_titre` du scénario).
+- **Un conseil emploi, pas une pub** : le dessin animé donne un vrai conseil de recruteur (négocier,
+  démissionner, choisir entre deux offres, premier jour, réseau, entretien, CV…). Sujets du tag `emploi`
+  (famille `carriere_emploi`, 14 sujets) en plus des tags CV / candidature / entretien / lettre / LinkedIn.
+  Le prompt est celui d'un scénariste + expert marketing (pas d'« informations produit ») : OpusCV n'est cité
+  que dans l'appel à l'action final ; un « OpusCV » dans une réplique de l'histoire est refusé par la
+  validation (nouvelle tentative).
+- **Écriture de scénariste** (consigne `DRAMATURGIE` de `1_generate_script.py`) : 3 actes (envie + obstacle,
+  essai raté puis retournement qui apporte le conseil, application réussie + chute), un conseil unique,
+  concret et retenable (règle nommée ou phrase exacte), « montrer plutôt qu'expliquer » (pas de leçon de plus de
+  2 répliques), personnages à caractère (Karim maladroit et optimiste, Léa pince-sans-rire, recruteur pressé
+  mais honnête), un « fusil de Tchekhov » qui revient dans la chute, chute = le conseil reformulé.
 - **Trame d'histoire** (`trames` de `dessins.json`, une par reel, la moins récemment utilisée ;
-  imposable par `--plan` : `"trame"`) : avant / après, ce que pense le recruteur, quiproquo, l'erreur en
-  direct, vrai ou faux, le chat juge (running gag), ça aurait pu être pire. Ajouter une trame = une
-  entrée `{id, nom, consigne}`, sans code.
+  imposable par `--plan` : `"trame"`) : 17 trames : avant / après, ce que pense le recruteur, quiproquo,
+  l'erreur en direct, vrai ou faux, le chat juge (running gag), ça aurait pu être pire, la règle à retenir,
+  à la place du recruteur (rôles inversés), dix minutes avant (compte à rebours), deux lendemains, le faux
+  conseil, l'enquête, flashback, la répétition générale, le coup de fil surprise, ce que je ne dis jamais.
+  Ajouter une trame = une entrée `{id, nom, consigne}`, sans code.
 - **Chute** obligatoire juste avant le CTA (retournement ou réplique drôle, souvent un gros plan
   `rapide` sur le visage qui réagit).
 - **Une scène = un lieu et un moment** : on ne change de scène que si le lieu change ou si des heures
@@ -441,7 +455,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 | Fichier | Contenu | Exemples |
 |---|---|---|
 | `catalog/formats.json` | **Structure** de la vidéo (34 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
-| `catalog/sujets.json` | **De quoi** parle la vidéo (151 sujets, 13 familles), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, métiers (CV de commercial, de développeur, de soignant…), familles produit (dont les nouveautés : 6 mises en page, conversion de langue, chiffres sans invention, sections libres, lettre en PDF…) |
+| `catalog/sujets.json` | **De quoi** parle la vidéo (165 sujets, 14 familles), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, carrière et emploi (négocier, démissionner, choisir une offre, premier jour…), métiers (CV de commercial, de développeur, de soignant…), familles produit (dont les nouveautés : 6 mises en page, conversion de langue, chiffres sans invention, sections libres, lettre en PDF…) |
 | `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
 | `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`), `registres` (absent = tous) | violet nuit, corail, vert, bleu corporate, bande dessinée pop, sitcom pastel… |
 | `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), mix de registres (`registres` : sérieux 70 % / humour 30 %), règles d'écriture humoristique (`consigne_humour`, `ton_humour`), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), textes Instagram (`instagram`), scène preuve, phrases bannies | |
@@ -467,7 +481,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 | conseil | Quiz trouve l'erreur (`trouve_erreur`) | ligne piégée puis révélation |
 | conseil | Je t'explique au tableau (`tableau_blanc`) | le mécanisme dessiné à la main (cartes schéma), puis la phrase à retenir (carte impact) |
 | conseil | Le message du recruteur (`dm_recruteur`) | un échange de messages fictif (carte conversation), puis le décryptage |
-| conseil | Dessin animé : Karim cherche un job (`dessin_anime`) | série en mini dessin animé : Léa, Karim (et le recruteur) jouent la situation, chacun avec sa voix, sur une trame tirée en rotation ; capture `aucune` uniquement |
+| conseil | Dessin animé : Karim cherche un job (`dessin_anime`) | série en mini dessin animé : Léa, Karim (et le recruteur) jouent une situation d'emploi et en tirent un conseil, chacun avec sa voix, sur une trame tirée en rotation ; le produit n'apparaît que dans le CTA ; capture `aucune` uniquement |
 | produit | Démo produit (`demo_produit`) | une fonctionnalité réelle par scène |
 | produit | Témoignage (`temoignage_produit`) | récit fictif à la 1re personne |
 | produit | Avant / Après avec OpusCV (`split_avant_apres`) | comparaison puis le chemin dans l'outil |
@@ -573,7 +587,7 @@ Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--ho
 ### Combinaison par reel (`--plan`)
 
 `--plan` impose, reel par reel, tout ou partie de la combinaison : une liste JSON d'objets aux clés
-`format`, `sujet`, `hook`, `theme`, `voix`, `registre`, `ambiance` (id de `audio.json`), `trame`
+`format`, `sujet`, `hook`, `theme`, `voix`, `registre`, `ambiance` (id de `audio.json`, ou `aucune` = sans musique), `trame`
 (dessin animé : id de `trames` dans `dessins.json`, proposé par la console quand le format est un dessin
 animé) et `angle` (sujet libre, à la place de `sujet`). Une clé absente ou vide reste automatique (rotation
 anti-répétition habituelle) ; une clé renseignée l'emporte sur l'option globale correspondante. Le
@@ -644,12 +658,18 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
 
 ## Son et effets (`catalog/audio.json`)
 
-- **Musique** synthétisée (aucun droit à gérer) : 11 ambiances (lo-fi piano, pop énergique,
+- **Musique** synthétisée (aucun droit à gérer) : 17 ambiances (lo-fi piano, pop énergique,
   corporate, tension tech, minimal pulsé, house douce, piano minimal, synthwave, acoustique, trap
-  légère, comique sautillant), avec 4 instruments (`nappe`, `piano`, `pluck`, `synth`), basses (`pulse`, `808`, `douce`)
+  légère, comique sautillant, et les plus douces : ambiance matinale sans rythme, jazz de café, bossa
+  douce, ukulélé bonne humeur, boîte à musique, cinéma doux), avec 4 instruments (`nappe`, `piano`, `pluck`, `synth`), basses (`pulse`, `808`, `douce`)
   et batterie (kick, snare, hat, clap, shaker). Chaque thème liste ses ambiances compatibles
   (`"ambiances"`), une est tirée par reel sans reprendre les plus récentes. La musique baisse
   automatiquement quand la voix parle.
+- **Sans musique** : `--no-music` (case « Musique de fond » du workflow `generate-reels.yml` et de la
+  console), ou `"ambiance": "aucune"` pour un reel du `--plan` (tuile « Sans musique » de la console) :
+  la voix et les effets restent, le mastering à -14 LUFS aussi. Pour changer de musique : choisir une
+  ambiance par reel dans la console, ajouter des ambiances à un thème (`"ambiances"` de `themes.json`) ou
+  déposer ses propres morceaux libres de droits dans `assets/music/<id_ambiance>/`.
 - **Mastering** : compression douce, normalisation à **-14 LUFS** (niveau de référence TikTok /
   Reels) et limiteur à -1 dBFS : tous les reels sortent au même volume perçu.
 - **Effets accordés à l'ambiance** (`"effets"` de chaque ambiance) : volume, tonalité en demi-tons

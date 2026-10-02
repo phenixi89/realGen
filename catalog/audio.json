@@ -1,5 +1,5 @@
 {
-  "_doc": "Audio des reels (scripts/audio_gen.py). ambiances : musiques synthetisees (bpm, accords en notes MIDI, motifs de batterie 16 pas 'x' = coup). Chaque theme (themes.json) choisit son ambiance via 'ambiance'. Deposer des morceaux libres de droits dans assets/music/<id_ambiance>/ pour les utiliser a la place de la synthese. effets : transition = son des changements de scene (tick, whoosh, pop...), volumes par effet, regles anti-abus (ecart minimal, maximum par 10 s, effets bannis). instrument : nappe | piano | pluck | synth ; arpege : ordre des notes par double-croche (chiffres = rang dans l'accord, '.' = silence) ; basse_type : pulse | 808 | douce ; batterie : kick, snare, hat, clap, shaker. effets (par ambiance) : volume (multiplicateur), tonalite (demi-tons, effets melodiques accordes sur la musique), transition (son des changements de scene pour cette ambiance). Le mix final est masterise a -14 LUFS (audio_gen.master).",
+  "_doc": "Audio des reels (scripts/audio_gen.py). ambiances : musiques synthetisees (bpm, accords en notes MIDI, motifs de batterie 16 pas 'x' = coup). Chaque theme (themes.json) choisit son ambiance via 'ambiance'. Deposer des morceaux libres de droits dans assets/music/<id_ambiance>/ pour les utiliser a la place de la synthese. effets : transition = son des changements de scene (tick, whoosh, pop...), volumes par effet, regles anti-abus (ecart minimal, maximum par 10 s, effets bannis). instrument : nappe | piano | pluck | synth ; arpege : ordre des notes par double-croche (chiffres = rang dans l'accord, '.' = silence) ; basse_type : pulse | 808 | douce ; batterie : kick, snare, hat, clap, shaker. effets (par ambiance) : volume (multiplicateur), tonalite (demi-tons, effets melodiques accordes sur la musique), transition (son des changements de scene pour cette ambiance). Le mix final est masterise a -14 LUFS (audio_gen.master). Sans musique : l'id reserve 'aucune' (plan, --no-music, case de la console) coupe la musique de fond, la voix et les effets restent. Ambiances sans batterie (ambient_matin, boite_a_musique) : fond tres discret, utile sous un dialogue.",
   "musique": {
     "volume": 0.1,
     "baisse_sous_voix": 0.7
@@ -461,6 +461,262 @@
       "effets": {
         "volume": 1.0,
         "tonalite": 3
+      }
+    },
+    {
+      "id": "ambient_matin",
+      "nom": "Ambiance matinale (sans rythme)",
+      "bpm": 66,
+      "instrument": "nappe",
+      "basse_type": "douce",
+      "accords": [
+        [
+          60,
+          64,
+          67,
+          71
+        ],
+        [
+          57,
+          60,
+          64,
+          69
+        ],
+        [
+          53,
+          57,
+          60,
+          64
+        ],
+        [
+          55,
+          59,
+          62,
+          67
+        ]
+      ],
+      "basse": 0.12,
+      "filtre_hz": 3200,
+      "batterie": {},
+      "effets": {
+        "volume": 0.8,
+        "tonalite": 0
+      }
+    },
+    {
+      "id": "jazz_cafe",
+      "nom": "Jazz de café",
+      "bpm": 92,
+      "instrument": "piano",
+      "arpege": "0..1.2..3..2.1..",
+      "basse_type": "douce",
+      "accords": [
+        [
+          62,
+          65,
+          69,
+          72
+        ],
+        [
+          67,
+          71,
+          74,
+          77
+        ],
+        [
+          60,
+          64,
+          67,
+          71
+        ],
+        [
+          57,
+          60,
+          64,
+          67
+        ]
+      ],
+      "basse": 0.2,
+      "filtre_hz": 4500,
+      "batterie": {
+        "shaker": "x.x.xx.xx.x.xx.x",
+        "kick": "x..........x...."
+      },
+      "effets": {
+        "volume": 0.75,
+        "tonalite": -2
+      }
+    },
+    {
+      "id": "bossa_douce",
+      "nom": "Bossa douce",
+      "bpm": 88,
+      "instrument": "pluck",
+      "arpege": "0.12.01.2.01.2.1",
+      "basse_type": "douce",
+      "accords": [
+        [
+          57,
+          60,
+          64,
+          67
+        ],
+        [
+          62,
+          65,
+          69,
+          72
+        ],
+        [
+          55,
+          59,
+          62,
+          65
+        ],
+        [
+          60,
+          64,
+          67,
+          71
+        ]
+      ],
+      "basse": 0.18,
+      "filtre_hz": 5200,
+      "batterie": {
+        "shaker": "x.xxx.xxx.xxx.xx",
+        "kick": "x..x..x..x..x..."
+      },
+      "effets": {
+        "volume": 0.8,
+        "tonalite": 0
+      }
+    },
+    {
+      "id": "ukulele_bonne_humeur",
+      "nom": "Ukulélé bonne humeur",
+      "bpm": 108,
+      "instrument": "pluck",
+      "arpege": "0213",
+      "basse_type": "douce",
+      "accords": [
+        [
+          60,
+          64,
+          67,
+          72
+        ],
+        [
+          67,
+          71,
+          74,
+          79
+        ],
+        [
+          69,
+          72,
+          76,
+          81
+        ],
+        [
+          65,
+          69,
+          72,
+          77
+        ]
+      ],
+      "basse": 0.16,
+      "filtre_hz": 7000,
+      "batterie": {
+        "shaker": "x.x.x.x.x.x.x.x.",
+        "clap": "....x.......x..."
+      },
+      "effets": {
+        "volume": 0.9,
+        "tonalite": 2
+      }
+    },
+    {
+      "id": "boite_a_musique",
+      "nom": "Boîte à musique",
+      "bpm": 78,
+      "instrument": "pluck",
+      "arpege": "0.1.2.3.2.1.0...",
+      "basse_type": "douce",
+      "accords": [
+        [
+          72,
+          76,
+          79,
+          84
+        ],
+        [
+          69,
+          72,
+          76,
+          81
+        ],
+        [
+          65,
+          69,
+          72,
+          77
+        ],
+        [
+          67,
+          71,
+          74,
+          79
+        ]
+      ],
+      "basse": 0.08,
+      "filtre_hz": 6500,
+      "batterie": {},
+      "effets": {
+        "volume": 0.7,
+        "tonalite": 5
+      }
+    },
+    {
+      "id": "cinema_doux",
+      "nom": "Cinéma doux",
+      "bpm": 72,
+      "instrument": "piano",
+      "arpege": "0...1...2...3...",
+      "basse_type": "douce",
+      "accords": [
+        [
+          57,
+          60,
+          64,
+          67
+        ],
+        [
+          55,
+          59,
+          62,
+          66
+        ],
+        [
+          53,
+          57,
+          60,
+          64
+        ],
+        [
+          52,
+          56,
+          59,
+          64
+        ]
+      ],
+      "basse": 0.18,
+      "filtre_hz": 4200,
+      "batterie": {
+        "kick": "x..............."
+      },
+      "effets": {
+        "volume": 0.7,
+        "tonalite": -3
       }
     }
   ],

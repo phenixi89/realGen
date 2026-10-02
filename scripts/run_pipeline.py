@@ -309,6 +309,8 @@ def main():
                              "remplace --n (un reel par objet)")
     parser.add_argument("--no-sfx", action="store_true",
                          help="Sans effets sonores (la musique reste) ; reglages fins : catalog/audio.json")
+    parser.add_argument("--no-music", action="store_true",
+                         help="Sans musique de fond (voix et effets conserves) ; sinon une ambiance par reel (catalog/audio.json)")
     parser.add_argument("--no-hook-overlay", action="store_true",
                          help="N'affiche pas l'accroche en grand au debut de la video")
     parser.add_argument("--registre", type=str, default=None, choices=catalog.REGISTRES,
@@ -517,6 +519,8 @@ def main():
             anim_video_args = []
         if args.no_sfx:
             sfx_cues = []
+        if args.no_music:  # le dernier --ambiance l'emporte (argparse)
+            anim_assemble_args = [*anim_assemble_args, "--ambiance", "aucune"]
         sfx_path = video_dir / "sfx.json"
         anims_marker = video_dir / ".anims"
         anims_signature = json.dumps([anim_video_args, anim_assemble_args, sfx_cues])

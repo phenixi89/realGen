@@ -163,6 +163,7 @@ details>summary{cursor:pointer;padding:6px 0}
   <div class="g-only"><label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS"></div>
   <label>Scénario manuel <small>optionnel, chemin dans le dépôt</small></label><input id="f_scenario" placeholder="scenarios/exemple.json">
   <div class="grid" style="margin-top:8px">
+    <label class="chk"><input id="f_musique" type="checkbox" checked> Musique de fond</label>
     <label class="chk"><input id="f_sfx" type="checkbox" checked> Effets sonores</label>
     <label class="chk"><input id="f_sans_voix" type="checkbox"> Sans voix off</label>
     <label class="chk"><input id="f_force" type="checkbox"> Tout regénérer (ignorer le cache)</label>
@@ -260,7 +261,7 @@ function checkCapture(){
   $("capWarn").textContent = dessin ? DESSIN_WARN : CARTES_WARN;
   $("capWarn").classList.toggle("hidden", $("f_compose").checked || !(dessin || (cartesPerdues(f) && !(f && f.dessin))));
 }
-const ambName = id => (byId(CAT.ambiances, id) || {}).nom || nice(id);
+const ambName = id => id === "aucune" ? "Sans musique" : (byId(CAT.ambiances, id) || {}).nom || nice(id);
 const colors = th => Object.values(th.couleurs || {}).filter(c => typeof c === "string" && c.startsWith("#")).slice(0, 6);
 
 // --- Onglet Catalogue : fiches lisibles, recherche, filtres ---
@@ -425,7 +426,7 @@ function corpsEtape(k, r){
     return `<h3>Thème <small>(couleurs, polices, sous-titres${dessin ? " ; le dessin animé garde son trait blanc, le thème habille l'accroche et la fin" : ""})</small></h3>
       <div class="picks">${AUTO("theme", !r.theme)}${options(r, "theme").map(t => tuile(r.theme === t.id, `setField(CUR,'theme','${esc(t.id)}')`, img(`themes/${t.id}.jpg`, "🎨"), t.nom)).join("")}</div>
       <h3>Musique <small>${r.theme ? "(celles du thème choisi)" : ""}</small></h3>
-      <div class="picks txt">${AUTO("ambiance", !r.ambiance, "Une des musiques du thème", true)}${options(r, "ambiance").map(a => tuile(r.ambiance === a.id, `setField(CUR,'ambiance','${esc(a.id)}')`, "", a.nom || nice(a.id), a.bpm ? `${a.bpm} BPM${a.instrument ? " · " + esc(a.instrument) : ""}` : "", playBtn(`ambiances/${a.id}.mp3`)).replace('class="pick', 'class="pick son')).join("")}</div>
+      <div class="picks txt">${AUTO("ambiance", !r.ambiance, "Une des musiques du thème", true)}${tuile(r.ambiance === "aucune", "setField(CUR,'ambiance','aucune')", "", "Sans musique", "voix et effets seulement").replace('class="pick', 'class="pick son')}${options(r, "ambiance").map(a => tuile(r.ambiance === a.id, `setField(CUR,'ambiance','${esc(a.id)}')`, "", a.nom || nice(a.id), a.bpm ? `${a.bpm} BPM${a.instrument ? " · " + esc(a.instrument) : ""}` : "", playBtn(`ambiances/${a.id}.mp3`)).replace('class="pick', 'class="pick son')).join("")}</div>
       ${dessin ? `<p class="muted">Voix : en dessin animé, chaque personnage a la sienne (étape « L'histoire »).</p>` : `<h3>Voix off</h3>
       <div class="picks txt">${AUTO("voix", !r.voix, "Rotation des voix", true)}${CAT.voix.map(v => tuile(r.voix === v.id, `setField(CUR,'voix','${esc(v.id)}')`, "", v.id, esc(v.description), playBtn(`voix/${v.id}.mp3`)).replace('class="pick', 'class="pick son')).join("")}</div>`}`;
   }
@@ -457,7 +458,7 @@ function ouvrirEtape(k){ ETAPE = k; renderEditeur(); const e = [...$("plan").que
 function renderPlan(){
   if (!$("f_compose").checked) return updateGoInfo();
   // Un choix devenu incompatible (registre, mode sans capture...) repasse en auto.
-  for (const r of PLAN) for (const k of ["format", "sujet", "trame", "hook", "theme", "ambiance"]) if (r[k] && CAT.formats.length && !options(r, k).some(x => x.id === r[k])) r[k] = "";
+  for (const r of PLAN) for (const k of ["format", "sujet", "trame", "hook", "theme", "ambiance"]) if (r[k] && CAT.formats.length && !(k === "ambiance" && r[k] === "aucune") && !options(r, k).some(x => x.id === r[k])) r[k] = "";
   CUR = Math.min(CUR, PLAN.length - 1);
   savePlan(); renderLot(); renderEditeur(); updateGoInfo();
 }
@@ -506,7 +507,7 @@ function planInput(){
 async function launch(){
   const inputs = { n: String($("f_n").value || 3) };
   for (const k of ["duration","format","theme","hook","registre","plateformes","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
-  for (const k of ["sfx","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
+  for (const k of ["musique","sfx","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
   if ($("f_compose").checked) {
     // Mode composition : une combinaison par reel ; les choix globaux cedent la place.
     if (PLAN.some(r => r.libre && !r.angle)) return toast("Sujet libre choisi mais vide : écris-le ou repasse en Auto", 6000);

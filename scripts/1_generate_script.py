@@ -179,9 +179,12 @@ def choose_sujet(client, fmt: dict, history: list[dict], rng: random.Random) -> 
     if client is None or len(fresh) == 1:
         return rng.choice(fresh)
     listing = "\n".join(f'- {s["id"]} : {s["texte"]}' for s in fresh)
-    prompt = f"""Tu es stratège de contenu TikTok/Instagram pour OpusCV (optimisation de CV par IA).
-
-{PRODUCT_CONTEXT}
+    if fmt.get("dessin"):
+        cadre = ("Tu es scénariste de séries courtes et expert en marketing de contenu, spécialisé dans les conseils emploi et recrutement.\n"
+                 "Le dessin animé donne un VRAI conseil de recherche d'emploi ou de carrière ; le produit n'est pas son sujet.")
+    else:
+        cadre = f"Tu es stratège de contenu TikTok/Instagram pour OpusCV (optimisation de CV par IA).\n\n{PRODUCT_CONTEXT}"
+    prompt = f"""{cadre}
 
 Le prochain reel suit le format « {fmt['nom']} » : {fmt['structure']}
 
@@ -286,6 +289,28 @@ def dessin_bounds(duration: int) -> tuple[int, int]:
     return 2, max(4, math.ceil(duration / 6))
 
 
+DRAMATURGIE = """ÉCRITURE DE SCÉNARISTE (un vrai mini-scénario, pas un dialogue de FAQ) :
+  - ACTE 1 (accroche, ~15 % du reel) : Karim VEUT quelque chose de précis aujourd'hui (décrocher cet entretien, ne pas
+    perdre cette offre) et un obstacle se dresse : l'enjeu est clair dès la 1re scène ;
+  - ACTE 2 : il tente à sa façon, ça coince (on le voit), puis un RETOURNEMENT surprenant apporte le conseil ;
+  - ACTE 3 : il applique, ça marche (on le voit aussi), puis la chute.
+  - LE CONSEIL est UN principe retenable, concret et contre-intuitif quand c'est possible : une règle courte et
+    nommée (« la règle des 3 secondes ») ou une phrase exacte à dire ou à écrire, avec un exemple. Un conseil de
+    spécialiste du recrutement (ce que les recruteurs font vraiment), jamais une généralité (« sois toi-même ») ;
+  - MONTRE, NE FAIS PAS LA LEÇON : le conseil passe par une action ou un essai raté puis réussi ; jamais plus de
+    2 répliques de suite où un personnage explique pendant que l'autre ne fait que dire « ah oui » ;
+  - PERSONNAGES AVEC UN CARACTÈRE : Karim, optimiste, de bonne foi et maladroit ; Léa, pince-sans-rire, pédagogue sans
+    être donneuse de leçons ; le recruteur, pressé mais honnête. Les gags viennent de leurs caractères et d'un
+    sous-texte (honte, espoir, orgueil), pas de blagues plaquées ;
+  - UN FUSIL DE TCHEKHOV : un objet ou une réplique posé tôt (la tasse, le chat, une phrase répétée) revient dans la
+    chute, transformé ;
+  - LA CHUTE reformule le conseil en une formule mémorable (la punchline EST le conseil), puis l'appel à l'action ;
+  - ORIGINALITÉ : évite l'histoire attendue (« Karim rate son entretien, Léa lui explique ») ; choisis un angle
+    inattendu (inversion des rôles, point de vue du recruteur, décompte, enquête, deux futurs...) et une situation
+    précise, jamais « un entretien » en général.
+"""
+
+
 def dessin_rules(plan: dict | None = None) -> str:
     """Consignes du format dessin anime : catalogue des decors, objets, personnages et actions,
     trame d'histoire du reel, serie (episodes precedents)."""
@@ -377,8 +402,10 @@ Mise en scène :
   - pas de "imaginer" ni d'"ellipse" dans la scène 1 (l'accroche occupe le haut de l'écran) ;
   - les répliques sont DITES à voix haute : pas de « POV », d'abréviation ni de code des réseaux qui ne se
     disent pas dans une vraie conversation ;
-  - OpusCV n'a que les fonctions décrites plus haut : un personnage n'invente ni chiffre de performance
-    (« trois variantes en deux clics », « 50 refus évités ») ni fonction qui n'existe pas.
+  - le dialogue ne parle PAS du produit : jamais « OpusCV » ni « l'appli » dans une réplique, sauf l'appel à
+    l'action final ; l'histoire donne un conseil emploi/recrutement valable avec ou sans outil, et aucun
+    personnage n'invente de chiffre de performance (« 50 refus évités ») ni de fonction.
+{DRAMATURGIE}
 {trame_rule}{serie_rule}CHUTE : juste avant l'appel à l'action, une chute : un retournement ou une réplique drôle (un sourire en
 registre sérieux), souvent soulignée par un gros plan "rapide" sur le visage qui réagit.
 Scène 1 : l'accroche est la 1re réplique (12 mots max, sans pourcentage ni statistique), dite tout de suite,
@@ -510,7 +537,7 @@ Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
                       f"{max(6, round(target / 7))} à {max(7, round(target / 6))} répliques de 6 à 8 mots. "
                       "Compte tes mots avant de répondre : un texte trop long fait dépasser la durée du reel.")
     if dessin:
-        screen_rule = dessin_rules(plan) + """Tu peux citer OpusCV à la fin comme l'outil qui aide, sans décrire d'écran que le spectateur ne voit pas.
+        screen_rule = dessin_rules(plan) + """OpusCV n'est cité que dans l'appel à l'action final (phrase imposée), jamais dans l'histoire.
 """
         scene1_rule = ""
         variety_rule = "chaque scène fait avancer l'histoire (pas deux scènes qui disent la même chose) ;"
@@ -537,13 +564,23 @@ invite en 5 à 7 mots à enregistrer la vidéo pour ne pas la perdre, puis encha
 contenu. Varie la formulation (ex : « Enregistre-la, tu vas en avoir besoin. », « Garde-la avant de
 postuler. ») ; ne demande PAS l'abonnement ici, il est réservé au CTA final.
 """ if wants_save_nudge(fmt, humour) and not dessin else "")
-    prompt = f"""Tu es un expert en création de contenu viral (TikTok, Instagram Reels, YouTube Shorts), spécialisé dans
+    intro = ("""Tu es scénariste de séries courtes (sitcom, comédie de situation) ET expert en marketing de contenu TikTok /
+Instagram Reels, spécialisé dans l'emploi, le recrutement et la carrière. Tu écris un mini-scénario original qui donne un
+VRAI conseil de recruteur à des candidats : le reel est de la valeur pour le spectateur (il repart avec une phrase,
+une règle ou un réflexe à utiliser dès demain), pas une publicité. Le produit (OpusCV) n'est pas le sujet : il
+n'apparaît que dans l'appel à l'action final.
+""" if dessin else f"""Tu es un expert en création de contenu viral (TikTok, Instagram Reels, YouTube Shorts), spécialisé dans
 l'emploi, le recrutement et la recherche de CV. Tes vidéos promeuvent OpusCV avec un ton direct, captivant et
 axé sur les frustrations réelles des candidats : l'idée est d'avoir une accroche très forte.
 Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonctionnalité :
 
 {PRODUCT_CONTEXT}
-
+""")
+    corps = ("Corps : l'histoire (voir DESSIN ANIMÉ ci-dessous) pose vite le problème précis, puis le conseil concret de "
+             "recruteur, appliqué et visible ; rythme rapide, phrases courtes, zéro blabla." if dessin else
+             "Corps (3-20 s) : expose vite le problème précis, puis la solution concrète apportée par OpusCV (montrée à\n"
+             "l'écran) ; rythme rapide, phrases courtes, zéro blabla.")
+    prompt = f"""{intro}
 Tu écris le SCÉNARIO d'un reel vertical de {duration} secondes, en français.
 
 FORMAT : {fmt['nom']} ({intent}).
@@ -558,8 +595,7 @@ une émotion forte (peur de l'échec, curiosité, gain de temps, injustice du re
 chiffre précis quand c'est possible, mais UNIQUEMENT un chiffre concret ou vérifiable (une durée,
 un nombre de lignes, de boîtes, d'étapes : 6 secondes, 30 secondes, 3 lignes, 50 boîtes) ; JAMAIS de
 statistique ni de pourcentage inventé (« 80 % des candidats », « 4 candidats sur 5 »…).
-Corps (3-20 s) : expose vite le problème précis, puis la solution concrète apportée par OpusCV (montrée à
-l'écran) ; rythme rapide, phrases courtes, zéro blabla.
+{corps}
 Public : des CANDIDATS qui cherchent un emploi (jamais des recruteurs) ; le CTA parle de leur recherche
 (décrocher un entretien, un job), pas de « recrutements ».
 Appel à l'action (fin) : incite à tester gratuitement l'outil (ex : « Lien en bio pour tester gratuitement »).
@@ -964,6 +1000,9 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
             if a.get("action") == "imaginer":
                 problems.append("scène 1 : pas de « imaginer » (le nuage cacherait l'accroche)")
                 break
+    if any(re.search(r"opus\s?cv", r["texte"], re.I) for s_ in scenes if "dessin" in s_ for r in s_["repliques"]):
+        problems.append("« OpusCV » dans une réplique de l'histoire : le dessin animé donne un conseil emploi, "
+                        "le produit n'est cité que dans l'appel à l'action final")
     for s_ in scenes:
         if any(re.search(r"\bPOV\b", r["texte"]) for r in s_["repliques"]):
             problems.append("« POV » dans une réplique : ça ne se dit pas dans un dialogue, reformule (« Imagine… », « Toi, tu… »)")

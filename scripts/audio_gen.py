@@ -30,6 +30,7 @@ import numpy as np
 SR = 44100
 ROOT = Path(__file__).resolve().parent.parent
 MUSIC_DIR = ROOT / "assets" / "music"
+NO_MUSIC = "aucune"  # id reserve : pas de musique de fond (la voix et les effets restent)
 AUDIO_EXT = (".mp3", ".wav", ".ogg", ".m4a")
 
 
@@ -475,7 +476,9 @@ def music(duration: float, ambiance: dict, seed: int = 0) -> np.ndarray:
 
 
 def load_music(duration: float, ambiance_id: str | None, seed: int = 0) -> np.ndarray:
-    """Morceau depose dans assets/music/<ambiance>/ s'il y en a, sinon synthese."""
+    """Morceau depose dans assets/music/<ambiance>/ s'il y en a, sinon synthese ; "aucune" -> silence."""
+    if ambiance_id == NO_MUSIC:
+        return np.zeros(int(duration * SR))
     ambiance = get_ambiance(ambiance_id)
     path = _track_file(ambiance["id"], random.Random(seed))
     if path:

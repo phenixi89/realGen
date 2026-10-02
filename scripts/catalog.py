@@ -536,6 +536,7 @@ def pick_cta(categorie: str, rng: random.Random) -> tuple[str, dict]:
     return rng.choice(phrases), dict(rng.choice(anims))
 
 
+NO_MUSIC = "aucune"  # ambiance reservee : sans musique de fond (audio_gen.NO_MUSIC)
 PLAN_KEYS = ("format", "sujet", "hook", "theme", "voix", "registre", "ambiance", "angle", "trame")
 
 
@@ -544,7 +545,7 @@ def validate_plan(plan: list, sans_captures: bool = False) -> list[str]:
     if not isinstance(plan, list) or not plan:
         return ["le plan doit etre une liste non vide d'objets (un par reel)"]
     getters = {"format": get_format, "sujet": get_sujet, "hook": get_hook, "theme": get_theme,
-               "voix": get_voice, "ambiance": lambda a: _by_id(ambiances(), a, "ambiance")}
+               "voix": get_voice, "ambiance": lambda a: a == NO_MUSIC or _by_id(ambiances(), a, "ambiance")}
     errors = []
     for i, item in enumerate(plan, 1):
         if not isinstance(item, dict):
