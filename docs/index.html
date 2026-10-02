@@ -42,6 +42,7 @@ button:disabled{opacity:.5;cursor:default}
 .log .err{color:var(--ko);font-weight:600}
 .warn{color:var(--ko)}
 h3{font-size:14px;margin:16px 0 8px}
+details>summary{cursor:pointer;padding:6px 0}
 .subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.subnav button{padding:6px 11px;font-size:13px}
 .subnav button.on{background:var(--fg);border-color:var(--fg);color:var(--bg)}
 .filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:12px}
@@ -86,15 +87,28 @@ h3{font-size:14px;margin:16px 0 8px}
 
 <section id="tab-launch" class="card">
   <h2>Nouveau lot de reels</h2>
+  <h3>1. L'essentiel</h3>
   <div class="grid">
     <div class="g-only"><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
+    <div class="g-only"><label>Accroche <small>« Pourquoi… » = les plus performantes</small></label><select id="f_hook"><option value="">Rotation automatique</option></select></div>
+    <div><label>Plateformes</label><select id="f_plateformes">
+      <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
+      <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
+  </div>
+  <h3>2. Un reel précis ? <small>(facultatif)</small></h3>
+  <label class="chk"><input id="f_compose" type="checkbox" onchange="setCompose(this.checked)"> Composer chaque reel moi-même (format, sujet, accroche, thème, ambiance, voix, registre)</label>
+  <div id="composer" class="hidden">
+    <p class="muted">Un bloc par reel. « Auto » laisse le générateur choisir (rotation anti-répétition). Les listes ne proposent que ce qui est compatible avec les choix déjà faits. Astuce : l'onglet 📚 Catalogue a un bouton « ➕ Composer » sur chaque élément.</p>
+    <div id="plan"></div>
+    <div class="row"><button onclick="addReel()">➕ Ajouter un reel</button><button onclick="rollAll()">🎲 Tout tirer au hasard</button><button onclick="resetPlan()">↺ Tout en automatique</button></div>
+  </div>
+  <p id="capWarn" class="warn hidden"></p>
+  <details style="margin-top:14px"><summary><b>3. Options avancées</b> <small>(durée, format, thème, voix, capture, reprise…)</small></summary>
+  <div class="grid">
     <div><label>Durée</label><select id="f_duration"><option>15</option><option selected>25</option><option>30</option><option>45</option><option>60</option></select></div>
     <div class="g-only"><label>Format <small>vide = auto</small></label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
     <div class="g-only"><label>Thème visuel <small>vide = rotation</small></label><select id="f_theme"><option value="">Rotation automatique</option></select></div>
     <div class="g-only"><label>Registre</label><select id="f_registre"><option value="">Automatique (mix sérieux / humour)</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
-    <div><label>Plateformes</label><select id="f_plateformes">
-      <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
-      <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
     <div class="g-only"><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
     <div><label>Capture</label><select id="f_capture_mode">
       <option value="screenshots" selected>Captures desktop + zoom (recommandé : cartes et animations complètes)</option><option value="video">Vidéo mobile (sans cartes animées)</option><option value="video_desktop">Vidéo desktop recadrée (sans cartes animées)</option><option value="aucune">Sans capture (conseils en cartes animées)</option></select></div>
@@ -109,15 +123,7 @@ h3{font-size:14px;margin:16px 0 8px}
       <option value="subs">subs : sous-titres + montage</option>
       <option value="assemble">assemble : montage final seul</option></select></div>
   </div>
-  <p id="capWarn" class="warn hidden"></p>
   <div class="g-only"><label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS"></div>
-  <h3>Combinaison par reel</h3>
-  <label class="chk"><input id="f_compose" type="checkbox" onchange="setCompose(this.checked)"> Composer chaque reel moi-même (format, sujet, accroche, thème, ambiance, voix, registre)</label>
-  <div id="composer" class="hidden">
-    <p class="muted">Un bloc par reel. « Auto » laisse le générateur choisir (rotation anti-répétition). Les listes ne proposent que ce qui est compatible avec les choix déjà faits. Astuce : l'onglet 📚 Catalogue a un bouton « ➕ Composer » sur chaque élément.</p>
-    <div id="plan"></div>
-    <div class="row"><button onclick="addReel()">➕ Ajouter un reel</button><button onclick="rollAll()">🎲 Tout tirer au hasard</button><button onclick="resetPlan()">↺ Tout en automatique</button></div>
-  </div>
   <label>Scénario manuel <small>optionnel, chemin dans le dépôt</small></label><input id="f_scenario" placeholder="scenarios/exemple.json">
   <div class="grid" style="margin-top:8px">
     <label class="chk"><input id="f_sfx" type="checkbox" checked> Effets sonores</label>
@@ -125,6 +131,7 @@ h3{font-size:14px;margin:16px 0 8px}
     <label class="chk"><input id="f_force" type="checkbox"> Tout regénérer (ignorer le cache)</label>
     <label class="chk"><input id="f_allow_ai_quota" type="checkbox"> Autoriser quota IA (entretien)</label>
   </div>
+  </details>
   <div class="row" style="margin-top:14px"><button class="primary" id="go" onclick="launch()">Lancer le workflow</button></div>
 </section>
 
@@ -189,6 +196,7 @@ async function loadCatalog(){
   CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [] };
   for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${regs(x).includes("humour") ? ", humour" : ""})`, x.id));
   for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
+  for (const x of CAT.hooks) $("f_hook").add(new Option(nice(x.id), x.id));
   for (const x of CAT.voix) $("f_voice").add(new Option(`${x.id} : ${x.description}`, x.id));
   $("catErr").innerHTML = errs.length ? `<p class="warn">Catalogue illisible (${errs.length}/${names.length} fichiers). Cause la plus fréquente : le token n'a pas la permission <b>Contents : Read-only</b> (GitHub → Settings → Developer settings → Fine-grained tokens → le token → Edit → Repository permissions). Les listes Format, Thème et Voix de l'onglet Lancer restent alors vides.</p><pre class="log">${esc(errs.join("\n"))}</pre>` : "";
   renderCatalog(); renderPlan();
@@ -349,12 +357,12 @@ function planInput(){
 
 async function launch(){
   const inputs = { n: String($("f_n").value || 3) };
-  for (const k of ["duration","format","theme","registre","plateformes","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
+  for (const k of ["duration","format","theme","hook","registre","plateformes","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
   for (const k of ["sfx","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
   if ($("f_compose").checked) {
     // Mode composition : une combinaison par reel ; les choix globaux cedent la place.
     if (PLAN.some(r => r.libre && !r.angle)) return toast("Sujet libre choisi mais vide : écris-le ou repasse en Auto", 6000);
-    Object.assign(inputs, { plan: planInput(), n: String(PLAN.length), format: "", theme: "", registre: "", voice: "auto", angle: "" });
+    Object.assign(inputs, { plan: planInput(), n: String(PLAN.length), format: "", theme: "", hook: "", registre: "", voice: "auto", angle: "" });
   }
   if (inputs.from_step === "script" && !confirm("from_step = script : nouveaux textes ET nouvelles voix (appels Gemini). Continuer ?")) return;
   $("go").disabled = true;

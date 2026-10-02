@@ -521,13 +521,17 @@ ouvrir la page dans Chrome, Firefox ou Edge. Si l'onglet Catalogue (et les liste
 Thème, Voix) reste vide, la console affiche l'erreur : le plus souvent, le token n'a pas la
 permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en bas de l'écran.
 
+- **Onglet 🚀 Lancer**, en trois zones : 1. l'essentiel (nombre de reels, **accroche** imposée à tous les reels,
+  plateformes) ; 2. la composition reel par reel (facultative, ci-dessous) ; 3. les options avancées, repliées
+  par défaut (durée, format, thème, registre, voix, capture, animations, reprise, angle, scénario manuel, cases).
+  Le bouton « Lancer le workflow » est en bas.
 - **Compositeur** (onglet 🚀 Lancer, case « Composer chaque reel moi-même ») : un bloc par reel
   (jusqu'à 10) avec registre, format, sujet (groupés par famille, ou sujet libre), accroche, thème,
   musique et voix. « Auto » laisse le générateur choisir. Les listes ne proposent que les choix
   compatibles (sujet ↔ format, registre ↔ format/accroche/thème, musiques du thème, formats jouables
   en capture `aucune`). Aperçu sous chaque bloc (structure du format, texte du sujet, exemple
   d'accroche, couleurs du thème). 🎲 tire une combinaison compatible, ⧉ duplique. Envoyé au workflow
-  dans le champ `plan` ; les champs globaux Nombre, Format, Thème, Registre, Voix et Angle sont alors
+  dans le champ `plan` ; les champs globaux Nombre, Accroche, Format, Thème, Registre, Voix et Angle sont alors
   masqués. Capture par défaut : « Captures desktop + zoom » (`screenshots`). Un format à cartes
   choisi avec une capture vidéo (`video`, `video_desktop`) affiche un avertissement : ses cartes y
   seraient remplacées par des captures. La composition est mémorisée dans le navigateur.
