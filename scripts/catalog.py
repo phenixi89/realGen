@@ -512,8 +512,14 @@ def sans_captures_ok(fmt: dict) -> bool:
     return fmt.get("categorie") == "conseil" and fmt.get("cartes") != "aucune"
 
 
-def pick_hook(history: list[dict], rng: random.Random, registre: str | None = None) -> dict:
-    pool = [h for h in hooks() if registre is None or registre in registres_of(h)] or hooks()
+def hook_ok_dessin(h: dict) -> bool:
+    """Accroche jouable par un personnage du dessin anime (hooks.json "dessin": false sinon, ex : POV)."""
+    return h.get("dessin", True) is not False
+
+
+def pick_hook(history: list[dict], rng: random.Random, registre: str | None = None, dessin: bool = False) -> dict:
+    pool = [h for h in hooks() if (registre is None or registre in registres_of(h)) and (not dessin or hook_ok_dessin(h))] \
+        or [h for h in hooks() if not dessin or hook_ok_dessin(h)]
     return weighted_pick(pool, _recent(history, "hook", config()["historique_hooks"]), rng)
 
 
@@ -562,6 +568,9 @@ def validate_plan(plan: list, sans_captures: bool = False) -> list[str]:
                 errors.append(f"reel {i} : format '{item['format']}' impossible sans captures")
             if not sans_captures and get_format(item["format"]).get("dessin"):
                 errors.append(f"reel {i} : format dessin anime '{item['format']}' : capture 'aucune' uniquement")
+            if get_format(item["format"]).get("dessin") and item.get("hook") in {x["id"] for x in hooks()} \
+                    and not hook_ok_dessin(get_hook(item["hook"])):
+                errors.append(f"reel {i} : accroche '{item['hook']}' impossible en dessin anime (dite par un personnage)")
     return errors
 
 

@@ -239,7 +239,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         else:
             sujet = choose_sujet(client, fmt, working, rng)
         hid, tid = ov.get("hook") or hook_id, ov.get("theme") or theme_id
-        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre)
+        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin")))
         theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre)
         voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng)
         cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
@@ -363,17 +363,22 @@ Mise en scène :
     qui s'entendent : {", ".join(ACTIONS_BRUITEES)} ; un personnage peut entrer pendant que l'autre parle ;
     le chat (une scène au plus) apporte une petite touche d'humour ;
   - "titre" (optionnel, 2 à 4 mots : lieu ou moment, ex : « Lundi, 9 h ») : jamais sur la scène 1 ;
-  - UNE SCÈNE = UN LIEU ET UN MOMENT. On ne change de scène QUE si le lieu ou le moment change (le soir,
-    le lendemain, chez le recruteur…) : sinon, reste dans la même scène (jusqu'à 6 répliques) et varie
-    les plans avec la caméra (gros plan sur un visage, sur le CV, retour au plan large). Deux scènes de
-    suite au même endroit, au même moment, sont fusionnées en une seule ;
+  - UNE SCÈNE = UN LIEU ET UN MOMENT. On ne change de scène QUE si le lieu change (chez le recruteur,
+    dans le métro…) ou si des heures passent (le soir, le lendemain : "ellipse") : sinon, reste dans la
+    même scène (jusqu'à 6 répliques) et varie les plans avec la caméra (gros plan sur un visage, sur le
+    CV, retour au plan large). « Deux minutes après » n'est pas un changement de scène : deux scènes de
+    suite dans le même décor sans "ellipse" sont fusionnées en une seule ;
   - un saut dans le temps s'annonce par "ellipse" (au lieu de "titre") : « Une semaine plus tard… » (2 à 6 mots),
     et peut se voir (calendrier qui "defiler") ;
   - MONTRE au lieu de dire, au moins une fois par reel : gros plan caméra sur une réaction, le CV corrigé à l'écran
     ("corriger" : la phrase faible barrée puis la bonne), l'e-mail ou la notification reçus, le tampon du recruteur,
     ou ce qu'imagine un personnage ("imaginer") ; le CV à l'écran dès que le conseil porte sur une formulation ;
   - un objet déclaré APRÈS un personnage passe devant lui (recruteur derrière son bureau : le recruteur, puis la table) ;
-  - pas de "imaginer" ni d'"ellipse" dans la scène 1 (l'accroche occupe le haut de l'écran).
+  - pas de "imaginer" ni d'"ellipse" dans la scène 1 (l'accroche occupe le haut de l'écran) ;
+  - les répliques sont DITES à voix haute : pas de « POV », d'abréviation ni de code des réseaux qui ne se
+    disent pas dans une vraie conversation ;
+  - OpusCV n'a que les fonctions décrites plus haut : un personnage n'invente ni chiffre de performance
+    (« trois variantes en deux clics », « 50 refus évités ») ni fonction qui n'existe pas.
 {trame_rule}{serie_rule}CHUTE : juste avant l'appel à l'action, une chute : un retournement ou une réplique drôle (un sourire en
 registre sérieux), souvent soulignée par un gros plan "rapide" sur le visage qui réagit.
 Scène 1 : l'accroche est la 1re réplique (12 mots max, sans pourcentage ni statistique), dite tout de suite,
@@ -959,6 +964,10 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
             if a.get("action") == "imaginer":
                 problems.append("scène 1 : pas de « imaginer » (le nuage cacherait l'accroche)")
                 break
+    for s_ in scenes:
+        if any(re.search(r"\bPOV\b", r["texte"]) for r in s_["repliques"]):
+            problems.append("« POV » dans une réplique : ça ne se dit pas dans un dialogue, reformule (« Imagine… », « Toi, tu… »)")
+            break
     mises_en_scene = sum(1 for s_ in scenes if "dessin" in s_ for a in s_["dessin"]["actions"]
                          if a.get("action") in ACTIONS_MISE_EN_SCENE)
     if any("dessin" in s_ for s_ in scenes) and not mises_en_scene:
@@ -991,15 +1000,15 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
 
 def fusionner_meme_lieu(scenes: list[dict]) -> list[dict]:
     """
-    Deux scenes dessinees de suite dans le meme decor, sans titre ni ellipse (meme lieu, meme moment) :
-    une seule scene. Changer de scene sans changer de lieu ni de moment coupait l'action pour rien
+    Deux scenes dessinees de suite dans le meme decor, sans ellipse (meme lieu, meme moment) : une seule
+    scene, le titre de la seconde oublie (run 61 : « Deux minutes apres » dans le meme salon). Changer de scene sans changer de lieu ni de moment coupait l'action pour rien
     (nouveau trace du decor, fondu). Les objets de la seconde absents de la premiere s'y ajoutent.
     """
     out = []
     for sc in scenes:
         prev = out[-1] if out else None
         d, dp = sc.get("dessin"), prev.get("dessin") if prev else None
-        if d and dp and d.get("fond", "vide") == dp.get("fond", "vide") and not d.get("titre") and not d.get("ellipse"):
+        if d and dp and d.get("fond", "vide") == dp.get("fond", "vide") and not d.get("ellipse"):
             ids = {o["id"] for o in dp["objets"]}
             dp["objets"] += [o for o in d["objets"] if o["id"] not in ids]
             dp["actions"] += d["actions"]

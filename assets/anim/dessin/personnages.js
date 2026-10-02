@@ -446,39 +446,41 @@
   function imaginer(tl, it, a, ctx) {
     const d = a.duree || 2.8;
     const P = Dessin.pinceau(Dessin.hash("pensee" + a.t));
-    // Tete a l'ecran (sous le cadrage courant) ; le nuage reste hors camera, en haut de l'ecran.
+    // Tete a l'ecran (sous le cadrage courant). Le nuage reste hors camera, en haut ; le moteur choisit
+    // son cote apres avoir place les bulles (ctx.nuage) : celui ou aucune bulle ne s'ouvre pendant ce temps.
     const [tx, ty] = ctx.ecran(ctx.x(it), ctx.sol - ((it.hautTete || 1000) + 20) * ctx.ech);
-    const cx = Math.min(800, Math.max(280, tx + it._regard * 60)), cy = 400, rx = 230, ry = a.texte ? 150 : 125;
-    const grp = ctx.ecranGroupe();
-    gsap.set(grp, { opacity: 0 });
-    // Nuage : festons a main levee.
-    const pts = [];
-    for (let i = 0; i <= 64; i++) {
-      const ang = (i / 64) * Math.PI * 2, bosse = 1 + 0.07 * Math.abs(Math.sin(ang * 5));
-      pts.push([cx + Math.cos(ang) * rx * bosse, cy + Math.sin(ang) * ry * bosse]);
-    }
-    el("path", { d: smooth(pts) + "Z", fill: "#000000" }, grp);
-    P.trace(grp, pts, { w: 3.6, passes: 2, ferme: true });
-    // Petits ronds du nuage jusqu'a la tete.
-    if (ty > cy + ry + 40) [[0.25, 9], [0.5, 14], [0.75, 19]].forEach(([k, r]) => P.rond(grp, tx + (cx - tx) * (1 - k), ty + (cy + ry - ty) * (1 - k), r, r * 0.85, { w: 2.6, passes: 1 }));
-    const ico = (window.ICONES || {})[a.image] || (window.ICONES || {}).question;
-    if (ico) {
-      const ic = g(grp, { transform: `translate(${cx - 80} ${cy - (a.texte ? 128 : 92)}) scale(1.6)` });
-      for (const dd of ico.d) el("path", { d: dd, class: "tr icone", pathLength: 1, fill: "none", stroke: "#ffffff", "stroke-width": 3.4,
-        "stroke-linecap": "round", "stroke-linejoin": "round" }, ic);
-      tl.fromTo(ic.querySelectorAll("path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, stagger: 0.5 / ico.d.length, ease: "none", immediateRender: false }, a.t + 0.25);
-    }
-    if (a.texte) P.texte(grp, cx, cy + 112, a.texte, { taille: 46 });
-    if (a.barre) {
-      const croix = g(grp, { opacity: 0 });
-      P.trace(croix, [[cx - 120, cy - 110], [cx + 120, cy + 90]], { w: 9, passes: 2, couleur: "#ff5a5a" });
-      P.trace(croix, [[cx + 120, cy - 110], [cx - 120, cy + 90]], { w: 9, passes: 2, couleur: "#ff5a5a" });
-      tl.set(croix, { opacity: 1 }, a.t + Math.min(1.4, d * 0.55));
-      Dessin.son("buzz", a.t + Math.min(1.4, d * 0.55), { gain: 0.6 });
-    }
-    ctx.racine(grp);
-    tl.fromTo(grp, { opacity: 0, scale: 0.6, svgOrigin: `${cx} ${cy + ry}` }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.8)", immediateRender: false }, a.t)
-      .to(grp, { opacity: 0, duration: 0.25 }, a.t + d - 0.25);
+    const rx = 200, ry = a.texte ? 145 : 120, cy = 400;
+    ctx.nuage({ t: a.t, d, x: tx, dessiner(cx) {
+      const grp = ctx.ecranGroupe();
+      gsap.set(grp, { opacity: 0 });
+      const pts = [];
+      for (let i = 0; i <= 64; i++) {
+        const ang = (i / 64) * Math.PI * 2, bosse = 1 + 0.07 * Math.abs(Math.sin(ang * 5));
+        pts.push([cx + Math.cos(ang) * rx * bosse, cy + Math.sin(ang) * ry * bosse]);
+      }
+      el("path", { d: smooth(pts) + "Z", fill: "#000000" }, grp);
+      P.trace(grp, pts, { w: 3.6, passes: 2, ferme: true });
+      // Petits ronds du nuage jusqu'a la tete.
+      if (ty > cy + ry + 40) [[0.25, 9], [0.5, 14], [0.75, 19]].forEach(([k, r]) => P.rond(grp, tx + (cx - tx) * (1 - k), ty + (cy + ry - ty) * (1 - k), r, r * 0.85, { w: 2.6, passes: 1 }));
+      const ico = (window.ICONES || {})[a.image] || (window.ICONES || {}).question;
+      if (ico) {
+        const ic = g(grp, { transform: `translate(${cx - 72} ${cy - (a.texte ? 118 : 84)}) scale(1.44)` });
+        for (const dd of ico.d) el("path", { d: dd, class: "tr icone", pathLength: 1, fill: "none", stroke: "#ffffff", "stroke-width": 3.6,
+          "stroke-linecap": "round", "stroke-linejoin": "round" }, ic);
+        tl.fromTo(ic.querySelectorAll("path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, stagger: 0.5 / ico.d.length, ease: "none", immediateRender: false }, a.t + 0.25);
+      }
+      if (a.texte) P.texte(grp, cx, cy + 100, a.texte, { taille: a.texte.length > 16 ? 34 : 42 });
+      if (a.barre) {
+        const croix = g(grp, { opacity: 0 });
+        P.trace(croix, [[cx - 110, cy - 100], [cx + 110, cy + 80]], { w: 9, passes: 2, couleur: "#ff5a5a" });
+        P.trace(croix, [[cx + 110, cy - 100], [cx - 110, cy + 80]], { w: 9, passes: 2, couleur: "#ff5a5a" });
+        tl.set(croix, { opacity: 1 }, a.t + Math.min(1.4, d * 0.55));
+        Dessin.son("buzz", a.t + Math.min(1.4, d * 0.55), { gain: 0.6 });
+      }
+      ctx.racine(grp);
+      tl.fromTo(grp, { opacity: 0, scale: 0.6, svgOrigin: `${cx} ${cy + ry}` }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.8)", immediateRender: false }, a.t)
+        .to(grp, { opacity: 0, duration: 0.25 }, a.t + d - 0.25);
+    } });
     Dessin.son("idee", a.t + 0.1, { gain: 0.6 });
     geste(tl, it, "penser", a.t, d);
     return d;

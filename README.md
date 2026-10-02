@@ -254,6 +254,10 @@ calculé sur sa taille) ; `"rapide": true` = coupe sèche avec un petit souffle 
 de 0,55 s. Jouée à l'instant de l'action suivante, sans la retarder ; jamais hors du décor. Les bulles
 suivent le cadrage (au-dessus de la tête à l'écran) ; les nuages de pensée, les inserts et les cartons
 restent hors caméra.
+**Bulles et gros plans** : le contenu d'un insert est descendu sous la zone des bulles (`INSERT_DECALAGE`,
+150 px), la réplique dite pendant le gros plan ne le cache plus. Un nuage de pensée se place du côté
+que les bulles ouvertes pendant ce temps laissent libre (sinon près de celui qui pense), et ces bulles se
+resserrent à 600 px (`BULLE_ETROITE`) pour tenir à côté.
 
 **Inserts** (gros plan plein écran sur un objet, au-dessus de la scène et sous les bulles, pendant que le
 dialogue continue ; bornés à la fin de la scène) : `cv.corriger` (`avant` s'écrit à la main, est barré en
@@ -328,10 +332,14 @@ assis) :
   entrée `{id, nom, consigne}`, sans code.
 - **Chute** obligatoire juste avant le CTA (retournement ou réplique drôle, souvent un gros plan
   `rapide` sur le visage qui réagit).
-- **Une scène = un lieu et un moment** : on ne change de scène que si le lieu ou le moment change
-  (`titre` ou `ellipse`) ; sinon les plans varient avec la caméra. Deux scènes de suite dans le même
-  décor sans titre ni ellipse sont fusionnées en une (`fusionner_meme_lieu`) : le décor ne se redessine
-  plus pour rien.
+- **Une scène = un lieu et un moment** : on ne change de scène que si le lieu change ou si des heures
+  passent (`ellipse`) ; sinon les plans varient avec la caméra. Deux scènes de suite dans le même décor
+  sans ellipse sont fusionnées en une (`fusionner_meme_lieu`, titre de la seconde oublié ; run 61 :
+  « Deux minutes après » dans le même salon) : le décor ne se redessine plus pour rien.
+- **Répliques dites à voix haute** : pas de « POV » ni de code des réseaux dans une réplique (contrôlé :
+  Gemini reformule) ; l'accroche `pov` (`"dessin": false` dans `hooks.json`) n'est jamais tirée pour le
+  dessin animé (ni proposée par la console, refusée dans `--plan`). OpusCV n'a que ses fonctions réelles :
+  aucun chiffre de performance inventé dans la bouche d'un personnage (« trois variantes en deux clics »).
 - **Montrer au lieu de dire** : au moins une mise en scène « cinéma » par reel (`ACTIONS_MISE_EN_SCENE` :
   caméra, `corriger`, `tamponner`, `afficher`, `notifier`, `imaginer`), le CV à l'écran dès que le
   conseil porte sur une formulation ; ni `imaginer` ni `ellipse` en scène 1 (l'accroche occupe le haut).

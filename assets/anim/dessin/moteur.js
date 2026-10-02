@@ -37,6 +37,8 @@
   const DESSIN = 1.0, PREMIERE = 1.25, ECART = 0.25, FONDU = 0.35;
   const dureeReplique = (texte) => Math.min(4, Math.max(1.4, 0.9 + 0.28 * String(texte).split(/\s+/).length));
   const SENS = { gauche: -1, droite: 1 };
+  const INSERT_DECALAGE = 150;
+  const BULLE_ETROITE = 600;   // largeur max d'une bulle pendant un nuage de pensee (les deux tiennent cote a cote)
 
   function monter(def, { svg, bulles, titres }) {
     const scenes = def.scenes || [def];
@@ -147,6 +149,7 @@
 
     // Contexte donne aux actions (deplacements, regard, bascule d'objets).
     const sieges = {};   // id d'un siege a plusieurs places -> places deja prises
+    const nuages = [];   // nuages de pensee {t, d, x, dessiner(cx)}
     const ctx = {
       debutScene: S, sol, ech, calque, finScene,
       objet: (id) => { const o = objets[id]; return o && { x: o.copies[""].it._x, regard: o.copies[""].it._regard, it: o.copies[""].it,
@@ -164,6 +167,8 @@
         return { x: it._x + places[i] * ech * (o.def.echelle ?? 1), regard: places[i] < 0 ? 1 : -1 };
       },
       racine(grp) { racines.push(grp); },
+      // Nuage de pensee : dessine apres le placement des bulles, du cote qu'elles laissent libre.
+      nuage(n) { nuages.push(n); },
       // Hors camera (nuage de pensee) : groupe au-dessus de la scene, et point de la scene -> ecran
       // sous le cadrage courant (celui de la derniere action camera deja jouee).
       ecranGroupe: () => g(scene, { "data-v": "a" }),
@@ -175,7 +180,10 @@
         if (ctx.copie > 0) return d;   // objet en plusieurs copies (place, main) : un seul insert
         const grp = g(scene, { class: "insert", "data-v": "a" });
         gsap.set(grp, { opacity: 0 });
-        dessiner(grp, t, d);
+        // Contenu descendu sous la zone des bulles (bas d'une bulle vers y = 740) : la replique dite
+        // pendant le gros plan ne le cache plus.
+        el("rect", { x: 0, y: 0, width: 1080, height: 1920, fill: "#000000", opacity: 0.5 }, grp);
+        dessiner(g(grp, { transform: `translate(0 ${INSERT_DECALAGE})` }), t, d);
         racines.push(grp);
         tl.fromTo(grp, { opacity: 0, scale: 0.9, svgOrigin: "540 1250" }, { opacity: 1, scale: 1, duration: 0.25, ease: "back.out(1.6)", immediateRender: false }, t)
           .to(grp, { opacity: 0, duration: 0.2 }, t + d - 0.2);
@@ -304,6 +312,7 @@
       const suivante = repliques[i + 1];
       r.fin = Math.min(r.a.t + r.a.duree + 0.12, suivante ? suivante.a.t - 0.02 : Infinity);
     });
+    const chevauche = (r, n) => r.a.t < n.t + n.d && r.fin > n.t;
     for (const r of repliques) {
       // Position a l'ecran sous le cadrage de la camera a cet instant.
       const c = cadreA(r.a.t + 0.2);
@@ -315,14 +324,23 @@
       b.innerHTML = '<span class="nom"></span><span class="t"></span>';
       b.querySelector(".nom").textContent = r.it.nom || "";
       b.querySelector(".t").textContent = frTypo(r.a.texte);
+      r.etroite = nuages.some((n) => chevauche(r, n));
+      if (r.etroite) b.style.maxWidth = `${BULLE_ETROITE}px`;
       b.style.bottom = `${Math.round(1920 - r.haut + 36)}px`;
       if (gauche) b.style.left = `${Math.max(40, Math.round(r.x - 240))}px`; else b.style.right = `${Math.max(40, Math.round(1080 - r.x - 240))}px`;
       dom.bulles.appendChild(b);
       const rect = b.getBoundingClientRect();
       b.style.setProperty("--queue", `${Math.min(Math.max(r.x - rect.left - 22, 30), rect.width - 80)}px`);
+      r.gauche = gauche;
       gsap.set(b, { opacity: 0, scale: 0.4, transformOrigin: `${r.x - rect.left}px 120%` });
       tl.to(b, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, r.a.t)
         .to(b, { opacity: 0, scale: 0.85, duration: 0.15 }, r.fin);
+    }
+    // Nuages : du cote oppose aux bulles ouvertes pendant ce temps (sinon pres de celui qui pense).
+    for (const n of nuages) {
+      const cotes = new Set(repliques.filter((r) => chevauche(r, n)).map((r) => r.gauche));
+      const cx = cotes.size === 1 ? (cotes.has(true) ? 1080 - 215 : 215) : Math.min(865, Math.max(215, n.x));
+      n.dessiner(cx);
     }
     return duree;
   }

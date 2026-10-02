@@ -1,5 +1,5 @@
 {
-  "_doc": "Styles d'accroche (2 premieres secondes). Un style est tire par reel en evitant les plus recents, et impose a Gemini pour la scene 1 et le texte affiche a l'ecran (accroche_ecran). Ajouter un style = ajouter une entree. registres : registres compatibles ('serieux' et/ou 'humour', absent = ['serieux']) : un reel humour ne tire que des accroches marquees 'humour'. poids : probabilité relative du tirage (1 par défaut) ; les accroches « Pourquoi… ? » centrées sur une douleur vécue (question_choc, pourquoi_douleur) sont favorisées car ce sont celles qui ont le mieux performé.",
+  "_doc": "Styles d'accroche (2 premieres secondes). Un style est tire par reel en evitant les plus recents, et impose a Gemini pour la scene 1 et le texte affiche a l'ecran (accroche_ecran). Ajouter un style = ajouter une entree. registres : registres compatibles ('serieux' et/ou 'humour', absent = ['serieux']) : un reel humour ne tire que des accroches marquees 'humour'. poids : probabilité relative du tirage (1 par défaut) ; les accroches « Pourquoi… ? » centrées sur une douleur vécue (question_choc, pourquoi_douleur) sont favorisées car ce sont celles qui ont le mieux performé. dessin : false -> jamais tire pour le dessin anime (accroche dite par un personnage : « POV » ne se dit pas dans un dialogue).",
   "hooks": [
     {
       "id": "question_choc",
@@ -37,7 +37,8 @@
       "registres": [
         "serieux",
         "humour"
-      ]
+      ],
+      "dessin": false
     },
     {
       "id": "promesse",
