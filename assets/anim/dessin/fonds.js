@@ -301,7 +301,7 @@
     },
     vie(tl, f, t0, t1) {
       const pas = 2.2;
-      f.etages.forEach((e, i) => { if (i) tl.set(e, { opacity: 1 }, t0 + i * pas).set(f.etages[i - 1], { opacity: 0 }, t0 + i * pas); });
+      f.etages.forEach((e, i) => { if (i) { tl.set(e, { opacity: 1 }, t0 + i * pas).set(f.etages[i - 1], { opacity: 0 }, t0 + i * pas); Dessin.son("ding", t0 + i * pas, { gain: 0.45 }); } });
     },
   });
 
