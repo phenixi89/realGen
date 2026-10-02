@@ -3,7 +3,7 @@
   Scene "dialogue" : deux personnages se parlent, une bulle par replique
   au-dessus de celui qui parle. Deux styles (?style=) :
     trait     (defaut) assets/anim/perso_trait.js : dessin blanc tremble sur
-              fond noir, debout au bord d'une falaise hachuree, bulles manuscrites ;
+              fond noir, de profil sur un sol a main levee, bulles manuscrites ;
     editorial assets/anim/perso.js : illustration editoriale coloree, assis de
               part et d'autre d'un bureau d'entretien.
    Pendant sa replique, le personnage
@@ -88,7 +88,7 @@
     g: Perso.dessiner(svg, ids.g, 265, 2336, 1.32, 1),
     d: Perso.dessiner(svg, ids.d, 815, 2336, 1.32, -1),
   };
-  const sol = TRAIT ? PersoTrait.sol(svg, 1650) : null;
+  const sol = TRAIT ? PersoTrait.sol(svg, 1650, [300, 780]) : null;
   // Bureau d'entretien (devant les personnages) : plateau, chant, facade, une feuille (le CV) et un stylo.
   const NSVG = "http://www.w3.org/2000/svg";
   const deco = (tag, attrs, parent = svg) => { const n = document.createElementNS(NSVG, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.appendChild(n); return n; };

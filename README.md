@@ -197,18 +197,20 @@ récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
 Deux styles au choix (`style` du gabarit `dialogue`) :
 
-**`trait` (par défaut)** — `assets/anim/perso_trait.js` : dessin à la main blanc sur fond noir, le style
-des petites histoires dessinées qui tournent sur TikTok. Traits tremblés repassés deux fois (les cercles — têtes, yeux, chignon — ondulent doucement et
-finissent par un léger dépassement, comme un coup de crayon, sans bosses), qui
-« bouillonnent » (deux variantes du dessin alternent environ 6 fois par seconde) et se dessinent à
-l'apparition. Grosse tête ronde de profil (un œil, un sourcil, un petit nez, une petite bouche qui enchaîne trois
-ouvertures différentes quand il parle), corps en bâtons, pieds
-ovales, debout au bord d'une falaise hachurée. **Léa** : chignon, frange et mèches, robe, cils ; **Karim** : épis,
-chemise, cravate, pantalon. Mêmes expressions et gestes que ci-dessous, avec des **effets manga** : grand
-œil (iris blanc, pupille noire à reflets, paupière épaisse), yeux en « ^ » et joues hachurées quand il est
-`content`, pupille minuscule + traits d'effroi + « ! » sous le `choc`, goutte de sueur qui glisse
-(`doute`, `triste`), veine en croix qui pulse sur le front (`agace`). Bulles noires au contour irrégulier, texte
-et surtitre manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe par personnage).
+**`trait` (par défaut)** — `assets/anim/perso_trait.js` : dessin à la main blanc sur fond noir, dans
+l'esprit des petites histoires dessinées qui tournent sur TikTok (sans en reprendre les personnages).
+Chaque trait est un trait principal assuré doublé de fines passes d'esquisse ; les cercles (têtes, yeux)
+ondulent doucement et finissent par un léger dépassement, comme un coup de crayon. Deux variantes du dessin
+alternent environ 6 fois par seconde (traits qui « bouillonnent ») et tout se dessine à l'apparition.
+Personnages **de profil** : grosse tête ronde, œil blanc plein avec la pupille noire à l'avant et un reflet,
+petit nez, petite bouche souriante qui enchaîne trois ouvertures quand il parle, sourcil seulement quand
+l'expression le demande ; corps de profil, bras le long du corps (mains avec doigts), jambes fines, pieds
+ovales. **Léa** : queue de cheval haute qui se balance, ligne de cheveux en S, frange, cil, veste cintrée et
+jupe ; **Karim** : cheveux courts avec un épi, chemise, cravate, pantalon. Sol à main levée avec cailloux,
+touffes d'herbe et ombre hachurée sous chaque personnage. **Effets manga** : yeux en « ^ » et joues
+hachurées quand il est `content`, pupille minuscule + traits d'effroi + « ! » sous le `choc`, goutte de
+sueur qui glisse (`doute`, `triste`), veine en croix qui pulse sur le front (`agace`). Bulles noires au
+contour irrégulier, texte et surtitre manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe).
 
 **`editorial`** — `assets/anim/perso.js` : deux personnages en **illustration éditoriale**, dessinés en SVG et animés par GSAP
 (`assets/anim/perso.js`) : **Léa** (`femme`, carré brun, veste bleu nuit sur un haut à la couleur
@@ -234,7 +236,7 @@ python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&replique
 
 Pas encore branché au générateur de scénarios (ni bouche synchronisée sur la voix off, ni effets
 sonores) : à utiliser en rendu manuel pour tester le rendu. Ajouter un personnage = ajouter une entrée
-à `PERSOS` dans `perso_trait.js` (tenue `robe`/`pantalon`, coiffure `chignon`/`meche`, accessoire
+à `PERSOS` dans `perso_trait.js` (tenue `jupe`/`pantalon`, coiffure `queue`/`courts`, accessoire
 `cravate`) ou `perso.js` (couleurs, coiffure `carre`/`raie`, accessoire `collier`/`lunettes`,
 `visage` `doux`/`carre`, `cils` ; une couleur `var(--c1)` suit le thème).
 
