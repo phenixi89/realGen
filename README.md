@@ -310,7 +310,8 @@ face à face, objets posés ou tenus, personnage assis) :
 - **Voix** : toutes les répliques en **un seul appel** Gemini TTS multi-locuteurs, une voix par
   personnage (`voix` dans `dessins.json` : Léa = Aoede, Karim = Puck). Consigne au format de la doc
   Gemini (« TTS the following conversation… ») : une consigne libre en français a inversé les voix à
-  l'essai.
+  l'essai. La réplique finale (CTA) vient de l'enregistrement de la voix du personnage qui la dit
+  (voir « CTA enregistré »).
 - **Synchro** : Whisper mesure quand chaque réplique est dite (`repliques` de la timeline,
   `4_generate_subtitles.py`) ; au montage, chaque bulle s'ouvre à cet instant et la bouche bouge le temps
   exact de la réplique (`run_pipeline.dessin_spec`). Chaque scène devient un plan `scene` de 3b ; la
@@ -452,10 +453,20 @@ avec le curseur qui clique puis le bouton entouré au feutre avec un post-it (`p
 `config.json` pour la désactiver). Le CTA dit et le CTA animé
 sont tirés parmi plusieurs variantes.
 
+**CTA enregistré** (`cta_enregistre` dans `config.json`, activé par défaut) : la dernière phrase du reel
+est **exactement** une phrase de `ctas_conseil` / `ctas_produit` (Gemini la recopie, `fixer_cta` la
+remet telle quelle de toute façon) et sa voix n'est **pas resynthétisée** : `2_generate_voice.py` dit
+le reste du texte, puis colle l'enregistrement de cette phrase pour la voix du reel (ou du personnage
+qui la dit, en dessin animé) après une pause de 0,3 s, ramené au volume de la voix. Enregistrements :
+`assets/voix_cta/<voix>_<empreinte de la phrase>.ogg` (versionnés, une fois par voix et par phrase :
+`python scripts/2_generate_voice.py --precompute-cta`) ; une phrase ou une voix nouvelle est enregistrée
+au premier besoin dans `output/voix_cta/` (gardé par le cache de la CI). L'écho à l'accroche (boucle)
+passe alors à l'avant-dernière scène. Scénario écrit à la main (`--scenario`) : son CTA est gardé tel quel.
+
 **Originalité** : formats POV, « ce que le recruteur voit vraiment », tier list, red flag / green flag,
 quiz « trouve l'erreur » ; Gemini doit apporter un élément concret par scène (exemple de formulation,
 cas précis), les conseils génériques et promesses intenables (« entretien garanti ») de `phrases_bannies`
-sont refusés, et la dernière phrase répond
+sont refusés, et la dernière phrase (l'avant-dernière avec le CTA enregistré) répond
 à l'accroche pour que la vidéo boucle naturellement ; dès la scène 2, une **boucle ouverte** (révélation promise, tenue vers la fin) retient le spectateur au-delà des 3 premières secondes.
 
 Les formats à cartes affichent des **cartes animées** à la place des captures (en

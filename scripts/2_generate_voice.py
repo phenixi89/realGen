@@ -3,10 +3,18 @@ Genere la voix off (TTS) via l'API Gemini et convertit le PCM brut en MP3 avec F
 
 Usage:
     python 2_generate_voice.py --scripts output/scripts.json --voice Kore --out output/audio
+    python 2_generate_voice.py --precompute-cta        # enregistre les phrases de CTA (assets/voix_cta/)
+
+Phrase de CTA enregistree (derniere scene "cta_enregistre", catalog/config.json) : elle
+n'est pas resynthetisee a chaque reel ; son enregistrement pour la voix du reel (ou du
+personnage qui la dit) est colle a la fin, au meme volume que le reste. Enregistrements
+cherches dans assets/voix_cta/ (versionnes), sinon dans <out>/../voix_cta/ (cache, cree
+au premier besoin et garde d'un run a l'autre par le cache de la CI).
 
 Nécessite GEMINI_API_KEY. Nécessite ffmpeg installé sur la machine.
 """
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -16,7 +24,12 @@ from pathlib import Path
 
 
 from gemini_retry import generate_with_retry
+import catalog
 from script_text import dialogue_lines, script_to_text
+
+CTA_DIR = Path(__file__).resolve().parent.parent / "assets" / "voix_cta"
+CTA_PAUSE_S = 0.3   # silence entre le corps du texte et la phrase de CTA enregistree
+SR_TTS = 24000
 
 # Voix disponibles cote Gemini TTS (exemples courants a adapter selon la doc a jour)
 VOICES = ["Kore", "Puck", "Enceladus", "Aoede", "Zephyr"]
@@ -94,6 +107,69 @@ def synthesize_dialogue(client, lines: list[tuple[str, str]], voices: dict[str, 
         wf.writeframes(audio_data)
 
 
+def cta_filename(voice: str, phrase: str) -> str:
+    """Un enregistrement par (voix, phrase exacte) : changer la phrase en cree un autre."""
+    return f"{voice}_{hashlib.sha1(phrase.encode('utf-8')).hexdigest()[:10]}.ogg"
+
+
+def cta_clip(client, voice: str, phrase: str, cache_dir: Path) -> Path:
+    """Enregistrement de la phrase de CTA pour cette voix : versionne, en cache, sinon synthetise une fois."""
+    name = cta_filename(voice, phrase)
+    for folder in (CTA_DIR, cache_dir):
+        if (folder / name).exists():
+            return folder / name
+    if client is None:
+        raise RuntimeError(f"enregistrement du CTA absent ({name}) et pas de client Gemini")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    wav = cache_dir / (name + ".wav")
+    print(f"    CTA « {phrase} » ({voice}) : enregistrement unique -> {cache_dir / name}")
+    synthesize(client, phrase, voice, wav, catalog.default_tone())
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(wav), "-c:a", "libvorbis", "-q:a", "5",
+                    str(cache_dir / name)], check=True)
+    wav.unlink()
+    return cache_dir / name
+
+
+def _pcm(path: Path):
+    import numpy as np
+    raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(path), "-f", "s16le", "-ac", "1",
+                          "-ar", str(SR_TTS), "-"], check=True, capture_output=True).stdout
+    return np.frombuffer(raw, dtype=np.int16).astype(np.float64)
+
+
+def append_cta(body_wav: Path, clip: Path, out_wav: Path):
+    """Corps + courte pause + CTA enregistre, le CTA ramene au volume de la voix du reel (RMS des passages parles)."""
+    import numpy as np
+    body, cta = _pcm(body_wav), _pcm(clip)
+
+    def level(x):
+        frames = x[: len(x) // 480 * 480].reshape(-1, 480)
+        rms = np.sqrt((frames ** 2).mean(axis=1))
+        voiced = rms[rms > rms.max() * 0.1]
+        return float(np.sqrt((voiced ** 2).mean())) if len(voiced) else 1.0
+
+    cta = cta * (level(body) / level(cta))
+    out = np.concatenate([body, np.zeros(int(CTA_PAUSE_S * SR_TTS)), cta])
+    with wave.open(str(out_wav), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(SR_TTS)
+        wf.writeframes(np.clip(out, -32768, 32767).astype(np.int16).tobytes())
+
+
+def precompute_cta(client):
+    """Enregistre chaque phrase de CTA du catalogue pour chaque voix (rotation + personnages) dans assets/voix_cta/."""
+    cfg = catalog.config()
+    phrases = list(dict.fromkeys(p for k in ("ctas_conseil", "ctas_produit") for p in cfg.get(k) or []))
+    voices = list(dict.fromkeys([v["id"] for v in catalog.voices()] + [p["voix"] for p in catalog.personnages().values()]))
+    for voice in voices:
+        for phrase in phrases:
+            if (CTA_DIR / cta_filename(voice, phrase)).exists():
+                continue
+            path = cta_clip(client, voice, phrase, CTA_DIR)
+            print(f"OK -> {path}")
+
+
 def convert_to_mp3(wav_path: Path, mp3_path: Path):
     """Convertit le wav en mp3 pret pour montage FFmpeg / compatible TikTok-Reels."""
     subprocess.run(
@@ -120,6 +196,8 @@ def main():
     parser.add_argument("--out", type=str, default="output/audio")
     parser.add_argument("--force", action="store_true",
                          help="Regenere meme si le mp3 existe deja pour un reel")
+    parser.add_argument("--precompute-cta", action="store_true",
+                         help="Enregistre les phrases de CTA du catalogue pour chaque voix (assets/voix_cta/), puis s'arrete")
     args = parser.parse_args()
 
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -131,6 +209,10 @@ def main():
     if not args.silent:  # import tardif : le mode sans voix n'a pas besoin du SDK Gemini
         from google import genai
         client = genai.Client(api_key=api_key)
+
+    if args.precompute_cta:
+        precompute_cta(client)
+        return
 
     scripts = json.loads(Path(args.scripts).read_text(encoding="utf-8"))
     out_dir = Path(args.out)
@@ -151,6 +233,12 @@ def main():
             text_key = "\n".join(f"{q}: {t}" for q, t in lines)
         else:
             text_key = text
+        # CTA enregistre : derniere scene dite par l'enregistrement de la voix (du personnage) qui la porte.
+        last = (script.get("scenes") or [{}])[-1]
+        cta_voice = None
+        if last.get("cta_enregistre") and len(script.get("scenes", [])) > 1:
+            cta_voice = voices.get(lines[-1][0]) if lines else voice
+            text_key += f"\n[cta enregistre : {cta_filename(cta_voice, last['texte'].strip())}]"
         # Empreinte = tout ce qui change le son : texte, voix, ton (ou silence).
         fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone}]\n{text_key}"
 
@@ -176,10 +264,16 @@ def main():
                 write_silence(text, mp3_path)
             else:
                 print(f"[{i}/{len(scripts)}] Synthese voix ({voice}, ton : {tone})...")
+                body_lines = lines[:-1] if cta_voice and lines else lines
+                body_text = " ".join(s["texte"].strip() for s in script["scenes"][:-1]) if cta_voice else text
                 if lines:
-                    synthesize_dialogue(client, lines, voices, wav_path, tone)
+                    synthesize_dialogue(client, body_lines, voices, wav_path, tone)
                 else:
-                    synthesize(client, text, voice, wav_path, tone)
+                    synthesize(client, body_text, voice, wav_path, tone)
+                if cta_voice:
+                    clip = cta_clip(client, cta_voice, last["texte"].strip(), out_dir.parent / "voix_cta")
+                    print(f"    CTA enregistre reutilise : {clip.name}")
+                    append_cta(wav_path, clip, wav_path)
                 convert_to_mp3(wav_path, mp3_path)
             text_path.write_text(fingerprint, encoding="utf-8")
             print(f"    -> {mp3_path}")

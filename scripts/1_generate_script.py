@@ -257,6 +257,22 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
 # Scenario
 # ---------------------------------------------------------------------------
 
+def cta_enregistre() -> bool:
+    """config.json "cta_enregistre" : derniere phrase = phrase du catalogue, voix enregistree une fois pour toutes."""
+    return bool(catalog.config().get("cta_enregistre", True))
+
+
+def fixer_cta(scenes: list[dict], cta: str) -> None:
+    """Derniere scene = la phrase de CTA exacte (2_generate_voice.py colle son enregistrement)."""
+    if not scenes or len(scenes) < 2:
+        return
+    last = scenes[-1]
+    last["texte"] = cta
+    if last.get("repliques"):
+        last["repliques"] = [{"qui": last["repliques"][0]["qui"], "texte": cta}]
+    last["cta_enregistre"] = True
+
+
 def dessin_bounds(duration: int) -> tuple[int, int]:
     """Dessin anime : 2 a ~4 decors (un decor dure plusieurs repliques) + la scene CTA."""
     return 3, max(4, math.ceil(duration / 6))
@@ -329,6 +345,10 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
     target, lo_w, hi_w = word_budget(duration, catalog.tone_for(fmt, plan.get("registre")), bool(fmt.get("dessin")))
     lo_s, hi_s = scene_bounds(duration)
     cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
+    # CTA enregistre (config.json cta_enregistre) : phrase recopiee telle quelle, sa voix est deja enregistree.
+    cta_fixe = cta_enregistre()
+    cta_rule = (f"dernière scène = EXACTEMENT cette phrase, recopiée mot pour mot (elle est déjà enregistrée) : « {cta} »"
+                if cta_fixe else f"dernière scène = CTA court, dans l'esprit : « {cta} »")
     structure = fmt["structure"].replace("{episode}", str(plan["episode"] or 1))
 
     # Un sujet "killer feature : ..." vise UNE fonctionnalite en profondeur
@@ -494,7 +514,7 @@ Appel à l'action (fin) : incite à tester gratuitement l'outil (ex : « Lien en
 Contraintes :
 - entre {lo_s} et {hi_s} scènes ;
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
-- scène 1 = l'accroche (12 mots max){scene1_rule} ; dernière scène = CTA court, dans l'esprit : « {cta} » ;
+- scène 1 = l'accroche (12 mots max){scene1_rule} ; {cta_rule} ;
 - {"des répliques courtes et vivantes, comme un vrai dialogue" if dessin else "1 à 2 phrases par scène"}, ton oral et naturel, tutoiement, pas publicitaire{"" if not humour else ", drôle"} ;
 - {variety_rule}
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est
@@ -508,7 +528,7 @@ Contraintes :
 - BOUCLE OUVERTE : dès la scène 2, promets une révélation placée plus tard (« et la 3ᵉ erreur est la pire »,
   « reste jusqu'à la fin pour la phrase à copier ») et tiens-la dans les dernières scènes : c'est ce qui
   retient le spectateur au-delà des 3 premières secondes ;
-- BOUCLE : la dernière phrase répond ou fait écho à l'accroche, pour que la vidéo s'enchaîne
+- BOUCLE : {"l'avant-dernière scène" if cta_fixe else "la dernière phrase"} répond ou fait écho à l'accroche, pour que la vidéo s'enchaîne
   naturellement si elle recommence.
 
 Fournis aussi :
@@ -901,6 +921,8 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
 def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str],
                       forced: list[dict] | None = None) -> dict:
     fmt = plan["format"]
+    if not plan.get("cta"):  # meme phrase pour le prompt et pour fixer_cta
+        plan["cta"] = catalog.pick_cta(fmt["categorie"], random.Random())[0]
     feedback = None
     best: list[dict] = []
     best_data: dict = {}
@@ -929,6 +951,8 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
     if plan.get("sans_captures") and not fmt.get("dessin"):
         for scene in best[1:-1]:
             scene.setdefault("carte", fallback_card(scene["texte"]))
+    if cta_enregistre() and not forced:
+        fixer_cta(best, plan["cta"])
     dessin_fields = {}
     if fmt.get("dessin"):
         completer_mise_en_scene(best)

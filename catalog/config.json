@@ -92,5 +92,7 @@
         "texte": "Vérifie ton CV gratuitement : lien en bio."
       }
     ]
-  }
+  },
+  "cta_enregistre": true,
+  "_note_cta_enregistre": "true : la derniere phrase d'un reel est exactement une phrase de ctas_conseil / ctas_produit (Gemini ne la reecrit pas) et sa voix vient d'un enregistrement fait une fois par voix (assets/voix_cta/, python scripts/2_generate_voice.py --precompute-cta), colle a la fin au meme volume. false : Gemini ecrit un CTA dans l'esprit de la phrase tiree, synthetise avec le reste."
 }
