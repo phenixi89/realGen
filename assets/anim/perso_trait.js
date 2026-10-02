@@ -139,15 +139,44 @@
       P.trace(tete, m([[-6, -910], [10, -944]]), { w: 2.2, passes: 1 });
       P.trace(tete, m([[54, -904], [70, -934]]), { w: 2.2, passes: 1 });
     }
-    // Oeil (cercle + pupille pleine), sourcil, oreille discrete.
+    // Oeil facon manga (de profil) : grand contour, paupiere superieure epaisse,
+    // iris blanc, pupille noire avec reflets ; cils pour la robe. Variante "^"
+    // (yeux fermes de joie) pour l'expression content.
     const ex = 58 * c, ey = -805;
-    const yeux = g(tete), iris = g(yeux);
-    P.rond(yeux, ex, ey, 19, 21, { w: 3 });
-    el("circle", { cx: ex + 5 * c, cy: ey + 2, r: 8.5, fill: "#ffffff" }, iris);
+    const m = (pts) => pts.map(([x, y]) => [x * c, y]);
+    const yeux = g(tete), oeil = g(yeux), iris = g(oeil);
+    P.rond(oeil, ex, ey, 22, 27, { w: 2.6, passes: 1 });
+    P.trace(oeil, [[ex - 24 * c, ey - 12], [ex - 2 * c, ey - 30], [ex + 22 * c, ey - 20]], { w: 5.5, passes: 1, jit: 1.5 });
+    if (p.tenue === "robe") {
+      P.trace(oeil, [[ex + 18 * c, ey - 22], [ex + 32 * c, ey - 32]], { w: 3, passes: 1, jit: 1 });
+      P.trace(oeil, [[ex + 21 * c, ey - 15], [ex + 35 * c, ey - 20]], { w: 3, passes: 1, jit: 1 });
+    }
+    el("ellipse", { cx: ex + 4 * c, cy: ey + 3, rx: 14, ry: 18, fill: "#ffffff" }, iris);
+    const pupille = el("ellipse", { cx: ex + 5 * c, cy: ey + 4, rx: 7, ry: 10, fill: "#000000" }, iris);
+    el("circle", { cx: ex + 1 * c, cy: ey - 3, r: 4.2, fill: "#ffffff" }, iris);
+    el("circle", { cx: ex + 9 * c, cy: ey + 10, r: 2, fill: "#ffffff" }, iris);
     gsap.set(yeux, { svgOrigin: `${ex} ${ey}` });
+    gsap.set(pupille, { svgOrigin: `${ex + 5 * c} ${ey + 4}` });
+    const joie = g(tete, { opacity: 0 });
+    P.trace(joie, [[ex - 20 * c, ey + 6], [ex, ey - 14], [ex + 20 * c, ey + 6]], { w: 4.5, passes: 1 });
     const sourcil = g(tete);
-    P.trace(sourcil, [[ex - 20 * c, ey - 40], [ex, ey - 46], [ex + 18 * c, ey - 42]], { w: 3 });
-    gsap.set(sourcil, { svgOrigin: `${ex} ${ey - 44}` });
+    P.trace(sourcil, [[ex - 22 * c, ey - 44], [ex, ey - 52], [ex + 20 * c, ey - 46]], { w: 3.4 });
+    gsap.set(sourcil, { svgOrigin: `${ex} ${ey - 48}` });
+
+    // Symboles manga (emanata), un par expression : joues hachurees (content),
+    // traits d'effroi + "!" (choc), goutte de sueur (doute, triste), veine en croix sur le front (agace).
+    const signes = {};
+    signes.joues = g(tete, { opacity: 0 });
+    for (let i = 0; i < 4; i++) P.trace(signes.joues, m([[50 + i * 11, -752], [62 + i * 11, -778]]), { w: 2.2, passes: 1, jit: 1 });
+    signes.choc = g(tete, { opacity: 0 });
+    for (let i = 0; i < 4; i++) P.trace(signes.choc, m([[8 + i * 22, -884], [8 + i * 22, -846 + (i % 2) * 8]]), { w: 2.4, passes: 1, jit: 1 });
+    P.trace(signes.choc, m([[118, -1000], [112, -950]]), { w: 6, passes: 1, jit: 1 });
+    el("circle", { cx: 110 * c, cy: -930, r: 5, fill: "#ffffff" }, signes.choc);
+    signes.goutte = g(tete, { opacity: 0 });
+    P.trace(signes.goutte, m([[-128, -900], [-140, -872], [-138, -860], [-128, -854], [-118, -860], [-116, -872], [-128, -900]]), { w: 3, passes: 1, jit: 0.8 });
+    signes.veine = g(tete, { opacity: 0 });
+    for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]])
+      P.trace(signes.veine, m([[40 + sx * 28, -868 + sy * 9], [40 + sx * 11, -868 + sy * 11], [40 + sx * 9, -868 + sy * 28]]), { w: 3.6, passes: 1, jit: 0.8 });
     P.trace(tete, [[-6 * c, -812], [-14 * c, -790], [-4 * c, -770]], { w: 2.4, passes: 1 });   // oreille
 
     // Bouches (au bout du profil), une seule visible a la fois.
@@ -180,7 +209,7 @@
       bras[s] = { haut, avant, s };
     }
 
-    return { id, nom: p.nom, couleur: "#ffffff", root, corps, tete, yeux, iris: [iris], sourcils: [sourcil], bouches, bras, cote, expr: "neutre" };
+    return { id, nom: p.nom, couleur: "#ffffff", root, corps, tete, yeux, oeil, joie, pupille, signes, iris: [iris], sourcils: [sourcil], bouches, bras, cote, expr: "neutre" };
   }
 
   // Bord de falaise hachure sur toute la largeur, a la hauteur y.
@@ -199,6 +228,7 @@
     neutre: { s: [0, 0], yeux: 1 }, content: { s: [-6, -6], yeux: 0.8 }, choc: { s: [0, -14], yeux: 1.35 },
     doute: { s: [-14, -8], yeux: 0.9 }, triste: { s: [-14, 2], yeux: 0.85 }, agace: { s: [16, 4], yeux: 0.7 },
   };
+  const SIGNES = { content: "joues", choc: "choc", doute: "goutte", triste: "goutte", agace: "veine" };
   const montrerBouche = (tl, perso, nom, at) => {
     for (const [k, b] of Object.entries(perso.bouches)) tl.set(b, { opacity: k === nom ? 1 : 0 }, at);
   };
@@ -206,7 +236,15 @@
     const e = EXPR[nom] || EXPR.neutre;
     perso.expr = EXPR[nom] ? nom : "neutre";
     tl.to(perso.sourcils[0], { rotation: e.s[0] * perso.cote, y: e.s[1], duration: 0.2, ease: "power2.out" }, at)
-      .to(perso.yeux, { scaleY: e.yeux, scaleX: nom === "choc" ? 1.2 : 1, duration: 0.16 }, at);
+      .to(perso.yeux, { scaleY: e.yeux, scaleX: nom === "choc" ? 1.15 : 1, duration: 0.16 }, at)
+      // Manga : pupille minuscule sous le choc, yeux en "^" de joie, symbole de l'expression.
+      .to(perso.pupille, { scale: nom === "choc" ? 0.4 : 1, duration: 0.12 }, at)
+      .set(perso.oeil, { opacity: nom === "content" ? 0 : 1 }, at)
+      .set(perso.joie, { opacity: nom === "content" ? 1 : 0 }, at);
+    const signe = SIGNES[perso.expr];
+    for (const [k, grp] of Object.entries(perso.signes)) tl.to(grp, { opacity: k === signe ? 1 : 0, duration: 0.15 }, at);
+    if (signe === "goutte") tl.fromTo(perso.signes.goutte, { y: -6 }, { y: 10, duration: 0.6, ease: "power1.in", immediateRender: false }, at);
+    if (signe === "veine") tl.fromTo(perso.signes.veine, { scale: 0.6 }, { scale: 1, svgOrigin: `${40 * perso.cote} -868`, duration: 0.18, yoyo: true, repeat: 3, ease: "power2.out", immediateRender: false }, at);
     if (nom === "choc") tl.fromTo(perso.tete, { y: 0 }, { y: -14, duration: 0.14, yoyo: true, repeat: 1, ease: "power2.out", immediateRender: false }, at);
     montrerBouche(tl, perso, perso.expr, at);
   }

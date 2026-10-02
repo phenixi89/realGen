@@ -201,8 +201,11 @@ Deux styles au choix (`style` du gabarit `dialogue`) :
 des petites histoires dessinées qui tournent sur TikTok. Traits tremblés repassés deux fois, qui
 « bouillonnent » (deux variantes du dessin alternent environ 6 fois par seconde) et se dessinent à
 l'apparition. Grosse tête ronde de profil (un œil, un sourcil, une petite bouche), corps en bâtons, pieds
-ovales, debout au bord d'une falaise hachurée. **Léa** : chignon, mèches, robe ; **Karim** : épis, chemise,
-cravate, pantalon. Mêmes expressions et gestes que ci-dessous. Bulles noires au contour irrégulier, texte
+ovales, debout au bord d'une falaise hachurée. **Léa** : chignon, mèches, robe, cils ; **Karim** : épis,
+chemise, cravate, pantalon. Mêmes expressions et gestes que ci-dessous, avec des **effets manga** : grand
+œil (iris blanc, pupille noire à reflets, paupière épaisse), yeux en « ^ » et joues hachurées quand il est
+`content`, pupille minuscule + traits d'effroi + « ! » sous le `choc`, goutte de sueur qui glisse
+(`doute`, `triste`), veine en croix qui pulse sur le front (`agace`). Bulles noires au contour irrégulier, texte
 et surtitre manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe par personnage).
 
 **`editorial`** — `assets/anim/perso.js` : deux personnages en **illustration éditoriale**, dessinés en SVG et animés par GSAP
