@@ -304,7 +304,9 @@ face à face, objets posés ou tenus, personnage assis) :
   dernière est le CTA animé, dit par un personnage.
 - **Montage** : pas de sous-titres incrustés (le texte est dans les bulles, `5_assemble.py
   --no-captions`) ; la 1re scène est cadrée plus large et plus bas (`DESSIN_SOUS_ACCROCHE`) pour que
-  l'accroche affichée en grand en haut ne cache pas la 1re bulle.
+  l'accroche affichée en grand en haut ne cache pas la 1re bulle, les autres un peu plus petites qu'en
+  rendu libre (`DESSIN_CADRAGE`) pour qu'une bulle de 3 lignes reste sous le titre de scène. Une bulle
+  s'efface au plus tard quand la suivante s'ouvre.
 
 ```bash
 python scripts/run_pipeline.py --n 1 --format dessin_anime --duration 25

@@ -196,7 +196,13 @@
       gsap.set(t, { opacity: 0 });
       if (!dom.derniere) tl.to(t, { opacity: 0, duration: FONDU }, S + duree - 0.05);
     }
-    // Bulles : au-dessus de la tete de celui qui parle, du cote ou il se trouve.
+    // Bulles : au-dessus de la tete de celui qui parle, du cote ou il se trouve. Une bulle
+    // s'efface au plus tard quand la suivante s'ouvre (repliques enchainees sur la voix).
+    repliques.sort((x, y) => x.a.t - y.a.t);
+    repliques.forEach((r, i) => {
+      const suivante = repliques[i + 1];
+      r.fin = Math.min(r.a.t + r.a.duree + 0.12, suivante ? suivante.a.t - 0.02 : Infinity);
+    });
     for (const r of repliques) {
       const b = document.createElement("div"), gauche = r.x < 540;
       b.className = "bulle " + (gauche ? "g" : "d");
@@ -211,7 +217,7 @@
       b.style.setProperty("--queue", `${Math.min(Math.max(r.x - rect.left - 22, 30), rect.width - 80)}px`);
       gsap.set(b, { opacity: 0, scale: 0.4, transformOrigin: `${r.x - rect.left}px 120%` });
       tl.to(b, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, r.a.t)
-        .to(b, { opacity: 0, scale: 0.85, duration: 0.15 }, r.a.t + r.a.duree + 0.12);
+        .to(b, { opacity: 0, scale: 0.85, duration: 0.15 }, r.fin);
     }
     return duree;
   }

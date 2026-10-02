@@ -50,6 +50,9 @@ CAPTURE_MODES = ["video", "screenshots", "video_desktop", "aucune"]
 # Dessin anime : 1re scene cadree plus large et plus bas, sous l'accroche affichee en grand
 # (assets/anim/hook.html, haut de l'ecran) -- sinon la 1re bulle passerait dessous.
 DESSIN_SOUS_ACCROCHE = {"echelle": 0.78, "sol": 1790}
+# Autres scenes : un peu plus petites et plus bas qu'en rendu libre (1,1 / 1650) -- une bulle
+# de 3 lignes reste sous le titre de scene (haut de l'ecran).
+DESSIN_CADRAGE = {"echelle": 0.95, "sol": 1720}
 
 
 def parse_anims(value: str) -> list[str]:
@@ -207,8 +210,7 @@ def dessin_spec(scene: dict, timing: dict, under_hook: bool = False) -> str:
         a["t"] = round(max(r["start"] - start, 0.0), 2)
         a["duree"] = round(max(r["end"] - r["start"], 0.6), 2)
     sc["duree"] = round(timing["end"] - start, 2)
-    if under_hook:
-        sc.update(DESSIN_SOUS_ACCROCHE)
+    sc.update(DESSIN_SOUS_ACCROCHE if under_hook else DESSIN_CADRAGE)
     return "scene?" + urlencode({"scene": json.dumps(sc, ensure_ascii=False, separators=(",", ":"))})
 
 
