@@ -50,7 +50,7 @@
   function pinceau(seed) {
     const rnd = mulberry(seed);
     const j = (a) => (rnd() - 0.5) * 2 * a;
-    const trace = (parent, pts, { w = 3.4, passes = 2, jit = 3.2, ferme = false, plein = false } = {}) => {
+    const trace = (parent, pts, { w = 3.4, passes = 2, jit = 3.2, ferme = false, plein = false, alpha = null } = {}) => {
       for (const v of ["va", "vb"]) {
         const grp = g(parent, { class: v });
         for (let k = 0; k < passes; k++) {
@@ -62,18 +62,26 @@
           }
           el("path", { d: smooth(p) + (plein ? "Z" : ""), class: "tr", pathLength: 1, fill: plein ? "#ffffff" : "none",
             stroke: "#ffffff", "stroke-width": w * (k ? 0.7 : 1), "stroke-linecap": "round", "stroke-linejoin": "round",
-            opacity: k ? 0.75 : 0.95 }, grp);
+            opacity: alpha ?? (k ? 0.75 : 0.95) }, grp);
         }
       }
     };
-    // Cercle a main levee : un peu plus d'un tour, rayon qui varie.
+    // Cercle a main levee : un peu plus d'un tour, la fin rentre legerement (spirale)
+    // comme un vrai coup de crayon. Le rayon ondule doucement (basses frequences)
+    // au lieu de trembler point par point -- sinon le cercle a des bosses de caillou.
+    // Chaque passe est un tour complet decale, plus fin.
     const rond = (parent, cx, cy, rx, ry = rx, o = {}) => {
-      const n = 26, a0 = rnd() * Math.PI * 2, tours = 1.12 + rnd() * 0.12, pts = [];
-      for (let i = 0; i <= n; i++) {
-        const a = a0 + (i / n) * Math.PI * 2 * tours, k = 1 + j(0.035);
-        pts.push([cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]);
+      const passes = o.passes ?? 2, w = o.w ?? 3.4;
+      for (let k = 0; k < passes; k++) {
+        const n = Math.max(32, Math.round((rx + ry) / 4)), a0 = rnd() * Math.PI * 2, tours = 1.04 + rnd() * 0.08;
+        const f1 = rnd() * 6.28, f2 = rnd() * 6.28, amp = k ? 0.018 : 0.011, dx = j(k ? 2.2 : 0.6), dy = j(k ? 2.2 : 0.6), pts = [];
+        for (let i = 0; i <= n; i++) {
+          const t = (i / n) * tours, a = a0 + t * Math.PI * 2;
+          const r = 1 + amp * (0.6 * Math.sin(2 * a + f1) + 0.4 * Math.sin(3 * a + f2)) - 0.035 * Math.max(0, t - 1) / (tours - 1);
+          pts.push([cx + dx + Math.cos(a) * rx * r, cy + dy + Math.sin(a) * ry * r]);
+        }
+        trace(parent, pts, { ...o, passes: 1, ferme: true, jit: o.jit ?? 0.7, w: w * (k ? 0.62 : 1), alpha: k ? 0.6 : 0.95 });
       }
-      trace(parent, pts, { ...o, ferme: true });
     };
     return { trace, rond, rnd, j };
   }

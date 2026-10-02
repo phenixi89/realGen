@@ -198,7 +198,8 @@ récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 Deux styles au choix (`style` du gabarit `dialogue`) :
 
 **`trait` (par défaut)** — `assets/anim/perso_trait.js` : dessin à la main blanc sur fond noir, le style
-des petites histoires dessinées qui tournent sur TikTok. Traits tremblés repassés deux fois, qui
+des petites histoires dessinées qui tournent sur TikTok. Traits tremblés repassés deux fois (les cercles — têtes, yeux, chignon — ondulent doucement et
+finissent par un léger dépassement, comme un coup de crayon, sans bosses), qui
 « bouillonnent » (deux variantes du dessin alternent environ 6 fois par seconde) et se dessinent à
 l'apparition. Grosse tête ronde de profil (un œil, un sourcil, une petite bouche), corps en bâtons, pieds
 ovales, debout au bord d'une falaise hachurée. **Léa** : chignon, mèches, robe, cils ; **Karim** : épis,
