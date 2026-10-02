@@ -118,6 +118,8 @@ def validate_scene_dessin(scene: dict) -> list[str]:
                 errors.append(f"scene {n} : type d'objet inconnu '{o.get('type')}'")
                 continue
             ids[o.get("id")] = t
+            if o.get("assis") and (o["assis"] not in ids or ids[o["assis"]].get("id") != "chaise" or t["categorie"] != "personnage"):
+                errors.append(f"scene {n} : '{o['id']}' assis sur '{o['assis']}' : il faut un personnage et une chaise declaree avant lui")
             if o.get("sur"):
                 cible, _, anc = o["sur"].partition(".")
                 if cible not in ids or anc not in (ids[cible].get("ancres") or []):

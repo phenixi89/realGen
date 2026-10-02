@@ -5,7 +5,9 @@
 //
 // Ancres (pour tenir / porter un objet) : main_avant, main_arriere, tete.
 // Actions : parler, expression, geste (salut, montre, hausse, explique), marcher,
-// entrer, sortir, regarder, tenir, poser, boire, telephoner, sauter.
+// entrer, sortir, regarder, tenir, poser, boire, telephoner, sauter, s_asseoir, se_lever ;
+// postures tenues : bras_croises, tete_mains, idee (ampoule), penser (main au menton).
+// Pose de depart "assis": id d'une chaise (assis dessus des la premiere image).
 // Effets manga par expression : yeux ^ ^ et joues (content), effroi + "!" (choc),
 // goutte de sueur (doute, triste), veine en croix (agace).
 (() => {
@@ -24,44 +26,52 @@
     const p = MODELES[opts.type] || MODELES.lea;
     const corps = g(parent);
 
-    // Jambes (groupes pivotant a la hanche) et pieds ovales vers l'avant.
+    // Jambes articulees : cuisse (pivot a la hanche) puis tibia (pivot au genou), pied ovale vers l'avant.
     const jambes = [];
     HANCHE[p.tenue].forEach(([hx, hy], i) => {
-      const jg = g(corps);
-      if (p.tenue === "jupe") P.trace(jg, [[hx, hy], [hx - 1, -180], [hx - 2 + i * 4, -26]]);
-      else {
+      const cuisse = g(corps), tibia = g(cuisse);
+      let kx;
+      if (p.tenue === "jupe") {
+        kx = hx - 1;
+        P.trace(cuisse, [[hx, hy], [kx, -180]]);
+        P.trace(tibia, [[kx, -180], [hx - 2 + i * 4, -26]]);
+      } else {
         const [a, b] = i ? [2, 46] : [-46, -8];
-        P.trace(jg, [[a, -330], [a + (i ? 6 : 6), -180], [a + (i ? 12 : 12), -26]]);
-        P.trace(jg, [[b, -330], [b - 2, -180], [b - 4 + (i ? 0 : 4), -26]]);
+        kx = (a + b) / 2 + 1;
+        P.trace(cuisse, [[a, -330], [a + 3, -180]]); P.trace(cuisse, [[b, -330], [b - 1, -180]]);
+        P.trace(tibia, [[a + 3, -180], [a + 12, -26]]); P.trace(tibia, [[b - 1, -180], [b - 4 + (i ? 0 : 4), -26]]);
       }
-      P.rond(jg, (p.tenue === "jupe" ? [0, 30] : [-14, 28])[i], -13, 30, 12, { w: 3.6 });
-      gsap.set(jg, { svgOrigin: `${hx} ${hy}` });
-      jambes.push(jg);
+      P.rond(tibia, (p.tenue === "jupe" ? [0, 30] : [-14, 28])[i], -13, 30, 12, { w: 3.6 });
+      gsap.set(cuisse, { svgOrigin: `${hx} ${hy}` });
+      gsap.set(tibia, { svgOrigin: `${kx} -180` });
+      jambes.push({ cuisse, tibia });
     });
+    // Haut du corps (buste, tete, bras) : descend d'un bloc quand le personnage s'assoit.
+    const haut = g(corps);
 
     // Buste de profil.
     if (p.tenue === "jupe") {
-      P.trace(corps, [[-12, -634], [-40, -616], [-50, -566], [-44, -470]]);
-      P.trace(corps, [[8, -632], [36, -604], [42, -560], [34, -470]]);
-      P.trace(corps, [[-44, -470], [-4, -464], [34, -470]], { w: 3.4 });
-      P.trace(corps, [[8, -630], [20, -586], [14, -540]], { w: 2.6, passes: 2 });              // revers
-      P.trace(corps, [[-44, -468], [-62, -400], [-74, -334]]);
-      P.trace(corps, [[34, -468], [52, -400], [66, -334]]);
-      P.trace(corps, [[-74, -334], [-4, -326], [66, -334]]);
+      P.trace(haut, [[-12, -634], [-40, -616], [-50, -566], [-44, -470]]);
+      P.trace(haut, [[8, -632], [36, -604], [42, -560], [34, -470]]);
+      P.trace(haut, [[-44, -470], [-4, -464], [34, -470]], { w: 3.4 });
+      P.trace(haut, [[8, -630], [20, -586], [14, -540]], { w: 2.6, passes: 2 });              // revers
+      P.trace(haut, [[-44, -468], [-62, -400], [-74, -334]]);
+      P.trace(haut, [[34, -468], [52, -400], [66, -334]]);
+      P.trace(haut, [[-74, -334], [-4, -326], [66, -334]]);
     } else {
-      P.trace(corps, [[-12, -634], [-44, -614], [-52, -560], [-50, -332]]);
-      P.trace(corps, [[8, -632], [40, -606], [50, -560], [48, -332]]);
-      P.trace(corps, [[-50, -336], [0, -330], [48, -336]], { w: 3.6 });
-      P.trace(corps, [[-6, -634], [10, -612], [20, -630]], { w: 2.6, passes: 2 });              // col
+      P.trace(haut, [[-12, -634], [-44, -614], [-52, -560], [-50, -332]]);
+      P.trace(haut, [[8, -632], [40, -606], [50, -560], [48, -332]]);
+      P.trace(haut, [[-50, -336], [0, -330], [48, -336]], { w: 3.6 });
+      P.trace(haut, [[-6, -634], [10, -612], [20, -630]], { w: 2.6, passes: 2 });              // col
       if (p.cravate) {
-        P.lavis(corps, [[12, -616], [20, -600], [30, -500], [36, -476], [24, -484], [16, -600]], p.couleur, 0.55);
-        P.trace(corps, [[12, -616], [20, -600], [30, -500], [36, -476], [24, -484], [16, -600], [12, -616]], { w: 2.6, passes: 2 });
+        P.lavis(haut, [[12, -616], [20, -600], [30, -500], [36, -476], [24, -484], [16, -600]], p.couleur, 0.55);
+        P.trace(haut, [[12, -616], [20, -600], [30, -500], [36, -476], [24, -484], [16, -600], [12, -616]], { w: 2.6, passes: 2 });
       }
     }
-    P.trace(corps, [[-2, -668], [-6, -632]], { w: 3.4 });                                       // cou
+    P.trace(haut, [[-2, -668], [-6, -632]], { w: 3.4 });                                       // cou
 
     // Tete.
-    const tete = g(corps);
+    const tete = g(haut);
     el("circle", { cx: 0, cy: -790, r: 124, fill: "#000000" }, tete);
     let queue = null;
     if (p.coiffure === "queue") {
@@ -143,21 +153,35 @@
     // Bras (arriere puis avant), main avec paume et doigts ; ancre au creux de la main.
     const bras = {}, ancres = {};
     for (const s of [-1, 1]) {
-      const haut = g(corps), avant = g(haut);
-      P.trace(haut, [[EPAULE[0] * s, EPAULE[1]], [COUDE[0] * s, COUDE[1]]], { w: 3.6 });
+      const bh = g(haut), avant = g(bh);   // bh : bras (epaule -> coude), avant : avant-bras
+      P.trace(bh, [[EPAULE[0] * s, EPAULE[1]], [COUDE[0] * s, COUDE[1]]], { w: 3.6 });
       P.trace(avant, [[COUDE[0] * s, COUDE[1]], [POIGNET[0] * s, POIGNET[1]]], { w: 3.6 });
       const [hx, hy] = [POIGNET[0] * s, POIGNET[1]];
       P.rond(avant, hx + 2 * s, hy + 12, 8, 11, { w: 2.6, passes: 2 });
       P.trace(avant, [[hx - 4 * s, hy + 20], [hx - 6 * s, hy + 34]], { w: 2.2, passes: 1, jit: 0.4 });
       P.trace(avant, [[hx + 1 * s, hy + 22], [hx + 1 * s, hy + 37]], { w: 2.2, passes: 1, jit: 0.4 });
       P.trace(avant, [[hx + 6 * s, hy + 20], [hx + 9 * s, hy + 33]], { w: 2.2, passes: 1, jit: 0.4 });
-      gsap.set(haut, { svgOrigin: `${EPAULE[0] * s} ${EPAULE[1]}` });
+      gsap.set(bh, { svgOrigin: `${EPAULE[0] * s} ${EPAULE[1]}` });
       gsap.set(avant, { svgOrigin: `${COUDE[0] * s} ${COUDE[1]}` });
-      bras[s] = { haut, avant, s };
+      bras[s] = { haut: bh, avant, s };
       ancres[s > 0 ? "main_avant" : "main_arriere"] = { groupe: avant, x: hx + 2 * s, y: hy + 16 };
     }
     ancres.tete = { groupe: tete, x: 0, y: -915 };
-    return { nom: p.nom, corps, tete, queue, jambes, yeux, oeil, joie, pupille, iris, sourcil, signes, bouches, bras, ancres,
+    // Ampoule (idee, touche de jaune) et petits ronds de reflexion (penser), au-dessus de la tete.
+    const ampoule = g(tete, { opacity: 0 }), rayons = g(ampoule);
+    P.lavisRond(ampoule, 40, -1046, 30, 34, "#ffe066", 0.6);
+    P.rond(ampoule, 40, -1048, 24, 28, { w: 3.2, passes: 2 });
+    P.trace(ampoule, [[30, -1018], [50, -1018]], { w: 2.6, passes: 1 });
+    P.trace(ampoule, [[32, -1008], [48, -1008]], { w: 2.6, passes: 1 });
+    P.trace(ampoule, [[34, -1040], [40, -1030], [46, -1040]], { w: 1.8, passes: 1, jit: 0.4 });
+    for (const deg of [-70, -35, 0, 35, 70]) {
+      const r = (deg * Math.PI) / 180;
+      P.trace(rayons, [[40 + Math.sin(r) * 42, -1048 - Math.cos(r) * 46], [40 + Math.sin(r) * 60, -1048 - Math.cos(r) * 64]], { w: 2.6, passes: 1, jit: 0.5 });
+    }
+    gsap.set(ampoule, { svgOrigin: "40 -1010" });
+    const pensee = g(tete, { opacity: 0 });
+    [[128, -926, 5], [146, -962, 8], [170, -1004, 12]].forEach(([x, y, r]) => P.rond(pensee, x, y, r, r, { w: 2.6, passes: 1 }));
+    return { nom: p.nom, corps, haut, tete, ampoule, rayons, pensee, assis: false, queue, jambes, yeux, oeil, joie, pupille, iris, sourcil, signes, bouches, bras, ancres,
       expr: "neutre", tient: null, poseBras: null, hautTete: 1000 };
   }
 
@@ -190,7 +214,7 @@
   function parler(tl, it, a) {
     const de = a.t + 0.05, fin = a.t + a.duree - 0.1, pas = 0.11;
     if (a.expr) expression(tl, it, a.expr, a.t - 0.1);
-    if (a.geste) geste(tl, it, a.geste, a.t + 0.1);
+    if (a.geste) geste(tl, it, a.geste, a.t + 0.1, a.duree);
     for (let t = de, k = 0; t < fin - pas; t += pas, k++) montrerBouche(tl, it, SYLLABES[k % SYLLABES.length] || it.expr, t);
     montrerBouche(tl, it, it.expr, fin);
     const n = Math.max(1, Math.floor((fin - de) / 0.7));
@@ -198,13 +222,58 @@
     return a.duree;
   }
   // Pose des bras au repos (ou "tenir" quand la main avant porte un objet).
+  // Assis : le haut du corps descend, cuisses vers l'avant, tibias a la verticale,
+  // avant-bras poses vers l'avant (sur les genoux ou une table).
+  const ASSIS = { haut: 48, cuisse: -62, tibia: 62, brasHaut: -10, brasAvant: -62 };
   const repos = (tl, it, b, at, d = 0.35) => {
     const tenir = b.s > 0 && it.tient;
-    tl.to(b.haut, { rotation: tenir ? OUT(1, 12) : 0, duration: d, ease: "power2.inOut" }, at)
-      .to(b.avant, { rotation: tenir ? OUT(1, 78) : 0, duration: d, ease: "power2.inOut" }, at);
+    const [h, av] = tenir ? [OUT(1, 12), OUT(1, 78)] : it.assis ? [ASSIS.brasHaut, ASSIS.brasAvant] : [0, 0];
+    tl.to(b.haut, { rotation: h, duration: d, ease: "power2.inOut" }, at)
+      .to(b.avant, { rotation: av, duration: d, ease: "power2.inOut" }, at);
   };
-  function geste(tl, it, nom, at) {
+  function geste(tl, it, nom, at, duree) {
     const bv = it.bras[1], bl = it.bras[-1];
+    const d = duree || 2.2;
+    // Postures tenues `d` secondes, puis retour au repos.
+    if (nom === "bras_croises") {
+      tl.to([bv.haut, bl.haut], { rotation: 12, duration: 0.35, ease: "power2.out" }, at)
+        .to(bv.avant, { rotation: -152, duration: 0.35, ease: "power2.out" }, at)
+        .to(bl.avant, { rotation: -140, duration: 0.35, ease: "power2.out" }, at)
+        .to(it.tete, { rotation: -4, duration: 0.3 }, at).to(it.tete, { rotation: 0, duration: 0.3 }, at + d - 0.35);
+      repos(tl, it, bv, at + d - 0.35); repos(tl, it, bl, at + d - 0.35);
+      return d;
+    }
+    if (nom === "tete_mains") {   // desespoir : penche en avant, le visage dans les mains
+      tl.to(it.haut, { rotation: 10, svgOrigin: "0 -330", duration: 0.4, ease: "power2.out" }, at)
+        .to(it.tete, { rotation: 22, duration: 0.4, ease: "power2.out" }, at)
+        .to(bv.haut, { rotation: -88, duration: 0.4, ease: "power2.out" }, at)
+        .to(bl.haut, { rotation: -80, duration: 0.4, ease: "power2.out" }, at)
+        .to([bv.avant, bl.avant], { rotation: -95, duration: 0.4, ease: "power2.out" }, at)
+        .to(it.haut, { rotation: 0, duration: 0.4 }, at + d - 0.4).to(it.tete, { rotation: 0, duration: 0.4 }, at + d - 0.4);
+      repos(tl, it, bv, at + d - 0.4, 0.4); repos(tl, it, bl, at + d - 0.4, 0.4);
+      return d;
+    }
+    if (nom === "idee") {   // doigt leve, ampoule qui s'allume au-dessus de la tete
+      tl.to(bv.haut, { rotation: -150, duration: 0.3, ease: "back.out(1.6)" }, at)
+        .to(bv.avant, { rotation: -12, duration: 0.3, ease: "power2.out" }, at)
+        .fromTo(it.ampoule, { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.4)", immediateRender: false }, at + 0.15)
+        .fromTo(it.rayons, { opacity: 0.3 }, { opacity: 1, duration: 0.12, yoyo: true, repeat: Math.max(1, Math.round((d - 0.6) / 0.12)), immediateRender: false }, at + 0.4)
+        .to(it.ampoule, { opacity: 0, duration: 0.25 }, at + d - 0.25);
+      repos(tl, it, bv, at + d - 0.35);
+      return d;
+    }
+    if (nom === "penser") {   // main au menton, regard en l'air, petits ronds de reflexion
+      tl.to(bv.haut, { rotation: -70, duration: 0.35, ease: "power2.out" }, at)
+        .to(bv.avant, { rotation: -112, duration: 0.35, ease: "power2.out" }, at)
+        .to(it.iris, { y: -5, duration: 0.25 }, at)
+        .to(it.sourcil, { opacity: 1, y: -8, rotation: -6, duration: 0.25 }, at)
+        .fromTo(it.pensee, { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, at + 0.3)
+        .to(it.pensee, { opacity: 0, duration: 0.2 }, at + d - 0.25)
+        .to(it.iris, { y: 0, duration: 0.25 }, at + d - 0.3)
+        .to(it.sourcil, { opacity: it.expr === "neutre" ? 0 : 1, y: 0, rotation: 0, duration: 0.25 }, at + d - 0.3);
+      repos(tl, it, bv, at + d - 0.35);
+      return d;
+    }
     if (nom === "salut") {
       tl.to(bv.haut, { rotation: OUT(1, 120), duration: 0.3, ease: "power2.out" }, at)
         .to(bv.avant, { rotation: OUT(1, -80), duration: 0.3, ease: "power2.out" }, at)
@@ -221,7 +290,7 @@
           .to(b.avant, { rotation: OUT(b.s, 78), duration: 0.25, ease: "power2.out" }, at);
         repos(tl, it, b, at + 1.0);
       }
-      tl.to(it.corps, { y: -10, duration: 0.25 }, at).to(it.corps, { y: 0, duration: 0.35 }, at + 1.0)
+      tl.to(it.haut, { y: (it.assis ? ASSIS.haut : 0) - 10, duration: 0.25 }, at).to(it.haut, { y: it.assis ? ASSIS.haut : 0, duration: 0.35 }, at + 1.0)
         .to(it.tete, { rotation: -6, duration: 0.25 }, at).to(it.tete, { rotation: 0, duration: 0.35 }, at + 1.0);
     } else if (nom === "explique") {
       tl.to(bv.haut, { rotation: OUT(1, 28), duration: 0.28, ease: "power2.out" }, at)
@@ -236,10 +305,12 @@
     const dist = Math.abs(a.vers - ctx.x(it)), duree = a.duree || Math.max(0.6, dist / 260);
     ctx.deplacer(it, a.vers, a.t, duree);
     const pas = 0.26, n = Math.max(1, Math.round(duree / pas));
-    const [j0, j1] = it.jambes;
+    const [j0, j1] = it.jambes.map((j) => j.cuisse), [k0, k1] = it.jambes.map((j) => j.tibia);
     tl.fromTo(j0, { rotation: -16 }, { rotation: 16, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t)
       .fromTo(j1, { rotation: 16 }, { rotation: -16, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t)
-      .to([j0, j1], { rotation: 0, duration: 0.15 }, a.t + n * pas)
+      .fromTo(k0, { rotation: 14 }, { rotation: 0, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t)
+      .fromTo(k1, { rotation: 0 }, { rotation: 14, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t)
+      .to([j0, j1, k0, k1], { rotation: 0, duration: 0.15 }, a.t + n * pas)
       .fromTo(it.corps, { y: 0 }, { y: -8, duration: pas / 2, yoyo: true, repeat: n * 2 - 1, ease: "sine.inOut", immediateRender: false }, a.t);
     if (!it.tient) tl.fromTo(it.bras[1].haut, { rotation: 14 }, { rotation: -14, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t);
     tl.fromTo(it.bras[-1].haut, { rotation: -14 }, { rotation: 14, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t)
@@ -281,6 +352,33 @@
     return n * 0.45;
   }
   function regarder(tl, it, a, ctx) { ctx.orienter(it, a.vers, a.t); return 0.2; }
+  // S'asseoir sur une chaise (`sur`) : y marche si besoin, se tourne comme la chaise, s'assoit.
+  function poseAssise(tl, it, at, assis, d = 0.45) {
+    it.assis = assis;
+    tl.to(it.haut, { y: assis ? ASSIS.haut : 0, duration: d, ease: "power2.inOut" }, at)
+      .to(it.jambes.map((j) => j.cuisse), { rotation: assis ? ASSIS.cuisse : 0, duration: d, ease: "power2.inOut" }, at)
+      .to(it.jambes.map((j) => j.tibia), { rotation: assis ? ASSIS.tibia : 0, duration: d, ease: "power2.inOut" }, at);
+    repos(tl, it, it.bras[1], at, d); repos(tl, it, it.bras[-1], at, d);
+  }
+  function sAsseoir(tl, it, a, ctx) {
+    const sup = ctx.objet(a.sur);
+    if (!sup) throw new Error(`s_asseoir : siege inconnu « ${a.sur} »`);
+    let t = a.t;
+    if (Math.abs(sup.x - ctx.x(it)) > 8) t += marcher(tl, it, { ...a, vers: sup.x }, ctx);
+    ctx.orienter(it, sup.regard > 0 ? "droite" : "gauche", t);
+    poseAssise(tl, it, t + 0.05, true);
+    return t - a.t + 0.55;
+  }
+  function seLever(tl, it, a) { poseAssise(tl, it, a.t, false); return 0.5; }
+  // Pose de depart (objet "assis": id du siege) : appliquee directement, sans animation.
+  function poseInitiale(it, def) {
+    if (!def.assis) return;
+    it.assis = true;
+    gsap.set(it.haut, { y: ASSIS.haut });
+    for (const j of it.jambes) { gsap.set(j.cuisse, { rotation: ASSIS.cuisse }); gsap.set(j.tibia, { rotation: ASSIS.tibia }); }
+    for (const b of [it.bras[1], it.bras[-1]]) { gsap.set(b.haut, { rotation: ASSIS.brasHaut }); gsap.set(b.avant, { rotation: ASSIS.brasAvant }); }
+  }
+  const posture = (nom) => (tl, it, a) => geste(tl, it, nom, a.t, a.duree);
   function entrer(tl, it, a, ctx) {
     const depuis = a.depuis === "droite" ? 1220 : -140, vers = a.vers ?? ctx.xInitial(it);
     ctx.placer(it, depuis, ctx.debutScene);
@@ -300,8 +398,10 @@
   for (const type of Object.keys(MODELES))
     Dessin.enregistrer(type, {
       categorie: "personnage", hauteur: 1030, nom: MODELES[type].nom, ancres: ["main_avant", "main_arriere", "tete"],
-      dessiner, vie, expressions: Object.keys(EXPR), gestes: ["salut", "montre", "hausse", "explique"],
-      actions: { parler, expression: (tl, it, a) => expression(tl, it, a.expr, a.t), geste: (tl, it, a) => geste(tl, it, a.geste, a.t),
-        marcher, entrer, sortir, regarder, tenir, poser, boire, telephoner, sauter },
+      dessiner, vie, poseInitiale, expressions: Object.keys(EXPR),
+      gestes: ["salut", "montre", "hausse", "explique", "bras_croises", "tete_mains", "idee", "penser"],
+      actions: { parler, expression: (tl, it, a) => expression(tl, it, a.expr, a.t), geste: (tl, it, a) => geste(tl, it, a.geste, a.t, a.duree),
+        marcher, entrer, sortir, regarder, tenir, poser, boire, telephoner, sauter, s_asseoir: sAsseoir, se_lever: seLever,
+        bras_croises: posture("bras_croises"), tete_mains: posture("tete_mains"), idee: posture("idee"), penser: posture("penser") },
     });
 })();

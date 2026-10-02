@@ -16,7 +16,8 @@
 //                  {"qui": "lea", "action": "boire", "avec": true} ] }
 // Objet : x (px, 0-1080) au sol, ou "sur": "id.ancre" (pose sur / tenu par un
 // autre objet), ou "y" (px) pour un objet accroche au mur ; "regard"
-// gauche/droite ; "echelle" (multiplie celle de la scene).
+// gauche/droite ; "echelle" (multiplie celle de la scene) ; "assis": id d'une
+// chaise (personnage assis dessus des le debut, declarer la chaise avant).
 // Actions : jouees dans l'ordre ; "t" (s, depuis le debut de la scene) sinon a
 // la suite de la precedente, ou en meme temps qu'elle avec "avec": true.
 // "pause" (sans "qui") avance le temps de "duree". "parler" affiche une bulle.
@@ -106,9 +107,21 @@
       break;
     }
 
+    // Pose de depart : assis sur un siege ("assis": id), a sa place et tourne comme lui.
+    for (const o of sc.objets || []) {
+      if (!o.assis) continue;
+      const sup = objets[o.assis];
+      if (!sup) throw new Error(`« assis » : siege inconnu « ${o.assis} »`);
+      const it = objets[o.id].copies[""].it, s0 = sup.copies[""].it;
+      it._x = it._xInit = s0._x; it._regard = s0._regard;
+      gsap.set(it._root, { x: it._x }); gsap.set(it._orient, { scaleX: it._regard });
+      if (objets[o.id].type.poseInitiale) objets[o.id].type.poseInitiale(it, o);
+    }
+
     // Contexte donne aux actions (deplacements, regard, bascule d'objets).
     const ctx = {
       debutScene: S,
+      objet: (id) => { const o = objets[id]; return o && { x: o.copies[""].it._x, regard: o.copies[""].it._regard }; },
       x: (it) => it._x, xInitial: (it) => it._xInit,
       placer: (it, x) => { it._x = x; },
       orienter(it, vers, t) {

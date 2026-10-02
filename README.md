@@ -221,12 +221,20 @@ titres manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe), comme l
 **Personnages** (de profil, regard retourné par le moteur) : grosse tête ronde, œil blanc plein à pupille
 noire et reflet, petit nez, petite bouche qui enchaîne trois ouvertures quand il parle, sourcil seulement
 quand l'expression le demande ; bras articulés (épaule, coude) et mains avec doigts, jambes articulées à la
-hanche (marche). 6 expressions (`neutre`, `content`, `choc`, `doute`, `triste`, `agace`) avec **effets
-manga** (yeux « ^ » et joues hachurées, effroi + « ! », goutte de sueur, veine en croix), 4 gestes (`salut`,
-`montre`, `hausse`, `explique`) et des actions : `parler` (bulle), `expression`, `geste`, `marcher`
-(`vers`), `entrer` / `sortir` (par la gauche ou la droite), `regarder` (`vers` : côté ou objet), `tenir`
-(`objet` : le prend dans la main avant), `poser` (`objet`, `sur`), `boire` (tasse tenue), `telephoner`
-(téléphone tenu), `sauter`. Ancres : `main_avant`, `main_arriere`, `tete`.
+hanche et au genou (marche, position assise). 6 expressions (`neutre`, `content`, `choc`, `doute`,
+`triste`, `agace`) avec **effets manga** (yeux « ^ » et joues hachurées, effroi + « ! », goutte de sueur,
+veine en croix) et des actions : `parler` (bulle), `expression`, `geste`, `marcher` (`vers`), `entrer` /
+`sortir` (par la gauche ou la droite), `regarder` (`vers` : côté ou objet), `tenir` (`objet` : le prend
+dans la main avant), `poser` (`objet`, `sur`), `boire` (tasse tenue), `telephoner` (téléphone tenu),
+`sauter`, `s_asseoir` (`sur` : une chaise ; y marche si besoin et se tourne comme elle), `se_lever`.
+Ancres : `main_avant`, `main_arriere`, `tete`.
+
+**Gestes et postures** (action `geste`, champ `geste` de `parler` — tenu le temps de la réplique — ou
+action du même nom avec `duree`, 2,2 s par défaut) : `salut`, `montre`, `hausse`, `explique`,
+`bras_croises`, `tete_mains` (désespoir : penché, le visage dans les mains), `idee` (doigt levé, ampoule
+jaune qui s'allume au-dessus de la tête), `penser` (main au menton, regard en l'air, petits ronds de
+réflexion). **Assis** : un personnage peut commencer assis (`"assis": "id_chaise"`, la chaise déclarée
+avant lui : il prend sa place et son orientation), avant-bras posés vers l'avant (genoux ou table).
 
 **Format d'une scène** (JSON ; `{"scenes": [...], "surtitre": "..."}` pour en enchaîner plusieurs) :
 
@@ -245,7 +253,7 @@ manga** (yeux « ^ » et joues hachurées, effroi + « ! », goutte de sueur, ve
 
 Objet : `x` (px, 0-1080) au sol, ou `sur` (`id.ancre` : posé sur / tenu par un objet déclaré avant), ou
 `y` (px) pour un objet mural ; `regard` (`gauche`/`droite`) ; `echelle` (multiplie celle de la scène,
-1,1 par défaut). Actions jouées dans l'ordre : à la suite de la précédente, en même temps avec
+1,1 par défaut) ; `assis` (personnage : id d'une chaise). Actions jouées dans l'ordre : à la suite de la précédente, en même temps avec
 `"avec": true`, ou à `t` secondes du début de la scène ; `{"action": "pause", "duree": 1}` avance le temps.
 Une réplique dure 0,9 s + 0,28 s par mot (entre 1,4 et 4 s) ; la première action démarre après le dessin
 du décor (~1,2 s). `catalog.validate_scene_dessin(scene)` vérifie une scène contre `catalog/dessins.json`
@@ -259,8 +267,8 @@ python scripts/render_js_anim.py --spec scene --scene ma_scene.json --duration 1
 ```
 
 Pas encore branché au générateur de scénarios (ni bouche synchronisée sur la voix off, ni effets
-sonores) : à utiliser en rendu manuel. Prochaines étapes : postures (assis, bras croisés, tête dans les
-mains, idée), puis scènes composées par le générateur à partir du catalogue.
+sonores) : à utiliser en rendu manuel. Prochaine étape : scènes composées par le générateur à partir du
+catalogue.
 
 ### Gabarit `dialogue` : deux personnages qui se parlent
 
