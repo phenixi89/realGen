@@ -174,11 +174,13 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
     derniere capture de la scene est annotee au feutre (bouton "focus" entoure,
     sinon la carte nette), apres le clic du curseur s'il est sur le meme plan.
     Chaque capture avec "focus" est zoomee vers ce point.
-    -> {"clics": instants des clics du curseur, "feutre": debuts des annotations}
+    -> {"clics": instants des clics du curseur, "feutre": debuts des annotations,
+        "sons": bruitages des plans animes (dessin anime : pas, miaou...)}
        (effets sonores, cf. run_pipeline.py).
     """
     clicks: list[float] = []
     strokes: list[float] = []
+    sounds: list[dict] = []
     theme_params = catalog.anim_params(theme)
     captures = json.loads((screens_dir / "captures.json").read_text(encoding="utf-8"))
     media_by_feature: dict[str, list[Path]] = {}
@@ -224,7 +226,8 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
             if isinstance(media, tuple):
                 name, params = media
                 print(f"Scene {scene_index} : animation '{name}' ({length:.1f}s)")
-                render_clip(name, {**theme_params, **params}, clip, length)
+                start = sum(durations[:i])
+                sounds += [{**c, "t": round(start + c["t"], 3)} for c in render_clip(name, {**theme_params, **params}, clip, length)]
             else:
                 card = card_by_file.get(media.name)
                 focus = focus_by_file.get(media.name)
@@ -269,7 +272,7 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
             previous_scene = scene_index
             clips.append(clip)
         concat_with_xfade(clips, durations, out_path, (theme or {}).get("transitions"))
-    return {"clics": clicks, "feutre": strokes}
+    return {"clics": clicks, "feutre": strokes, "sons": sounds}
 
 
 def annotation_delay(clip_length: float, after_cursor: bool) -> float:

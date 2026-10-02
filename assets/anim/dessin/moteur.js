@@ -3,7 +3,9 @@
 // s'enchainent (fondu + nouveau dessin qui se trace). Utilise par scene.html et
 // dialogue.html (style trait).
 //
-//   const { tl, duree } = Scene.monter({ scenes: [...] }, { svg, bulles, titres });
+//   const { tl, duree, sons } = Scene.monter({ scenes: [...] }, { svg, bulles, titres });
+// sons : bruitages [{t, name, duration?, gain?}] signales par les actions (Dessin.son),
+// plus le feutre du dessin de chaque scene ; scene.html les publie dans window.SONS.
 //
 // Format d'une scene (catalog/dessins.json documente les types disponibles) :
 //   { "fond": "cafe", "echelle": 1.1, "titre": "Lundi matin",
@@ -30,12 +32,13 @@
   function monter(def, { svg, bulles, titres }) {
     const scenes = def.scenes || [def];
     const tl = gsap.timeline({ paused: true });
+    Dessin.sons.liste = []; Dessin.sons.muet = false;
     let S = 0;
     scenes.forEach((sc, n) => {
       const duree = jouerScene(tl, sc, n, S, { svg, bulles, titres, derniere: n === scenes.length - 1, surtitre: def.surtitre });
       S += duree;
     });
-    return { tl, duree: S };
+    return { tl, duree: S, sons: Dessin.sons.liste.slice().sort((x, y) => x.t - y.t) };
   }
 
   function jouerScene(tl, sc, n, S, dom) {
@@ -158,8 +161,13 @@
       const fn = o.type.actions && o.type.actions[a.action];
       if (!fn) throw new Error(`action « ${a.action} » inconnue pour ${o.def.type}`);
       if (a.action === "parler") a.duree = a.duree || dureeReplique(a.texte || "");
+      // Une seule copie (la premiere) signale ses bruitages : les autres jouent la meme action.
       let d = 0;
-      for (const c of Object.values(o.copies)) d = Math.max(d, fn(tl, c.it, a, ctx) || 0);
+      Object.values(o.copies).forEach((c, i) => {
+        Dessin.sons.muet = i > 0;
+        d = Math.max(d, fn(tl, c.it, a, ctx) || 0);
+      });
+      Dessin.sons.muet = false;
       if (a.action === "parler" && a.texte) repliques.push({ a, it: o.copies[""].it, x: o.copies[""].it._x, ech: ech * (o.def.echelle ?? 1) });
       const finRel = tRel + d;
       if (!a.avec) curseur = finRel + ECART; else curseur = Math.max(curseur, finRel + ECART);
@@ -175,6 +183,7 @@
     if (fondType.vie) fondType.vie(tl, fond, S, S + duree);
     racines.forEach((r, i) => bouillonner(tl, r, S, S + duree, (i % 3) * 0.05));
     apparition(tl, calque, S + (n ? 0.05 : 0), DESSIN);
+    Dessin.son("feutre", S + (n ? 0.05 : 0), { duree: DESSIN * 0.8 });
     if (!dom.derniere) tl.to(calque, { opacity: 0, duration: FONDU }, S + duree - 0.05);
 
     // Titre de la scene (manuscrit, en haut).

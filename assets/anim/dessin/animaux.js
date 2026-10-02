@@ -64,6 +64,7 @@
       traverser: marcherChat,
       miauler(tl, it, a) {
         // Le texte ne doit pas etre retourne avec le chat quand il regarde a gauche.
+        Dessin.son("miaou", a.t);
         tl.set(it.bulle, { scaleX: it._regard || 1, svgOrigin: "150 -240" }, a.t)
           .fromTo(it.bulle, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.2, immediateRender: false }, a.t)
           .to(it.bulle, { opacity: 0, duration: 0.2 }, a.t + 1.2)
@@ -72,6 +73,7 @@
       },
       dormir(tl, it, a) {
         const d = a.duree || 2;
+        Dessin.son("ronron", a.t, { duree: d });
         tl.set(it.zz, { scaleX: it._regard || 1, svgOrigin: "155 -260" }, a.t)
           .set(it.oeil, { opacity: 0 }, a.t).set(it.ferme, { opacity: 1 }, a.t)
           .fromTo(it.zz, { opacity: 0, y: 10 }, { opacity: 1, y: -10, duration: d, ease: "none", immediateRender: false }, a.t)

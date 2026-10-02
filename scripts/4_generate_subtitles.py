@@ -161,16 +161,34 @@ def build_timeline(aligned: list[dict], scenes: list[dict], audio_duration: floa
     """
     ranges = scene_ranges([len(s["texte"].split()) for s in scenes])
     starts = []
+    end_total = max(audio_duration, aligned[-1]["end"] if aligned else 0.0)
     for k, (a, _) in enumerate(ranges):
         start = 0.0 if k == 0 else max(starts[-1] + 0.3, aligned[a]["start"] - SCENE_LEAD_S)
         starts.append(start)
-    end_total = max(audio_duration, aligned[-1]["end"] if aligned else 0.0)
     items = []
     for k, scene in enumerate(scenes):
         end = starts[k + 1] if k + 1 < len(scenes) else end_total
-        items.append({"feature": scene.get("feature"), "start": round(starts[k], 3),
-                      "end": round(end, 3), "texte": scene["texte"]})
+        item = {"feature": scene.get("feature"), "start": round(starts[k], 3),
+                "end": round(end, 3), "texte": scene["texte"]}
+        if scene.get("repliques"):
+            item["repliques"] = replique_times(aligned, ranges[k][0], scene["repliques"])
+        items.append(item)
     return {"duration": round(end_total, 3), "scenes": items}
+
+
+def replique_times(aligned: list[dict], first: int, repliques: list[dict]) -> list[dict]:
+    """
+    Dessin anime : quand chaque replique est dite (premier mot -> dernier mot) ; le texte
+    de la scene est la suite exacte de ses repliques (1_generate_script.py).
+    """
+    out, pos = [], first
+    for r in repliques:
+        n = len(r["texte"].split())
+        words = aligned[pos:pos + n]
+        if words:
+            out.append({"qui": r["qui"], "start": round(words[0]["start"], 3), "end": round(words[-1]["end"], 3)})
+        pos += n
+    return out
 
 
 def main():
@@ -198,7 +216,8 @@ def main():
 
     scripts = json.loads(Path(args.scripts).read_text(encoding="utf-8"))
     script = scripts[args.index - 1]
-    scenes = [{"feature": s.get("feature"), "texte": s["texte"]} for s in script.get("scenes", [])
+    scenes = [{"feature": s.get("feature"), "texte": s["texte"],
+               **({"repliques": s["repliques"]} if s.get("repliques") else {})} for s in script.get("scenes", [])
               if s.get("texte", "").strip()] or [{"feature": None, "texte": t} for t in scene_texts(script)]
     reference_words = script_to_text(script).split()
 

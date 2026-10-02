@@ -54,12 +54,14 @@ def file_uri(path: str | Path) -> str:
 
 
 def render_frames(name: str, params: dict, out_dir: Path, duration: float | None = None,
-                  fps: int = FPS, transparent: bool = True) -> int:
+                  fps: int = FPS, transparent: bool = True, sons: list | None = None) -> int:
     """
     -> nombre d'images ecrites dans out_dir (00000.png, 00001.png...).
     duration=None : duree naturelle du gabarit (window.DURATION) ; au-dela,
     seek() fige/prolonge l'animation, ce qui permet de caler un gabarit sur
     une scene plus longue que lui.
+    sons : liste completee par les bruitages publies par la page (window.SONS,
+    dessin anime : [{"t", "name", "duration"?, "gain"?}], t depuis le debut du clip).
     """
     from playwright.sync_api import sync_playwright
 
@@ -74,6 +76,8 @@ def render_frames(name: str, params: dict, out_dir: Path, duration: float | None
             page.goto(url)
             page.wait_for_function("window.READY === true", timeout=READY_TIMEOUT_MS)
             total = duration if duration is not None else page.evaluate("window.DURATION")
+            if sons is not None:
+                sons.extend(c for c in page.evaluate("window.SONS || []") if c["t"] < total)
             count = max(1, round(total * fps))
             for i in range(count):
                 # "; 0" : ne renvoie rien a Python (sinon serialisation de l'objet GSAP)
@@ -111,15 +115,17 @@ def render_stills(jobs: list[tuple[str, dict, Path]], size: tuple[int, int] = SI
     return written
 
 
-def render_clip(name: str, params: dict, out_path: Path, duration: float, fps: int = FPS):
-    """Clip MP4 opaque (mode scene), meme encodage que les clips de 3b."""
+def render_clip(name: str, params: dict, out_path: Path, duration: float, fps: int = FPS) -> list[dict]:
+    """Clip MP4 opaque (mode scene), meme encodage que les clips de 3b. -> bruitages du clip (window.SONS)."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    sons: list[dict] = []
     with tempfile.TemporaryDirectory() as tmp:
-        render_frames(name, params, Path(tmp), duration=duration, fps=fps, transparent=False)
+        render_frames(name, params, Path(tmp), duration=duration, fps=fps, transparent=False, sons=sons)
         subprocess.run([
             "ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps), "-i", str(Path(tmp) / "%05d.png"),
             "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", str(out_path),
         ], check=True)
+    return sons
 
 
 def main():
@@ -143,7 +149,9 @@ def main():
     elif out.suffix == ".mp4":
         if args.duration is None:
             parser.error("--duration est obligatoire pour un clip .mp4")
-        render_clip(name, params, out, args.duration)
+        sons = render_clip(name, params, out, args.duration)
+        if sons:  # bruitages (dessin anime) : a cote du clip, pour l'ecoute / le mixage
+            out.with_suffix(".sons.json").write_text(json.dumps(sons, ensure_ascii=False), encoding="utf-8")
     else:
         if out.exists():
             shutil.rmtree(out)

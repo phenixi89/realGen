@@ -27,7 +27,9 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Dessin animé (`assets/anim/scene.html`) : un type (personnage, animal, objet, décor, fond) = un
   `Dessin.enregistrer` dans `assets/anim/dessin/*.js` **et** une entrée dans `catalog/dessins.json`
   (`catalog.py` vérifie la correspondance). Penser par objet, pas par scène ; touches de couleur légères
-  (lavis) plutôt qu'aplats.
+  (lavis) plutôt qu'aplats. Une action qui fait du bruit le signale avec `Dessin.son(nom, t)` (nom déclaré dans
+  `catalog/audio.json` "bruitages" et produit par `scripts/audio_gen.py`).
+- Sons enregistrés (`assets/sfx/`) : licence CC0 uniquement, source notée dans `assets/sfx/LICENCES.md`.
 - Polices : uniquement sous licence libre (OFL), licence copiée dans `assets/fonts/`.
 - Après un run du workflow `generate-reels.yml`, l'analyse se fait sur l'artefact `output`
   (images extraites des reels, loudness mesurée avec `ffmpeg -af ebur128`, cible -14 LUFS).

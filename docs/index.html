@@ -111,7 +111,7 @@ details>summary{cursor:pointer;padding:6px 0}
     <div class="g-only"><label>Registre</label><select id="f_registre"><option value="">Automatique (mix sérieux / humour)</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
     <div class="g-only"><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
     <div><label>Capture</label><select id="f_capture_mode">
-      <option value="screenshots" selected>Captures desktop + zoom (recommandé : cartes et animations complètes)</option><option value="video">Vidéo mobile (sans cartes animées)</option><option value="video_desktop">Vidéo desktop recadrée (sans cartes animées)</option><option value="aucune">Sans capture (conseils en cartes animées)</option></select></div>
+      <option value="screenshots" selected>Captures desktop + zoom (recommandé : cartes et animations complètes)</option><option value="video">Vidéo mobile (sans cartes animées)</option><option value="video_desktop">Vidéo desktop recadrée (sans cartes animées)</option><option value="aucune">Sans capture (conseils en cartes animées, dessin animé)</option></select></div>
     <div><label>Animations <small>scene/highlight : mode captures</small></label><select id="f_anims">
       <option value="none">Aucune</option><option value="all">Toutes</option><option>overlay</option><option>scene</option><option>highlight</option><option>cursor</option>
       <option>overlay,scene</option><option>overlay,highlight</option><option>scene,highlight</option><option>overlay,cursor</option><option>scene,cursor</option></select></div>
@@ -215,9 +215,13 @@ const sansCap = () => $("f_capture_mode").value === "aucune";
 // Cartes animees seulement en capture "screenshots" ou "aucune" (sinon la capture est montree a la place).
 const cartesPerdues = fmt => fmt && fmt.cartes !== "aucune" && !["screenshots", "aucune"].includes($("f_capture_mode").value);
 const CARTES_WARN = "⚠ Ce format a des cartes animées : elles ne seront pas affichées en capture vidéo (captures de l'app à la place). Choisis « Captures desktop + zoom » ou « Sans capture ».";
+// Dessin anime : aucune capture de l'app ; le pipeline passe de lui-meme en capture « aucune ».
+const DESSIN_WARN = "ℹ Format dessin animé : la capture passe automatiquement à « Sans capture » (Léa et Karim jouent la scène, chacun avec sa voix).";
 function checkCapture(){
   const f = byId(CAT.formats, $("f_format").value);
-  $("capWarn").textContent = CARTES_WARN; $("capWarn").classList.toggle("hidden", $("f_compose").checked || !cartesPerdues(f));
+  const dessin = f && f.dessin && !sansCap();
+  $("capWarn").textContent = dessin ? DESSIN_WARN : CARTES_WARN;
+  $("capWarn").classList.toggle("hidden", $("f_compose").checked || !(dessin || (cartesPerdues(f) && !(f && f.dessin))));
 }
 const ambName = id => (byId(CAT.ambiances, id) || {}).nom || nice(id);
 const colors = th => Object.values(th.couleurs || {}).filter(c => typeof c === "string" && c.startsWith("#")).slice(0, 6);
@@ -245,7 +249,7 @@ const useBtn = (kind, id) => `<button onclick="useInPlan('${PLAN_FIELD[kind]}','
 const regTags = r => r.map(x => `<span class="tag${x === "humour" ? " hum" : ""}">${REG_LABEL[x] || x}</span>`).join("");
 const CARD = {
   formats: x => { const n = CAT.sujets.filter(s => compatible(x, s)).length;
-    return `<div class="item"><h4>${esc(x.nom)}</h4><div><span class="tag">${esc(x.categorie)}</span>${regTags(regs(x))}${x.serie ? `<span class="tag">série</span>` : ""}${sansCapOk(x) ? `<span class="tag ok">sans capture ✔</span>` : ""}</div>
+    return `<div class="item"><h4>${esc(x.nom)}</h4><div><span class="tag">${esc(x.categorie)}</span>${regTags(regs(x))}${x.serie ? `<span class="tag">série</span>` : ""}${sansCapOk(x) ? `<span class="tag ok">sans capture ✔</span>` : ""}${x.dessin ? `<span class="tag">dessin animé</span>` : ""}</div>
       <p>${esc(x.structure)}</p><p class="muted">Visuel : ${esc(CARTES[x.cartes] || x.cartes)} · ${n} sujets compatibles</p><span class="id">${esc(x.id)}</span>
       <div class="foot">${useBtn("formats", x.id)}<button onclick="showSujetsFor('${esc(x.id)}')">Voir ses sujets</button></div></div>`; },
   sujets: x => { const n = CAT.formats.filter(f => compatible(f, x)).length;
@@ -280,7 +284,7 @@ function setCompose(on){
 function options(r, k){
   const fmt = byId(CAT.formats, r.format), suj = byId(CAT.sujets, r.sujet), th = byId(CAT.themes, r.theme);
   switch (k) {
-    case "format": return CAT.formats.filter(f => (!r.registre || regs(f).includes(r.registre)) && (!suj || compatible(f, suj)) && (!sansCap() || sansCapOk(f)));
+    case "format": return CAT.formats.filter(f => (!r.registre || regs(f).includes(r.registre)) && (!suj || compatible(f, suj)) && (!sansCap() || sansCapOk(f)) && (sansCap() || !f.dessin));
     case "sujet": return CAT.sujets.filter(x => !fmt || compatible(fmt, x));
     case "hook": return CAT.hooks.filter(x => !r.registre || regs(x).includes(r.registre));
     case "theme": return CAT.themes.filter(x => !r.registre || themeRegs(x).includes(r.registre));

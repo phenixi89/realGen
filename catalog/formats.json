@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes animees : texte, chiffre, comparaison, liste, schema dessine, conversation, scan ATS, impact -- assets/anim/ -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params). registres : registres d'ecriture compatibles, 'serieux' et/ou 'humour' (absent = ['serieux']) ; le registre de chaque reel est tire selon config.json 'registres'. ton_humour : ton de lecture quand le format est joue en registre humour (sinon config.json 'ton_humour'). Carte 'meme' (assets/anim/meme.html) : texte du haut (la situation), icone dessinee, chute en bas -- proposee a l'IA en registre humour.",
+  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes animees : texte, chiffre, comparaison, liste, schema dessine, conversation, scan ATS, impact -- assets/anim/ -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params). registres : registres d'ecriture compatibles, 'serieux' et/ou 'humour' (absent = ['serieux']) ; le registre de chaque reel est tire selon config.json 'registres'. ton_humour : ton de lecture quand le format est joue en registre humour (sinon config.json 'ton_humour'). Carte 'meme' (assets/anim/meme.html) : texte du haut (la situation), icone dessinee, chute en bas -- proposee a l'IA en registre humour. dessin : true -> mini dessin anime (assets/anim/scene.html) : les personnages de catalog/dessins.json jouent des scenes ecrites par l'IA (decor, objets, actions, repliques dites a plusieurs voix) ; --capture-mode aucune uniquement (impose automatiquement si le format est demande).",
   "formats": [
     {
       "id": "demo_produit",
@@ -568,6 +568,27 @@
       ],
       "structure": "Accroche = une question précise que beaucoup de candidats se posent sur le sujet (sans prétendre qu'on l'a reçue en commentaire). Réponse courte et tranchée d'abord (carte 'impact' possible), puis 2 ou 3 scènes de nuances concrètes (cartes texte, liste ou schéma), une scène sans carte montre OpusCV. Dernière scène : CTA qui invite à poser sa propre question en commentaire.",
       "ton": "direct et rassurant, comme une réponse de grand frère ou grande sœur, débit posé et naturel, avec de courtes pauses entre les phrases"
+    },
+    {
+      "id": "dessin_anime",
+      "nom": "Dessin animé : Léa et Karim",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "autorisees",
+      "dessin": true,
+      "registres": [
+        "humour",
+        "serieux"
+      ],
+      "sujets": [
+        "cv",
+        "candidature",
+        "entretien",
+        "lettre",
+        "linkedin"
+      ],
+      "structure": "Mini dessin animé : Léa et Karim (personnages dessinés au trait) vivent une situation de candidat en 2 à 4 scènes dessinées (salle d'attente, café, bureau...). Scène 1 : l'accroche est la 1re réplique, dite par un personnage. Le problème se joue en situation, puis le conseil concret arrive dans le dialogue (l'un conseille l'autre, avec une phrase précise à dire ou à écrire). Dernière scène : un personnage dit l'appel à l'action pendant que l'écran d'appel à l'action s'affiche.",
+      "ton": "dialogue vivant et naturel entre deux amis, répliques bien distinctes, petite pause avant chaque chute"
     }
   ]
 }

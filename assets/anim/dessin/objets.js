@@ -45,6 +45,7 @@
     actions: {
       vibrer(tl, it, a) {
         const d = a.duree || 1.2, n = Math.round(d / 0.06);
+        Dessin.son("vibreur", a.t, { duree: d });
         tl.set(it.ondes, { opacity: 1 }, a.t).set(it.ondes, { opacity: 0 }, a.t + d)
           .fromTo(it.corps, { rotation: -9 }, { rotation: 9, duration: 0.06, yoyo: true, repeat: n - 1, immediateRender: false }, a.t)
           .to(it.corps, { rotation: 0, duration: 0.05 }, a.t + d);
@@ -84,6 +85,7 @@
     actions: {
       taper(tl, it, a) {
         const d = a.duree || 1.6;
+        Dessin.son("clavier", a.t, { duree: d });
         it.lignes.forEach((l, i) => tl.set(l, { opacity: 1 }, a.t + (i + 1) * (d / (it.lignes.length + 1))));
         return d;
       },

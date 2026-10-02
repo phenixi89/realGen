@@ -109,6 +109,8 @@ ANNOTATION_MAX_WORDS = 6
 MAX_ANNOTATIONS = 2
 # Carrousel Instagram : diapositives ecrites par l'IA (hors diapositive finale, ajoutee au rendu).
 CARROUSEL_MIN, CARROUSEL_MAX = 4, 8
+# Dessin anime (formats "dessin": true) : une replique tient dans une bulle.
+REPLIQUE_MAX_WORDS = 16
 # Sans aucun de ces caracteres sur tout un script, le texte a ete ecrit sans
 # accents : les sous-titres (texte exact du script) seraient faux.
 ACCENT_RE = re.compile(r"[éèêëàâùûüîïôçœÉÈÊÀÂÙÛÎÔÇ]")
@@ -213,7 +215,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
             fmt = forced_fmt
         elif forced_sujet:  # sujet impose : format tire parmi ceux qui l'acceptent
             ok = [f for f in catalog.formats() if forced_sujet in catalog.compatible_sujets(f)
-                  and (not sans_captures or catalog.sans_captures_ok(f))]
+                  and (not sans_captures or catalog.sans_captures_ok(f)) and (sans_captures or not f.get("dessin"))]
             pool = [f for f in ok if registre in catalog.registres_of(f)] or ok
             fmt = catalog.weighted_pick(pool, [], rng) if pool else catalog.pick_format(working, rng, registre, sans_captures)
         else:
@@ -245,6 +247,64 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
 # ---------------------------------------------------------------------------
 # Scenario
 # ---------------------------------------------------------------------------
+
+def dessin_bounds(duration: int) -> tuple[int, int]:
+    """Dessin anime : 2 a ~4 decors (un decor dure plusieurs repliques) + la scene CTA."""
+    return 3, max(4, math.ceil(duration / 6))
+
+
+def dessin_rules() -> str:
+    """Consignes du format dessin anime : catalogue des decors, objets, personnages et actions."""
+    cat = catalog.dessins()
+    perso = cat["personnage"]
+    fonds = "\n".join(f'  - "{f["id"]}" : {f["description"]}' for f in cat["fonds"])
+    persos = "\n".join(f'  - "{o["id"]}" : {o["description"]}' for o in cat["objets"] if o["categorie"] == "personnage")
+    objets = "\n".join(
+        f'  - "{o["id"]}" ({o["categorie"]}{", mural" if o.get("mural") else ""}) : {o["description"]}'
+        + (f' ; ancres : {", ".join(o["ancres"])}' if o.get("ancres") else "")
+        + (f' ; actions : {", ".join(o["actions"])}' if o.get("actions") else "")
+        for o in cat["objets"] if o["categorie"] != "personnage")
+    actions = "\n".join(f'  - {k} : {v}' for k, v in perso["actions"].items())
+    return f"""DESSIN ANIMÉ : le reel est un mini dessin animé au trait blanc sur fond noir (touches de couleur légères).
+Personnages (id = type) :
+{persos}
+TOUT le texte est DIT PAR LES PERSONNAGES, il n'y a pas de voix off : chaque réplique s'affiche dans une bulle
+et est lue avec la voix du personnage. Les deux personnages peuvent parler ; le chat ne parle pas (il miaule).
+
+Chaque scène dessinée = un décor + des objets placés + des actions jouées dans l'ordre :
+{{"fond": "cafe", "titre": "Le lendemain",
+  "objets": [{{"id": "c1", "type": "chaise", "x": 300, "regard": "droite"}}, {{"id": "karim", "type": "karim", "assis": "c1"}},
+             {{"id": "table", "type": "table_ronde", "x": 540}}, {{"id": "tasse", "type": "tasse", "sur": "table.dessus_gauche"}},
+             {{"id": "lea", "type": "lea", "x": 820, "regard": "gauche"}}],
+  "actions": [{{"qui": "karim", "action": "parler", "texte": "Pourquoi personne ne me rappelle ?", "expr": "triste", "geste": "tete_mains"}},
+              {{"qui": "lea", "action": "parler", "texte": "Tu envoies le même CV partout ?", "expr": "doute"}},
+              {{"qui": "karim", "action": "tenir", "objet": "tasse"}}, {{"qui": "karim", "action": "boire"}}]}}
+Décors ("fond") :
+{fonds}
+Objets, animaux et décor ("type") :
+{objets}
+Personnages : expressions {", ".join(perso["expressions"])} ; gestes {", ".join(perso["gestes"])} ; actions :
+{actions}
+Mise en scène :
+  - "x" = position au sol, de 0 à 1080 : les personnages vers 250 et 820, face à face ("regard" droite / gauche),
+    meubles au centre (table vers x 540) ; objet mural : "x" et "y" (600 à 850) ; objet posé : "sur": "table.dessus"
+    (ou dessus_gauche / dessus_droite) ; objet déjà en main : "sur": "lea.main_avant" ; personnage assis dès le
+    début : "assis": "<id d'une chaise déclarée AVANT lui>" (la chaise porte "x" et "regard") ;
+  - "id" unique dans la scène (deux chaises : "c1", "c2") ; un support est déclaré avant ce qui est posé dessus ;
+  - 3 à 7 objets par scène : les personnages présents + au moins un objet ou meuble qui situe l'action ;
+  - "parler" porte UNE réplique ("texte" : 3 à {REPLIQUE_MAX_WORDS} mots, une phrase orale), avec "expr" et "geste"
+    accordés au texte (geste optionnel) ; 2 à 5 répliques par scène ;
+  - 1 à 3 actions sans parole par scène, utiles à l'histoire (entrer, s'asseoir, tenir puis boire, téléphone qui
+    vibre, chat qui miaule...), à la suite ou en même temps que la réplique précédente ("avec": true) ;
+  - "titre" (optionnel, 2 à 4 mots : lieu ou moment, ex : « Lundi, 9 h ») : jamais sur la scène 1 ;
+  - varie les décors d'une scène à l'autre quand l'histoire change de lieu ou de moment.
+Scène 1 : l'accroche est la 1re réplique (12 mots max), dite tout de suite, avant toute autre action.
+Dernière scène = l'appel à l'action, SANS décor : {{"cta": true, "qui": "lea", "texte": "..."}} -- un personnage
+le dit pendant que l'écran d'appel à l'action s'affiche.
+Dans ce format, l'accroche (1re réplique) peut être à la 1re personne (« Pourquoi personne ne me rappelle ? »)
+ou s'adresser à l'autre personnage ; "accroche_ecran" reste au « tu » et s'adresse au spectateur.
+"""
+
 
 def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback: str | None,
                  recent_hooks: list[str]) -> str:
@@ -348,7 +408,16 @@ Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
                  if plan["sujet"].get("famille") in ("ats_mots_cles", "redaction_cv", "produit_analyse")
                  else "ne dérive pas vers les logiciels ATS, les mots-clés ni le fait de chiffrer ses résultats "
                       "(thèmes déjà très traités sur le compte) ; traite CE sujet, avec ses exemples propres.")
-    if sans_captures:
+    dessin = bool(fmt.get("dessin"))
+    if dessin:
+        lo_s, hi_s = dessin_bounds(duration)
+        cards_rule = proof_rule = annotation_rule = ""
+    if dessin:
+        screen_rule = dessin_rules() + """Tu peux citer OpusCV à la fin comme l'outil qui aide, sans décrire d'écran que le spectateur ne voit pas.
+"""
+        scene1_rule = ""
+        variety_rule = "chaque scène fait avancer l'histoire (pas deux scènes qui disent la même chose) ;"
+    elif sans_captures:
         screen_rule = f"""Le reel est une suite de SCÈNES, SANS AUCUNE IMAGE DE L'APPLICATION : l'écran de chaque scène est
 une carte animée (ci-dessous) pendant que la voix off dit le texte de la scène. Pas de champ "feature".
 Scène 1 : pas de carte, mais un champ "illustration" = l'id d'une icône dessinée à la main sous l'accroche,
@@ -370,7 +439,7 @@ Fonctionnalités filmables (utilise UNIQUEMENT ces ids, champ "feature") :
 invite en 5 à 7 mots à enregistrer la vidéo pour ne pas la perdre, puis enchaîne aussitôt sur le
 contenu. Varie la formulation (ex : « Enregistre-la, tu vas en avoir besoin. », « Garde-la avant de
 postuler. ») ; ne demande PAS l'abonnement ici, il est réservé au CTA final.
-""" if wants_save_nudge(fmt, humour) else "")
+""" if wants_save_nudge(fmt, humour) and not dessin else "")
     prompt = f"""Tu es un expert en création de contenu viral (TikTok, Instagram Reels, YouTube Shorts), spécialisé dans
 l'emploi, le recrutement et la recherche de CV. Tes vidéos promeuvent OpusCV avec un ton direct, captivant et
 axé sur les frustrations réelles des candidats : l'idée est d'avoir une accroche très forte.
@@ -407,7 +476,7 @@ Contraintes :
 - entre {lo_s} et {hi_s} scènes ;
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
 - scène 1 = l'accroche (12 mots max){scene1_rule} ; dernière scène = CTA court, dans l'esprit : « {cta} » ;
-- 1 à 2 phrases par scène, ton oral et naturel, tutoiement, pas publicitaire{"" if not humour else ", drôle"} ;
+- {"des répliques courtes et vivantes, comme un vrai dialogue" if dessin else "1 à 2 phrases par scène"}, ton oral et naturel, tutoiement, pas publicitaire{"" if not humour else ", drôle"} ;
 - {variety_rule}
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est
   affiché tel quel en sous-titres ;
@@ -458,7 +527,9 @@ Recopie à l'identique les textes imposés ; écris uniquement les textes manqua
     if feedback:
         prompt += f"\nCORRECTION DEMANDÉE sur ta proposition précédente : {feedback}\n"
 
-    scene_json = ('{"illustration": "<id d\'icône>", "texte": "..."}, {"texte": "...", "carte": {...}}, ..., {"texte": "..."}]'
+    scene_json = ('{"fond": "...", "titre": "...", "objets": [...], "actions": [...]}, ..., {"cta": true, "qui": "...", "texte": "..."}]'
+                  if dessin else
+                  '{"illustration": "<id d\'icône>", "texte": "..."}, {"texte": "...", "carte": {...}}, ..., {"texte": "..."}]'
                   if sans_captures else
                   '{"feature": "<id>", "texte": "...", "carte": {...} (optionnel), "preuve": true (optionnel),\n'
                   ' "annotation": "..." (optionnel)}]')
@@ -580,12 +651,17 @@ def banned_phrases(text: str) -> list[str]:
 
 def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: str = "aucune",
              recent_hooks: list[str] | None = None, proof: bool = False,
-             tone: str = "", sans_captures: bool = False) -> tuple[list[dict], list[str]]:
+             tone: str = "", sans_captures: bool = False, dessin: bool = False) -> tuple[list[dict], list[str]]:
     """
     Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA).
     sans_captures : pas de feature (""), une carte sur chaque scene sauf la 1re (icone
     "illustration") et la derniere (CTA anime), ni preuve ni annotation.
+    dessin : scenes dessinees (dessin_scenes), le texte = les repliques des personnages.
     """
+    if dessin:
+        scenes, problems = dessin_scenes(data)
+        return scenes, problems + common_problems(scenes, data, duration, tone, recent_hooks, None,
+                                                  dessin_bounds(duration))
     problems = []
     scenes = []
     for raw in data.get("scenes") or []:
@@ -670,13 +746,23 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
             scenes[proofs[0]].pop("carte", None)
         else:
             problems.append('il manque la scène "preuve": true (conseil appliqué en direct dans OpusCV)')
+    problems += common_problems(scenes, data, duration, tone, recent_hooks, forced)
+    if card_mode == "majoritaires" and not sans_captures and scenes and sum("carte" in s for s in scenes) < len(scenes) / 2:
+        problems.append("ce format demande une carte pour la majorité des scènes")
+    return scenes, problems
+
+
+def common_problems(scenes: list[dict], data: dict, duration: int, tone: str, recent_hooks: list[str] | None,
+                    forced: list[dict] | None, bounds: tuple[int, int] | None = None) -> list[str]:
+    """Controles communs a tous les formats : phrases bannies, volume de texte, accents, accroche."""
+    problems = []
     banned = banned_phrases(" ".join(s["texte"] for s in scenes))
     if banned:
         problems.append("formulations trop génériques à remplacer par du concret : " + ", ".join(banned))
 
     words = sum(len(s["texte"].split()) for s in scenes)
     _, lo_w, hi_w = word_budget(duration, tone)
-    lo_s, hi_s = scene_bounds(duration)
+    lo_s, hi_s = bounds or scene_bounds(duration)
     if not scenes:
         problems.append("aucune scène exploitable")
     elif not forced and not lo_s <= len(scenes) <= hi_s:
@@ -687,8 +773,6 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
     all_text = " ".join([s["texte"] for s in scenes] + [str(data.get("accroche_ecran") or "")])
     if len(all_text.split()) >= MIN_WORDS_ACCENT_CHECK and not ACCENT_RE.search(all_text):
         problems.append("le texte est écrit sans accents : écris en français correct avec tous les accents")
-    if card_mode == "majoritaires" and not sans_captures and scenes and sum("carte" in s for s in scenes) < len(scenes) / 2:
-        problems.append("ce format demande une carte pour la majorité des scènes")
 
     accroche = str(data.get("accroche_ecran") or "").strip()
     if not forced:
@@ -701,6 +785,63 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
             if old:
                 problems.append(f'accroche trop proche d\'une accroche déjà publiée (« {old} ») : trouve un autre angle')
                 break
+    return problems
+
+
+def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
+    """
+    Format dessin anime -> scenes du scenario :
+      {"feature": "", "texte": repliques mises bout a bout, "repliques": [{"qui", "texte"}],
+       "dessin": scene jouable par assets/anim/dessin/moteur.js (catalog.clean_scene_dessin)}
+    et en dernier la scene CTA, sans "dessin" ({"cta": true, "qui", "texte"} cote IA).
+    Le minutage des repliques (bulles, bouches) est pose au montage, sur la voix.
+    """
+    personnages = catalog.personnages()
+    scenes, problems = [], []
+    for n, raw in enumerate(data.get("scenes") or [], 1):
+        if not isinstance(raw, dict):
+            continue
+        if raw.get("cta"):
+            texte = " ".join(str(raw.get("texte") or "").split())
+            qui = raw.get("qui") if raw.get("qui") in personnages else next(iter(personnages))
+            if texte:
+                scenes.append({"feature": "", "texte": texte, "repliques": [{"qui": qui, "texte": texte}]})
+            continue
+        sc = {k: raw[k] for k in ("fond", "titre", "objets", "actions") if raw.get(k) is not None}
+        if not scenes:
+            sc.pop("titre", None)  # scene 1 : l'accroche s'affiche deja en haut
+        clean, errors = catalog.clean_scene_dessin(sc, n)
+        problems += errors
+        actions, repliques = [], []
+        for a in clean["actions"]:
+            a = {k: v for k, v in a.items() if k not in ("t", "duree") or a.get("action") != "parler"}
+            if a.get("action") == "parler":
+                a["texte"] = " ".join(str(a.get("texte") or "").split())
+                if not a["texte"]:
+                    continue
+                if a["qui"] not in personnages:
+                    problems.append(f"scène {n} : « {a['qui']} » ne parle pas (seuls {', '.join(personnages)} parlent)")
+                    continue
+                if len(a["texte"].split()) > REPLIQUE_MAX_WORDS:
+                    problems.append(f"scène {n} : réplique trop longue pour une bulle ({len(a['texte'].split())} mots, "
+                                    f"{REPLIQUE_MAX_WORDS} max) : « {a['texte'][:40]}… »")
+                repliques.append({"qui": a["qui"], "texte": a["texte"]})
+            actions.append(a)
+        clean["actions"] = actions
+        if not repliques:
+            problems.append(f"scène {n} : aucune réplique (action parler avec un texte)")
+            continue
+        scenes.append({"feature": "", "texte": " ".join(r["texte"] for r in repliques),
+                       "repliques": repliques, "dessin": clean})
+    if scenes and "dessin" in scenes[-1]:
+        problems.append('la dernière scène doit être l\'appel à l\'action : {"cta": true, "qui": "...", "texte": "..."}')
+    if scenes and "dessin" not in scenes[0]:
+        problems.append("la scène 1 doit être une scène dessinée (l'accroche dite par un personnage)")
+    parleurs = list(dict.fromkeys(r["qui"] for s in scenes for r in s["repliques"]))
+    if len(parleurs) > 2:
+        problems.append(f"{len(parleurs)} personnages parlent ({', '.join(parleurs)}) : 2 au plus")
+    if scenes and len(scenes[0]["repliques"][0]["texte"].split()) > 12:
+        problems.append("l'accroche (1re réplique) dépasse 12 mots")
     return scenes, problems
 
 
@@ -718,8 +859,8 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
             continue
         sans_captures = bool(plan.get("sans_captures"))
         scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks,
-                                    wants_proof(fmt) and not sans_captures,
-                                    catalog.tone_for(fmt, plan.get("registre")), sans_captures)
+                                    wants_proof(fmt) and not sans_captures and not fmt.get("dessin"),
+                                    catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")))
         if scenes:
             best, best_data = scenes, data
         if not problems:
@@ -729,9 +870,15 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
 
     if not best:
         raise RuntimeError(f"Scénario inexploitable après {MAX_ATTEMPTS} tentatives (sujet : {plan['sujet']['texte']})")
-    if plan.get("sans_captures"):
+    if plan.get("sans_captures") and not fmt.get("dessin"):
         for scene in best[1:-1]:
             scene.setdefault("carte", fallback_card(scene["texte"]))
+    dessin_fields = {}
+    if fmt.get("dessin"):
+        # Une voix par personnage qui parle (2_generate_voice.py, un seul appel multi-locuteurs).
+        parleurs = dict.fromkeys(r["qui"] for s in best for r in s.get("repliques", []))
+        dessin_fields = {"dessin": True,
+                         "voix_personnages": {q: catalog.personnages()[q]["voix"] for q in list(parleurs)[:2]}}
     hashtags = best_data.get("hashtags") or []
     return finalize({
         "angle": plan["sujet"]["texte"], "titre": best_data.get("titre", ""), "duree_cible_s": duration,
@@ -745,6 +892,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         "theme_style": str(best_data.get("theme_style") or "").strip(),
         **instagram_fields(best_data),
         **plan_fields(plan),
+        **dessin_fields,
     })
 
 

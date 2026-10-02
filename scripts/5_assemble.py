@@ -206,7 +206,7 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
              hook_text: str = "", hook_duration: float = HOOK_DEFAULT_S,
              ambiance_id: str | None = None, sfx_cues: list[dict] | None = None,
              keywords: list[str] | None = None, progress_bar: bool = True, loop_ending: bool = True,
-             punch: bool = True):
+             punch: bool = True, captions: bool = True):
     """
     theme : catalog/themes.json (sous-titres, animations, watermark, musique).
     hook_text : accroche affichee en grand des la premiere image (assets/anim/hook.html).
@@ -215,6 +215,7 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     keywords : mots-cles colores dans les sous-titres.
     progress_bar / loop_ending : barre de progression, fin raccordee au debut.
     punch : zoom "claque" a l'ouverture et petits coups de zoom sur les mots-cles.
+    captions : sous-titres incrustes (False : dessin anime, le texte est dans les bulles).
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cues = json.loads(subs_path.read_text(encoding="utf-8"))
@@ -242,7 +243,7 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
         overlays.insert(0, (0.0, "hook?" + urlencode({"text": hook_text, "dur": f"{min(hook_duration, duration):.2f}"})))
     overlay_clips = make_overlay_clips(overlays, duration, Path(tmp.name), theme)
     layers = [video, make_watermark_clip(duration, theme), *overlay_clips,
-              *make_caption_clips(cues, theme, {norm_word(k) for k in keywords or []})]
+              *(make_caption_clips(cues, theme, {norm_word(k) for k in keywords or []}) if captions else [])]
     if progress_bar:
         layers.append(make_progress_bar(duration, video.size[0], theme))
     final = CompositeVideoClip(layers, size=video.size).with_duration(duration)
@@ -307,6 +308,8 @@ def main():
                          help="Fin en fondu au noir au lieu d'un raccord avec la premiere image")
     parser.add_argument("--no-punch", action="store_true",
                          help="Sans zoom 'claque' a l'ouverture ni coups de zoom sur les mots-cles")
+    parser.add_argument("--no-captions", action="store_true",
+                         help="Sans sous-titres incrustes (dessin anime : le texte est dans les bulles)")
     parser.add_argument("--force", action="store_true",
                          help="Reassemble meme si --out existe deja")
     args = parser.parse_args()
@@ -321,7 +324,8 @@ def main():
              hook_text=args.hook_text, hook_duration=args.hook_duration, ambiance_id=args.ambiance,
              sfx_cues=json.loads(Path(args.sfx).read_text(encoding="utf-8")) if args.sfx else [],
              keywords=[k for k in args.keywords.split("|") if k.strip()],
-             progress_bar=not args.no_progress_bar, loop_ending=not args.no_loop, punch=not args.no_punch)
+             progress_bar=not args.no_progress_bar, loop_ending=not args.no_loop, punch=not args.no_punch,
+             captions=not args.no_captions)
     print(f"OK -> {args.out}")
 
 

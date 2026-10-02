@@ -101,44 +101,76 @@ def _types_dessin_js() -> dict[str, set[str]]:
             | set(re.findall(r'(?:\breg|Dessin\.enregistrer)\("([a-z_]+)"', autres))}
 
 
-def validate_scene_dessin(scene: dict) -> list[str]:
-    """Verifie une scene (ou {"scenes": [...]}) du dessin anime contre catalog/dessins.json."""
+def personnages() -> dict[str, dict]:
+    """Personnages du dessin anime (catalog/dessins.json, categorie personnage) : id -> {nom, voix...}."""
+    return {o["id"]: o for o in dessins()["objets"] if o.get("categorie") == "personnage"}
+
+
+def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
+    """
+    Une scene du dessin anime -> (scene jouable, problemes). Les objets et actions
+    invalides (type, ancre, siege, action, cible inconnus) sont retires, une
+    expression ou un geste inconnu est oublie : le moteur ne plante jamais sur
+    ce qu'une IA a pu ecrire ; les problemes servent a lui faire corriger.
+    """
     cat = dessins()
     fonds_ = {f["id"] for f in cat["fonds"]}
     objets_ = {o["id"]: o for o in cat["objets"]}
     perso = cat["personnage"]
-    errors = []
-    for n, sc in enumerate(scene.get("scenes") or [scene], 1):
-        if sc.get("fond", "vide") not in fonds_:
-            errors.append(f"scene {n} : fond inconnu '{sc.get('fond')}' (choix : {sorted(fonds_)})")
-        ids = {}
-        for o in sc.get("objets") or []:
-            t = objets_.get(o.get("type"))
-            if not t:
-                errors.append(f"scene {n} : type d'objet inconnu '{o.get('type')}'")
+    errors, clean = [], {k: v for k, v in sc.items() if k not in ("objets", "actions")}
+    if sc.get("fond", "vide") not in fonds_:
+        errors.append(f"scene {n} : fond inconnu '{sc.get('fond')}' (choix : {sorted(fonds_)})")
+        clean["fond"] = "vide"
+    ids, objets = {}, []
+    for o in sc.get("objets") or []:
+        if not isinstance(o, dict):
+            continue
+        t = objets_.get(o.get("type"))
+        if not t or not o.get("id") or o["id"] in ids:
+            errors.append(f"scene {n} : objet '{o.get('id')}' : type inconnu '{o.get('type')}' ou id absent / en double")
+            continue
+        if o.get("assis") and (o["assis"] not in ids or ids[o["assis"]].get("id") != "chaise" or t["categorie"] != "personnage"):
+            errors.append(f"scene {n} : '{o['id']}' assis sur '{o['assis']}' : il faut un personnage et une chaise declaree avant lui")
+            o = {k: v for k, v in o.items() if k != "assis"}
+        if o.get("sur"):
+            cible, _, anc = str(o["sur"]).partition(".")
+            if cible not in ids or anc not in (ids[cible].get("ancres") or []):
+                errors.append(f"scene {n} : '{o['id']}' sur '{o['sur']}' : objet ou ancre inconnus (declarer le support avant)")
                 continue
-            ids[o.get("id")] = t
-            if o.get("assis") and (o["assis"] not in ids or ids[o["assis"]].get("id") != "chaise" or t["categorie"] != "personnage"):
-                errors.append(f"scene {n} : '{o['id']}' assis sur '{o['assis']}' : il faut un personnage et une chaise declaree avant lui")
-            if o.get("sur"):
-                cible, _, anc = o["sur"].partition(".")
-                if cible not in ids or anc not in (ids[cible].get("ancres") or []):
-                    errors.append(f"scene {n} : '{o['id']}' sur '{o['sur']}' : objet ou ancre inconnus (declarer le support avant)")
-        for a in sc.get("actions") or []:
-            if a.get("action") == "pause":
-                continue
-            t = ids.get(a.get("qui"))
-            if not t:
-                errors.append(f"scene {n} : action sur un objet absent '{a.get('qui')}'")
-                continue
-            possibles = list(perso["actions"]) if t["categorie"] == "personnage" else (t.get("actions") or [])
-            if a.get("action") not in possibles:
-                errors.append(f"scene {n} : action '{a.get('action')}' impossible pour {a.get('qui')} (choix : {possibles})")
-            if a.get("expr") and a["expr"] not in perso["expressions"]:
-                errors.append(f"scene {n} : expression inconnue '{a['expr']}'")
-            if a.get("geste") and a["geste"] not in perso["gestes"]:
-                errors.append(f"scene {n} : geste inconnu '{a['geste']}'")
-    return errors
+        ids[o["id"]] = t
+        objets.append(o)
+    actions = []
+    for a in sc.get("actions") or []:
+        if not isinstance(a, dict):
+            continue
+        if a.get("action") == "pause":
+            actions.append(a)
+            continue
+        t = ids.get(a.get("qui"))
+        if not t:
+            errors.append(f"scene {n} : action sur un objet absent '{a.get('qui')}'")
+            continue
+        possibles = list(perso["actions"]) if t["categorie"] == "personnage" else (t.get("actions") or [])
+        if a.get("action") not in possibles:
+            errors.append(f"scene {n} : action '{a.get('action')}' impossible pour {a.get('qui')} (choix : {possibles})")
+            continue
+        cibles = [a[k] for k in ("objet", "sur") if a.get(k) and a.get("action") in ("tenir", "poser", "s_asseoir")]
+        if any(str(c).split(".")[0] not in ids for c in cibles):
+            errors.append(f"scene {n} : {a['action']} de {a['qui']} vise un objet absent ({', '.join(map(str, cibles))})")
+            continue
+        a = dict(a)
+        for champ, liste in (("expr", perso["expressions"]), ("geste", perso["gestes"])):
+            if a.get(champ) and a[champ] not in liste:
+                errors.append(f"scene {n} : {champ} inconnu '{a[champ]}' (choix : {liste})")
+                del a[champ]
+        actions.append(a)
+    clean["objets"], clean["actions"] = objets, actions
+    return clean, errors
+
+
+def validate_scene_dessin(scene: dict) -> list[str]:
+    """Verifie une scene (ou {"scenes": [...]}) du dessin anime contre catalog/dessins.json."""
+    return [e for n, sc in enumerate(scene.get("scenes") or [scene], 1) for e in clean_scene_dessin(sc, n)[1]]
 
 
 def _by_id(items: list[dict], item_id: str, kind: str) -> dict:
@@ -289,6 +321,8 @@ def pick_format(history: list[dict], rng: random.Random, registre: str | None = 
     pool = [f for f in formats() if registre is None or registre in registres_of(f)] or formats()
     if sans_captures:
         pool = [f for f in pool if sans_captures_ok(f)] or [f for f in formats() if sans_captures_ok(f)]
+    else:  # dessin anime : plans dessines, aucune capture -> --capture-mode aucune seulement
+        pool = [f for f in pool if not f.get("dessin")] or [f for f in formats() if not f.get("dessin")]
     available = {f["categorie"] for f in pool}
     targets = {cat: share for cat, share in config()["mix"].items() if cat in available} or {pool[0]["categorie"]: 1.0}
     # Mix mesure au sein du registre : sinon les reels humour absorberaient le retard de toute une categorie.
@@ -351,9 +385,11 @@ def validate_plan(plan: list, sans_captures: bool = False) -> list[str]:
             errors.append(f"reel {i} : registre inconnu '{item['registre']}'")
         if item.get("sujet") and item.get("angle"):
             errors.append(f"reel {i} : sujet du catalogue OU angle libre, pas les deux")
-        if sans_captures and item.get("format") and item["format"] in {f["id"] for f in formats()} \
-                and not sans_captures_ok(get_format(item["format"])):
-            errors.append(f"reel {i} : format '{item['format']}' impossible sans captures")
+        if item.get("format") and item["format"] in {f["id"] for f in formats()}:
+            if sans_captures and not sans_captures_ok(get_format(item["format"])):
+                errors.append(f"reel {i} : format '{item['format']}' impossible sans captures")
+            if not sans_captures and get_format(item["format"]).get("dessin"):
+                errors.append(f"reel {i} : format dessin anime '{item['format']}' : capture 'aucune' uniquement")
     return errors
 
 
@@ -486,6 +522,10 @@ def validate_catalog() -> list[str]:
         for o in cat["objets"]:
             if o.get("categorie") not in ("personnage", "animal", "objet", "decor"):
                 errors.append(f"dessins.json : objet {o['id']} : categorie inconnue")
+            if o.get("categorie") == "personnage" and not (o.get("nom") and o.get("voix")):
+                errors.append(f"dessins.json : personnage {o['id']} : nom et voix (Gemini TTS) obligatoires")
+        if any(f.get("dessin") for f in formats()) and len(personnages()) < 2:
+            errors.append("dessins.json : le format dessin anime demande au moins 2 personnages")
     except (ValueError, OSError, KeyError) as e:
         errors.append(f"dessins.json ou assets/anim/dessin/ illisible : {e}")
     if not (FONTS_DIR / HAND_FONT).exists():

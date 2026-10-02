@@ -5,6 +5,8 @@
 //                              lavis = touche de couleur legere sous le trait
 //   Dessin.enregistrer(type, definition)  -> ajoute un type au registre
 //   Dessin.types[type]       -> { categorie, hauteur, ancres, dessiner, vie, actions }
+//   Dessin.son(nom, t, {duree, gain}) -> bruitage a l'instant t (s) : collecte par le
+//     moteur (Scene.monter -> sons), mixe par scripts/audio_gen.py (catalog/audio.json "bruitages")
 //
 // Trait : un trait principal assure + des passes d'esquisse fines ; chaque trait
 // existe en deux variantes (classes va / vb) que l'attribut data-v d'un objet de
@@ -121,5 +123,15 @@
 
   const types = {};
   const enregistrer = (type, def) => { types[type] = { categorie: "objet", hauteur: 300, ancres: {}, actions: {}, ...def }; };
-  window.Dessin = { NS, el, g, smooth, mulberry, hash, pinceau, bouillonner, apparition, BOIL, types, enregistrer };
+  // Bruitages : les actions les signalent ici ; le moteur vide la liste a chaque montage
+  // et coupe la collecte (muet) pendant qu'il joue les copies d'un meme objet.
+  const sons = { liste: [], muet: false };
+  const son = (nom, t, o = {}) => {
+    if (sons.muet) return;
+    const s = { t: Math.round(t * 1000) / 1000, name: nom };
+    if (o.duree) s.duration = Math.round(o.duree * 100) / 100;
+    if (o.gain) s.gain = o.gain;
+    sons.liste.push(s);
+  };
+  window.Dessin = { NS, el, g, smooth, mulberry, hash, pinceau, bouillonner, apparition, BOIL, types, enregistrer, son, sons };
 })();

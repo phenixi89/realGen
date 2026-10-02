@@ -61,7 +61,8 @@
   const hand = document.fonts ? document.fonts.load("64px HandT").catch(() => null) : null;
   if (def) Promise.all([FONTS_READY, hand]).then(() => {
     try {
-      const { tl, duree } = Scene.monter(def, { svg, bulles: document.getElementById("bulles"), titres: document.getElementById("titres") });
+      const { tl, duree, sons } = Scene.monter(def, { svg, bulles: document.getElementById("bulles"), titres: document.getElementById("titres") });
+      window.SONS = sons;   // bruitages, lus par render_js_anim.py (render_clip)
       expose(tl);
       window.DURATION = duree;
     } catch (e) { document.getElementById("erreur").textContent = "Scene : " + e.message; console.error(e); }

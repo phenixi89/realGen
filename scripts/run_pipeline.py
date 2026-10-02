@@ -47,6 +47,9 @@ HOOK_MAX_S = 4.0
 # --capture-mode aucune : icone du plan illustre quand la scene n'en donne pas.
 ILLUSTRATION_DEFAULT = "cv"
 CAPTURE_MODES = ["video", "screenshots", "video_desktop", "aucune"]
+# Dessin anime : 1re scene cadree plus large et plus bas, sous l'accroche affichee en grand
+# (assets/anim/hook.html, haut de l'ecran) -- sinon la 1re bulle passerait dessous.
+DESSIN_SOUS_ACCROCHE = {"echelle": 0.78, "sol": 1790}
 
 
 def parse_anims(value: str) -> list[str]:
@@ -87,6 +90,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     - sans_captures (--capture-mode aucune) : toute scene sans carte ni CTA
       devient un plan illustre (assets/anim/illustration.html, icone
       "illustration" de la scene, "cv" par defaut) -- aucune capture a montrer ;
+    - dessin anime (scenario "dessin") : chaque scene "dessin" devient un plan
+      assets/anim/scene.html, repliques calees sur la voix (dessin_spec) ;
     - theme du scenario transmis aux deux etapes.
     """
     scenes = [s for s in script.get("scenes", []) if s.get("texte", "").strip()]
@@ -98,6 +103,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         video_args += ["--theme", script["theme"]]
         assemble_args += ["--theme", script["theme"]]
 
+    show_hook = bool(hook and script.get("accroche_ecran") and t_scenes)
     card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
     # dur = duree de la scene : cadence de la frappe au clavier (carte.html),
     # reprise telle quelle par sound_design pour caler les clics.
@@ -114,6 +120,10 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         chosen = {last: "cta?" + urlencode(texts) if texts else DEFAULT_SCENE_ANIM}
     if "scene" in kinds or cards:
         scene_anims.update(chosen)
+    if cards:
+        for i, s in enumerate(scenes):
+            if s.get("dessin"):
+                scene_anims[i] = dessin_spec(s, t_scenes[i], under_hook=i == 0 and show_hook)
     if sans_captures:
         for i, t in enumerate(t_scenes):
             if i not in scene_anims:
@@ -166,7 +176,6 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         assemble_args += ["--ambiance", script["ambiance"]]
     if script.get("mots_cles"):
         assemble_args += ["--keywords", "|".join(script["mots_cles"])]
-    show_hook = bool(hook and script.get("accroche_ecran") and t_scenes)
     if show_hook:
         first_scene = t_scenes[0]["end"] - t_scenes[0]["start"]
         assemble_args += ["--hook-text", script["accroche_ecran"],
@@ -182,6 +191,24 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     # Plans animes effectivement montes (cartes/CTA : mode screenshots seulement).
     sfx_cues = sound_design.plan_cues(timeline, scene_anims if cards else {}, show_hook)
     return video_args, assemble_args, sfx_cues
+
+
+def dessin_spec(scene: dict, timing: dict, under_hook: bool = False) -> str:
+    """
+    Scene dessinee du scenario -> "scene?scene=<json>" (assets/anim/scene.html) : chaque
+    replique ("parler") est placee a l'instant ou la voix la dit et dure ce qu'elle dure
+    (timeline "repliques", 4_generate_subtitles.py) -- bulle et bouche suivent la voix.
+    """
+    sc = json.loads(json.dumps(scene["dessin"]))
+    start = timing["start"]
+    parler = [a for a in sc.get("actions", []) if a.get("action") == "parler"]
+    for a, r in zip(parler, timing.get("repliques") or []):
+        a["t"] = round(max(r["start"] - start, 0.0), 2)
+        a["duree"] = round(max(r["end"] - r["start"], 0.6), 2)
+    sc["duree"] = round(timing["end"] - start, 2)
+    if under_hook:
+        sc.update(DESSIN_SOUS_ACCROCHE)
+    return "scene?" + urlencode({"scene": json.dumps(sc, ensure_ascii=False, separators=(",", ":"))})
 
 
 def fallback_title(texte: str, max_words: int = 9) -> str:
@@ -273,6 +300,9 @@ def main():
                               "instagram (legende .instagram.txt + couverture .jpg), carrousel (carrousel 4:5) ; "
                               "ou all (defaut)")
     args = parser.parse_args()
+    if args.format and catalog.get_format(args.format).get("dessin") and args.capture_mode != "aucune":
+        print(f"Format dessin anime '{args.format}' : --capture-mode aucune impose (aucune capture de l'app)")
+        args.capture_mode = "aucune"
     if args.capture_mode != "aucune" and not args.saas_url:
         parser.error("--saas-url est obligatoire, sauf avec --capture-mode aucune")
 
@@ -478,7 +508,8 @@ def main():
         if sfx_cues and events_path.exists():
             events = json.loads(events_path.read_text(encoding="utf-8"))
             sfx_cues = (sfx_cues + [{"t": t, "name": "mouse"} for t in events.get("clics", [])]
-                        + [{"t": t, "name": "feutre", "duration": 0.7} for t in events.get("feutre", [])])
+                        + [{"t": t, "name": "feutre", "duration": 0.7} for t in events.get("feutre", [])]
+                        + events.get("sons", []))
         if sfx_cues:
             sfx_path.write_text(json.dumps(sfx_cues), encoding="utf-8")
             anim_assemble_args += ["--sfx", str(sfx_path)]
@@ -486,6 +517,9 @@ def main():
         # 5. Assemblage final -- force des que la video ou les sous-titres
         #    (donc l'audio, cf. subs_force ci-dessus) ont change.
         final_path = out / "final" / f"reel_{i:02d}.mp4"
+        # Dessin anime : le texte est deja dans les bulles -> pas de sous-titres incrustes.
+        if scripts[i - 1].get("dessin"):
+            anim_assemble_args.append("--no-captions")
         run([sys.executable, str(ROOT / "5_assemble.py"),
              "--video", str(video_path), "--audio", str(audio_path),
              "--subs", str(subs_path), "--out", str(final_path), *anim_assemble_args,

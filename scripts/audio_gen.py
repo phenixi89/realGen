@@ -1,7 +1,7 @@
 """
-Audio des reels, 100 % synthetise (aucun fichier externe -> aucune question
-de droits) : musique d'ambiance rythmee et effets sonores cales sur le
-montage. Tout se regle dans catalog/audio.json (ambiances, volumes, regles
+Audio des reels, synthetise (aucune question de droits) : musique d'ambiance
+rythmee et effets sonores cales sur le montage ; seuls les bruitages d'animaux
+du dessin anime (miaou, ronron) sont des enregistrements CC0 (assets/sfx/). Tout se regle dans catalog/audio.json (ambiances, volumes, regles
 anti-abus des effets).
 
     music(duration, ambiance)      -> nappe + accords + basse + batterie en boucle
@@ -164,7 +164,77 @@ def sfx(name: str, seed: int = 0, **kw) -> np.ndarray:
             y[pos:end] += seg[: end - pos]
             pos += length + int(rng.uniform(0.05, 0.14) * SR)
         return _norm(y)
+    # --- Bruitages du dessin anime (assets/anim/scene.html, instants donnes par le moteur) ---
+    if name == "pas":  # pas feutre : petit choc sourd + frottement
+        t = _t(0.12)
+        f0 = 95 + 18 * (seed % 3)
+        thump = np.sin(2 * np.pi * f0 * t) * env(len(t), 0.002, 0.03)
+        scuff = _lowpass_fast(_noise(len(t), seed), 1400, passes=2) * env(len(t), 0.004, 0.04)
+        return _norm(thump + 0.7 * scuff)
+    if name == "saut":  # petit "hop" qui monte
+        t = _t(0.16)
+        f = np.linspace(260, 620, len(t))
+        return _norm(np.sin(2 * np.pi * np.cumsum(f) / SR) * env(len(t), 0.005, 0.06))
+    if name == "chaise":  # chaise : bois qui craque doucement
+        n = int(0.32 * SR)
+        x = _noise(n, seed)
+        band = _lowpass_fast(x, 1800) - _lowpass_fast(x, 450)
+        grain = 0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 34 * np.arange(n) / SR))
+        return _norm(band * grain * env(n, 0.02, 0.12))
+    if name == "pose":  # objet pose sur une table : "toc" de ceramique
+        t = _t(0.18)
+        body = np.sin(2 * np.pi * 620 * t) + 0.5 * np.sin(2 * np.pi * 1490 * t)
+        tap = _lowpass_fast(_noise(len(t), seed), 3500) * env(len(t), 0.0005, 0.01)
+        return _norm(body * env(len(t), 0.001, 0.045) + 0.6 * tap)
+    if name == "vibreur":  # telephone en vibreur : bourdonnements de 0,3 s
+        d = kw.get("duration", 1.2)
+        t = _t(d)
+        gate = ((t % 0.5) < 0.3).astype(float)
+        buzz = np.sign(np.sin(2 * np.pi * 155 * t)) * (0.6 + 0.4 * np.sin(2 * np.pi * 31 * t))
+        return _norm(_lowpass_fast(buzz * gate, 900, passes=2))
+    if name == "clavier":  # frappe au clavier : rafale de petites touches
+        d = kw.get("duration", 1.6)
+        y = np.zeros(int(d * SR))
+        rng = np.random.default_rng(seed)
+        pos = 0
+        while pos < len(y):
+            k = sfx("click", seed=int(rng.integers(0, 1000)))
+            end = min(pos + len(k), len(y))
+            y[pos:end] += k[: end - pos] * rng.uniform(0.5, 1.0)
+            pos += int(rng.uniform(0.07, 0.16) * SR)
+        return _norm(y)
+    if name == "idee":  # ampoule qui s'allume : deux notes qui montent
+        t = _t(0.45)
+        y = np.zeros(len(t))
+        for k, note in enumerate((86, 93)):
+            start = int(k * 0.09 * SR)
+            seg = t[: len(t) - start]
+            y[start:] += np.sin(2 * np.pi * midi_hz(note) * seg) * env(len(seg), 0.002, 0.14)
+        return _norm(y)
+    if name in SAMPLES:  # enregistrements CC0 (assets/sfx/LICENCES.md)
+        x = _sample(SAMPLES[name])
+        d = kw.get("duration")
+        if d and name == "ronron":  # boucle sur la duree demandee, fondu de sortie
+            x = np.tile(x, int(np.ceil(d * SR / len(x))))[: int(d * SR)]
+            fade = min(len(x), int(0.4 * SR))
+            x[-fade:] *= np.linspace(1, 0, fade)
+        return _norm(x)
     raise ValueError(f"effet inconnu : {name}")
+
+
+SFX_DIR = ROOT / "assets" / "sfx"
+SAMPLES = {"miaou": "miaou.ogg", "ronron": "ronron.ogg"}
+_SAMPLE_CACHE: dict[str, np.ndarray] = {}
+
+
+def _sample(filename: str) -> np.ndarray:
+    """Fichier de assets/sfx/ -> mono SR Hz (decode par ffmpeg, deja requis par le pipeline)."""
+    if filename not in _SAMPLE_CACHE:
+        import subprocess
+        raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(SFX_DIR / filename), "-f", "f32le",
+                              "-ac", "1", "-ar", str(SR), "-"], check=True, capture_output=True).stdout
+        _SAMPLE_CACHE[filename] = np.frombuffer(raw, dtype=np.float32).astype(np.float64)
+    return _SAMPLE_CACHE[filename].copy()
 
 
 def _norm(x: np.ndarray) -> np.ndarray:
@@ -172,7 +242,7 @@ def _norm(x: np.ndarray) -> np.ndarray:
     return (x / peak).astype(np.float64)
 
 
-TONAL_SFX = ("pop", "ding", "sparkle", "tick")
+TONAL_SFX = ("pop", "ding", "sparkle", "tick", "idee")
 
 
 def _pitch(x: np.ndarray, semitones: float) -> np.ndarray:
@@ -199,12 +269,19 @@ def render_sfx_track(cues: list[dict], duration: float, ambiance: dict | None = 
         return np.zeros(int(duration * SR))
     track = np.zeros(int(duration * SR) + SR)
     kept, last = [], -10.0
+    # Bruitages du dessin anime (pas, miaou...) : lies a une action visible, hors regles
+    # anti-abus ; seul un meme bruitage trop rapproche de lui-meme est ecarte.
+    bruitages, last_bruitage = set(rules.get("bruitages", [])), {}
     for cue in sorted(cues, key=lambda c: c["t"]):
         if cue.get("transition") and profile.get("transition"):
             cue = {**cue, "name": profile["transition"]}
         if cue["name"] in rules.get("bannis", []):
             continue
-        if cue["name"] != "click":
+        if cue["name"] in bruitages:
+            if cue["t"] - last_bruitage.get(cue["name"], -10.0) < rules.get("bruitage_ecart_min_s", 0.12):
+                continue
+            last_bruitage[cue["name"]] = cue["t"]
+        elif cue["name"] != "click":
             if cue["t"] - last < rules["ecart_min_s"]:
                 continue
             window = [k for k in kept if k["name"] != "click" and cue["t"] - k["t"] < 10]

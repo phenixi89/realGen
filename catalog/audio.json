@@ -487,9 +487,31 @@
       "sparkle": 0.2,
       "tick": 0.14,
       "mouse": 0.3,
-      "feutre": 0.14
+      "feutre": 0.14,
+      "pas": 0.16,
+      "saut": 0.12,
+      "chaise": 0.14,
+      "pose": 0.18,
+      "vibreur": 0.2,
+      "clavier": 0.1,
+      "idee": 0.18,
+      "miaou": 0.32,
+      "ronron": 0.16
     },
     "transition": "",
-    "_note": "Mix sobre : seuls les effets qui soulignent un moment cle restent (impact de l'accroche et de la revelation, pop des cartes, ding, scintillement du CTA, clic de souris, feutre des dessins et annotations). transition vide = aucun son aux changements de scene."
+    "_note": "Mix sobre : seuls les effets qui soulignent un moment cle restent (impact de l'accroche et de la revelation, pop des cartes, ding, scintillement du CTA, clic de souris, feutre des dessins et annotations). transition vide = aucun son aux changements de scene.",
+    "bruitages": [
+      "pas",
+      "saut",
+      "chaise",
+      "pose",
+      "vibreur",
+      "clavier",
+      "idee",
+      "miaou",
+      "ronron"
+    ],
+    "bruitage_ecart_min_s": 0.12,
+    "_note_bruitages": "bruitages : sons du dessin anime, emis par le moteur (assets/anim/dessin/) a l'instant exact de l'action (pas de marche, saut, chaise, objet pose, vibreur, clavier, ampoule, miaou, ronron) ; hors regles ecart_min_s / max_par_10s (un meme bruitage est seulement espace de bruitage_ecart_min_s). miaou et ronron : enregistrements CC0 de assets/sfx/."
   }
 }

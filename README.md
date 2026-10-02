@@ -84,7 +84,9 @@ captures du mode `screenshots`.
 Aucune connexion à l'app ni compte de démo : le reel est fait uniquement de plans animés.
 
 - **Formats** : seulement les formats conseil qui ont des cartes (`catalog.sans_captures_ok`), une démo
-  produit sans image du produit ne montrerait rien ; `--format` d'un autre format est refusé.
+  produit sans image du produit ne montrerait rien ; `--format` d'un autre format est refusé. Le format
+  **dessin animé** (`dessin_anime`, voir « Dessin animé ») n'existe que dans ce mode : demandé avec
+  `--format dessin_anime`, il y bascule tout seul ; il n'est jamais tiré au sort avec captures.
 - **Scénario** : Gemini écrit une carte animée pour chaque scène sauf la 1re et la dernière. Il n'y a pas de
   champ `feature`. La 1re scène porte `"illustration": "<id d'icône>"` : une icône dessinée à la main
   (`assets/anim/illustration.html`) sous l'accroche. La dernière scène est le CTA animé.
@@ -194,7 +196,7 @@ python scripts/render_js_anim.py --spec "schema?titre=Le tri ATS&etapes=cv:Ton C
 `highlight` a besoin de la position des cartes, enregistrée dans `captures.json` par les captures
 récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
-### Dessin animé : scènes, fonds et objets (`scene`, `assets/anim/dessin/`) — prototype
+### Dessin animé : scènes, fonds et objets (`scene`, `assets/anim/dessin/`)
 
 Moteur de dessin animé **pensé par objet, pas par scène** : tout ce qui apparaît est un *objet*
 (personnage, animal, objet, élément de décor, fond), et une **scène = un fond + des objets placés + des
@@ -266,9 +268,44 @@ python scripts/render_js_anim.py --spec scene --duration 37 --out /tmp/demo.mp4 
 python scripts/render_js_anim.py --spec scene --scene ma_scene.json --duration 12 --out /tmp/s.mp4  # sa propre scène
 ```
 
-Pas encore branché au générateur de scénarios (ni bouche synchronisée sur la voix off, ni effets
-sonores) : à utiliser en rendu manuel. Prochaine étape : scènes composées par le générateur à partir du
-catalogue.
+**Bruitages** : chaque action signale son son à l'instant exact (`Dessin.son(nom, t)`), le moteur les
+renvoie (`Scene.monter` → `sons`, publiés dans `window.SONS`) et le montage les mixe (voir « Son et
+effets ») : pas à chaque foulée (`marcher`, `entrer`, `sortir`), `saut` puis réception, `chaise`
+(s'asseoir, se lever), `pose` (objet posé), `vibreur` (téléphone), `clavier` (ordinateur), `idee`
+(ampoule), `miaou` et `ronron` (chat), et le feutre pendant que chaque décor se dessine. En rendu manuel
+d'un `.mp4`, la liste est écrite à côté (`.sons.json`).
+
+#### Format `dessin_anime` : le générateur écrit le dessin animé
+
+`--format dessin_anime` (avec `--capture-mode aucune`, imposé automatiquement) : Gemini écrit un mini
+dessin animé où **Léa et Karim jouent la situation**. Il reçoit tout le catalogue `dessins.json` (décors,
+objets et leurs ancres, actions, expressions, gestes) et des règles de mise en scène (positions au sol,
+face à face, objets posés ou tenus, personnage assis) :
+
+- **Scénario** : 2 à ~4 scènes dessinées (`{"fond", "titre", "objets", "actions"}`, le même format que
+  ci-dessus), puis la scène CTA `{"cta": true, "qui": "lea", "texte": "..."}`. **Tout est dit par les
+  personnages** (pas de voix off) : chaque `parler` porte une réplique de 16 mots au plus ; la 1re
+  réplique est l'accroche (12 mots max, elle peut être à la 1re personne : « Pourquoi personne ne me
+  rappelle ? ») ; `accroche_ecran` reste au « tu ». 2 personnages qui parlent au plus.
+- **Contrôle** : chaque scène passe par `catalog.clean_scene_dessin` : objet, ancre, siège, action,
+  expression ou geste inconnus sont retirés (le rendu ne casse jamais) et signalés à Gemini, qui corrige
+  (3 essais). Dans `scripts.json`, une scène porte `repliques` (`[{qui, texte}]`), `dessin` (la scène
+  jouable) et `texte` (les répliques bout à bout) ; le reel porte `dessin: true` et `voix_personnages`.
+- **Voix** : toutes les répliques en **un seul appel** Gemini TTS multi-locuteurs, une voix par
+  personnage (`voix` dans `dessins.json` : Léa = Aoede, Karim = Puck). Consigne au format de la doc
+  Gemini (« TTS the following conversation… ») : une consigne libre en français a inversé les voix à
+  l'essai.
+- **Synchro** : Whisper mesure quand chaque réplique est dite (`repliques` de la timeline,
+  `4_generate_subtitles.py`) ; au montage, chaque bulle s'ouvre à cet instant et la bouche bouge le temps
+  exact de la réplique (`run_pipeline.dessin_spec`). Chaque scène devient un plan `scene` de 3b ; la
+  dernière est le CTA animé, dit par un personnage.
+- **Montage** : pas de sous-titres incrustés (le texte est dans les bulles, `5_assemble.py
+  --no-captions`) ; la 1re scène est cadrée plus large et plus bas (`DESSIN_SOUS_ACCROCHE`) pour que
+  l'accroche affichée en grand en haut ne cache pas la 1re bulle.
+
+```bash
+python scripts/run_pipeline.py --n 1 --format dessin_anime --duration 25
+```
 
 ### Gabarit `dialogue` : deux personnages qui se parlent
 
@@ -325,6 +362,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 | conseil | Quiz trouve l'erreur (`trouve_erreur`) | ligne piégée puis révélation |
 | conseil | Je t'explique au tableau (`tableau_blanc`) | le mécanisme dessiné à la main (cartes schéma), puis la phrase à retenir (carte impact) |
 | conseil | Le message du recruteur (`dm_recruteur`) | un échange de messages fictif (carte conversation), puis le décryptage |
+| conseil | Dessin animé : Léa et Karim (`dessin_anime`) | mini dessin animé : Léa et Karim jouent la situation, chacun avec sa voix ; capture `aucune` uniquement |
 | produit | Démo produit (`demo_produit`) | une fonctionnalité réelle par scène |
 | produit | Témoignage (`temoignage_produit`) | récit fictif à la 1re personne |
 | produit | Avant / Après avec OpusCV (`split_avant_apres`) | comparaison puis le chemin dans l'outil |
@@ -504,10 +542,16 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
   frottement de feutre pendant les dessins et les annotations (`feutre`). Disponibles mais bannis par défaut : whoosh/tick aux
   changements de scène, clics de clavier, buzz, montée de tension. Garde-fous dans `audio.json` : volumes par effet, écart minimal, maximum par 10 s,
   liste `bannis` pour désactiver un effet.
+- **Bruitages du dessin animé** (`bruitages` dans `audio.json`) : pas, saut, chaise, objet posé,
+  vibreur, clavier, ampoule (synthétisés), miaou et ronron (enregistrements **CC0**, `assets/sfx/`,
+  sources dans `assets/sfx/LICENCES.md`). Émis par le moteur de dessin à l'instant de l'action, ils
+  échappent à l'écart minimal et au maximum par 10 s (un même bruitage est seulement espacé de
+  `bruitage_ecart_min_s`) ; volumes discrets réglables dans `volumes`.
 - **Effets de carte** (`"effet"`, choisi par Gemini) : `standard`, `frappe` (texte tapé au clavier)
   et `suspense` (titre caché puis révélé, un seul par reel).
 
-Écouter : `python scripts/audio_gen.py --ambiance pop_energie --out /tmp/a.wav` ou `--sfx whoosh`.
+Écouter : `python scripts/audio_gen.py --ambiance pop_energie --out /tmp/a.wav` ou `--sfx whoosh`
+(`--sfx pas`, `--sfx miaou`…).
 
 ## Effets visuels et voix
 
@@ -548,7 +592,8 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
   bleu givré, jaune affiche), le texte posé sur cette couleur (pastilles, accroche, bouton du CTA,
   bulles, mot fort) passe en sombre (`--c1fg` calculé dans `assets/anim/common.js`).
 - **Voix en rotation** (`--voice auto`, `catalog/voix.json`) et **ton de lecture par format**
-  (`ton` dans `formats.json`, `ton_humour` en registre humour).
+  (`ton` dans `formats.json`, `ton_humour` en registre humour). Dessin animé : une voix par personnage
+  (`voix` dans `catalog/dessins.json`), en un seul appel multi-locuteurs.
 - **Mode sans voix** (`--sans-voix`, case « sans_voix » du workflow) : texte à l'écran + musique,
   pour le public qui regarde sans le son.
 
@@ -607,6 +652,7 @@ si le premier chargement dépasse le délai habituel.
 - Whisper tourne en CPU (`--model small` par défaut) ; largement suffisant pour des reels de 15-30s.
 - Aucun GPU nécessaire pour ce pipeline (pas d'avatar animé, juste du screen-record + montage).
 - La musique de fond est synthétisée localement (pas de fichier audio externe) : aucune question de droits.
+  Seules exceptions : le miaou et le ronron du dessin animé, enregistrements CC0 (`assets/sfx/LICENCES.md`).
 
 ## Console web (docs/index.html)
 
@@ -637,7 +683,10 @@ permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en
   dans le champ `plan` ; les champs globaux Nombre, Accroche, Format, Thème, Registre, Voix et Angle sont alors
   masqués. Capture par défaut : « Captures desktop + zoom » (`screenshots`). Un format à cartes
   choisi avec une capture vidéo (`video`, `video_desktop`) affiche un avertissement : ses cartes y
-  seraient remplacées par des captures. La composition est mémorisée dans le navigateur.
+  seraient remplacées par des captures. Le format dessin animé (`dessin_anime`) n'est proposé au
+  compositeur qu'en capture « Sans capture » ; choisi comme format global avec une autre capture, un
+  message indique que la capture passera automatiquement à « Sans capture ». La composition est mémorisée
+  dans le navigateur.
 - **Catalogue** : fiches par type (formats, sujets, accroches, thèmes, ambiances, voix) avec recherche
   et filtres catégorie / registre ; formats : structure, visuel, sujets compatibles (« Voir ses
   sujets ») ; thèmes : nuancier, polices, musiques. « ➕ Composer » ajoute l'élément au compositeur

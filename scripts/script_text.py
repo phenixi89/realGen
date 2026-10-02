@@ -12,3 +12,15 @@ def scene_texts(script: dict) -> list[str]:
 def script_to_text(script: dict) -> str:
     """Texte complet lu par la voix off : les scenes mises bout a bout."""
     return " ".join(scene_texts(script))
+
+
+def dialogue_lines(script: dict) -> list[tuple[str, str]]:
+    """
+    Reel en dessin anime (format "dessin") : les repliques dans l'ordre, [(id du
+    personnage, texte)] -- lues a plusieurs voix par 2_generate_voice.py ; [] sinon.
+    Le texte de chaque scene est la suite de ses repliques (1_generate_script.py).
+    """
+    if not script.get("dessin"):
+        return []
+    return [(a["qui"], a["texte"].strip()) for s in script.get("scenes", []) for a in s.get("repliques", [])
+            if a.get("texte", "").strip()]

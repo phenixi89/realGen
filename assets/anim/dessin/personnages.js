@@ -254,6 +254,7 @@
       return d;
     }
     if (nom === "idee") {   // doigt leve, ampoule qui s'allume au-dessus de la tete
+      Dessin.son("idee", at + 0.15);
       tl.to(bv.haut, { rotation: -150, duration: 0.3, ease: "back.out(1.6)" }, at)
         .to(bv.avant, { rotation: -12, duration: 0.3, ease: "power2.out" }, at)
         .fromTo(it.ampoule, { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.4)", immediateRender: false }, at + 0.15)
@@ -312,6 +313,7 @@
       .fromTo(k1, { rotation: 0 }, { rotation: 14, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t)
       .to([j0, j1, k0, k1], { rotation: 0, duration: 0.15 }, a.t + n * pas)
       .fromTo(it.corps, { y: 0 }, { y: -8, duration: pas / 2, yoyo: true, repeat: n * 2 - 1, ease: "sine.inOut", immediateRender: false }, a.t);
+    for (let k = 0; k < n; k++) Dessin.son("pas", a.t + 0.08 + k * pas, { gain: k % 2 ? 0.8 : 1 });
     if (!it.tient) tl.fromTo(it.bras[1].haut, { rotation: 14 }, { rotation: -14, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t);
     tl.fromTo(it.bras[-1].haut, { rotation: -14 }, { rotation: 14, duration: pas, yoyo: true, repeat: n - 1, ease: "sine.inOut", immediateRender: false }, a.t)
       .to(it.bras[-1].haut, { rotation: 0, duration: 0.15 }, a.t + n * pas);
@@ -333,6 +335,7 @@
     tl.to(b.haut, { rotation: OUT(1, 40), duration: 0.3, ease: "power2.out" }, a.t)
       .to(b.avant, { rotation: OUT(1, 30), duration: 0.3, ease: "power2.out" }, a.t);
     ctx.basculer(a.objet || it.tient, a.sur || null, a.t + 0.3);
+    Dessin.son("pose", a.t + 0.3);
     it.tient = null;
     repos(tl, it, b, a.t + 0.45, 0.4);
     return 0.9;
@@ -348,13 +351,17 @@
   const telephoner = (tl, it, a) => { const d = a.duree || 2.5; versVisage(tl, it, a.t, d, 22, 150); return d; };
   function sauter(tl, it, a) {
     const n = a.fois || 2;
-    for (let i = 0; i < n; i++) tl.to(it.corps, { y: -70, duration: 0.2, yoyo: true, repeat: 1, ease: "power2.out" }, a.t + i * 0.45);
+    for (let i = 0; i < n; i++) {
+      tl.to(it.corps, { y: -70, duration: 0.2, yoyo: true, repeat: 1, ease: "power2.out" }, a.t + i * 0.45);
+      Dessin.son("saut", a.t + i * 0.45); Dessin.son("pas", a.t + i * 0.45 + 0.4);
+    }
     return n * 0.45;
   }
   function regarder(tl, it, a, ctx) { ctx.orienter(it, a.vers, a.t); return 0.2; }
   // S'asseoir sur une chaise (`sur`) : y marche si besoin, se tourne comme la chaise, s'assoit.
   function poseAssise(tl, it, at, assis, d = 0.45) {
     it.assis = assis;
+    Dessin.son("chaise", at + (assis ? d * 0.6 : 0), { gain: assis ? 1 : 0.7 });
     tl.to(it.haut, { y: assis ? ASSIS.haut : 0, duration: d, ease: "power2.inOut" }, at)
       .to(it.jambes.map((j) => j.cuisse), { rotation: assis ? ASSIS.cuisse : 0, duration: d, ease: "power2.inOut" }, at)
       .to(it.jambes.map((j) => j.tibia), { rotation: assis ? ASSIS.tibia : 0, duration: d, ease: "power2.inOut" }, at);

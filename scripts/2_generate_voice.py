@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 from gemini_retry import generate_with_retry
-from script_text import script_to_text
+from script_text import dialogue_lines, script_to_text
 
 # Voix disponibles cote Gemini TTS (exemples courants a adapter selon la doc a jour)
 VOICES = ["Kore", "Puck", "Enceladus", "Aoede", "Zephyr"]
@@ -50,6 +50,46 @@ def synthesize(client, text: str, voice: str, pcm_path: Path, tone: str = DEFAUL
     with wave.open(str(pcm_path), "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)  # 16-bit
+        wf.setframerate(24000)
+        wf.writeframes(audio_data)
+
+
+def synthesize_dialogue(client, lines: list[tuple[str, str]], voices: dict[str, str], pcm_path: Path,
+                        tone: str = DEFAULT_TONE):
+    """
+    Dessin anime : toutes les repliques en UN seul appel, une voix par personnage
+    (Gemini TTS multi-locuteurs, 2 voix au plus ; un seul personnage -> voix simple).
+    Les noms de locuteurs (Lea:, Karim:) guident le TTS et ne sont pas lus.
+    """
+    from google.genai import types
+
+    speakers = list(dict.fromkeys(qui for qui, _ in lines))
+    if len(speakers) > 2:
+        raise ValueError(f"Gemini TTS : 2 voix au plus par dialogue, recu {speakers}")
+    label = {qui: qui.capitalize() for qui in speakers}
+    script = "\n".join(f"{label[qui]}: {texte}" for qui, texte in lines)
+    if len(speakers) == 1:
+        voice_config = types.SpeechConfig(voice_config=types.VoiceConfig(
+            prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voices[speakers[0]])))
+    else:
+        voice_config = types.SpeechConfig(multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
+            speaker_voice_configs=[types.SpeakerVoiceConfig(
+                speaker=label[qui], voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voices[qui])))
+                for qui in speakers]))
+    names = " and ".join(label[q] for q in speakers)
+    response = generate_with_retry(
+        client, model=TTS_MODEL_NAME, label="Gemini TTS (dialogue)",
+        # Consigne au format de la doc Gemini : une consigne libre en francais a deja
+        # inverse les voix des deux personnages (verifie a l'ecoute).
+        contents=f"TTS the following conversation between {names}, in French "
+                 f"(style: {tone}; short pause between lines):\n{script}",
+        config=types.GenerateContentConfig(response_modalities=["AUDIO"], speech_config=voice_config),
+    )
+    audio_data = response.candidates[0].content.parts[0].inline_data.data
+    with wave.open(str(pcm_path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
         wf.setframerate(24000)
         wf.writeframes(audio_data)
 
@@ -103,8 +143,16 @@ def main():
             continue
         voice = script.get("voix") or "Kore" if args.voice == "auto" else args.voice
         tone = script.get("ton") or DEFAULT_TONE
+        # Dessin anime : une voix par personnage (catalog/dessins.json "voix"), un seul appel.
+        lines = dialogue_lines(script)
+        voices = script.get("voix_personnages") or {}
+        if lines:
+            voice = " / ".join(f"{q}={voices.get(q, '?')}" for q in dict.fromkeys(q for q, _ in lines))
+            text_key = "\n".join(f"{q}: {t}" for q, t in lines)
+        else:
+            text_key = text
         # Empreinte = tout ce qui change le son : texte, voix, ton (ou silence).
-        fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone}]\n{text}"
+        fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone}]\n{text_key}"
 
         wav_path = out_dir / f"reel_{i:02d}.wav"
         mp3_path = out_dir / f"reel_{i:02d}.mp3"
@@ -128,7 +176,10 @@ def main():
                 write_silence(text, mp3_path)
             else:
                 print(f"[{i}/{len(scripts)}] Synthese voix ({voice}, ton : {tone})...")
-                synthesize(client, text, voice, wav_path, tone)
+                if lines:
+                    synthesize_dialogue(client, lines, voices, wav_path, tone)
+                else:
+                    synthesize(client, text, voice, wav_path, tone)
                 convert_to_mp3(wav_path, mp3_path)
             text_path.write_text(fingerprint, encoding="utf-8")
             print(f"    -> {mp3_path}")
