@@ -621,8 +621,13 @@ Le même reel vertical 9:16 sert de Reel Instagram ; `scripts/instagram.py` (app
 |---|---|---|
 | `tiktok` | `reel_XX.txt` | légende courte + 4 à 6 hashtags |
 | `instagram` | `reel_XX.instagram.txt` | légende Instagram (1re ligne accrocheuse visible avant « plus », résumé des conseils, question, invitation à enregistrer) + 5 hashtags au plus (`instagram.hashtags_max`) |
-| `tiktok` ou `instagram` | `reel_XX.couverture.jpg` | couverture 1080×1920 : l'accroche en grand sur un fond uni aux couleurs du thème (jamais une capture, illisible une fois réduite dans la grille), texte dans la zone commune aux recadrages de la grille (3:4 et carré). À importer comme couverture à la publication (voir ci-dessous) |
+| `tiktok` ou `instagram` | `reel_XX.couverture.jpg` | couverture 1080×1920 : l'accroche en grand sur un fond uni aux couleurs du thème (jamais une capture, illisible une fois réduite dans la grille), texte dans la zone commune aux recadrages de la grille (3:4 et carré) ; surtitre pour une série : « Karim cherche un job · ép. N » (dessin animé), « Jour N/30 » (`serie_30_jours`). À importer comme couverture à la publication (voir ci-dessous) |
 | `carrousel` | `reel_XX_carrousel/01.png…` + `legende.txt` | carrousel 4:5 (1080×1350) : couverture, une idée par diapositive (numéro, barre de progression, « Glisse → »), diapositive finale d'appel à l'action (`instagram.carrousel_fin`) |
+
+**Publication** : manuelle pour l'instant (vidéo, légende et couverture téléchargées depuis la console).
+La publication automatique après validation (Instagram via l'API Instagram Login, brouillon TikTok via
+l'API Content Posting) est prévue mais pas encore écrite ; les jetons iront uniquement dans les secrets
+GitHub du dépôt.
 
 **Couverture TikTok** : à la publication, TikTok propose « Modifier la couverture » : choisir une image de la
 vidéo ou en importer une depuis la galerie du téléphone (`reel_XX.couverture.jpg`). Sans cela, la grille du
