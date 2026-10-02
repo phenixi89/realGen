@@ -201,8 +201,9 @@ Deux styles au choix (`style` du gabarit `dialogue`) :
 des petites histoires dessinées qui tournent sur TikTok. Traits tremblés repassés deux fois (les cercles — têtes, yeux, chignon — ondulent doucement et
 finissent par un léger dépassement, comme un coup de crayon, sans bosses), qui
 « bouillonnent » (deux variantes du dessin alternent environ 6 fois par seconde) et se dessinent à
-l'apparition. Grosse tête ronde de profil (un œil, un sourcil, une petite bouche), corps en bâtons, pieds
-ovales, debout au bord d'une falaise hachurée. **Léa** : chignon, mèches, robe, cils ; **Karim** : épis,
+l'apparition. Grosse tête ronde de profil (un œil, un sourcil, un petit nez, une petite bouche qui enchaîne trois
+ouvertures différentes quand il parle), corps en bâtons, pieds
+ovales, debout au bord d'une falaise hachurée. **Léa** : chignon, frange et mèches, robe, cils ; **Karim** : épis,
 chemise, cravate, pantalon. Mêmes expressions et gestes que ci-dessous, avec des **effets manga** : grand
 œil (iris blanc, pupille noire à reflets, paupière épaisse), yeux en « ^ » et joues hachurées quand il est
 `content`, pupille minuscule + traits d'effroi + « ! » sous le `choc`, goutte de sueur qui glisse

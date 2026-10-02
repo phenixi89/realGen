@@ -134,6 +134,11 @@
       P.trace(tete, [[30 * c, -912], [-10 * c, -880], [-40 * c, -820], [-58 * c, -740], [-80 * c, -688]], { w: 3 });
       P.trace(tete, [[-118 * c, -820], [-126 * c, -760], [-122 * c, -700]], { w: 2.4, passes: 1 });
       P.trace(tete, [[-110 * c, -840], [-130 * c, -770], [-134 * c, -720]], { w: 2, passes: 1 });
+      // Meches en plus : frange qui tombe sur le front, meche devant l'oreille.
+      P.trace(tete, [[24 * c, -912], [42 * c, -884], [50 * c, -852]], { w: 2.4, passes: 1, jit: 1.2 });
+      P.trace(tete, [[6 * c, -914], [20 * c, -890], [24 * c, -864]], { w: 2, passes: 1, jit: 1.2 });
+      P.trace(tete, [[40 * c, -908], [62 * c, -890], [74 * c, -866]], { w: 1.8, passes: 1, jit: 1.2 });
+      P.trace(tete, [[-24 * c, -850], [-30 * c, -800], [-22 * c, -748]], { w: 2, passes: 1, jit: 1.2 });
     } else {
       // Meche : touffes en epis qui depassent du crane, bord interieur en
       // arc sur le front, quelques meches dedans (coordonnees "regarde a droite", x * c).
@@ -186,6 +191,8 @@
     for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]])
       P.trace(signes.veine, m([[40 + sx * 28, -868 + sy * 9], [40 + sx * 11, -868 + sy * 11], [40 + sx * 9, -868 + sy * 28]]), { w: 3.6, passes: 1, jit: 0.8 });
     P.trace(tete, [[-6 * c, -812], [-14 * c, -790], [-4 * c, -770]], { w: 2.4, passes: 1 });   // oreille
+    // Petit nez de profil : une bosse qui depasse a peine du cercle, entre l'oeil et la bouche.
+    P.trace(tete, m([[116, -800], [128, -786], [136, -772], [128, -767], [118, -765]]), { w: 3, passes: 1, jit: 0.6 });
 
     // Bouches (au bout du profil), une seule visible a la fois.
     const mx = 80 * c, my = -738;
@@ -199,7 +206,12 @@
     const bouches = {};
     for (const [k, pts] of Object.entries(BOUCHES)) { bouches[k] = g(tete, { opacity: 0 }); P.trace(bouches[k], pts, { w: 3.2, passes: 1 }); }
     bouches.choc = g(tete, { opacity: 0 }); P.rond(bouches.choc, mx, my, 9, 12, { w: 3, passes: 1 });
+    // Parole : trois ouvertures differentes (moyenne, grande avec la langue, petite "o").
     bouches.ouverte = g(tete, { opacity: 0 }); P.rond(bouches.ouverte, mx, my, 13, 9, { w: 3, passes: 1 });
+    bouches.grande = g(tete, { opacity: 0 });
+    P.trace(bouches.grande, m([[80 - 17, my - 6], [80 + 14, my - 9], [80 + 13, my + 9], [80, my + 17], [80 - 13, my + 8], [80 - 17, my - 6]]), { w: 3, passes: 1, jit: 0.6 });
+    P.trace(bouches.grande, m([[80 - 8, my + 10], [80 + 2, my + 5], [80 + 9, my + 9]]), { w: 2.2, passes: 1, jit: 0.4 });
+    bouches.petite = g(tete, { opacity: 0 }); P.rond(bouches.petite, mx, my + 1, 6, 7.5, { w: 3, passes: 1 });
     gsap.set(tete, { svgOrigin: "0 -668" });
 
     // Bras en deux segments (baton) + main en trois traits.
@@ -256,9 +268,11 @@
     if (nom === "choc") tl.fromTo(perso.tete, { y: 0 }, { y: -14, duration: 0.14, yoyo: true, repeat: 1, ease: "power2.out", immediateRender: false }, at);
     montrerBouche(tl, perso, perso.expr, at);
   }
+  // Parole : enchainement fixe de formes de bouche (comme des syllabes), ~9 changements par seconde.
+  const SYLLABES = ["grande", "petite", "ouverte", null, "grande", "ouverte", "petite", null, "ouverte", "grande", null, "petite"];
   function parler(tl, perso, de, a) {
-    const pas = 0.14;
-    for (let t = de, k = 0; t < a - pas; t += pas, k++) montrerBouche(tl, perso, k % 2 === 0 ? "ouverte" : perso.expr, t);
+    const pas = 0.11;
+    for (let t = de, k = 0; t < a - pas; t += pas, k++) montrerBouche(tl, perso, SYLLABES[k % SYLLABES.length] || perso.expr, t);
     montrerBouche(tl, perso, perso.expr, a);
     const n = Math.max(1, Math.floor((a - de) / 0.7));
     tl.to(perso.tete, { rotation: 3 * perso.cote, duration: 0.35, yoyo: true, repeat: n * 2 - 1, ease: "sine.inOut" }, de);
