@@ -37,7 +37,8 @@ export $(cat .env | xargs)
 | `SAAS_URL` | oui (ou `--saas-url`), sauf `--capture-mode aucune` | URL de démo d'OpusCV |
 | `DEMO_EMAIL` / `DEMO_PASSWORD` | selon le parcours | Identifiants du compte de démo (connexion réelle capturée). Un compte Pro évite le filigrane « OPUSCV.TECH » du plan gratuit sur l'aperçu capturé |
 | `GEMINI_MODEL` | non | Modèle texte (défaut : `gemini-flash-latest`) |
-| `GEMINI_TTS_MODEL` | non | Modèle voix off (défaut : `gemini-2.5-flash-preview-tts`) |
+| `GEMINI_TTS_MODEL` | non | Modèle des voix (défaut : `gemini-3.8-flash-tts`, choisi à l'écoute après le run 58) |
+| `GEMINI_TTS_FALLBACK_MODEL` | non | Modèle des voix de secours si le principal reste indisponible (défaut : `gemini-3.1-flash-tts-preview`) |
 | `ALLOW_AI_QUOTA_FEATURES` | non | `1` pour inclure la simulation d'entretien IA (consomme le quota IA du compte démo) |
 
 ## Utilisation
@@ -310,12 +311,19 @@ face à face, objets posés ou tenus, personnage assis) :
   Le montage repasse chaque scène par ce contrôle (corrections récentes appliquées aux anciens scénarios). Dans `scripts.json`, une scène porte `repliques` (`[{qui, texte}]`), `dessin` (la scène
   jouable) et `texte` (les répliques bout à bout) ; le reel porte `dessin: true` et `voix_personnages`.
 - **Voix** : toutes les répliques en **un seul appel** Gemini TTS multi-locuteurs, une voix par
-  personnage (`voix` dans `dessins.json` : Léa = Aoede, Karim = Puck). Consigne au format de la doc
-  Gemini (« TTS the following conversation… ») : une consigne libre en français a inversé les voix à
-  l'essai. La réplique finale (CTA) vient de l'enregistrement de la voix du personnage qui la dit
-  (voir « CTA enregistré »).
-- **Contrôle des voix** (`scripts/voix_controle.py`) : Gemini fond parfois tout le dialogue dans une
-  seule voix (run 58 : Karim dit avec la voix de Léa). Après Whisper, chaque réplique doit avoir au
+  personnage (`voix` dans `dessins.json` : Léa = Aoede, Karim = Puck). Avec `gemini-3.8-flash-tts`,
+  chaque réplique part avec son personnage et son ton (`speech_metadata`) : le ton du reel + celui de
+  l'expression du personnage (`voix_expressions` de `dessins.json` : « agacé, un peu sec »,
+  « hésitant, perplexe »…). Le modèle de secours (`gemini-3.1-flash-tts-preview`) ne connaît que
+  l'ancien format : le dialogue en texte, consigne au format de la doc Gemini (« TTS the following
+  conversation… » ; une consigne libre en français a inversé les voix à l'essai). Les répliques sont
+  demandées « parlées » (mots de tous les jours, relances, « Attends… », pas de jargon écrit). La
+  réplique finale (CTA) vient de l'enregistrement de la voix du personnage qui la dit (voir « CTA
+  enregistré »). `audio/reel_XX.voix.json` note le modèle qui a parlé.
+- **Contrôle des voix** (`scripts/voix_controle.py`), pour l'ancien format seulement : le modèle y
+  devine qui parle et fond parfois tout le dialogue dans une seule voix (run 58 : Karim dit avec la
+  voix de Léa). Inutile, et faux, quand chaque réplique porte son personnage : avec un ton par
+  réplique, Puck enjoué monte à ~200 Hz, au-dessus d'Aoede au naturel. Après Whisper, chaque réplique doit avoir au
   moins 40 % de ses trames plus proches (en hauteur) de la voix de son personnage que de l'autre ;
   hauteur de référence d'une voix = mesurée sur ses enregistrements de CTA (`assets/voix_cta/`).
   Sinon : nouvelle synthèse du reel (`2_generate_voice.py --index N --force`), puis, si elle échoue
@@ -470,7 +478,8 @@ remet telle quelle de toute façon) et sa voix n'est **pas resynthétisée** : `
 le reste du texte, puis colle l'enregistrement de cette phrase pour la voix du reel (ou du personnage
 qui la dit, en dessin animé) après une pause de 0,3 s, ramené au volume de la voix. Enregistrements :
 `assets/voix_cta/<voix>_<empreinte de la phrase>.ogg` (versionnés, une fois par voix et par phrase :
-`python scripts/2_generate_voice.py --precompute-cta`) ; une phrase ou une voix nouvelle est enregistrée
+`python scripts/2_generate_voice.py --precompute-cta`, `--force` pour tout réenregistrer après un
+changement de modèle TTS — fait pour `gemini-3.8-flash-tts`) ; une phrase ou une voix nouvelle est enregistrée
 au premier besoin dans `output/voix_cta/` (gardé par le cache de la CI). L'écho à l'accroche (boucle)
 passe alors à l'avant-dernière scène. Scénario écrit à la main (`--scenario`) : son CTA est gardé tel quel.
 
@@ -695,7 +704,7 @@ si le premier chargement dépasse le délai habituel.
   (`GEMINI_FALLBACK_MODEL`, `gemini-2.5-flash` par défaut) ; dès que le repli a répondu, les appels
   suivants du même script partent directement sur lui (le run 58 perdait ~1 min 45 par appel à
   réessayer le modèle principal). Une autre erreur (clé invalide…) arrête tout de suite.
-- Le modèle TTS Gemini est en statut *preview* côté Google (pas de SLA garanti) — teste régulièrement la qualité de sortie.
+- Voix : `gemini-3.8-flash-tts` (version stable) ; le secours `gemini-3.1-flash-tts-preview` est une préversion (pas de SLA garanti).
 - Whisper tourne en CPU (`--model small` par défaut) ; largement suffisant pour des reels de 15-30s.
 - Aucun GPU nécessaire pour ce pipeline (pas d'avatar animé, juste du screen-record + montage).
 - La musique de fond est synthétisée localement (pas de fichier audio externe) : aucune question de droits.

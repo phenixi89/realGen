@@ -1,6 +1,9 @@
 """
-Controle des voix du dessin anime : Gemini TTS multi-locuteurs fond parfois tout le
-dialogue dans UNE voix (run 58 : les repliques de Karim dites avec la voix de Lea).
+Controle des voix du dessin anime : Gemini TTS multi-locuteurs a l'ancien format (dialogue
+en texte "Lea: ...", modele de repli) fond parfois tout le dialogue dans UNE voix (run 58 :
+les repliques de Karim dites avec la voix de Lea). Le modele principal (3.8+) recoit le
+locuteur de chaque replique : pas de controle (run_pipeline, reel_XX.voix.json) -- avec un
+ton par replique, une voix grave enjouee monte au-dessus d'une voix aigue au naturel.
 
 Chaque replique (instants mesures par Whisper, timeline "repliques") est comparee aux
 deux voix du reel : au moins 40 % de ses trames voisees doivent etre plus proches (en

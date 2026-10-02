@@ -622,6 +622,9 @@ def validate_catalog() -> list[str]:
                 errors.append(f"dessins.json : objet {o['id']} : categorie inconnue")
             if o.get("categorie") == "personnage" and not (o.get("nom") and o.get("voix")):
                 errors.append(f"dessins.json : personnage {o['id']} : nom et voix (Gemini TTS) obligatoires")
+        perso = cat["personnage"]
+        if set(perso.get("voix_expressions") or {}) != set(perso["expressions"]):
+            errors.append("dessins.json : personnage.voix_expressions doit donner un ton pour chaque expression")
         if any(f.get("dessin") for f in formats()) and len(personnages()) < 2:
             errors.append("dessins.json : le format dessin anime demande au moins 2 personnages")
     except (ValueError, OSError, KeyError) as e:

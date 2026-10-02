@@ -24,3 +24,19 @@ def dialogue_lines(script: dict) -> list[tuple[str, str]]:
         return []
     return [(a["qui"], a["texte"].strip()) for s in script.get("scenes", []) for a in s.get("repliques", [])
             if a.get("texte", "").strip()]
+
+
+def dialogue_expressions(script: dict) -> list[str | None]:
+    """
+    Expression du personnage pour chaque replique de dialogue_lines (meme ordre) : le "expr" de
+    l'action "parler" correspondante de la scene dessinee (None pour le CTA, sans dessin) --
+    elle donne le ton de la replique au TTS (2_generate_voice.py).
+    """
+    if not script.get("dessin"):
+        return []
+    exprs = []
+    for s in script.get("scenes", []):
+        parler = [a for a in (s.get("dessin") or {}).get("actions", []) if a.get("action") == "parler"]
+        repliques = [a for a in s.get("repliques", []) if a.get("texte", "").strip()]
+        exprs += [(parler[k].get("expr") if k < len(parler) else None) for k in range(len(repliques))]
+    return exprs

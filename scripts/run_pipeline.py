@@ -471,11 +471,16 @@ def main():
                  "--model", args.whisper_model, *(["--synthetic"] if args.sans_voix else []), *force_args])
         sous_titres(subs_force)
 
-        # Dessin anime : chaque replique doit etre dite par la voix de son personnage (Gemini
-        # multi-locuteurs fond parfois le dialogue dans une seule voix) -> une nouvelle synthese,
-        # puis replique par replique (voix garantie). Voir voix_controle.py.
+        # Dessin anime synthetise a l'ancien format (modele TTS de repli : le dialogue en texte,
+        # le modele devine qui parle et fond parfois tout dans une voix) : chaque replique doit
+        # etre dite par la voix de son personnage -> sinon nouvelle synthese, puis replique par
+        # replique (voix garantie). Inutile quand le locuteur de chaque replique a ete declare
+        # (modele 3.8+, reel_XX.voix.json) : la hauteur d'une voix grave enjouee depasse celle
+        # d'une voix aigue au naturel, le controle se tromperait. Voir voix_controle.py.
         voices = scripts[i - 1].get("voix_personnages") or {}
-        if voices and not args.sans_voix and timeline_path.exists():
+        meta_voix = out / "audio" / f"reel_{i:02d}.voix.json"
+        declares = meta_voix.exists() and json.loads(meta_voix.read_text(encoding="utf-8")).get("locuteurs_declares")
+        if voices and not declares and not args.sans_voix and timeline_path.exists():
             import voix_controle
             for essai in (1, 2):
                 ok, detail = voix_controle.repliques_bien_dites(

@@ -4,6 +4,7 @@ Genere la voix off (TTS) via l'API Gemini et convertit le PCM brut en MP3 avec F
 Usage:
     python 2_generate_voice.py --scripts output/scripts.json --voice Kore --out output/audio
     python 2_generate_voice.py --precompute-cta        # enregistre les phrases de CTA (assets/voix_cta/)
+    python 2_generate_voice.py --precompute-cta --force  # les reenregistre toutes (nouveau modele TTS)
 
 Phrase de CTA enregistree (derniere scene "cta_enregistre", catalog/config.json) : elle
 n'est pas resynthetisee a chaque reel ; son enregistrement pour la voix du reel (ou du
@@ -25,7 +26,7 @@ from pathlib import Path
 
 from gemini_retry import generate_with_retry
 import catalog
-from script_text import dialogue_lines, script_to_text
+from script_text import dialogue_expressions, dialogue_lines, script_to_text
 
 CTA_DIR = Path(__file__).resolve().parent.parent / "assets" / "voix_cta"
 CTA_PAUSE_S = 0.3   # silence entre le corps du texte et la phrase de CTA enregistree
@@ -34,7 +35,47 @@ SR_TTS = 24000
 # Voix disponibles cote Gemini TTS (exemples courants a adapter selon la doc a jour)
 VOICES = ["Kore", "Puck", "Enceladus", "Aoede", "Zephyr"]
 
-TTS_MODEL_NAME = os.environ.get("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
+# gemini-3.8-flash-tts : choisi a l'ecoute (run 58) ; chaque replique d'un dialogue lui arrive
+# avec son personnage et son ton (speech_metadata), il n'a plus a deviner qui parle.
+# Repli : gemini-3.1-flash-tts-preview, qui ne connait que l'ancien format (texte "Lea: ...").
+TTS_MODEL_NAME = os.environ.get("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts")
+TTS_FALLBACK_MODEL = os.environ.get("GEMINI_TTS_FALLBACK_MODEL", "gemini-3.1-flash-tts-preview")
+
+
+def _metadonnees_parole(model: str) -> bool:
+    """Le modele prend-il le locuteur et le ton par replique (speech_metadata) ? Les 2.x et 3.1 non."""
+    return not model.startswith(("gemini-2.", "gemini-3.1-", "gemini-3.0-"))
+
+
+def _ecrire_audio(response, pcm_path: Path):
+    """Audio de la reponse -> wav : deja un wav (RIFF, modeles 3.8+) ou PCM brut 24 kHz 16 bits mono."""
+    audio = response.candidates[0].content.parts[0].inline_data.data
+    if audio[:4] == b"RIFF":
+        pcm_path.write_bytes(audio)
+        return
+    with wave.open(str(pcm_path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)  # 16-bit
+        wf.setframerate(SR_TTS)
+        wf.writeframes(audio)
+
+
+MODELE_UTILISE = None  # modele qui a produit la derniere synthese (principal ou repli)
+
+
+def _avec_repli(appel, label: str):
+    """appel(modele) sur le modele TTS, puis sur le repli si le principal reste indisponible."""
+    global MODELE_UTILISE
+    try:
+        response = appel(TTS_MODEL_NAME)
+        MODELE_UTILISE = TTS_MODEL_NAME
+    except Exception as exc:
+        if not TTS_FALLBACK_MODEL or TTS_FALLBACK_MODEL == TTS_MODEL_NAME:
+            raise
+        print(f"    {label} : {TTS_MODEL_NAME} en echec ({str(exc)[:120]}) -> {TTS_FALLBACK_MODEL}", flush=True)
+        response = appel(TTS_FALLBACK_MODEL)
+        MODELE_UTILISE = TTS_FALLBACK_MODEL
+    return response
 
 
 DEFAULT_TONE = "chaleureux, dynamique, rythme rapide pour réseaux sociaux"
@@ -43,78 +84,82 @@ SILENT_WPS = 3.0
 
 
 def synthesize(client, text: str, voice: str, pcm_path: Path, tone: str = DEFAULT_TONE):
-    """Appelle l'API Gemini TTS et ecrit le flux audio en wav (PCM 24kHz 16-bit mono)."""
+    """Une voix : appelle Gemini TTS et ecrit le wav."""
     from google.genai import types
 
-    response = generate_with_retry(
-        client, model=TTS_MODEL_NAME, label="Gemini TTS",
-        contents=f"[style: {tone}] {text}",
-        config=types.GenerateContentConfig(
-            response_modalities=["AUDIO"],
-            speech_config=types.SpeechConfig(
-                voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice)
-                )
-            ),
-        ),
-    )
-    audio_data = response.candidates[0].content.parts[0].inline_data.data
+    def appel(model):
+        if _metadonnees_parole(model):
+            contents = [types.Content(role="user", parts=[
+                types.Part(text=text, speech_metadata=types.SpeechMetadata(style=tone))])]
+        else:
+            contents = f"[style: {tone}] {text}"
+        return generate_with_retry(
+            client, model=model, label="Gemini TTS", contents=contents,
+            config=types.GenerateContentConfig(
+                response_modalities=["AUDIO"],
+                speech_config=types.SpeechConfig(voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice)))))
+    _ecrire_audio(_avec_repli(appel, "Gemini TTS"), pcm_path)
 
-    with wave.open(str(pcm_path), "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)  # 16-bit
-        wf.setframerate(24000)
-        wf.writeframes(audio_data)
+
+def style_replique(tone: str, expr: str | None) -> str:
+    """Ton du reel + ton de la replique, tire de l'expression du personnage (dessins.json "voix_expressions")."""
+    ton_expr = (catalog.dessins()["personnage"].get("voix_expressions") or {}).get(expr or "")
+    return f"{tone} ; {ton_expr}" if ton_expr else tone
 
 
 def synthesize_dialogue(client, lines: list[tuple[str, str]], voices: dict[str, str], pcm_path: Path,
-                        tone: str = DEFAULT_TONE):
+                        tone: str = DEFAULT_TONE, exprs: list[str | None] | None = None):
     """
     Dessin anime : toutes les repliques en UN seul appel, une voix par personnage
     (Gemini TTS multi-locuteurs, 2 voix au plus ; un seul personnage -> voix simple).
-    Les noms de locuteurs (Lea:, Karim:) guident le TTS et ne sont pas lus.
+    Modele 3.8+ : une partie par replique, avec son locuteur et son ton (expression du
+    personnage). Ancien format (repli) : le dialogue en texte, "Lea: ..." -- le modele y
+    devine qui parle et fond parfois tout dans une voix (voir voix_controle.py).
     """
     from google.genai import types
 
     speakers = list(dict.fromkeys(qui for qui, _ in lines))
     if len(speakers) > 2:
         raise ValueError(f"Gemini TTS : 2 voix au plus par dialogue, recu {speakers}")
-    label = {qui: qui.capitalize() for qui in speakers}
-    script = "\n".join(f"{label[qui]}: {texte}" for qui, texte in lines)
     if len(speakers) == 1:
-        voice_config = types.SpeechConfig(voice_config=types.VoiceConfig(
-            prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voices[speakers[0]])))
-    else:
-        voice_config = types.SpeechConfig(multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
-            speaker_voice_configs=[types.SpeakerVoiceConfig(
-                speaker=label[qui], voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voices[qui])))
-                for qui in speakers]))
-    names = " and ".join(label[q] for q in speakers)
-    response = generate_with_retry(
-        client, model=TTS_MODEL_NAME, label="Gemini TTS (dialogue)",
-        # Consigne au format de la doc Gemini : une consigne libre en francais a deja
-        # inverse les voix des deux personnages (verifie a l'ecoute).
-        contents=f"TTS the following conversation between {names}, in French "
-                 f"(style: {tone}; short pause between lines):\n{script}",
-        config=types.GenerateContentConfig(response_modalities=["AUDIO"], speech_config=voice_config),
-    )
-    audio_data = response.candidates[0].content.parts[0].inline_data.data
-    with wave.open(str(pcm_path), "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(24000)
-        wf.writeframes(audio_data)
+        texte = " ".join(t for _, t in lines)
+        return synthesize(client, texte, voices[speakers[0]], pcm_path, tone)
+    exprs = exprs or [None] * len(lines)
+    label = {qui: qui.capitalize() for qui in speakers}
+    voice_config = types.SpeechConfig(multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
+        speaker_voice_configs=[types.SpeakerVoiceConfig(
+            speaker=label[qui], voice_config=types.VoiceConfig(
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voices[qui])))
+            for qui in speakers]))
+
+    def appel(model):
+        if _metadonnees_parole(model):
+            contents = [types.Content(role="user", parts=[
+                types.Part(text=texte, speech_metadata=types.SpeechMetadata(
+                    speaker=label[qui], style=style_replique(tone, expr)))
+                for (qui, texte), expr in zip(lines, exprs)])]
+        else:
+            script = "\n".join(f"{label[qui]}: {texte}" for qui, texte in lines)
+            names = " and ".join(label[q] for q in speakers)
+            # Consigne au format de la doc Gemini : une consigne libre en francais a deja
+            # inverse les voix des deux personnages (verifie a l'ecoute).
+            contents = (f"TTS the following conversation between {names}, in French "
+                        f"(style: {tone}; short pause between lines):\n{script}")
+        return generate_with_retry(
+            client, model=model, label="Gemini TTS (dialogue)", contents=contents,
+            config=types.GenerateContentConfig(response_modalities=["AUDIO"], speech_config=voice_config))
+    _ecrire_audio(_avec_repli(appel, "Gemini TTS (dialogue)"), pcm_path)
 
 
 def synthesize_lines(client, lines: list[tuple[str, str]], voices: dict[str, str], pcm_path: Path,
-                     tone: str = DEFAULT_TONE):
+                     tone: str = DEFAULT_TONE, exprs: list[str | None] | None = None):
     """Repli : une synthese par replique, chacune avec la voix de son personnage, mises bout a bout."""
     import numpy as np
     parts = []
-    for n, (qui, texte) in enumerate(lines):
+    for n, ((qui, texte), expr) in enumerate(zip(lines, exprs or [None] * len(lines))):
         tmp = pcm_path.with_suffix(f".l{n}.wav")
-        synthesize(client, texte, voices[qui], tmp, tone)
+        synthesize(client, texte, voices[qui], tmp, style_replique(tone, expr))
         parts += [_pcm(tmp), np.zeros(int(0.25 * SR_TTS))]
         tmp.unlink()
     with wave.open(str(pcm_path), "wb") as wf:
@@ -174,15 +219,21 @@ def append_cta(body_wav: Path, clip: Path, out_wav: Path):
         wf.writeframes(np.clip(out, -32768, 32767).astype(np.int16).tobytes())
 
 
-def precompute_cta(client):
-    """Enregistre chaque phrase de CTA du catalogue pour chaque voix (rotation + personnages) dans assets/voix_cta/."""
+def precompute_cta(client, force: bool = False):
+    """
+    Enregistre chaque phrase de CTA du catalogue pour chaque voix (rotation + personnages) dans
+    assets/voix_cta/. force : reenregistre tout (a faire apres un changement de modele TTS, sinon
+    la phrase finale n'a pas le meme grain que le reste du reel).
+    """
     cfg = catalog.config()
     phrases = list(dict.fromkeys(p for k in ("ctas_conseil", "ctas_produit") for p in cfg.get(k) or []))
     voices = list(dict.fromkeys([v["id"] for v in catalog.voices()] + [p["voix"] for p in catalog.personnages().values()]))
     for voice in voices:
         for phrase in phrases:
             if (CTA_DIR / cta_filename(voice, phrase)).exists():
-                continue
+                if not force:
+                    continue
+                (CTA_DIR / cta_filename(voice, phrase)).unlink()
             path = cta_clip(client, voice, phrase, CTA_DIR)
             print(f"OK -> {path}")
 
@@ -232,7 +283,7 @@ def main():
         client = genai.Client(api_key=api_key)
 
     if args.precompute_cta:
-        precompute_cta(client)
+        precompute_cta(client, args.force)
         return
 
     scripts = json.loads(Path(args.scripts).read_text(encoding="utf-8"))
@@ -263,7 +314,7 @@ def main():
             cta_voice = voices.get(lines[-1][0]) if lines else voice
             text_key += f"\n[cta enregistre : {cta_filename(cta_voice, last['texte'].strip())}]"
         # Empreinte = tout ce qui change le son : texte, voix, ton (ou silence).
-        fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone}]\n{text_key}"
+        fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone} | {TTS_MODEL_NAME}]\n{text_key}"
 
         wav_path = out_dir / f"reel_{i:02d}.wav"
         mp3_path = out_dir / f"reel_{i:02d}.mp3"
@@ -290,10 +341,16 @@ def main():
                 body_lines = lines[:-1] if cta_voice and lines else lines
                 body_text = " ".join(s["texte"].strip() for s in script["scenes"][:-1]) if cta_voice else text
                 if lines:
+                    body_exprs = dialogue_expressions(script)[:len(body_lines)]
                     if args.par_replique:
-                        synthesize_lines(client, body_lines, voices, wav_path, tone)
+                        synthesize_lines(client, body_lines, voices, wav_path, tone, body_exprs)
                     else:
-                        synthesize_dialogue(client, body_lines, voices, wav_path, tone)
+                        synthesize_dialogue(client, body_lines, voices, wav_path, tone, body_exprs)
+                    # Qui parle a-t-il ete donne replique par replique (rien a deviner pour le TTS) ?
+                    # Sinon run_pipeline controle les voix (voix_controle.py).
+                    declares = args.par_replique or _metadonnees_parole(MODELE_UTILISE or TTS_MODEL_NAME)
+                    (out_dir / f"reel_{i:02d}.voix.json").write_text(json.dumps(
+                        {"modele": MODELE_UTILISE, "locuteurs_declares": bool(declares)}), encoding="utf-8")
                 else:
                     synthesize(client, body_text, voice, wav_path, tone)
                 if cta_voice:

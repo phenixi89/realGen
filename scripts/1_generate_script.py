@@ -318,7 +318,10 @@ Mise en scène :
   - "id" unique dans la scène (deux chaises : "c1", "c2") ; un support est déclaré avant ce qui est posé dessus ;
   - 3 à 7 objets par scène : les personnages présents + au moins un objet ou meuble qui situe l'action ;
   - "parler" porte UNE réplique ("texte" : 3 à {REPLIQUE_MAX_WORDS} mots, une phrase orale), avec "expr" et "geste"
-    accordés au texte (geste optionnel) ; 2 à 5 répliques par scène ;
+    accordés au texte (geste optionnel ; "expr" donne aussi le ton de la voix) ; 2 à 5 répliques par scène ;
+  - des répliques PARLÉES, comme entre deux amis : mots de tous les jours, phrases courtes, relances et
+    réactions (« Attends… », « Ah bon ? », « Franchement, », « Bah oui ! »), un personnage peut couper l'autre ;
+    jamais de langage écrit ou de jargon (pas « valorise ton périmètre d'action », mais « dis ce que TU as géré ») ;
   - CHAQUE scène a 1 à 3 actions sans parole qui se voient, utiles à l'histoire (entrer, s'asseoir, tenir puis
     boire, poser, téléphone qui vibre, ordinateur qui tape, chat qui miaule ou dort, sauter de joie, idée...),
     à la suite ou en même temps que la réplique précédente ("avec": true) ; au moins {MIN_BRUITAGES} dans le reel

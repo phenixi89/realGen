@@ -1,5 +1,5 @@
 {
-  "_doc": "Dessin anime 'trait blanc' (assets/anim/scene.html, moteur assets/anim/dessin/). Une scene = un fond + des objets places + des actions jouees dans l'ordre ; plusieurs scenes s'enchainent. fonds : decors (id = fond de la scene). objets : tout ce qui se place dans une scene -- personnage, animal, objet (se tient, se pose), decor (meuble, element mural) ; ancres = points ou poser / tenir un autre objet ('sur': 'id.ancre') ; actions = actions propres au type ; mural = place avec 'y' (px, centre de l'objet) au lieu du sol. personnage : expressions, gestes (aussi utilisables dans 'parler' : geste tenu le temps de la replique) et actions communes a tous les personnages ; un personnage peut commencer assis ('assis': id d'une chaise declaree avant lui). Ajouter un type = l'ecrire dans assets/anim/dessin/*.js (Dessin.enregistrer) puis le declarer ici ; python scripts/catalog.py verifie que les deux correspondent. Personnage : nom (affiche dans les bulles) et voix (voix Gemini TTS de ses repliques dans le format dessin anime ; 2 personnages qui parlent au plus par reel, limite du TTS multi-locuteurs).",
+  "_doc": "Dessin anime 'trait blanc' (assets/anim/scene.html, moteur assets/anim/dessin/). Une scene = un fond + des objets places + des actions jouees dans l'ordre ; plusieurs scenes s'enchainent. fonds : decors (id = fond de la scene). objets : tout ce qui se place dans une scene -- personnage, animal, objet (se tient, se pose), decor (meuble, element mural) ; ancres = points ou poser / tenir un autre objet ('sur': 'id.ancre') ; actions = actions propres au type ; mural = place avec 'y' (px, centre de l'objet) au lieu du sol. personnage : expressions, gestes (aussi utilisables dans 'parler' : geste tenu le temps de la replique) et actions communes a tous les personnages ; un personnage peut commencer assis ('assis': id d'une chaise declaree avant lui). Ajouter un type = l'ecrire dans assets/anim/dessin/*.js (Dessin.enregistrer) puis le declarer ici ; python scripts/catalog.py verifie que les deux correspondent. Personnage : nom (affiche dans les bulles) et voix (voix Gemini TTS de ses repliques dans le format dessin anime ; 2 personnages qui parlent au plus par reel, limite du TTS multi-locuteurs). voix_expressions : ton dit par la voix (Gemini TTS, speech_metadata.style) pour une replique jouee avec cette expression ; une cle par expression.",
   "fonds": [
     {
       "id": "vide",
@@ -27,6 +27,14 @@
       "triste",
       "agace"
     ],
+    "voix_expressions": {
+      "neutre": "naturel, détendu",
+      "content": "enjoué, souriant, convaincu",
+      "choc": "surpris, la voix qui monte",
+      "doute": "hésitant, perplexe, un peu plus lent",
+      "triste": "découragé, inquiet, plus bas",
+      "agace": "agacé, un peu sec"
+    },
     "gestes": [
       "salut",
       "montre",
