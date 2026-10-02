@@ -1,4 +1,4 @@
-google-genai>=1.0.0
+google-genai>=2.27.0  # speech_metadata (locuteur et ton par replique, gemini-3.8-flash-tts)
 playwright>=1.45.0
 openai-whisper>=20231117
 moviepy>=2.0.0
