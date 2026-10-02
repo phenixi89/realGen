@@ -1,7 +1,8 @@
 // Fonds du dessin anime (coordonnees ecran 1080x1920, sol a la hauteur `sol`).
 // Le decor de fond est trace plus fin et plus transparent que les personnages
 // (profondeur), avec quelques touches de couleur legeres (lavis).
-//   vide, bureau, cafe, salle_attente, salle_entretien, salon, metro, visio.
+//   vide, bureau, cafe, salle_attente, salle_entretien, salon, metro, visio,
+//   ascenseur, open_space, bureau_manager, salon_emploi.
 (() => {
   const { g } = Dessin;
   const reg = (nom, def) => Dessin.enregistrer("fond_" + nom, { categorie: "fond", ...def });
@@ -271,6 +272,160 @@
     },
     vie(tl, f, t0, t1) {
       tl.fromTo(f.rec, { opacity: 1 }, { opacity: 0.2, duration: 0.6, yoyo: true, repeat: Math.ceil((t1 - t0) / 0.6), immediateRender: false }, t0);
+    },
+  });
+
+  // Cabine d'ascenseur : portes coulissantes au fond, afficheur d'etage qui monte, boutons, main courante.
+  reg("ascenseur", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      P.rect(grp, 110, 520, 860, m - 520, { ...FOND, w: 4, alpha: 0.8 });
+      P.lavis(grp, [[120, 530], [960, 530], [960, 600], [120, 600]], "#ffe08a", 0.16);
+      // Afficheur d'etage : un numero qui change.
+      P.rect(grp, 440, 580, 200, 96, { ...FOND, w: 3 });
+      const etages = [];
+      ["4", "5", "6", "7"].forEach((n, i) => { const e = g(grp, { opacity: i ? 0 : 1 }); P.texte(e, 540, 652, n, { taille: 70 }); etages.push(e); });
+      P.trace(grp, [[500, 600], [540, 590], [580, 600]], { w: 2.4, passes: 1, alpha: 0.7 });
+      // Portes : deux battants, fente au milieu, reflets.
+      P.lavis(grp, [[130, 720], [534, 720], [534, m - 20], [130, m - 20]], "#9bb4c8", 0.12);
+      P.lavis(grp, [[546, 720], [950, 720], [950, m - 20], [546, m - 20]], "#9bb4c8", 0.12);
+      P.rect(grp, 126, 716, 408, m - 20 - 716, { ...FOND, w: 3 }); P.rect(grp, 546, 716, 408, m - 20 - 716, { ...FOND, w: 3 });
+      for (const [x0, x1] of [[190, 250], [610, 670]]) P.trace(grp, [[x0, 780], [x1, 740]], { w: 2, passes: 1, alpha: 0.35 });
+      // Panneau de boutons a droite.
+      P.rect(grp, 1000, 840, 56, 200, { ...FOND, w: 3 });
+      [870, 920, 970].forEach((yy, i) => { P.rond(grp, 1028, yy, 12, 12, { w: 2.4, passes: 1 }); if (i === 1) P.lavisRond(grp, 1028, yy, 10, 10, "#ffc94d", 0.8); });
+      // Main courante.
+      P.trace(grp, [[110, m - 330], [970, m - 330]], { ...FOND, w: 4 });
+      for (const x of [150, 930]) P.trace(grp, [[x, m - 330], [x, m - 308]], { ...FOND, w: 3 });
+      sol(grp, P, y, xs, { cailloux: false });
+      return { etages };
+    },
+    vie(tl, f, t0, t1) {
+      const pas = 2.2;
+      f.etages.forEach((e, i) => { if (i) tl.set(e, { opacity: 1 }, t0 + i * pas).set(f.etages[i - 1], { opacity: 0 }, t0 + i * pas); });
+    },
+  });
+
+  // Plateau open space : bureaux au fond avec ecrans allumes, baie vitree sur la ville, suspensions, plante.
+  reg("open_space", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      mur(grp, P, m);
+      // Baie vitree et immeubles.
+      P.lavis(grp, [[96, 586], [984, 586], [984, 830], [96, 830]], "#8fd3ff", 0.2);
+      P.rect(grp, 90, 580, 900, 260, FOND);
+      for (const x of [390, 690]) P.trace(grp, [[x, 580], [x, 840]], { ...FOND, w: 2.4 });
+      let x = 110;
+      for (const [w, h] of [[60, 120], [80, 190], [50, 90], [90, 150], [70, 210], [60, 110], [100, 170], [70, 130], [80, 200], [60, 100]]) {
+        P.trace(grp, [[x, 836], [x, 836 - h], [x + w, 836 - h], [x + w, 836]], { w: 2, passes: 1, alpha: 0.4 }); x += w + 12;
+      }
+      // Suspensions.
+      for (const lx of [220, 540, 860]) {
+        P.trace(grp, [[lx, 330], [lx, 470]], { w: 2, passes: 1, alpha: 0.5 });
+        P.lavis(grp, [[lx - 60, 520], [lx + 60, 520], [lx + 34, 470], [lx - 34, 470]], "#ffe066", 0.35);
+        P.trace(grp, [[lx - 60, 520], [lx - 34, 470], [lx + 34, 470], [lx + 60, 520], [lx - 60, 520]], { w: 2.6, passes: 1, alpha: 0.8 });
+      }
+      // Bureaux du fond : plateau, pieds, ecran allume, cloison.
+      const bureaux = [[170, 1], [470, 0], [770, 1]];
+      for (const [bx, cloison] of bureaux) {
+        P.trace(grp, [[bx - 110, m - 130], [bx + 110, m - 130]], { w: 3, passes: 1, alpha: 0.7 });
+        P.trace(grp, [[bx - 100, m - 130], [bx - 100, m]], { w: 2.4, passes: 1, alpha: 0.6 });
+        P.trace(grp, [[bx + 100, m - 130], [bx + 100, m]], { w: 2.4, passes: 1, alpha: 0.6 });
+        P.lavis(grp, [[bx - 40, m - 230], [bx + 40, m - 230], [bx + 40, m - 160], [bx - 40, m - 160]], "#7fc8ff", 0.4);
+        P.rect(grp, bx - 42, m - 232, 84, 72, { w: 2.2, passes: 1, alpha: 0.7 });
+        P.trace(grp, [[bx, m - 160], [bx, m - 132]], { w: 2.2, passes: 1, alpha: 0.7 });
+        if (cloison) P.trace(grp, [[bx + 130, m - 260], [bx + 130, m - 120]], { w: 2.4, passes: 1, alpha: 0.45 });
+      }
+      // Plante a droite.
+      P.trace(grp, [[1010, m], [1004, m - 90]], { w: 2.4, passes: 1, alpha: 0.7 });
+      P.lavisRond(grp, 1004, m - 130, 46, 56, "#5cc98a", 0.35);
+      for (const [dx, dy] of [[-26, -90], [0, -130], [26, -96]]) P.trace(grp, [[1004, m - 70], [1004 + dx, m + dy + 0]], { w: 2.2, passes: 1, alpha: 0.7 });
+      sol(grp, P, y, xs, { cailloux: false });
+      return {};
+    },
+  });
+
+  // Bureau du manager : baie panoramique, diplomes encadres, bibliotheque, tapis, plaque « Direction ».
+  reg("bureau_manager", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      mur(grp, P, m);
+      // Grande baie sur la ville au crepuscule.
+      P.lavis(grp, [[316, 596], [764, 596], [764, 1010], [316, 1010]], "#ffb067", 0.2);
+      P.rect(grp, 310, 590, 460, 430, FOND);
+      P.trace(grp, [[540, 590], [540, 1020]], { ...FOND, w: 2.4 }); P.trace(grp, [[310, 800], [770, 800]], { ...FOND, w: 2.4 });
+      let x = 322;
+      for (const [w, h] of [[50, 120], [40, 200], [60, 90], [44, 170], [56, 230], [40, 130], [60, 160], [36, 110]]) {
+        P.trace(grp, [[x, 1016], [x, 1016 - h], [x + w, 1016 - h], [x + w, 1016]], { w: 2, passes: 1, alpha: 0.45 }); x += w + 8;
+      }
+      P.lavisRond(grp, 660, 700, 34, 34, "#ffe08a", 0.6);
+      P.trace(grp, [[290, 1030], [790, 1030]], { ...FOND, w: 3.4 });
+      // Diplomes encadres a gauche.
+      [[90, 700, 110, 80], [90, 810, 110, 80], [90, 920, 110, 80]].forEach(([fx, fy, w, h], i) => {
+        P.rect(grp, fx, fy, w, h, { w: 2.6, passes: 1 });
+        P.trace(grp, [[fx + 14, fy + 30], [fx + w - 14, fy + 30]], { w: 1.8, passes: 1, alpha: 0.6 });
+        P.trace(grp, [[fx + 14, fy + 50], [fx + w - 30, fy + 50]], { w: 1.8, passes: 1, alpha: 0.6 });
+        if (i === 1) P.lavisRond(grp, fx + w - 22, fy + h - 16, 9, 9, "#ffc94d", 0.8);
+      });
+      // Bibliotheque a droite.
+      P.rect(grp, 840, 620, 200, 700, FOND);
+      for (const yy of [770, 920, 1070, 1220]) P.trace(grp, [[840, yy], [1040, yy]], FOND);
+      const couleurs = ["#ff7a6b", null, "#4f8dff", "#ffc94d", null, "#5cc98a"];
+      [[620, 770], [770, 920], [920, 1070], [1070, 1220]].forEach(([haut, bas], r) => {
+        let bx = 852;
+        couleurs.forEach((c, i) => {
+          const w = 20 + ((i + r) % 3) * 6, h = 70 + ((i * 7 + r * 3) % 4) * 12;
+          if (c) P.lavis(grp, [[bx, bas - h], [bx + w, bas - h], [bx + w, bas], [bx, bas]], c, 0.35);
+          P.rect(grp, bx, bas - h, w, h, { w: 1.8, passes: 1, alpha: 0.55 }); bx += w + 6;
+        });
+      });
+      // Tapis sous le bureau.
+      P.lavisRond(grp, 540, y + 60, 360, 34, "#8f7bff", 0.16);
+      P.rond(grp, 540, y + 60, 360, 34, { w: 2.2, passes: 1, alpha: 0.5 });
+      P.texte(grp, 540, 566, "Direction", { taille: 36, alpha: 0.7 });
+      sol(grp, P, y, xs, { cailloux: false });
+      return {};
+    },
+  });
+
+  // Salon de l'emploi : guirlande de fanions, stands avec comptoir et kakemono, ballons, affiche « Salon de l'emploi ».
+  reg("salon_emploi", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      mur(grp, P, m);
+      // Banderole au centre, entre les deux personnages (les bulles passent plus haut).
+      P.lavis(grp, [[376, 686], [704, 686], [704, 770], [376, 770]], "#ffc94d", 0.25);
+      P.rect(grp, 370, 680, 340, 96, { ...FOND, w: 3.4 });
+      P.texte(grp, 540, 744, "Salon de l'emploi", { taille: 36, alpha: 0.9 });
+      for (const x of [390, 690]) P.trace(grp, [[x, 680], [x + (x < 540 ? -10 : 10), 640]], { w: 2, passes: 1, alpha: 0.5 });
+      // Guirlande de fanions (oscille doucement).
+      const guirlande = g(grp);
+      P.trace(guirlande, [[40, 600], [300, 640], [540, 656], [780, 640], [1040, 600]], { w: 2, passes: 1, alpha: 0.7 });
+      const coul = ["#ff7a6b", "#ffc94d", "#4f8dff", "#5cc98a", "#ff8fb1"];
+      for (let i = 0; i < 11; i++) {
+        const t = (i + 0.5) / 11, fx = 40 + t * 1000, fy = 600 + Math.sin(t * Math.PI) * 56 + 4;
+        P.lavis(guirlande, [[fx - 22, fy], [fx + 22, fy], [fx, fy + 52]], coul[i % 5], 0.55);
+        P.trace(guirlande, [[fx - 22, fy], [fx + 22, fy], [fx, fy + 52], [fx - 22, fy]], { w: 2, passes: 1, alpha: 0.7 });
+      }
+      gsap.set(guirlande, { svgOrigin: "540 580" });
+      // Stands : comptoir, kakemono, logo.
+      [[160, "RH", "#4f8dff"], [540, "Tech", "#5cc98a"], [920, "Vente", "#ff7a6b"]].forEach(([sx, nom, c]) => {
+        P.lavis(grp, [[sx - 90, m - 150], [sx + 90, m - 150], [sx + 90, m], [sx - 90, m]], c, 0.22);
+        P.rect(grp, sx - 90, m - 150, 180, 150, { w: 2.8, passes: 1, alpha: 0.8 });
+        P.trace(grp, [[sx - 100, m - 150], [sx + 100, m - 150]], { w: 3.4, passes: 1 });
+        P.texte(grp, sx, m - 70, nom, { taille: 46, alpha: 0.9 });
+        P.rect(grp, sx - 40, m - 520, 80, 300, { w: 2.4, passes: 1, alpha: 0.6 });
+        P.lavis(grp, [[sx - 36, m - 516], [sx + 36, m - 516], [sx + 36, m - 224], [sx - 36, m - 224]], c, 0.3);
+        P.rond(grp, sx, m - 440, 16, 16, { w: 2.2, passes: 1, alpha: 0.7 });
+      });
+      // Ballons au sol a droite.
+      P.trace(grp, [[1010, m], [1006, m - 110]], { w: 1.8, passes: 1, alpha: 0.5 });
+      P.lavisRond(grp, 1006, m - 140, 26, 32, "#ff8fb1", 0.5); P.rond(grp, 1006, m - 140, 26, 32, { w: 2.2, passes: 1, alpha: 0.7 });
+      sol(grp, P, y, xs, { cailloux: false });
+      return { guirlande };
+    },
+    vie(tl, f, t0, t1) {
+      tl.fromTo(f.guirlande, { rotation: -0.8 }, { rotation: 0.8, duration: 1.4, yoyo: true, repeat: Math.ceil((t1 - t0) / 1.4), ease: "sine.inOut", immediateRender: false }, t0);
     },
   });
 })();

@@ -1,5 +1,5 @@
 {
-  "_doc": "Dessin anime 'trait blanc' (assets/anim/scene.html, moteur assets/anim/dessin/). Une scene = un fond + des objets places + des actions jouees dans l'ordre ; plusieurs scenes s'enchainent. fonds : decors (id = fond de la scene). objets : tout ce qui se place dans une scene -- personnage, animal, objet (se tient, se pose), decor (meuble, element mural) ; ancres = points ou poser / tenir un autre objet ('sur': 'id.ancre') ; actions = actions propres au type ; mural = place avec 'y' (px, centre de l'objet) au lieu du sol. personnage : expressions, gestes (aussi utilisables dans 'parler' : geste tenu le temps de la replique) et actions communes a tous les personnages ; un personnage peut commencer assis ('assis': id d'une chaise declaree avant lui). Ajouter un type = l'ecrire dans assets/anim/dessin/*.js (Dessin.enregistrer) puis le declarer ici ; python scripts/catalog.py verifie que les deux correspondent. Personnage : nom (affiche dans les bulles) et voix (voix Gemini TTS de ses repliques dans le format dessin anime ; 2 personnages qui parlent au plus par reel, limite du TTS multi-locuteurs). voix_expressions : ton dit par la voix (Gemini TTS, speech_metadata.style) pour une replique jouee avec cette expression ; une cle par expression. camera : action sans 'qui' qui recadre la scene (cadres : large, buste, visage -- sur un personnage --, objet -- sur un objet ; 'rapide': true = coupe seche) ; jouee a l'instant de l'action suivante, sans la retarder. Scene : 'ellipse' = carton manuscrit (« Une semaine plus tard… ») au debut de la scene, a la place du titre. Inserts (gros plan plein cadre, actions d'objets : cv.corriger, tampon.tamponner, ordinateur.afficher, telephone.notifier) : voir la description de chaque action dans actions_objets. imaginer : nuage de pensee avec une icone de assets/anim/icones.js. trames : structures d'histoire, une par reel, tiree en rotation (la moins recemment utilisee) et donnee a l'IA. serie : le format dessin anime est une serie (titre, episodes numerotes, resume de chaque episode garde dans l'historique et rappele aux suivants). Personnage 'role' : 'principal' (peut dire l'appel a l'action) ou 'secondaire'.",
+  "_doc": "Dessin anime 'trait blanc' (assets/anim/scene.html, moteur assets/anim/dessin/). Une scene = un fond + des objets places + des actions jouees dans l'ordre ; plusieurs scenes s'enchainent. fonds : decors (id = fond de la scene). objets : tout ce qui se place dans une scene -- personnage, animal, objet (se tient, se pose), decor (meuble, element mural) ; ancres = points ou poser / tenir un autre objet ('sur': 'id.ancre') ; actions = actions propres au type ; mural = place avec 'y' (px, centre de l'objet) au lieu du sol. personnage : expressions, gestes (aussi utilisables dans 'parler' : geste tenu le temps de la replique) et actions communes a tous les personnages ; un personnage peut commencer assis ('assis': id d'une chaise declaree avant lui). Ajouter un type = l'ecrire dans assets/anim/dessin/*.js (Dessin.enregistrer) puis le declarer ici ; python scripts/catalog.py verifie que les deux correspondent. Personnage : nom (affiche dans les bulles) et voix (voix Gemini TTS de ses repliques dans le format dessin anime ; 2 personnages qui parlent au plus par reel, limite du TTS multi-locuteurs). voix_expressions : ton dit par la voix (Gemini TTS, speech_metadata.style) pour une replique jouee avec cette expression ; une cle par expression. camera : action sans 'qui' qui recadre la scene (cadres : large, buste, visage -- sur un personnage --, objet -- sur un objet ; 'rapide': true = coupe seche) ; jouee a l'instant de l'action suivante, sans la retarder. Scene : 'ellipse' = carton manuscrit (« Une semaine plus tard… ») au debut de la scene, a la place du titre. Inserts (gros plan plein cadre, actions d'objets : cv.corriger, tampon.tamponner, ordinateur.afficher, telephone.notifier) : voir la description de chaque action dans actions_objets. imaginer : nuage de pensee avec une icone de assets/anim/icones.js. trames : structures d'histoire, une par reel, tiree en rotation (la moins recemment utilisee) et donnee a l'IA. serie : le format dessin anime est une serie (titre, episodes numerotes, resume de chaque episode garde dans l'historique et rappele aux suivants). Personnage 'role' : 'principal' (peut dire l'appel a l'action) ou 'secondaire'. Camera : 'lent': true = travelling avant progressif (~3 s) ; cadres 'dessous' (contre-plongee) et 'epaule' (par-dessus l'epaule, champ 'depuis'). Inserts : diptyque.comparer = split-screen. Les bulles de dialogue sont petites et translucides, sans prenom du personnage.",
   "fonds": [
     {
       "id": "vide",
@@ -32,6 +32,22 @@
     {
       "id": "visio",
       "description": "Appel vidéo vu à l'écran : deux vignettes (gauche x 250, droite x 820), point d'enregistrement, boutons micro / caméra / raccrocher. Pour un entretien à distance."
+    },
+    {
+      "id": "ascenseur",
+      "description": "Cabine d'ascenseur : portes coulissantes au fond, afficheur d'étage qui monte (4, 5, 6, 7), panneau de boutons, main courante. Idéal pour un pitch de 20 secondes."
+    },
+    {
+      "id": "open_space",
+      "description": "Plateau open space : bureaux et écrans allumés au fond, baie vitrée sur la ville, suspensions, plante. Ambiance d'entreprise vivante."
+    },
+    {
+      "id": "bureau_manager",
+      "description": "Bureau du manager : grande baie sur la ville au crépuscule, diplômes encadrés, bibliothèque, tapis, plaque « Direction ». Pour négocier, annoncer, décider."
+    },
+    {
+      "id": "salon_emploi",
+      "description": "Salon de l'emploi : banderole « Salon de l'emploi », guirlande de fanions qui bouge, stands RH / Tech / Vente avec comptoir et kakemono, ballons."
     }
   ],
   "personnage": {
@@ -246,6 +262,15 @@
       "ancres": [
         "assise"
       ]
+    },
+    {
+      "id": "diptyque",
+      "categorie": "decor",
+      "mural": true,
+      "description": "Split-screen invisible dans la scène : « comparer » montre deux versions d'un même moment côte à côte (avant / après, deux lendemains, ce que je dis / ce que le recruteur entend).",
+      "actions": [
+        "comparer"
+      ]
     }
   ],
   "actions_objets": {
@@ -259,14 +284,17 @@
     "marcher": "chat : champ vers",
     "traverser": "chat : traverse la scène vers",
     "miauler": "chat : miaule",
-    "dormir": "chat : dort en ronronnant (champ duree)"
+    "dormir": "chat : dort en ronronnant (champ duree)",
+    "comparer": "diptyque : SPLIT-SCREEN plein écran, deux panneaux côte à côte : titre_gauche (1 à 3 mots, ex : Version A) + texte_gauche (3 à 12 mots), titre_droite + texte_droite (3 à 12 mots) ; gauche = ce qui rate (rouge), droite = ce qui marche (vert)"
   },
   "camera": {
     "cadres": {
       "large": "plan large (retour au décor entier)",
       "buste": "plan rapproché sur un personnage (sur)",
       "visage": "gros plan sur le visage d'un personnage (sur) : réaction, chute",
-      "objet": "gros plan sur un objet de la scène (sur)"
+      "objet": "gros plan sur un objet de la scène (sur)",
+      "dessous": "contre-plongée (sur un personnage) : la caméra remonte des pieds au visage, le personnage domine la scène",
+      "epaule": "par-dessus l'épaule (sur = le personnage regardé, depuis = celui de dos, au bord du cadre) : face-à-face"
     },
     "usage": "{\"action\": \"camera\", \"cadre\": \"visage\", \"sur\": \"karim\", \"rapide\": true} -- sans qui ; jouée en même temps que l'action suivante"
   },
@@ -328,7 +356,7 @@
     {
       "id": "deux_futurs",
       "nom": "Deux lendemains",
-      "consigne": "On joue deux versions du même moment : la version habituelle de Karim, avec sa conséquence le lendemain, puis la version avec le conseil, avec un lendemain très différent. Le contraste, visible (calendrier, notification, tampon), fait la démonstration."
+      "consigne": "On joue deux versions du même moment : la version habituelle de Karim, avec sa conséquence le lendemain, puis la version avec le conseil, avec un lendemain très différent. Le contraste se montre en split-screen (objet diptyque, action « comparer ») ou en deux scènes de même décor (calendrier, notification, tampon)."
     },
     {
       "id": "faux_ami",

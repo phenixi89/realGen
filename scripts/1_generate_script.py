@@ -117,11 +117,11 @@ REPLIQUE_MAX_WORDS = 16
 # Actions sans parole qui ne se voient presque pas (ne comptent pas comme "action" d'une scene).
 ACTIONS_PAROLE = ("parler", "expression", "geste", "regarder", "pause", "camera")
 # Mise en scene "cinema" (gros plans, inserts, nuage de pensee, carton d'ellipse) : au moins une par reel.
-ACTIONS_MISE_EN_SCENE = ("camera", "corriger", "tamponner", "afficher", "notifier", "imaginer")
+ACTIONS_MISE_EN_SCENE = ("camera", "corriger", "tamponner", "afficher", "notifier", "imaginer", "comparer")
 # Actions qui font un bruitage (Dessin.son dans assets/anim/dessin/) : au moins 2 par reel.
 ACTIONS_BRUITEES = ("marcher", "entrer", "sortir", "sauter", "s_asseoir", "se_lever", "poser", "vibrer",
                     "taper", "miauler", "dormir", "traverser", "idee", "jeter", "tamponner", "corriger",
-                    "notifier", "afficher", "defiler", "imaginer")
+                    "notifier", "afficher", "defiler", "imaginer", "comparer")
 MIN_BRUITAGES = 2
 # Sans aucun de ces caracteres sur tout un script, le texte a ete ecrit sans
 # accents : les sous-titres (texte exact du script) seraient faux.
@@ -368,7 +368,10 @@ Actions des objets ("qui" = id de l'objet ; GROS PLAN = insert plein écran pend
 {actions_objets}
 Icônes de "imaginer" (champ "image") : {icones}
 CAMÉRA (action SANS "qui", jouée en même temps que l'action suivante) : {{"action": "camera", "cadre": "visage", "sur": "karim"}}
-  cadres : {cadres} ; "rapide": true = coupe sèche (pour une réaction, une chute) ; revenir en "large" ensuite.
+  cadres : {cadres} ; "rapide": true = coupe sèche (pour une réaction, une chute) ; "lent": true = travelling
+  avant progressif (3 s : une tension qui monte) ; "dessous" : le personnage domine (le recruteur qui juge,
+  une prise de confiance) ; "epaule" + "depuis": id = on regarde "sur" par-dessus l'épaule de l'autre
+  (un face-à-face tendu) ; revenir en "large" ensuite. Varie les plans : jamais deux fois le même cadre de suite.
 Mise en scène :
   - "x" = position au sol, de 0 à 1080 : les personnages vers 250 et 820, face à face ("regard" droite / gauche),
     meubles au centre (table vers x 540) ; objet mural : "x" et "y" (600 à 850) ; objet posé : "sur": "table.dessus"

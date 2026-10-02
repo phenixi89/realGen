@@ -211,8 +211,8 @@ Style « trait blanc » sur fond noir, dans l'esprit des petites histoires dessi
 ondulent doucement et finissent par un léger dépassement ; deux variantes du dessin alternent environ
 6 fois par seconde (traits qui « bouillonnent ») ; tout se dessine à l'apparition ; **touches de couleur
 légères** (lavis transparent un peu décalé du trait, posé après le dessin, comme une aquarelle). Le décor
-de fond est tracé plus fin et plus transparent (profondeur). Bulles noires au contour irrégulier, texte et
-titres manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe), comme les autres gabarits.
+de fond est tracé plus fin et plus transparent (profondeur). Bulles **petites et translucides** (fond noir à 58 %, la scène reste visible dessous ; contour irrégulier, queue en deux traits),
+sans prénom du personnage, texte et titres manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe), comme les autres gabarits.
 
 | Fichier | Rôle |
 |---|---|
@@ -220,7 +220,7 @@ titres manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe), comme l
 | `dessin/personnages.js` | **Léa** (`lea` : queue de cheval qui se balance avec un chouchou corail, veste cintrée, jupe, cil), **Karim** (`karim` : cheveux courts avec un épi, chemise, cravate bleue, pantalon) et **le recruteur** (`recruteur` : crâne dégarni aux cheveux gris, lunettes rondes, moustache, veste, cravate verte ; voix Charon) |
 | `dessin/animaux.js` | `chat` roux (queue qui bouge ; `marcher`/`traverser`, `miauler`, `dormir`) |
 | `dessin/objets.js` | `tasse` (orange, qui fume), `telephone` (`vibrer`, `notifier`), `cv` (`corriger`), `ordinateur` (`taper`, `afficher`), `table` (bureau), `table_ronde`, `chaise`, `canape` (deux places), `plante` (feuilles qui bougent), `corbeille`, `tampon` (`tamponner`), `horloge`, `cadre` et `calendrier` (`defiler`) (muraux) |
-| `dessin/fonds.js` | `vide` (sol, cailloux, herbe, une fleur rose), `bureau` (fenêtre bleutée, livres colorés), `cafe` (suspensions à la lumière chaude, ardoise du menu), `salle_attente` (porte des RH à la plaque orange, affiche « On recrute ! », chaises, horloge qui tourne), `salle_entretien` (fenêtre à stores, tableau blanc, porte-manteau), `salon` (rideaux corail, lampadaire, tableau, tapis), `metro` (la ville défile derrière les vitres, poignées qui se balancent), `visio` (appel vidéo : deux vignettes, point d'enregistrement, boutons) |
+| `dessin/fonds.js` | `vide` (sol, cailloux, herbe, une fleur rose), `bureau` (fenêtre bleutée, livres colorés), `cafe` (suspensions à la lumière chaude, ardoise du menu), `salle_attente` (porte des RH à la plaque orange, affiche « On recrute ! », chaises, horloge qui tourne), `salle_entretien` (fenêtre à stores, tableau blanc, porte-manteau), `salon` (rideaux corail, lampadaire, tableau, tapis), `metro` (la ville défile derrière les vitres, poignées qui se balancent), `visio` (appel vidéo : deux vignettes, point d'enregistrement, boutons), `ascenseur` (portes coulissantes, afficheur d'étage qui monte, boutons), `open_space` (bureaux et écrans au fond, baie vitrée, suspensions), `bureau_manager` (baie sur la ville au crépuscule, diplômes, bibliothèque, « Direction »), `salon_emploi` (banderole, fanions qui bougent, stands RH / Tech / Vente) |
 | `dessin/moteur.js` | assemble les scènes : place les objets, joue les actions, caméra, inserts, bulles, titres, cartons d'ellipse, enchaînement |
 | `catalog/dessins.json` | la liste des fonds, objets (ancres, actions), expressions, gestes et actions des personnages |
 
@@ -251,14 +251,20 @@ avant lui : il prend sa place et son orientation), avant-bras posés vers l'avan
 
 **Caméra** (action sans `qui`) : `{"action": "camera", "cadre": "visage", "sur": "karim"}` ; cadres
 `large` (retour au décor entier), `buste` et `visage` (sur un personnage), `objet` (sur un objet, zoom
-calculé sur sa taille) ; `"rapide": true` = coupe sèche avec un petit souffle (`zoom`), sinon travelling
-de 0,55 s. Jouée à l'instant de l'action suivante, sans la retarder ; jamais hors du décor. Les bulles
+calculé sur sa taille), `dessous` (contre-plongée : la caméra remonte des pieds au visage, le personnage domine),
+`epaule` (par-dessus l'épaule : on regarde `sur`, le personnage `depuis` reste de dos au bord du cadre) ;
+`"rapide": true` = coupe sèche avec un petit souffle (`zoom`), `"lent": true` = travelling avant progressif de
+3 s (tension qui monte), sinon travelling de 0,55 s. Jouée à l'instant de l'action suivante, sans la retarder ; jamais hors du décor. Les bulles
 suivent le cadrage (au-dessus de la tête à l'écran) ; les nuages de pensée, les inserts et les cartons
 restent hors caméra.
 **Bulles et gros plans** : le contenu d'un insert est descendu sous la zone des bulles (`INSERT_DECALAGE`,
 150 px), la réplique dite pendant le gros plan ne le cache plus. Un nuage de pensée se place du côté
 que les bulles ouvertes pendant ce temps laissent libre (sinon près de celui qui pense), et ces bulles se
-resserrent à 600 px (`BULLE_ETROITE`) pour tenir à côté.
+resserrent à 520 px (`BULLE_ETROITE`) pour tenir à côté.
+
+**Split-screen** : l'objet invisible `diptyque` (mural) et son action `comparer` (`titre_gauche` / `texte_gauche` en rouge = ce
+qui rate, `titre_droite` / `texte_droite` en vert = ce qui marche, 3 à 12 mots) montrent deux versions d'un même moment
+côte à côte (trame « deux lendemains », avant / après).
 
 **Inserts** (gros plan plein écran sur un objet, au-dessus de la scène et sous les bulles, pendant que le
 dialogue continue ; bornés à la fin de la scène) : `cv.corriger` (`avant` s'écrit à la main, est barré en

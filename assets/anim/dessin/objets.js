@@ -4,7 +4,7 @@
 // autre objet) et des actions.
 //   tasse (vapeur), telephone (vibrer), cv, ordinateur (taper), table (bureau),
 //   table_ronde (cafe), chaise, plante, horloge (murale), cadre (mural), corbeille,
-//   tampon (tamponner), calendrier (mural, defiler), canape (deux places).
+//   tampon (tamponner), calendrier (mural, defiler), canape (deux places), diptyque (split-screen, comparer).
 // "prise" = point saisi par une main (tenir).
 // Inserts (gros plan plein cadre, ctx.insert du moteur) : cv.corriger (ligne barree puis
 // reecrite a la main), tampon.tamponner, ordinateur.afficher (e-mail a l'ecran),
@@ -300,6 +300,36 @@
           P.trace(grp, [[140, 875], [940, 875]], { w: 1.8, passes: 1, alpha: 0.5 });
           ecrire(tl, grp, P, 140, 960, a.texte, { taille: 50, largeur: 800, t: t0 + 0.4, mps: 7 });
           Dessin.son("notification", t0 + 0.25, { gain: 0.8 });
+        });
+      },
+    },
+  });
+
+  // Split-screen : deux versions d'un meme moment cote a cote (« deux lendemains », avant / apres, ce qu'il
+  // dit / ce que le recruteur entend). Objet mural invisible ; "comparer" = insert plein cadre.
+  reg("diptyque", {
+    categorie: "decor", hauteur: 10,
+    dessiner(parent) { return { g0: g(parent) }; },
+    actions: {
+      comparer(tl, it, a, ctx) {
+        const P = Dessin.pinceau(Dessin.hash("diptyque" + a.t));
+        const mots = (x) => String(x || "").split(/\s+/).filter(Boolean).length;
+        const duree = a.duree || Math.min(8, 2.2 + (mots(a.texte_gauche) + mots(a.texte_droite)) / 3.4);
+        return ctx.insert(a.t, duree, (grp, t0) => {
+          el("rect", { x: 0, y: 0, width: 1080, height: 1920, fill: "#000000", opacity: 0.88 }, grp);
+          const cote = (x0, couleur, titre, texte, t) => {
+            P.lavis(grp, [[x0 + 6, 566], [x0 + 474, 566], [x0 + 474, 1134], [x0 + 6, 1134]], couleur, 0.13);
+            P.rect(grp, x0, 560, 480, 580, { w: 4.4, passes: 2 });
+            P.texte(grp, x0 + 240, 650, titre, { taille: 54 });
+            P.trace(grp, [[x0 + 50, 690], [x0 + 430, 690]], { w: 2.6, passes: 1, couleur });
+            return ecrire(tl, grp, P, x0 + 36, 800, texte, { taille: 52, largeur: 410, t, mps: 5 });
+          };
+          const gauche = cote(40, ROUGE, a.titre_gauche || "Avant", a.texte_gauche, t0 + 0.4);
+          cote(560, VERT, a.titre_droite || "Après", a.texte_droite, gauche.fin + 0.45);
+          P.rond(grp, 540, 850, 30, 30, { w: 3.4, passes: 2 });
+          P.texte(grp, 540, 866, "VS", { taille: 30 });
+          Dessin.son("pop", t0 + 0.1);
+          Dessin.son("ding", gauche.fin + 0.45, { gain: 0.7 });
         });
       },
     },

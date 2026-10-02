@@ -193,8 +193,10 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
                 continue
             if a["cadre"] == "objet" and ids[a["sur"]]["categorie"] == "personnage":
                 a["cadre"] = "buste"
-            elif a["cadre"] in ("buste", "visage") and ids[a["sur"]]["categorie"] != "personnage":
+            elif a["cadre"] in ("buste", "visage", "dessous", "epaule") and ids[a["sur"]]["categorie"] != "personnage":
                 a["cadre"] = "objet"
+            if a.get("depuis") and (a["cadre"] != "epaule" or a["depuis"] not in ids or a["depuis"] == a["sur"]):
+                del a["depuis"]
             actions.append(a)
             continue
         t = ids.get(a.get("qui"))
@@ -271,6 +273,7 @@ TEXTES_ACTIONS = {
     "afficher": {"titre": (False, 6), "texte": (True, 25)},
     "notifier": {"titre": (False, 4), "texte": (True, 14)},
     "imaginer": {"texte": (False, 4)},
+    "comparer": {"titre_gauche": (False, 3), "texte_gauche": (True, 12), "titre_droite": (False, 3), "texte_droite": (True, 12)},
 }
 ELLIPSE_MAX_MOTS = 6
 

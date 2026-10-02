@@ -27,8 +27,9 @@
 // "ellipse": "Une semaine plus tard" -> carton manuscrit en haut (pages qui s'envolent) au
 // debut de la scene, a la place du titre. "suite": true -> meme lieu, meme moment que la scene
 // precedente : coupe franche, sans fondu ni nouveau trace.
-// Camera (action sans "qui") : {"action": "camera", "cadre": "large" | "buste" | "visage" | "objet",
-//   "sur": id (personnage ou objet), "rapide": true (coupe seche + petit souffle)} ; jouee a
+// Camera (action sans "qui") : {"action": "camera", "cadre": "large" | "buste" | "visage" | "objet" | "dessous" | "epaule",
+//   "sur": id (personnage ou objet), "rapide": true (coupe seche + petit souffle), "lent": true (travelling avant
+//   progressif, ~3 s), "depuis": id (epaule : le personnage de dos)} ; jouee a
 //   l'instant de l'action suivante, sans la retarder. Les bulles suivent le cadrage.
 // Inserts (gros plan plein cadre sur un objet : CV corrige, ecran, telephone, tampon) :
 //   ctx.insert(t, duree, dessiner) -- au-dessus de la scene, sous les bulles.
@@ -38,7 +39,7 @@
   const dureeReplique = (texte) => Math.min(4, Math.max(1.4, 0.9 + 0.28 * String(texte).split(/\s+/).length));
   const SENS = { gauche: -1, droite: 1 };
   const INSERT_DECALAGE = 150;
-  const BULLE_ETROITE = 600;   // largeur max d'une bulle pendant un nuage de pensee (les deux tiennent cote a cote)
+  const BULLE_ETROITE = 520;   // largeur max d'une bulle pendant un nuage de pensee (les deux tiennent cote a cote)
 
   function monter(def, { svg, bulles, titres }) {
     const scenes = def.scenes || [def];
@@ -224,7 +225,9 @@
     }
 
     // Camera : cadre vise -> echelle et decalage du groupe camera (bornes : jamais hors du decor).
-    const CADRES = { large: 1, buste: 1.45, visage: 2.0, objet: 2.2 };
+    //   dessous : contre-plongee (la camera remonte des pieds au visage, le personnage domine) ;
+    //   epaule  : par-dessus l'epaule de "depuis" (sinon l'autre personnage), on regarde "sur".
+    const CADRES = { large: 1, buste: 1.45, visage: 2.0, objet: 2.2, dessous: 1.6, epaule: 1.7 };
     function cadrer(a) {
       const nom = CADRES[a.cadre] ? a.cadre : "large";
       let s = CADRES[nom], cx = 540, cy = 960, vx = 540, vy = 960;
@@ -234,6 +237,12 @@
         if (o.type.categorie === "personnage") {
           cx = it._x; cy = nom === "visage" ? sol - (it.assis ? 742 : 790) * e : sol - (it.assis ? 560 : 620) * e;
           vy = nom === "visage" ? 1080 : 1150;
+          if (nom === "dessous") { cy = sol - (it.assis ? 420 : 500) * e; vy = 1400; }
+          if (nom === "epaule") {
+            const autres = Object.values(objets).filter((x) => x !== o && x.type.categorie === "personnage");
+            const autre = (a.depuis && objets[a.depuis]) || autres.sort((p, q) => Math.abs(p.copies[""].it._x - it._x) - Math.abs(q.copies[""].it._x - it._x))[0];
+            if (autre) cx = it._x + (autre.copies[""].it._x - it._x) * 0.42;   // l'autre reste au bord du cadre, de dos
+          }
         } else {   // objet : centre de son dessin (copie visible a ce moment)
           const c = o.copies[o.visible] || o.copies[""];
           const b = c.root.getBBox(), m = dom.svg.getScreenCTM().inverse().multiply(c.root.getScreenCTM());
@@ -243,8 +252,11 @@
         }
       } else s = 1;
       const x = Math.min(0, Math.max(1080 * (1 - s), vx - s * cx)), y = Math.min(0, Math.max(1920 * (1 - s), vy - s * cy));
-      const t = a.t, d = a.rapide ? 0.12 : 0.55;
-      tl.to(calque, { x, y, scale: s, duration: d, ease: a.rapide ? "power3.out" : "power2.inOut" }, t);
+      const t = a.t, d = a.rapide ? 0.12 : a.lent ? 3.2 : nom === "dessous" ? 1.3 : 0.55;   // lent : travelling avant progressif
+      if (nom === "dessous" && o) {   // contre-plongee : depart sur le bas du corps, la camera remonte
+        const y0 = Math.max(1920 * (1 - s), y - 320);
+        tl.fromTo(calque, { x, y: y0, scale: s }, { x, y, scale: s, duration: d, ease: "power2.out", immediateRender: false }, t);
+      } else tl.to(calque, { x, y, scale: s, duration: d, ease: a.rapide ? "power3.out" : a.lent ? "sine.inOut" : "power2.inOut" }, t);
       if (a.rapide) Dessin.son("zoom", t);
       cadres.push({ t: t + d * 0.5, s, x, y });
     }
@@ -321,13 +333,12 @@
       r.haut = Math.max(330, hautTete0 * c.s + c.y);
       const b = document.createElement("div"), gauche = r.x < 540;
       b.className = "bulle " + (gauche ? "g" : "d");
-      b.innerHTML = '<span class="nom"></span><span class="t"></span>';
-      b.querySelector(".nom").textContent = r.it.nom || "";
+      b.innerHTML = '<span class="t"></span>';   // pas de prenom : la bulle pointe deja vers celui qui parle
       b.querySelector(".t").textContent = frTypo(r.a.texte);
       r.etroite = nuages.some((n) => chevauche(r, n));
       if (r.etroite) b.style.maxWidth = `${BULLE_ETROITE}px`;
-      b.style.bottom = `${Math.round(1920 - r.haut + 36)}px`;
-      if (gauche) b.style.left = `${Math.max(40, Math.round(r.x - 240))}px`; else b.style.right = `${Math.max(40, Math.round(1080 - r.x - 240))}px`;
+      b.style.bottom = `${Math.round(1920 - r.haut + 30)}px`;
+      if (gauche) b.style.left = `${Math.max(40, Math.round(r.x - 200))}px`; else b.style.right = `${Math.max(40, Math.round(1080 - r.x - 200))}px`;
       dom.bulles.appendChild(b);
       const rect = b.getBoundingClientRect();
       b.style.setProperty("--queue", `${Math.min(Math.max(r.x - rect.left - 22, 30), rect.width - 80)}px`);

@@ -9,12 +9,14 @@ body.dessin .manuscrit{font-family:HandT,"DejaVu Sans",sans-serif;font-weight:70
 body.dessin #titres{position:absolute;top:105px;left:0;right:0;text-align:center}
 body.dessin .titre-scene{position:absolute;left:0;right:0;margin:auto;width:max-content;max-width:900px;color:#fff;
   font:700 76px HandT,"DejaVu Sans",sans-serif;padding:0 14px 4px;border-bottom:4px solid #fff}
-/* Bulles : noires au contour irregulier, texte manuscrit ; la queue pointe vers celui qui parle (--queue). */
-body.dessin .bulle{position:absolute;max-width:860px;background:#000;color:#fff;font:700 64px/1.18 HandT,"DejaVu Sans",sans-serif;
-  border:4px solid #fff;border-radius:255px 24px 225px 24px/24px 225px 24px 255px;padding:28px 46px 34px;box-sizing:border-box;box-shadow:none}
-body.dessin .bulle::after{content:"";position:absolute;bottom:-27px;left:var(--queue,200px);width:44px;height:44px;background:#000;
-  border-right:4px solid #fff;border-bottom:4px solid #fff;transform:rotate(45deg)}
-body.dessin .bulle .nom{display:block;font:700 34px HandT,sans-serif;color:#fff;opacity:.55;margin-bottom:0;text-transform:none;letter-spacing:0}
+/* Bulles : petites, fond noir translucide (la scene reste visible dessous), contour irregulier, texte manuscrit ;
+   la queue (deux traits, sans fond pour ne pas doubler l'opacite) pointe vers celui qui parle (--queue). */
+body.dessin .bulle{position:absolute;max-width:700px;background:rgba(0,0,0,.58);color:#fff;font:700 48px/1.14 HandT,"DejaVu Sans",sans-serif;
+  border:3px solid rgba(255,255,255,.9);border-radius:255px 20px 225px 20px/20px 225px 20px 255px;padding:16px 32px 22px;box-sizing:border-box;
+  box-shadow:none;text-shadow:0 2px 5px #000,0 0 3px #000}
+body.dessin .bulle::after{content:"";position:absolute;bottom:-21px;left:var(--queue,200px);width:34px;height:34px;background:transparent;
+  border-right:3px solid rgba(255,255,255,.9);border-bottom:3px solid rgba(255,255,255,.9);transform:rotate(45deg);
+  clip-path:polygon(100% 0,100% 100%,0 100%)}
 /* Carton d'ellipse (« Une semaine plus tard… ») : panneau manuscrit au contour irregulier, pages qui s'envolent. */
 body.dessin .ellipse{position:absolute;left:0;right:0;top:60px;margin:auto;width:max-content;max-width:900px;color:#fff;background:#000;
   font:700 88px/1.1 HandT,"DejaVu Sans",sans-serif;text-align:center;padding:26px 54px 34px;border:5px solid #fff;
