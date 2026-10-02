@@ -154,6 +154,15 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
             o["regard"] = "droite" if float(o["x"]) < 540 else "gauche"  # tourne vers le centre de la scene
         ids[o["id"]] = t
         objets.append(o)
+    for qui in dict.fromkeys(a.get("qui") for a in sc.get("actions") or [] if isinstance(a, dict)):
+        t = objets_.get(qui)
+        if qui not in ids and t and t["categorie"] == "personnage":
+            # Personnage qui joue sans avoir ete declare (oubli frequent de l'IA) : place a l'endroit libre.
+            occupes = [float(o["x"]) for o in objets if o.get("x") is not None and not o.get("sur")]
+            x = max((250, 820, 540), key=lambda c: min((abs(c - v) for v in occupes), default=1e9))
+            o = {"id": qui, "type": qui, "x": x, "regard": "droite" if x < 540 else "gauche"}
+            ids[qui] = t
+            objets.append(o)
     actions, tenus = [], {}   # tenus : personnage -> objet en main
     for o in objets:
         if o.get("sur") and str(o["sur"]).endswith(".main_avant"):

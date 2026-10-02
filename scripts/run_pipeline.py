@@ -210,6 +210,12 @@ def dessin_spec(scene: dict, timing: dict, under_hook: bool = False, first: bool
         a["t"] = round(max(r["start"] - start, 0.0), 2)
         a["duree"] = round(max(r["end"] - r["start"], 0.6), 2)
     sc["duree"] = round(timing["end"] - start, 2)
+    fin_parole = 0.0
+    for a in sc.get("actions", []):
+        if a.get("action") == "parler" and a.get("t") is not None:
+            fin_parole = a["t"] + a["duree"]
+        elif a.get("t") is None and not a.get("avec") and fin_parole > sc["duree"] - 1.0:
+            a["avec"] = True  # plus de place apres la replique : jouee pendant, sinon jamais vue
     sc.update(DESSIN_SOUS_ACCROCHE if under_hook else DESSIN_CADRAGE)
     if first:
         sc["dessine"] = False  # 1re image du reel complete (c'est elle qui retient ou fait scroller)

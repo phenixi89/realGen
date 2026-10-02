@@ -304,7 +304,9 @@ face à face, objets posés ou tenus, personnage assis) :
 - **Mise en scène exigée** : chaque scène dessinée a au moins une action visible (pas seulement des
   paroles), et le reel au moins 2 actions qui s'entendent (`ACTIONS_BRUITEES` : entrer, marcher,
   s'asseoir, poser, vibrer, taper, miauler, idée…) ; l'accroche parlée n'a ni pourcentage ni statistique ;
-  une révélation annoncée doit arriver avant le CTA.
+  une révélation annoncée doit arriver avant le CTA ; une phrase de CV donnée en exemple ne dicte pas
+  de chiffres (« avec TES vrais chiffres »). Un personnage qui joue sans avoir été déclaré dans
+  `objets` y est ajouté à la place libre (250, 820 ou 540) au lieu de faire relancer Gemini.
   Le montage repasse chaque scène par ce contrôle (corrections récentes appliquées aux anciens scénarios). Dans `scripts.json`, une scène porte `repliques` (`[{qui, texte}]`), `dessin` (la scène
   jouable) et `texte` (les répliques bout à bout) ; le reel porte `dessin: true` et `voix_personnages`.
 - **Voix** : toutes les répliques en **un seul appel** Gemini TTS multi-locuteurs, une voix par
@@ -314,7 +316,9 @@ face à face, objets posés ou tenus, personnage assis) :
   (voir « CTA enregistré »).
 - **Synchro** : Whisper mesure quand chaque réplique est dite (`repliques` de la timeline,
   `4_generate_subtitles.py`) ; au montage, chaque bulle s'ouvre à cet instant et la bouche bouge le temps
-  exact de la réplique (`run_pipeline.dessin_spec`). Chaque scène devient un plan `scene` de 3b ; la
+  exact de la réplique (`run_pipeline.dessin_spec`) ; une action qui suit une réplique finissant à
+  moins d'1 s de la fin de la scène est jouée pendant la réplique (`"avec": true`), sinon elle ne
+  serait jamais vue. Chaque scène devient un plan `scene` de 3b ; la
   dernière est le CTA animé, dit par un personnage.
 - **Montage** : pas de sous-titres incrustés (le texte est dans les bulles, `5_assemble.py
   --no-captions`) ; la 1re scène est cadrée plus large et plus bas (`DESSIN_SOUS_ACCROCHE`) pour que
@@ -681,7 +685,9 @@ si le premier chargement dépasse le délai habituel.
 - **Surcharge Gemini** (503 « high demand », 429, 500/502/504) : chaque appel (scénario, choix du sujet,
   voix) attend puis réessaie (15, 30, 60 puis 90 s, `scripts/gemini_retry.py`) au lieu de faire échouer
   le run. Pour le scénario, les deux derniers essais passent sur un modèle de repli
-  (`GEMINI_FALLBACK_MODEL`, `gemini-2.5-flash` par défaut). Une autre erreur (clé invalide…) arrête tout de suite.
+  (`GEMINI_FALLBACK_MODEL`, `gemini-2.5-flash` par défaut) ; dès que le repli a répondu, les appels
+  suivants du même script partent directement sur lui (le run 58 perdait ~1 min 45 par appel à
+  réessayer le modèle principal). Une autre erreur (clé invalide…) arrête tout de suite.
 - Le modèle TTS Gemini est en statut *preview* côté Google (pas de SLA garanti) — teste régulièrement la qualité de sortie.
 - Whisper tourne en CPU (`--model small` par défaut) ; largement suffisant pour des reels de 15-30s.
 - Aucun GPU nécessaire pour ce pipeline (pas d'avatar animé, juste du screen-record + montage).

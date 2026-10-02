@@ -330,6 +330,9 @@ Scène 1 : l'accroche est la 1re réplique (12 mots max, sans pourcentage ni sta
 avant toute autre action ; la scène 1 a ensuite, elle aussi, au moins une action visible.
 Une révélation annoncée (« je te donne LA phrase », « attends la suite ») arrive EXPLICITEMENT plus loin dans le
 dialogue, avant le CTA : jamais de promesse sans suite.
+Une phrase de CV donnée en exemple ne dicte jamais de chiffres au spectateur (« écris : 30 comptes, 95 % de
+satisfaction ») : elle dit d'où ils viennent (« avec TES vrais chiffres : combien de comptes ? ») -- OpusCV
+n'écrit jamais un chiffre que le candidat ne lui a pas donné. Citations entre « guillemets français ».
 Dernière scène = l'appel à l'action, SANS décor : {{"cta": true, "qui": "lea", "texte": "..."}} -- un personnage
 le dit pendant que l'écran d'appel à l'action s'affiche.
 Dans ce format, l'accroche (1re réplique) peut être à la 1re personne (« Pourquoi personne ne me rappelle ? »)
