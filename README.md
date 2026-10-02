@@ -148,7 +148,7 @@ Paramètres des gabarits : `points_corriger` (`lines` séparées par `|`, 5 au p
 `illustration` (`icone`, `titre` optionnel),
 `cta` (`brand`, `title`, `sub`, `button`, `bg`), `meme` (`haut`, `bas`, `icone`), `carrousel` (`kind` =
 `couverture`/`point`/`fin`, `n`, `total`, `titre`, `texte`, `bouton`), `couverture` (`titre`, `surtitre`, `bg`),
-`dialogue` (`repliques`, `gauche`, `droite`, `surtitre`, `bg` : voir « Personnages »).
+`dialogue` (`style`, `repliques`, `gauche`, `droite`, `surtitre`, `bg` : voir « Personnages »).
 Image fixe (état final du gabarit, taille libre) : `--out fichier.png --size 1080x1350`. Pour prévisualiser un gabarit, ouvre simplement le
 fichier `.html` dans un navigateur (lecture en boucle) ; pour le rendre à part :
 
@@ -193,9 +193,19 @@ python scripts/render_js_anim.py --spec "schema?titre=Le tri ATS&etapes=cv:Ton C
 `highlight` a besoin de la position des cartes, enregistrée dans `captures.json` par les captures
 récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
-### Personnages (`perso.js`, gabarit `dialogue`) — prototype
+### Personnages (`perso_trait.js` / `perso.js`, gabarit `dialogue`) — prototype
 
-Deux personnages en **illustration éditoriale**, dessinés en SVG et animés par GSAP
+Deux styles au choix (`style` du gabarit `dialogue`) :
+
+**`trait` (par défaut)** — `assets/anim/perso_trait.js` : dessin à la main blanc sur fond noir, le style
+des petites histoires dessinées qui tournent sur TikTok. Traits tremblés repassés deux fois, qui
+« bouillonnent » (deux variantes du dessin alternent environ 6 fois par seconde) et se dessinent à
+l'apparition. Grosse tête ronde de profil (un œil, un sourcil, une petite bouche), corps en bâtons, pieds
+ovales, debout au bord d'une falaise hachurée. **Léa** : chignon, mèches, robe ; **Karim** : épis, chemise,
+cravate, pantalon. Mêmes expressions et gestes que ci-dessous. Bulles noires au contour irrégulier, texte
+et surtitre manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe par personnage).
+
+**`editorial`** — `assets/anim/perso.js` : deux personnages en **illustration éditoriale**, dessinés en SVG et animés par GSAP
 (`assets/anim/perso.js`) : **Léa** (`femme`, carré brun, veste bleu nuit sur un haut à la couleur
 d'accent du thème, collier fin) et **Karim** (`homme`, veste camel, chemise claire, cheveux courts
 châtain foncé avec raie sur le côté, lunettes fines couleur écaille). Proportions réalistes, palette sobre, aplats sans contour avec ombres douces, visage
@@ -208,7 +218,7 @@ mains qui s'ouvrent), `salut`. Celui qui parle bouge la bouche et la tête ; l'a
 est déterministe, comme les autres gabarits.
 
 Le gabarit `dialogue` les fait se parler, une bulle par réplique au-dessus de celui qui parle (prénom
-en petites capitales, liseré à la couleur de sa veste) : `repliques` = `g:texte {expr,geste}|d:texte|…`
+au-dessus du texte) : `style` (`trait` ou `editorial`), `repliques` = `g:texte {expr,geste}|d:texte|…`
 (`g` = gauche, `d` = droite, `{expr,geste}` optionnel, 6 répliques au plus), `gauche` / `droite` (id du
 personnage, `femme` et `homme` par défaut), `surtitre`, `bg` + thème. Chaque réplique dure 0,9 s +
 0,28 s par mot (entre 1,4 et 4 s).
@@ -219,7 +229,8 @@ python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&replique
 
 Pas encore branché au générateur de scénarios (ni bouche synchronisée sur la voix off, ni effets
 sonores) : à utiliser en rendu manuel pour tester le rendu. Ajouter un personnage = ajouter une entrée
-à `PERSOS` dans `perso.js` (couleurs, coiffure `carre`/`raie`, accessoire `collier`/`lunettes`,
+à `PERSOS` dans `perso_trait.js` (tenue `robe`/`pantalon`, coiffure `chignon`/`meche`, accessoire
+`cravate`) ou `perso.js` (couleurs, coiffure `carre`/`raie`, accessoire `collier`/`lunettes`,
 `visage` `doux`/`carre`, `cils` ; une couleur `var(--c1)` suit le thème).
 
 ## Ligne éditoriale : le catalogue (`catalog/`)
