@@ -1,5 +1,5 @@
 {
-  "_doc": "Dessin anime 'trait blanc' (assets/anim/scene.html, moteur assets/anim/dessin/). Une scene = un fond + des objets places + des actions jouees dans l'ordre ; plusieurs scenes s'enchainent. fonds : decors (id = fond de la scene). objets : tout ce qui se place dans une scene -- personnage, animal, objet (se tient, se pose), decor (meuble, element mural) ; ancres = points ou poser / tenir un autre objet ('sur': 'id.ancre') ; actions = actions propres au type ; mural = place avec 'y' (px, centre de l'objet) au lieu du sol. personnage : expressions, gestes (aussi utilisables dans 'parler' : geste tenu le temps de la replique) et actions communes a tous les personnages ; un personnage peut commencer assis ('assis': id d'une chaise declaree avant lui). Ajouter un type = l'ecrire dans assets/anim/dessin/*.js (Dessin.enregistrer) puis le declarer ici ; python scripts/catalog.py verifie que les deux correspondent. Personnage : nom (affiche dans les bulles) et voix (voix Gemini TTS de ses repliques dans le format dessin anime ; 2 personnages qui parlent au plus par reel, limite du TTS multi-locuteurs). voix_expressions : ton dit par la voix (Gemini TTS, speech_metadata.style) pour une replique jouee avec cette expression ; une cle par expression.",
+  "_doc": "Dessin anime 'trait blanc' (assets/anim/scene.html, moteur assets/anim/dessin/). Une scene = un fond + des objets places + des actions jouees dans l'ordre ; plusieurs scenes s'enchainent. fonds : decors (id = fond de la scene). objets : tout ce qui se place dans une scene -- personnage, animal, objet (se tient, se pose), decor (meuble, element mural) ; ancres = points ou poser / tenir un autre objet ('sur': 'id.ancre') ; actions = actions propres au type ; mural = place avec 'y' (px, centre de l'objet) au lieu du sol. personnage : expressions, gestes (aussi utilisables dans 'parler' : geste tenu le temps de la replique) et actions communes a tous les personnages ; un personnage peut commencer assis ('assis': id d'une chaise declaree avant lui). Ajouter un type = l'ecrire dans assets/anim/dessin/*.js (Dessin.enregistrer) puis le declarer ici ; python scripts/catalog.py verifie que les deux correspondent. Personnage : nom (affiche dans les bulles) et voix (voix Gemini TTS de ses repliques dans le format dessin anime ; 2 personnages qui parlent au plus par reel, limite du TTS multi-locuteurs). voix_expressions : ton dit par la voix (Gemini TTS, speech_metadata.style) pour une replique jouee avec cette expression ; une cle par expression. camera : action sans 'qui' qui recadre la scene (cadres : large, buste, visage -- sur un personnage --, objet -- sur un objet ; 'rapide': true = coupe seche) ; jouee a l'instant de l'action suivante, sans la retarder. Scene : 'ellipse' = carton manuscrit (« Une semaine plus tard… ») au debut de la scene, a la place du titre. Inserts (gros plan plein cadre, actions d'objets : cv.corriger, tampon.tamponner, ordinateur.afficher, telephone.notifier) : voir la description de chaque action dans actions_objets. imaginer : nuage de pensee avec une icone de assets/anim/icones.js. trames : structures d'histoire, une par reel, tiree en rotation (la moins recemment utilisee) et donnee a l'IA. serie : le format dessin anime est une serie (titre, episodes numerotes, resume de chaque episode garde dans l'historique et rappele aux suivants). Personnage 'role' : 'principal' (peut dire l'appel a l'action) ou 'secondaire'.",
   "fonds": [
     {
       "id": "vide",
@@ -16,6 +16,22 @@
     {
       "id": "salle_attente",
       "description": "Porte des RH (plaque orange), affiche « On recrute ! », chaises au fond, horloge qui tourne."
+    },
+    {
+      "id": "salle_entretien",
+      "description": "Bureau du recruteur : fenêtre à stores, tableau blanc (courbe, post-it), porte-manteau. Avec une table (bureau) : le recruteur déclaré AVANT la table est derrière son bureau."
+    },
+    {
+      "id": "salon",
+      "description": "Chez soi : fenêtre à rideaux corail, lampadaire, tableau, tapis (avec un canapé)."
+    },
+    {
+      "id": "metro",
+      "description": "Rame de métro : la ville défile derrière les vitres, poignées qui se balancent, plan de ligne."
+    },
+    {
+      "id": "visio",
+      "description": "Appel vidéo vu à l'écran : deux vignettes (gauche x 250, droite x 820), point d'enregistrement, boutons micro / caméra / raccrocher. Pour un entretien à distance."
     }
   ],
   "personnage": {
@@ -25,7 +41,10 @@
       "choc",
       "doute",
       "triste",
-      "agace"
+      "agace",
+      "rire",
+      "soulagement",
+      "gene"
     ],
     "voix_expressions": {
       "neutre": "naturel, détendu",
@@ -33,7 +52,10 @@
       "choc": "surpris, la voix qui monte",
       "doute": "hésitant, perplexe, un peu plus lent",
       "triste": "découragé, inquiet, plus bas",
-      "agace": "agacé, un peu sec"
+      "agace": "agacé, un peu sec",
+      "rire": "en riant, amusé, la voix qui pétille",
+      "soulagement": "soulagé, un grand soupir puis détendu",
+      "gene": "gêné, un peu embarrassé, petit rire nerveux"
     },
     "gestes": [
       "salut",
@@ -63,7 +85,9 @@
       "bras_croises": "croise les bras ; champ duree (défaut 2,2 s)",
       "tete_mains": "désespoir : penché, le visage dans les mains ; champ duree",
       "idee": "doigt levé et ampoule qui s'allume au-dessus de la tête ; champ duree",
-      "penser": "main au menton, regard en l'air, petits ronds de réflexion ; champ duree"
+      "penser": "main au menton, regard en l'air, petits ronds de réflexion ; champ duree",
+      "imaginer": "nuage de pensée au-dessus de la scène : champ image (id d'icône), texte (2 à 4 mots, optionnel), barre (true : grande croix rouge, ce qu'il ne faut pas faire), duree ; main au menton pendant",
+      "jeter": "lance l'objet tenu (champ objet, défaut : celui en main) en boule de papier dans dans (id d'une corbeille)"
     }
   },
   "objets": [
@@ -77,7 +101,8 @@
         "main_avant",
         "main_arriere",
         "tete"
-      ]
+      ],
+      "role": "principal"
     },
     {
       "id": "karim",
@@ -85,6 +110,20 @@
       "nom": "Karim",
       "voix": "Puck",
       "description": "Karim : cheveux courts avec un épi, chemise, cravate bleue, pantalon.",
+      "ancres": [
+        "main_avant",
+        "main_arriere",
+        "tete"
+      ],
+      "role": "principal"
+    },
+    {
+      "id": "recruteur",
+      "categorie": "personnage",
+      "nom": "Le recruteur",
+      "voix": "Charon",
+      "role": "secondaire",
+      "description": "Le recruteur : crâne dégarni, cheveux gris sur les côtés, lunettes rondes, moustache, veste et cravate verte.",
       "ancres": [
         "main_avant",
         "main_arriere",
@@ -112,20 +151,25 @@
       "categorie": "objet",
       "description": "Téléphone à l'écran bleuté.",
       "actions": [
-        "vibrer"
+        "vibrer",
+        "notifier"
       ]
     },
     {
       "id": "cv",
       "categorie": "objet",
-      "description": "Feuille de CV (photo, lignes)."
+      "description": "Feuille de CV (photo, lignes) ; se tient, se pose, se jette.",
+      "actions": [
+        "corriger"
+      ]
     },
     {
       "id": "ordinateur",
       "categorie": "objet",
       "description": "Ordinateur portable ; des lignes apparaissent à l'écran.",
       "actions": [
-        "taper"
+        "taper",
+        "afficher"
       ]
     },
     {
@@ -151,7 +195,7 @@
     {
       "id": "chaise",
       "categorie": "decor",
-      "description": "Chaise de profil.",
+      "description": "Chaise de profil (un personnage s'y assoit, \"assis\" ou s_asseoir).",
       "ancres": [
         "assise"
       ]
@@ -172,6 +216,99 @@
       "categorie": "decor",
       "mural": true,
       "description": "Diplôme encadré (sceau doré)."
+    },
+    {
+      "id": "corbeille",
+      "categorie": "decor",
+      "description": "Corbeille à papier en grillage, au sol (cible de « jeter »)."
+    },
+    {
+      "id": "tampon",
+      "categorie": "objet",
+      "description": "Tampon encreur rouge (se tient).",
+      "actions": [
+        "tamponner"
+      ]
+    },
+    {
+      "id": "calendrier",
+      "categorie": "decor",
+      "mural": true,
+      "description": "Calendrier mural, page du jour (champ jour, optionnel) ; « defiler » : les pages s'envolent, le temps passe.",
+      "actions": [
+        "defiler"
+      ]
+    },
+    {
+      "id": "canape",
+      "categorie": "decor",
+      "description": "Canapé de face, deux places (le premier qui s'assoit prend la gauche).",
+      "ancres": [
+        "assise"
+      ]
+    }
+  ],
+  "actions_objets": {
+    "corriger": "cv : GROS PLAN sur le CV : avant (la phrase faible, 3 à 14 mots) s'écrit, se fait barrer en rouge, puis apres (la bonne phrase, 3 à 16 mots, sans chiffre inventé) s'écrit dessous",
+    "tamponner": "tampon : le tampon s'abat, gros plan sur le CV marqué texte (1 à 3 mots, ex : REFUSÉ, À REVOIR, ENTRETIEN !) ; couleur rouge (défaut) ou vert",
+    "afficher": "ordinateur : GROS PLAN sur l'écran : un e-mail, titre = objet (2 à 6 mots), texte = le message (5 à 25 mots)",
+    "notifier": "telephone : GROS PLAN sur le téléphone : notification, titre = expéditeur (1 à 4 mots), texte = message (3 à 14 mots), heure (optionnel, ex : 23:47)",
+    "vibrer": "telephone : vibre (champ duree)",
+    "taper": "ordinateur : on tape, des lignes apparaissent (champ duree)",
+    "defiler": "calendrier : les pages s'envolent (champ fois, défaut 3)",
+    "marcher": "chat : champ vers",
+    "traverser": "chat : traverse la scène vers",
+    "miauler": "chat : miaule",
+    "dormir": "chat : dort en ronronnant (champ duree)"
+  },
+  "camera": {
+    "cadres": {
+      "large": "plan large (retour au décor entier)",
+      "buste": "plan rapproché sur un personnage (sur)",
+      "visage": "gros plan sur le visage d'un personnage (sur) : réaction, chute",
+      "objet": "gros plan sur un objet de la scène (sur)"
+    },
+    "usage": "{\"action\": \"camera\", \"cadre\": \"visage\", \"sur\": \"karim\", \"rapide\": true} -- sans qui ; jouée en même temps que l'action suivante"
+  },
+  "serie": {
+    "titre": "Karim cherche un job",
+    "consigne": "Karim cherche un emploi, épisode après épisode ; Léa est son amie qui s'y connaît ; le recruteur apparaît quand l'histoire passe chez un employeur. Karim garde ce qu'il a vécu (on peut y faire un clin d'œil), mais chaque épisode se comprend seul."
+  },
+  "trames": [
+    {
+      "id": "avant_apres",
+      "nom": "Avant / après",
+      "consigne": "Karim fait l'erreur et ça rate (on le voit), Léa lui montre comment faire, il refait et ça marche (on le voit aussi)."
+    },
+    {
+      "id": "cote_recruteur",
+      "nom": "Ce que pense le recruteur",
+      "consigne": "Le recruteur lit le CV ou écoute Karim : on entend (ou on voit, nuage de pensée) ce qu'il pense vraiment, en décalage avec ce que Karim croit faire passer ; puis la correction."
+    },
+    {
+      "id": "quiproquo",
+      "nom": "Quiproquo",
+      "consigne": "Karim comprend un conseil de travers et l'applique à la lettre, avec un résultat absurde ; Léa recadre avec la vraie méthode."
+    },
+    {
+      "id": "erreur_en_direct",
+      "nom": "L'erreur en direct",
+      "consigne": "On assiste à l'erreur pendant qu'elle se fait (Karim écrit, envoie, répond…) ; quelqu'un l'arrête juste avant, ou trop tard, et montre la bonne version."
+    },
+    {
+      "id": "vrai_ou_faux",
+      "nom": "Vrai ou faux",
+      "consigne": "Léa teste Karim : elle énonce une idée reçue, il répond sûr de lui, elle le piège et donne la vraie réponse avec un exemple concret."
+    },
+    {
+      "id": "le_chat_juge",
+      "nom": "Le chat juge",
+      "consigne": "Le chat est le juge silencieux : il réagit à chaque essai de Karim (dort, s'en va, miaule) jusqu'à la bonne version, qu'il approuve enfin. Running gag."
+    },
+    {
+      "id": "ca_aurait_pu",
+      "nom": "Ça aurait pu être pire",
+      "consigne": "Karim imagine (nuage de pensée) le pire scénario de sa candidature ; Léa le ramène au réel avec la petite chose concrète qui change tout."
     }
   ]
 }

@@ -15,3 +15,8 @@ body.dessin .bulle{position:absolute;max-width:860px;background:#000;color:#fff;
 body.dessin .bulle::after{content:"";position:absolute;bottom:-27px;left:var(--queue,200px);width:44px;height:44px;background:#000;
   border-right:4px solid #fff;border-bottom:4px solid #fff;transform:rotate(45deg)}
 body.dessin .bulle .nom{display:block;font:700 34px HandT,sans-serif;color:#fff;opacity:.55;margin-bottom:0;text-transform:none;letter-spacing:0}
+/* Carton d'ellipse (« Une semaine plus tard… ») : panneau manuscrit au contour irregulier, pages qui s'envolent. */
+body.dessin .ellipse{position:absolute;left:0;right:0;top:60px;margin:auto;width:max-content;max-width:900px;color:#fff;background:#000;
+  font:700 88px/1.1 HandT,"DejaVu Sans",sans-serif;text-align:center;padding:26px 54px 34px;border:5px solid #fff;
+  border-radius:24px 225px 24px 255px/255px 24px 225px 24px}
+body.dessin .ellipse .feuille{position:absolute;top:-30px;right:40px;width:70px;height:84px;background:#000;border:4px solid #fff;border-radius:4px}

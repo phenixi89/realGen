@@ -115,10 +115,13 @@ CARROUSEL_MIN, CARROUSEL_MAX = 4, 8
 # Dessin anime (formats "dessin": true) : une replique tient dans une bulle.
 REPLIQUE_MAX_WORDS = 16
 # Actions sans parole qui ne se voient presque pas (ne comptent pas comme "action" d'une scene).
-ACTIONS_PAROLE = ("parler", "expression", "geste", "regarder", "pause")
+ACTIONS_PAROLE = ("parler", "expression", "geste", "regarder", "pause", "camera")
+# Mise en scene "cinema" (gros plans, inserts, nuage de pensee, carton d'ellipse) : au moins une par reel.
+ACTIONS_MISE_EN_SCENE = ("camera", "corriger", "tamponner", "afficher", "notifier", "imaginer")
 # Actions qui font un bruitage (Dessin.son dans assets/anim/dessin/) : au moins 2 par reel.
 ACTIONS_BRUITEES = ("marcher", "entrer", "sortir", "sauter", "s_asseoir", "se_lever", "poser", "vibrer",
-                    "taper", "miauler", "dormir", "traverser", "idee")
+                    "taper", "miauler", "dormir", "traverser", "idee", "jeter", "tamponner", "corriger",
+                    "notifier", "afficher", "defiler", "imaginer")
 MIN_BRUITAGES = 2
 # Sans aucun de ces caracteres sur tout un script, le texte a ete ecrit sans
 # accents : les sous-titres (texte exact du script) seraient faux.
@@ -245,8 +248,13 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
                 "cta": cta, "cta_anim": cta_anim, "ambiance": ambiance,
                 "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None,
                 "sans_captures": sans_captures}
+        if fmt.get("dessin"):  # trame d'histoire (rotation) et episodes precedents de la serie
+            plan["trame"] = next((t for t in catalog.trames() if t["id"] == ov.get("trame")), None) \
+                or catalog.pick_trame(working, rng)
+            plan["episodes_precedents"] = catalog.series_resumes(working, fmt["id"]) if fmt.get("serie") else []
         plans.append(plan)
         working.append({"format": fmt["id"], "categorie": fmt["categorie"], "sujet": sujet["id"],
+                        "trame": (plan.get("trame") or {}).get("id"),
                         "famille": sujet.get("famille"),
                         "hook": hook["id"], "theme": theme["id"], "voix": voice["id"], "ambiance": ambiance,
                         "registre": registre})
@@ -274,14 +282,33 @@ def fixer_cta(scenes: list[dict], cta: str) -> None:
 
 
 def dessin_bounds(duration: int) -> tuple[int, int]:
-    """Dessin anime : 2 a ~4 decors (un decor dure plusieurs repliques) + la scene CTA."""
-    return 3, max(4, math.ceil(duration / 6))
+    """Dessin anime : 1 a ~4 lieux / moments (un decor dure plusieurs repliques) + la scene CTA."""
+    return 2, max(4, math.ceil(duration / 6))
 
 
-def dessin_rules() -> str:
-    """Consignes du format dessin anime : catalogue des decors, objets, personnages et actions."""
+def dessin_rules(plan: dict | None = None) -> str:
+    """Consignes du format dessin anime : catalogue des decors, objets, personnages et actions,
+    trame d'histoire du reel, serie (episodes precedents)."""
     cat = catalog.dessins()
     perso = cat["personnage"]
+    principaux = [o["id"] for o in cat["objets"] if o["categorie"] == "personnage" and o.get("role", "principal") == "principal"]
+    actions_objets = "\n".join(f"  - {k} ({v.split(' : ', 1)[0]}) : {v.split(' : ', 1)[-1]}"
+                                for k, v in (cat.get("actions_objets") or {}).items())
+    cadres = " ; ".join(f'{k} = {v}' for k, v in (cat.get("camera") or {}).get("cadres", {}).items())
+    icones = ", ".join(catalog.icons())
+    plan = plan or {}
+    trame = plan.get("trame")
+    trame_rule = (f"""TRAME DE CET ÉPISODE : « {trame['nom']} » -- {trame['consigne']}
+""" if trame else "")
+    serie = cat.get("serie") or {}
+    serie_rule = ""
+    if serie and plan.get("episode"):
+        anciens = "\n".join(f"  - épisode {n} : {r}" for n, r in plan.get("episodes_precedents") or []) or "  (aucun résumé encore)"
+        serie_rule = f"""SÉRIE « {serie['titre']} », ÉPISODE {plan['episode']}. {serie.get('consigne', '')}
+Épisodes précédents (les plus récents) :
+{anciens}
+Ne refais pas l'histoire d'un épisode précédent ; un clin d'œil à un épisode passé est bienvenu.
+"""
     fonds = "\n".join(f'  - "{f["id"]}" : {f["description"]}' for f in cat["fonds"])
     persos = "\n".join(f'  - "{o["id"]}" : {o["description"]}' for o in cat["objets"] if o["categorie"] == "personnage")
     objets = "\n".join(
@@ -294,7 +321,9 @@ def dessin_rules() -> str:
 Personnages (id = type) :
 {persos}
 TOUT le texte est DIT PAR LES PERSONNAGES, il n'y a pas de voix off : chaque réplique s'affiche dans une bulle
-et est lue avec la voix du personnage. Les deux personnages peuvent parler ; le chat ne parle pas (il miaule).
+et est lue avec la voix du personnage. DEUX personnages parlent au plus dans tout le reel (limite des voix) :
+Léa et Karim, ou Karim et le recruteur ; un troisième peut être présent sans parler. Le chat ne parle pas (il miaule).
+L'appel à l'action final est dit par {" ou ".join(principaux)}.
 
 Chaque scène dessinée = un décor + des objets placés + des actions jouées dans l'ordre :
 {{"fond": "cafe", "titre": "Le lendemain",
@@ -310,11 +339,17 @@ Objets, animaux et décor ("type") :
 {objets}
 Personnages : expressions {", ".join(perso["expressions"])} ; gestes {", ".join(perso["gestes"])} ; actions :
 {actions}
+Actions des objets ("qui" = id de l'objet ; GROS PLAN = insert plein écran pendant que le dialogue continue) :
+{actions_objets}
+Icônes de "imaginer" (champ "image") : {icones}
+CAMÉRA (action SANS "qui", jouée en même temps que l'action suivante) : {{"action": "camera", "cadre": "visage", "sur": "karim"}}
+  cadres : {cadres} ; "rapide": true = coupe sèche (pour une réaction, une chute) ; revenir en "large" ensuite.
 Mise en scène :
   - "x" = position au sol, de 0 à 1080 : les personnages vers 250 et 820, face à face ("regard" droite / gauche),
     meubles au centre (table vers x 540) ; objet mural : "x" et "y" (600 à 850) ; objet posé : "sur": "table.dessus"
     (ou dessus_gauche / dessus_droite) ; objet déjà en main : "sur": "lea.main_avant" ; personnage assis dès le
-    début : "assis": "<id d'une chaise déclarée AVANT lui>" (la chaise porte "x" et "regard") ;
+    début : "assis": "<id d'une chaise ou d'un canapé déclaré AVANT lui>" (la chaise porte "x" et "regard" ;
+    sur un canapé, deux personnages s'assoient côte à côte) ;
   - "id" unique dans la scène (deux chaises : "c1", "c2") ; un support est déclaré avant ce qui est posé dessus ;
   - 3 à 7 objets par scène : les personnages présents + au moins un objet ou meuble qui situe l'action ;
   - "parler" porte UNE réplique ("texte" : 3 à {REPLIQUE_MAX_WORDS} mots, une phrase orale), avec "expr" et "geste"
@@ -328,7 +363,19 @@ Mise en scène :
     qui s'entendent : {", ".join(ACTIONS_BRUITEES)} ; un personnage peut entrer pendant que l'autre parle ;
     le chat (une scène au plus) apporte une petite touche d'humour ;
   - "titre" (optionnel, 2 à 4 mots : lieu ou moment, ex : « Lundi, 9 h ») : jamais sur la scène 1 ;
-  - varie les décors d'une scène à l'autre quand l'histoire change de lieu ou de moment.
+  - UNE SCÈNE = UN LIEU ET UN MOMENT. On ne change de scène QUE si le lieu ou le moment change (le soir,
+    le lendemain, chez le recruteur…) : sinon, reste dans la même scène (jusqu'à 6 répliques) et varie
+    les plans avec la caméra (gros plan sur un visage, sur le CV, retour au plan large). Deux scènes de
+    suite au même endroit, au même moment, sont fusionnées en une seule ;
+  - un saut dans le temps s'annonce par "ellipse" (au lieu de "titre") : « Une semaine plus tard… » (2 à 6 mots),
+    et peut se voir (calendrier qui "defiler") ;
+  - MONTRE au lieu de dire, au moins une fois par reel : gros plan caméra sur une réaction, le CV corrigé à l'écran
+    ("corriger" : la phrase faible barrée puis la bonne), l'e-mail ou la notification reçus, le tampon du recruteur,
+    ou ce qu'imagine un personnage ("imaginer") ; le CV à l'écran dès que le conseil porte sur une formulation ;
+  - un objet déclaré APRÈS un personnage passe devant lui (recruteur derrière son bureau : le recruteur, puis la table) ;
+  - pas de "imaginer" ni d'"ellipse" dans la scène 1 (l'accroche occupe le haut de l'écran).
+{trame_rule}{serie_rule}CHUTE : juste avant l'appel à l'action, une chute : un retournement ou une réplique drôle (un sourire en
+registre sérieux), souvent soulignée par un gros plan "rapide" sur le visage qui réagit.
 Scène 1 : l'accroche est la 1re réplique (12 mots max, sans pourcentage ni statistique), dite tout de suite,
 avant toute autre action ; la scène 1 a ensuite, elle aussi, au moins une action visible.
 Une révélation annoncée (« je te donne LA phrase », « attends la suite ») arrive EXPLICITEMENT plus loin dans le
@@ -458,7 +505,7 @@ Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
                       f"{max(6, round(target / 7))} à {max(7, round(target / 6))} répliques de 6 à 8 mots. "
                       "Compte tes mots avant de répondre : un texte trop long fait dépasser la durée du reel.")
     if dessin:
-        screen_rule = dessin_rules() + """Tu peux citer OpusCV à la fin comme l'outil qui aide, sans décrire d'écran que le spectateur ne voit pas.
+        screen_rule = dessin_rules(plan) + """Tu peux citer OpusCV à la fin comme l'outil qui aide, sans décrire d'écran que le spectateur ne voit pas.
 """
         scene1_rule = ""
         variety_rule = "chaque scène fait avancer l'histoire (pas deux scènes qui disent la même chose) ;"
@@ -560,6 +607,9 @@ Fournis aussi :
 """
     if plan.get("episode"):
         prompt += f"\nC'est l'épisode {plan['episode']} de la série : ne répète pas les conseils d'un épisode précédent.\n"
+    if dessin and plan.get("episode"):
+        prompt += ('Fournis aussi "resume_episode" : UNE phrase (25 mots max) qui résume ce qui arrive à Karim dans cet '
+                   "épisode et où il en est à la fin (elle sera rappelée à l'épisode suivant).\n")
     if forced:
         sequence = "\n".join(
             f'{i}. feature "{s["feature"]}"' + (f' -- texte imposé : "{s["texte"]}"' if s.get("texte") else "")
@@ -869,13 +919,17 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
             continue
         if raw.get("cta"):
             texte = " ".join(str(raw.get("texte") or "").split())
-            qui = raw.get("qui") if raw.get("qui") in personnages else next(iter(personnages))
+            # CTA dit par un personnage principal (Lea, Karim) : de preference un qui parle deja (2 voix au plus).
+            principaux = [q for q, p in personnages.items() if p.get("role", "principal") == "principal"]
+            parlent = [r["qui"] for sc_ in scenes for r in sc_["repliques"] if r["qui"] in principaux]
+            qui = raw.get("qui") if raw.get("qui") in principaux else (parlent or principaux)[0]
             if texte:
                 scenes.append({"feature": "", "texte": texte, "repliques": [{"qui": qui, "texte": texte}]})
             continue
-        sc = {k: raw[k] for k in ("fond", "titre", "objets", "actions") if raw.get(k) is not None}
+        sc = {k: raw[k] for k in ("fond", "titre", "ellipse", "objets", "actions") if raw.get(k) is not None}
         if not scenes:
             sc.pop("titre", None)  # scene 1 : l'accroche s'affiche deja en haut
+            sc.pop("ellipse", None)
         clean, errors = catalog.clean_scene_dessin(sc, n)
         problems += errors
         actions, repliques = [], []
@@ -899,6 +953,17 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
             continue
         scenes.append({"feature": "", "texte": " ".join(r["texte"] for r in repliques),
                        "repliques": repliques, "dessin": clean})
+    scenes = fusionner_meme_lieu(scenes)
+    if scenes and "dessin" in scenes[0]:
+        for a in scenes[0]["dessin"]["actions"]:
+            if a.get("action") == "imaginer":
+                problems.append("scène 1 : pas de « imaginer » (le nuage cacherait l'accroche)")
+                break
+    mises_en_scene = sum(1 for s_ in scenes if "dessin" in s_ for a in s_["dessin"]["actions"]
+                         if a.get("action") in ACTIONS_MISE_EN_SCENE)
+    if any("dessin" in s_ for s_ in scenes) and not mises_en_scene:
+        problems.append("aucun plan qui MONTRE : ajoute au moins un gros plan caméra, un CV corrigé à l'écran (corriger), "
+                        "un e-mail / une notification (afficher, notifier), un tampon ou un nuage de pensée (imaginer)")
     if scenes and "dessin" in scenes[-1]:
         problems.append('la dernière scène doit être l\'appel à l\'action : {"cta": true, "qui": "...", "texte": "..."}')
     if scenes and "dessin" not in scenes[0]:
@@ -922,6 +987,27 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
         problems.append(f"{bruits} action(s) qui s'entendent, il en faut au moins {MIN_BRUITAGES} "
                         f"({', '.join(ACTIONS_BRUITEES)})")
     return scenes, problems
+
+
+def fusionner_meme_lieu(scenes: list[dict]) -> list[dict]:
+    """
+    Deux scenes dessinees de suite dans le meme decor, sans titre ni ellipse (meme lieu, meme moment) :
+    une seule scene. Changer de scene sans changer de lieu ni de moment coupait l'action pour rien
+    (nouveau trace du decor, fondu). Les objets de la seconde absents de la premiere s'y ajoutent.
+    """
+    out = []
+    for sc in scenes:
+        prev = out[-1] if out else None
+        d, dp = sc.get("dessin"), prev.get("dessin") if prev else None
+        if d and dp and d.get("fond", "vide") == dp.get("fond", "vide") and not d.get("titre") and not d.get("ellipse"):
+            ids = {o["id"] for o in dp["objets"]}
+            dp["objets"] += [o for o in d["objets"] if o["id"] not in ids]
+            dp["actions"] += d["actions"]
+            prev["repliques"] += sc["repliques"]
+            prev["texte"] = " ".join(r["texte"] for r in prev["repliques"])
+            continue
+        out.append(sc)
+    return out
 
 
 def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str],
@@ -977,6 +1063,8 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         if isinstance(best_data.get("mots_cles"), list) else [],
         "offre_emploi": str(best_data.get("offre_emploi") or "").strip(),
         "theme_style": str(best_data.get("theme_style") or "").strip(),
+        **({"resume_episode": " ".join(str(best_data.get("resume_episode") or "").split()[:30])}
+           if fmt.get("dessin") and best_data.get("resume_episode") else {}),
         **instagram_fields(best_data),
         **plan_fields(plan),
         **dessin_fields,
@@ -1025,6 +1113,9 @@ def plan_fields(plan: dict) -> dict:
             "ton": catalog.tone_for(plan["format"], plan.get("registre")),
             "cta_anim": plan.get("cta_anim") or {},
             "ambiance": plan.get("ambiance"),
+            **({"trame": plan["trame"]["id"]} if plan.get("trame") else {}),
+            **({"serie_titre": (catalog.dessins().get("serie") or {}).get("titre")}
+               if plan["format"].get("dessin") and plan.get("episode") else {}),
             **({"sans_captures": True} if plan.get("sans_captures") else {}),
             **({"habillage": plan["format"]["habillage"], "habillage_params": plan["format"].get("habillage_params", {})}
                if plan["format"].get("habillage") else {})}
@@ -1211,7 +1302,8 @@ def main():
     catalog.save_history(history_path, history + [
         {"format": s.get("format"), "categorie": s.get("categorie"), "sujet": s.get("sujet"), "famille": s.get("famille"),
          "hook": s.get("hook"), "theme": s.get("theme"), "voix": s.get("voix"), "ambiance": s.get("ambiance"),
-         "registre": s.get("registre"), "titre": s.get("titre"),
+         "registre": s.get("registre"), "titre": s.get("titre"), "trame": s.get("trame"),
+         "resume": s.get("resume_episode"),
          "accroche": s.get("accroche_ecran") or (s["scenes"][0]["texte"] if s["scenes"] else "")}
         for s in scenarios])
     print(f"OK -> {out_path} ({len(scenarios)} scenarios)")

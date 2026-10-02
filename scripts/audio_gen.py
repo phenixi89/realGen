@@ -211,6 +211,48 @@ def sfx(name: str, seed: int = 0, **kw) -> np.ndarray:
             seg = t[: len(t) - start]
             y[start:] += np.sin(2 * np.pi * midi_hz(note) * seg) * env(len(seg), 0.002, 0.14)
         return _norm(y)
+    if name == "froisse":  # papier froisse : craquements secs en rafale
+        n = int(0.45 * SR)
+        rng = np.random.default_rng(seed)
+        y = np.zeros(n)
+        for _ in range(26):
+            pos, m = int(rng.uniform(0, n - 400)), int(rng.uniform(0.004, 0.02) * SR)
+            seg = _noise(m, int(rng.integers(0, 9999)))
+            seg = (seg - _lowpass_fast(seg, 1500)) * env(m, 0.0005, m / SR / 3) * rng.uniform(0.3, 1)
+            y[pos:pos + m] += seg[: n - pos]
+        return _norm(y * env(n, 0.01, 0.15))
+    if name == "poubelle":  # boule de papier qui tombe dans la corbeille : "pouf" metallique
+        t = _t(0.3)
+        ring = np.sin(2 * np.pi * 420 * t) * 0.4 + np.sin(2 * np.pi * 1130 * t) * 0.2
+        thump = _lowpass_fast(_noise(len(t), seed), 900, passes=2)
+        return _norm((ring + thump) * env(len(t), 0.002, 0.08))
+    if name == "tampon":  # coup de tampon : choc sourd + claquement de papier
+        t = _t(0.35)
+        f = 80 * np.exp(-t * 18) + 60
+        boom = np.sin(2 * np.pi * np.cumsum(f) / SR) * env(len(t), 0.001, 0.09)
+        slap = _lowpass_fast(_noise(len(t), seed), 5000) * env(len(t), 0.0005, 0.02)
+        return _norm(boom + 0.6 * slap)
+    if name == "notification":  # notification de telephone : deux notes douces
+        t = _t(0.5)
+        y = np.zeros(len(t))
+        for k, note in enumerate((81, 88)):
+            start = int(k * 0.12 * SR)
+            seg = t[: len(t) - start]
+            y[start:] += np.sin(2 * np.pi * midi_hz(note) * seg) * env(len(seg), 0.003, 0.12)
+        return _norm(y)
+    if name == "pages":  # pages qui tournent / s'envolent : petits souffles de papier
+        d = kw.get("duration", 0.9)
+        n = int(d * SR)
+        y = np.zeros(n)
+        for k, off in enumerate(np.arange(0, max(d - 0.15, 0.01), 0.3)):
+            m = int(0.16 * SR)
+            seg = _noise(m, seed + k)
+            seg = (_lowpass_fast(seg, 6000) - _lowpass_fast(seg, 1200)) * np.sin(np.linspace(0, np.pi, m)) ** 2
+            a = int(off * SR)
+            y[a:a + m] += seg[: n - a]
+        return _norm(y)
+    if name == "zoom":  # coupe seche de la camera : souffle tres court
+        return sfx("whoosh", seed, duration=0.22)
     if name in SAMPLES:  # enregistrements CC0 (assets/sfx/LICENCES.md)
         x = _sample(SAMPLES[name])
         d = kw.get("duration")
@@ -242,7 +284,7 @@ def _norm(x: np.ndarray) -> np.ndarray:
     return (x / peak).astype(np.float64)
 
 
-TONAL_SFX = ("pop", "ding", "sparkle", "tick", "idee")
+TONAL_SFX = ("pop", "ding", "sparkle", "tick", "idee", "notification")
 
 
 def _pitch(x: np.ndarray, semitones: float) -> np.ndarray:

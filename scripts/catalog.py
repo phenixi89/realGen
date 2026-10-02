@@ -119,6 +119,13 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
     objets_ = {o["id"]: o for o in cat["objets"]}
     perso = cat["personnage"]
     errors, clean = [], {k: v for k, v in sc.items() if k not in ("objets", "actions")}
+    if clean.get("ellipse") is not None:
+        mots = str(clean["ellipse"]).split()
+        if len(mots) > ELLIPSE_MAX_MOTS:
+            errors.append(f"scene {n} : ellipse trop longue ({len(mots)} mots, {ELLIPSE_MAX_MOTS} max)")
+        clean["ellipse"] = " ".join(mots[:ELLIPSE_MAX_MOTS])
+        if not clean["ellipse"]:
+            del clean["ellipse"]
     if sc.get("fond", "vide") not in fonds_:
         errors.append(f"scene {n} : fond inconnu '{sc.get('fond')}' (choix : {sorted(fonds_)})")
         clean["fond"] = "vide"
@@ -130,8 +137,10 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
         if not t or not o.get("id") or o["id"] in ids:
             errors.append(f"scene {n} : objet '{o.get('id')}' : type inconnu '{o.get('type')}' ou id absent / en double")
             continue
-        if o.get("assis") and (o["assis"] not in ids or ids[o["assis"]].get("id") != "chaise" or t["categorie"] != "personnage"):
-            errors.append(f"scene {n} : '{o['id']}' assis sur '{o['assis']}' : il faut un personnage et une chaise declaree avant lui")
+        if o.get("assis") and (o["assis"] not in ids or "assise" not in (ids[o["assis"]].get("ancres") or [])
+                               or t["categorie"] != "personnage"):
+            errors.append(f"scene {n} : '{o['id']}' assis sur '{o['assis']}' : il faut un personnage et une chaise "
+                          "(ou un canape) declares avant lui")
             o = {k: v for k, v in o.items() if k != "assis"}
         if o.get("sur"):
             cible, _, anc = str(o["sur"]).partition(".")
@@ -173,6 +182,21 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
         if a.get("action") == "pause":
             actions.append(a)
             continue
+        if a.get("action") == "camera":
+            cadres = cat.get("camera", {}).get("cadres", {"large": ""})
+            a = {k: v for k, v in a.items() if k != "qui"}
+            if a.get("cadre") not in cadres:
+                errors.append(f"scene {n} : cadre de camera inconnu '{a.get('cadre')}' (choix : {list(cadres)})")
+                continue
+            if a["cadre"] != "large" and a.get("sur") not in ids:
+                errors.append(f"scene {n} : camera {a['cadre']} sur '{a.get('sur')}' : objet ou personnage absent de la scene")
+                continue
+            if a["cadre"] == "objet" and ids[a["sur"]]["categorie"] == "personnage":
+                a["cadre"] = "buste"
+            elif a["cadre"] in ("buste", "visage") and ids[a["sur"]]["categorie"] != "personnage":
+                a["cadre"] = "objet"
+            actions.append(a)
+            continue
         t = ids.get(a.get("qui"))
         if not t:
             errors.append(f"scene {n} : action sur un objet absent '{a.get('qui')}'")
@@ -188,11 +212,29 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
         if a.get("action") not in possibles:
             errors.append(f"scene {n} : action '{a.get('action')}' impossible pour {a.get('qui')} (choix : {possibles})")
             continue
-        cibles = [a[k] for k in ("objet", "sur") if a.get(k) and a.get("action") in ("tenir", "poser", "s_asseoir")]
+        cibles = [a[k] for k in ("objet", "sur", "dans") if a.get(k) and a.get("action") in ("tenir", "poser", "s_asseoir", "jeter")]
         if any(str(c).split(".")[0] not in ids for c in cibles):
             errors.append(f"scene {n} : {a['action']} de {a['qui']} vise un objet absent ({', '.join(map(str, cibles))})")
             continue
         a = dict(a)
+        if a["action"] == "jeter" and not a.get("dans"):
+            errors.append(f"scene {n} : jeter de {a['qui']} : champ dans (id d'une corbeille de la scene) obligatoire")
+            continue
+        if a["action"] == "jeter" and not a.get("objet") and not tenus.get(a["qui"]):
+            errors.append(f"scene {n} : {a['qui']} jette sans rien tenir (champ objet)")
+            continue
+        if a["action"] == "jeter" and a.get("objet") and tenus.get(a["qui"]) != a["objet"]:
+            actions.append({"qui": a["qui"], "action": "tenir", "objet": a["objet"],
+                            **({"avec": True} if a.get("avec") else {})})
+            tenus[a["qui"]] = a["objet"]
+            a.pop("avec", None)
+        if a["action"] == "jeter":
+            tenus.pop(a["qui"], None)
+        problemes_texte = _textes_action(a)
+        if problemes_texte:
+            errors += [f"scene {n} : {a['action']} de {a['qui']} : {p}" for p in problemes_texte]
+            if any(p.startswith("champ") for p in problemes_texte):
+                continue
         if a["action"] in ("boire", "telephoner") and a.get("objet"):
             # Boire / telephoner = avec l'objet en main : on le prend d'abord s'il ne l'est pas.
             if tenus.get(a["qui"]) != a["objet"]:
@@ -220,6 +262,36 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
             actions.append(suite)
     clean["objets"], clean["actions"] = objets, actions
     return clean, errors
+
+
+# Textes des actions a texte (inserts, nuage de pensee) : champ -> (obligatoire, mots max).
+TEXTES_ACTIONS = {
+    "corriger": {"avant": (True, 14), "apres": (True, 16)},
+    "tamponner": {"texte": (False, 3)},
+    "afficher": {"titre": (False, 6), "texte": (True, 25)},
+    "notifier": {"titre": (False, 4), "texte": (True, 14)},
+    "imaginer": {"texte": (False, 4)},
+}
+ELLIPSE_MAX_MOTS = 6
+
+
+def _textes_action(a: dict) -> list[str]:
+    """Champs de texte d'une action (inserts, imaginer) : presence, longueur (coupee), icone connue."""
+    problemes = []
+    for champ, (requis, mx) in TEXTES_ACTIONS.get(a.get("action"), {}).items():
+        mots = " ".join(str(a.get(champ) or "").split()).split()
+        if not mots:
+            if requis:
+                problemes.append(f"champ {champ} obligatoire")
+            a.pop(champ, None)
+            continue
+        if len(mots) > mx:
+            problemes.append(f"{champ} trop long ({len(mots)} mots, {mx} max)")
+        a[champ] = " ".join(mots[:mx])
+    if a.get("action") == "imaginer" and a.get("image") not in icons():
+        problemes.append(f"image inconnue '{a.get('image')}' (icônes : {', '.join(icons())})")
+        a["image"] = "question"
+    return problemes
 
 
 def _ordre_supports(objets: list[dict]) -> list[dict]:
@@ -458,7 +530,7 @@ def pick_cta(categorie: str, rng: random.Random) -> tuple[str, dict]:
     return rng.choice(phrases), dict(rng.choice(anims))
 
 
-PLAN_KEYS = ("format", "sujet", "hook", "theme", "voix", "registre", "ambiance", "angle")
+PLAN_KEYS = ("format", "sujet", "hook", "theme", "voix", "registre", "ambiance", "angle", "trame")
 
 
 def validate_plan(plan: list, sans_captures: bool = False) -> list[str]:
@@ -479,6 +551,8 @@ def validate_plan(plan: list, sans_captures: bool = False) -> list[str]:
                     get(item[k])
                 except KeyError as e:
                     errors.append(f"reel {i} : {e.args[0].split(' (disponibles')[0]}")
+        if item.get("trame") and item["trame"] not in {t["id"] for t in trames()}:
+            errors.append(f"reel {i} : trame inconnue '{item['trame']}' (choix : {', '.join(t['id'] for t in trames())})")
         if item.get("registre") and item["registre"] not in REGISTRES:
             errors.append(f"reel {i} : registre inconnu '{item['registre']}'")
         if item.get("sujet") and item.get("angle"):
@@ -528,6 +602,28 @@ def recent_accroches(history: list[dict]) -> list[str]:
 
 def series_episode(history: list[dict], format_id: str) -> int:
     return sum(1 for h in history if h.get("format") == format_id) + 1
+
+
+def series_resumes(history: list[dict], format_id: str, n: int = 5) -> list[tuple[int, str]]:
+    """Resumes des n derniers episodes d'une serie (historique, champ "resume") : [(episode, resume)]."""
+    episodes = [h for h in history if h.get("format") == format_id]
+    return [(i, h["resume"]) for i, h in enumerate(episodes, 1) if h.get("resume")][-n:]
+
+
+def trames() -> list[dict]:
+    return dessins().get("trames") or []
+
+
+def pick_trame(history: list[dict], rng: random.Random) -> dict | None:
+    """Trame d'histoire du dessin anime : la moins recemment utilisee (au hasard entre les jamais vues)."""
+    pool = trames()
+    if not pool:
+        return None
+    recentes = [h.get("trame") for h in history if h.get("trame")]
+    def age(t):
+        return len(recentes) - 1 - max(i for i, r in enumerate(recentes) if r == t["id"]) if t["id"] in recentes else 10 ** 6
+    plus_vieux = max(age(t) for t in pool)
+    return rng.choice([t for t in pool if age(t) == plus_vieux])
 
 
 def _norm(text: str) -> str:
@@ -625,7 +721,11 @@ def validate_catalog() -> list[str]:
         perso = cat["personnage"]
         if set(perso.get("voix_expressions") or {}) != set(perso["expressions"]):
             errors.append("dessins.json : personnage.voix_expressions doit donner un ton pour chaque expression")
-        if any(f.get("dessin") for f in formats()) and len(personnages()) < 2:
+        for t in cat.get("trames") or []:
+            if not (t.get("id") and t.get("nom") and t.get("consigne")):
+                errors.append(f"dessins.json : trame {t} : id, nom et consigne obligatoires")
+        principaux = [p for p in personnages().values() if p.get("role", "principal") == "principal"]
+        if any(f.get("dessin") for f in formats()) and len(principaux) < 2:
             errors.append("dessins.json : le format dessin anime demande au moins 2 personnages")
     except (ValueError, OSError, KeyError) as e:
         errors.append(f"dessins.json ou assets/anim/dessin/ illisible : {e}")

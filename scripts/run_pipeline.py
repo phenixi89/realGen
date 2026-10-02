@@ -210,6 +210,13 @@ def dessin_spec(scene: dict, timing: dict, under_hook: bool = False, first: bool
         a["t"] = round(max(r["start"] - start, 0.0), 2)
         a["duree"] = round(max(r["end"] - r["start"], 0.6), 2)
     sc["duree"] = round(timing["end"] - start, 2)
+    # Camera sans instant : jouee avec l'action suivante quand celle-ci est une replique deja placee.
+    acts = sc.get("actions", [])
+    for i, a in enumerate(acts):
+        if a.get("action") == "camera" and a.get("t") is None:
+            suivante = next((b for b in acts[i + 1:] if b.get("action") != "camera"), None)
+            if suivante and suivante.get("t") is not None:
+                a["t"] = round(max(suivante["t"] - 0.1, 0.0), 2)
     fin_parole = 0.0
     for a in sc.get("actions", []):
         if a.get("action") == "parler" and a.get("t") is not None:

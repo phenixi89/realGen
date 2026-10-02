@@ -496,7 +496,13 @@
       "clavier": 0.1,
       "idee": 0.18,
       "miaou": 0.32,
-      "ronron": 0.16
+      "ronron": 0.16,
+      "froisse": 0.22,
+      "poubelle": 0.2,
+      "tampon": 0.3,
+      "notification": 0.18,
+      "pages": 0.16,
+      "zoom": 0.12
     },
     "transition": "",
     "_note": "Mix sobre : seuls les effets qui soulignent un moment cle restent (impact de l'accroche et de la revelation, pop des cartes, ding, scintillement du CTA, clic de souris, feutre des dessins et annotations). transition vide = aucun son aux changements de scene.",
@@ -509,9 +515,15 @@
       "clavier",
       "idee",
       "miaou",
-      "ronron"
+      "ronron",
+      "froisse",
+      "poubelle",
+      "tampon",
+      "notification",
+      "pages",
+      "zoom"
     ],
     "bruitage_ecart_min_s": 0.12,
-    "_note_bruitages": "bruitages : sons du dessin anime, emis par le moteur (assets/anim/dessin/) a l'instant exact de l'action (pas de marche, saut, chaise, objet pose, vibreur, clavier, ampoule, miaou, ronron) ; hors regles ecart_min_s / max_par_10s (un meme bruitage est seulement espace de bruitage_ecart_min_s). miaou et ronron : enregistrements CC0 de assets/sfx/."
+    "_note_bruitages": "bruitages : sons du dessin anime, emis par le moteur (assets/anim/dessin/) a l'instant exact de l'action (pas de marche, saut, chaise, objet pose, vibreur, clavier, ampoule, miaou, ronron, papier froisse et corbeille (jeter), tampon, notification (telephone, e-mail a l'ecran), pages (calendrier, carton d'ellipse), zoom (coupe seche de la camera)) ; hors regles ecart_min_s / max_par_10s (un meme bruitage est seulement espace de bruitage_ecart_min_s). miaou et ronron : enregistrements CC0 de assets/sfx/. Aucun son au changement de scene du dessin anime (le trace d'un nouveau decor est muet)."
   }
 }

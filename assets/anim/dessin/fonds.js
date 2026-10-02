@@ -1,7 +1,7 @@
 // Fonds du dessin anime (coordonnees ecran 1080x1920, sol a la hauteur `sol`).
 // Le decor de fond est trace plus fin et plus transparent que les personnages
 // (profondeur), avec quelques touches de couleur legeres (lavis).
-//   vide, bureau, cafe, salle_attente.
+//   vide, bureau, cafe, salle_attente, salle_entretien, salon, metro, visio.
 (() => {
   const { g } = Dessin;
   const reg = (nom, def) => Dessin.enregistrer("fond_" + nom, { categorie: "fond", ...def });
@@ -140,6 +140,137 @@
     vie(tl, f, t0, t1) {
       tl.fromTo(f.minutes, { rotation: 0 }, { rotation: 360 * ((t1 - t0) / 6), duration: t1 - t0, ease: "none", immediateRender: false }, t0)
         .fromTo(f.heures, { rotation: 0 }, { rotation: 30 * ((t1 - t0) / 6), duration: t1 - t0, ease: "none", immediateRender: false }, t0);
+    },
+  });
+  // Bureau du recruteur : fenetre a stores, tableau blanc avec une courbe, porte-manteau.
+  reg("salle_entretien", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      mur(grp, P, m);
+      P.lavis(grp, [[86, 606], [394, 606], [394, 974], [86, 974]], "#8fd3ff", 0.18);
+      P.rect(grp, 80, 600, 320, 380, FOND);
+      for (let yy = 640; yy < 980; yy += 38) P.trace(grp, [[84, yy], [396, yy + 2]], { w: 1.6, passes: 1, alpha: 0.45 });
+      P.trace(grp, [[380, 600], [380, 900]], { w: 1.6, passes: 1, alpha: 0.5 });
+      // Tableau blanc : une courbe et des post-it.
+      P.rect(grp, 600, 640, 360, 250, FOND);
+      P.trace(grp, [[630, 850], [700, 820], [760, 830], [830, 760], [920, 700]], { w: 2.6, passes: 1, alpha: 0.7 });
+      P.trace(grp, [[900, 690], [922, 698], [912, 720]], { w: 2.4, passes: 1, alpha: 0.7 });
+      [[640, 670, "#ffe066"], [700, 668, "#ff8fb1"]].forEach(([x, yy, c]) => { P.lavis(grp, [[x, yy], [x + 44, yy], [x + 44, yy + 44], [x, yy + 44]], c, 0.5); P.rect(grp, x, yy, 44, 44, { w: 1.8, passes: 1, alpha: 0.6 }); });
+      P.trace(grp, [[590, 900], [970, 900]], { ...FOND, w: 2.6 });
+      // Porte-manteau au fond a droite, une veste accrochee.
+      P.trace(grp, [[1010, m], [1012, 980]], { ...FOND, w: 3 });
+      for (const s of [-1, 1]) P.trace(grp, [[1011, 990], [1011 + s * 34, 1010]], { ...FOND, w: 2.4 });
+      P.lavis(grp, [[984, 1010], [1040, 1010], [1050, 1150], [976, 1150]], "#4f8dff", 0.22);
+      P.trace(grp, [[984, 1010], [976, 1150], [1050, 1150], [1040, 1010]], { ...FOND, w: 2.4 });
+      sol(grp, P, y, xs, { cailloux: false });
+      return {};
+    },
+  });
+
+  // Salon : fenetre a rideaux, lampadaire, tableau, tapis.
+  reg("salon", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      mur(grp, P, m);
+      P.lavis(grp, [[646, 626], [934, 626], [934, 954], [646, 954]], "#8fd3ff", 0.2);
+      P.rect(grp, 640, 620, 300, 340, FOND);
+      P.trace(grp, [[790, 620], [790, 960]], { ...FOND, w: 2.2 });
+      for (const [x0, s] of [[620, 1], [960, -1]]) {
+        P.lavis(grp, [[x0 - 10, 590], [x0 + s * 70, 590], [x0 + s * 50, 1010], [x0 - 10 * s, 1010]], "#ff7a6b", 0.25);
+        P.trace(grp, [[x0, 590], [x0 + s * 18, 800], [x0 - s * 4, 1010]], { ...FOND, w: 2.4 });
+        P.trace(grp, [[x0 + s * 60, 590], [x0 + s * 40, 800], [x0 + s * 50, 1010]], { ...FOND, w: 2.4 });
+      }
+      P.trace(grp, [[590, 586], [990, 586]], { ...FOND, w: 3.4 });
+      // Tableau (paysage) a gauche.
+      P.rect(grp, 120, 700, 220, 160, FOND);
+      P.lavis(grp, [[130, 820], [180, 770], [230, 800], [290, 750], [330, 850], [130, 850]], "#5cc98a", 0.3);
+      P.trace(grp, [[130, 820], [180, 770], [230, 800], [290, 750], [330, 820]], { w: 2, passes: 1, alpha: 0.6 });
+      P.lavisRond(grp, 300, 735, 14, 14, "#ffc94d", 0.6);
+      // Lampadaire.
+      P.trace(grp, [[470, m + 10], [470, 900]], { ...FOND, w: 3 });
+      P.lavis(grp, [[430, 900], [510, 900], [490, 820], [450, 820]], "#ffe066", 0.35);
+      P.trace(grp, [[430, 900], [450, 820], [490, 820], [510, 900], [430, 900]], { ...FOND, w: 3, ferme: true });
+      // Tapis.
+      P.lavisRond(grp, 540, y + 70, 420, 40, "#ff8fb1", 0.16);
+      P.rond(grp, 540, y + 70, 420, 40, { w: 2.2, passes: 1, alpha: 0.5 });
+      sol(grp, P, y, xs, { cailloux: false });
+      return {};
+    },
+  });
+
+  // Rame de metro : vitres sur la ville qui defile, barres, poignees qui se balancent, plan de ligne.
+  reg("metro", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      // Plan de ligne au-dessus des vitres.
+      P.trace(grp, [[80, 560], [1000, 560]], { w: 3, passes: 1, couleur: "#ffc94d", alpha: 0.8 });
+      for (let x = 100; x <= 980; x += 110) P.rond(grp, x, 560, 8, 8, { w: 2.4, passes: 1 });
+      P.lavisRond(grp, 540, 560, 14, 14, "#ff5a5a", 0.8);
+      // Vitres et ville qui defile derriere.
+      const svg = parent.ownerSVGElement, defs = svg.querySelector("defs") || Dessin.el("defs", {}, svg);
+      const clip = Dessin.el("clipPath", { id: "vitres-metro" }, defs);
+      for (const x of [60, 400, 740]) Dessin.el("rect", { x, y: 640, width: 280, height: 300 }, clip);
+      const ville = g(grp, { "clip-path": "url(#vitres-metro)" }), defile = g(ville);
+      for (let k = 0; k < 3; k++) {
+        let x = k * 1100;
+        for (const [w, h] of [[90, 160], [60, 230], [120, 120], [70, 200], [100, 260], [80, 140], [130, 190], [60, 110], [110, 220], [90, 170]]) {
+          P.trace(defile, [[x, 940], [x, 940 - h], [x + w, 940 - h], [x + w, 940]], { w: 2, passes: 1, alpha: 0.4 });
+          for (let fy = 940 - h + 24; fy < 920; fy += 40) P.trace(defile, [[x + 16, fy], [x + 26, fy]], { w: 2, passes: 1, alpha: 0.3 });
+          x += w + 20;
+        }
+      }
+      for (const x of [60, 400, 740]) { P.lavis(grp, [[x, 640], [x + 280, 640], [x + 280, 940], [x, 940]], "#8fd3ff", 0.14); P.rect(grp, x, 640, 280, 300, FOND); }
+      // Banquettes sous les vitres.
+      P.lavis(grp, [[40, m - 120], [1040, m - 120], [1040, m - 60], [40, m - 60]], "#4f8dff", 0.18);
+      P.trace(grp, [[40, m - 120], [1040, m - 120]], FOND); P.trace(grp, [[40, m - 60], [1040, m - 60]], FOND);
+      // Barres et poignees.
+      P.trace(grp, [[0, 610], [1080, 610]], { ...FOND, w: 3 });
+      for (const x of [370, 710]) P.trace(grp, [[x, 610], [x + 2, y]], { w: 3.6, passes: 2, alpha: 0.8 });
+      const poignees = [];
+      for (const x of [140, 260, 480, 600, 820, 940]) {
+        const p = g(grp);
+        P.trace(p, [[x, 610], [x, 680]], { w: 2.2, passes: 1, alpha: 0.7 });
+        P.rond(p, x, 700, 18, 20, { w: 2.6, passes: 1, alpha: 0.8 });
+        gsap.set(p, { svgOrigin: `${x} 610` });
+        poignees.push(p);
+      }
+      sol(grp, P, y, xs, { cailloux: false });
+      return { defile, poignees };
+    },
+    vie(tl, f, t0, t1) {
+      tl.fromTo(f.defile, { x: 0 }, { x: -1100 * Math.max(1, (t1 - t0) / 4), duration: t1 - t0, ease: "none", immediateRender: false }, t0)
+        .fromTo(f.poignees, { rotation: -5 }, { rotation: 5, duration: 0.9, yoyo: true, repeat: Math.ceil((t1 - t0) / 0.9), ease: "sine.inOut", immediateRender: false }, t0);
+    },
+  });
+
+  // Appel video : l'ecran de l'appel, deux vignettes (une par personnage : gauche et droite),
+  // barre du haut (point d'enregistrement), boutons du bas (micro, camera, raccrocher).
+  reg("visio", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), haut = 470, bas = y + 40;
+      P.rect(grp, 30, haut - 70, 1020, bas - haut + 170, { ...FOND, w: 4, alpha: 0.8 });
+      P.trace(grp, [[30, haut], [1050, haut]], FOND);
+      const rec = g(grp);
+      P.lavisRond(rec, 80, haut - 35, 12, 12, "#ff5a5a", 0.9);
+      P.texte(grp, 540, haut - 22, "Entretien en visio", { taille: 40, alpha: 0.75 });
+      P.trace(grp, [[540, haut], [540, bas]], { ...FOND, w: 3 });
+      P.lavis(grp, [[40, haut + 10], [530, haut + 10], [530, bas - 10], [40, bas - 10]], "#7fc8ff", 0.08);
+      P.lavis(grp, [[550, haut + 10], [1040, haut + 10], [1040, bas - 10], [550, bas - 10]], "#ffc94d", 0.08);
+      // Decor de chaque vignette : etagere a gauche, plante et cadre a droite.
+      P.rect(grp, 60, 620, 140, 220, { w: 2, passes: 1, alpha: 0.45 }); P.trace(grp, [[60, 730], [200, 730]], { w: 2, passes: 1, alpha: 0.45 });
+      P.rect(grp, 880, 640, 120, 90, { w: 2, passes: 1, alpha: 0.45 });
+      P.trace(grp, [[30, bas], [1050, bas]], FOND);
+      [[400, "#ffffff"], [540, "#ffffff"], [680, "#ff5a5a"]].forEach(([x, c]) => {
+        if (c !== "#ffffff") P.lavisRond(grp, x, bas + 55, 34, 34, c, 0.7);
+        P.rond(grp, x, bas + 55, 36, 36, { w: 3, passes: 1 });
+      });
+      P.trace(grp, [[390, bas + 40], [390, bas + 64]], { w: 3, passes: 1 }); P.rond(grp, 400, bas + 46, 8, 12, { w: 2.4, passes: 1 });
+      P.rect(grp, 520, bas + 42, 30, 24, { w: 2.4, passes: 1 }); P.trace(grp, [[550, bas + 50], [562, bas + 44], [562, bas + 66], [550, bas + 60]], { w: 2.2, passes: 1 });
+      P.trace(grp, [[660, bas + 62], [670, bas + 48], [690, bas + 48], [700, bas + 62]], { w: 3, passes: 1 });
+      return { rec };
+    },
+    vie(tl, f, t0, t1) {
+      tl.fromTo(f.rec, { opacity: 1 }, { opacity: 0.2, duration: 0.6, yoyo: true, repeat: Math.ceil((t1 - t0) / 0.6), immediateRender: false }, t0);
     },
   });
 })();

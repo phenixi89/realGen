@@ -202,7 +202,8 @@ récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
 Moteur de dessin animé **pensé par objet, pas par scène** : tout ce qui apparaît est un *objet*
 (personnage, animal, objet, élément de décor, fond), et une **scène = un fond + des objets placés + des
-actions**. Plusieurs scènes s'enchaînent dans un même rendu (fondu, puis le nouveau décor se dessine).
+actions**. Plusieurs scènes s'enchaînent dans un même rendu (fondu, puis le nouveau décor se dessine,
+sans bruit : le feutre qui s'entendait à chaque changement de scène a été retiré).
 
 Style « trait blanc » sur fond noir, dans l'esprit des petites histoires dessinées qui tournent sur TikTok
 (sans en reprendre les personnages) : trait principal assuré doublé de fines passes d'esquisse ; cercles qui
@@ -215,30 +216,55 @@ titres manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe), comme l
 | Fichier | Rôle |
 |---|---|
 | `dessin/pinceau.js` | trait à main levée, cercles, rectangles, texte manuscrit, lavis de couleur, bouillonnement, apparition ; registre des types (`Dessin.enregistrer`) |
-| `dessin/personnages.js` | **Léa** (`lea` : queue de cheval qui se balance avec un chouchou corail, veste cintrée, jupe, cil) et **Karim** (`karim` : cheveux courts avec un épi, chemise, cravate bleue, pantalon) |
+| `dessin/personnages.js` | **Léa** (`lea` : queue de cheval qui se balance avec un chouchou corail, veste cintrée, jupe, cil), **Karim** (`karim` : cheveux courts avec un épi, chemise, cravate bleue, pantalon) et **le recruteur** (`recruteur` : crâne dégarni aux cheveux gris, lunettes rondes, moustache, veste, cravate verte ; voix Charon) |
 | `dessin/animaux.js` | `chat` roux (queue qui bouge ; `marcher`/`traverser`, `miauler`, `dormir`) |
-| `dessin/objets.js` | `tasse` (orange, qui fume), `telephone` (`vibrer`), `cv`, `ordinateur` (`taper`), `table` (bureau), `table_ronde`, `chaise`, `plante` (feuilles qui bougent), `horloge` et `cadre` (muraux) |
-| `dessin/fonds.js` | `vide` (sol, cailloux, herbe, une fleur rose), `bureau` (fenêtre bleutée, livres colorés), `cafe` (suspensions à la lumière chaude, ardoise du menu), `salle_attente` (porte des RH à la plaque orange, affiche « On recrute ! », chaises, horloge qui tourne) |
-| `dessin/moteur.js` | assemble les scènes : place les objets, joue les actions, bulles, titres, enchaînement |
+| `dessin/objets.js` | `tasse` (orange, qui fume), `telephone` (`vibrer`, `notifier`), `cv` (`corriger`), `ordinateur` (`taper`, `afficher`), `table` (bureau), `table_ronde`, `chaise`, `canape` (deux places), `plante` (feuilles qui bougent), `corbeille`, `tampon` (`tamponner`), `horloge`, `cadre` et `calendrier` (`defiler`) (muraux) |
+| `dessin/fonds.js` | `vide` (sol, cailloux, herbe, une fleur rose), `bureau` (fenêtre bleutée, livres colorés), `cafe` (suspensions à la lumière chaude, ardoise du menu), `salle_attente` (porte des RH à la plaque orange, affiche « On recrute ! », chaises, horloge qui tourne), `salle_entretien` (fenêtre à stores, tableau blanc, porte-manteau), `salon` (rideaux corail, lampadaire, tableau, tapis), `metro` (la ville défile derrière les vitres, poignées qui se balancent), `visio` (appel vidéo : deux vignettes, point d'enregistrement, boutons) |
+| `dessin/moteur.js` | assemble les scènes : place les objets, joue les actions, caméra, inserts, bulles, titres, cartons d'ellipse, enchaînement |
 | `catalog/dessins.json` | la liste des fonds, objets (ancres, actions), expressions, gestes et actions des personnages |
 
 **Personnages** (de profil, regard retourné par le moteur) : grosse tête ronde, œil blanc plein à pupille
 noire et reflet, petit nez, petite bouche qui enchaîne trois ouvertures quand il parle, sourcil seulement
 quand l'expression le demande ; bras articulés (épaule, coude) et mains avec doigts, jambes articulées à la
-hanche et au genou (marche, position assise). 6 expressions (`neutre`, `content`, `choc`, `doute`,
-`triste`, `agace`) avec **effets manga** (yeux « ^ » et joues hachurées, effroi + « ! », goutte de sueur,
-veine en croix) et des actions : `parler` (bulle), `expression`, `geste`, `marcher` (`vers`), `entrer` /
+hanche et au genou (marche, position assise). 9 expressions (`neutre`, `content`, `choc`, `doute`,
+`triste`, `agace`, `rire`, `soulagement`, `gene`) avec **effets manga** (yeux « ^ » et joues hachurées,
+effroi + « ! », goutte de sueur, veine en croix ; rire : grand « D », tête qui sautille et « ha ! » ;
+soulagement : yeux mi-clos, petit nuage d'air, épaules qui retombent ; gêne : joue rose, bouche ondulée,
+goutte) et des actions : `parler` (bulle), `expression`, `geste`, `marcher` (`vers`), `entrer` /
 `sortir` (par la gauche ou la droite), `regarder` (`vers` : côté ou objet), `tenir` (`objet` : le prend
 dans la main avant), `poser` (`objet`, `sur`), `boire` (tasse tenue), `telephoner` (téléphone tenu),
-`sauter`, `s_asseoir` (`sur` : une chaise ; y marche si besoin et se tourne comme elle), `se_lever`.
+`sauter`, `s_asseoir` (`sur` : une chaise ou un canapé ; y marche si besoin et se tourne comme elle ; sur
+un canapé, le premier prend la place de gauche, le second celle de droite, tournés l'un vers l'autre),
+`se_lever`, `imaginer` (nuage de pensée en haut de l'écran, hors caméra : une icône de
+`assets/anim/icones.js` (`image`), une légende de 4 mots au plus (`texte`), une grande croix rouge avec
+`"barre": true` ; main au menton pendant), `jeter` (`objet` tenu, `dans` : id d'une corbeille ; boule de
+papier en cloche, la corbeille sursaute).
 Ancres : `main_avant`, `main_arriere`, `tete`.
 
 **Gestes et postures** (action `geste`, champ `geste` de `parler` — tenu le temps de la réplique — ou
 action du même nom avec `duree`, 2,2 s par défaut) : `salut`, `montre`, `hausse`, `explique`,
 `bras_croises`, `tete_mains` (désespoir : penché, le visage dans les mains), `idee` (doigt levé, ampoule
 jaune qui s'allume au-dessus de la tête), `penser` (main au menton, regard en l'air, petits ronds de
-réflexion). **Assis** : un personnage peut commencer assis (`"assis": "id_chaise"`, la chaise déclarée
+réflexion). **Assis** : un personnage peut commencer assis (`"assis": "id_chaise"` ou un canapé, déclaré
 avant lui : il prend sa place et son orientation), avant-bras posés vers l'avant (genoux ou table).
+
+**Caméra** (action sans `qui`) : `{"action": "camera", "cadre": "visage", "sur": "karim"}` ; cadres
+`large` (retour au décor entier), `buste` et `visage` (sur un personnage), `objet` (sur un objet, zoom
+calculé sur sa taille) ; `"rapide": true` = coupe sèche avec un petit souffle (`zoom`), sinon travelling
+de 0,55 s. Jouée à l'instant de l'action suivante, sans la retarder ; jamais hors du décor. Les bulles
+suivent le cadrage (au-dessus de la tête à l'écran) ; les nuages de pensée, les inserts et les cartons
+restent hors caméra.
+
+**Inserts** (gros plan plein écran sur un objet, au-dessus de la scène et sous les bulles, pendant que le
+dialogue continue ; bornés à la fin de la scène) : `cv.corriger` (`avant` s'écrit à la main, est barré en
+rouge, puis `apres` s'écrit dessous, surligné en vert, avec un « ding »), `tampon.tamponner` (`texte` :
+REFUSÉ, ENTRETIEN !… ; `couleur` rouge ou vert ; le tampon s'abat sur un CV), `ordinateur.afficher`
+(e-mail : `titre` = objet, `texte`), `telephone.notifier` (écran verrouillé, `heure`, notification :
+`titre` = expéditeur, `texte`). Longueurs contrôlées par `catalog.TEXTES_ACTIONS`.
+
+**Ellipse** (champ de scène, à la place de `titre`) : `"ellipse": "Une semaine plus tard…"` (6 mots au
+plus) → carton manuscrit en haut pendant ~2,4 s, pages qui s'envolent (son `pages`). Le `calendrier`
+mural peut aussi `defiler`.
 
 **Format d'une scène** (JSON ; `{"scenes": [...], "surtitre": "..."}` pour en enchaîner plusieurs) :
 
@@ -257,7 +283,8 @@ avant lui : il prend sa place et son orientation), avant-bras posés vers l'avan
 
 Objet : `x` (px, 0-1080) au sol, ou `sur` (`id.ancre` : posé sur / tenu par un objet déclaré avant), ou
 `y` (px) pour un objet mural ; `regard` (`gauche`/`droite`) ; `echelle` (multiplie celle de la scène,
-1,1 par défaut) ; `assis` (personnage : id d'une chaise). Actions jouées dans l'ordre : à la suite de la précédente, en même temps avec
+1,1 par défaut) ; `assis` (personnage : id d'une chaise ou d'un canapé) ; un objet déclaré après un
+personnage passe devant lui (le recruteur derrière son bureau). `calendrier` : `jour` (page affichée). Actions jouées dans l'ordre : à la suite de la précédente, en même temps avec
 `"avec": true`, ou à `t` secondes du début de la scène ; `{"action": "pause", "duree": 1}` avance le temps.
 `expression` peut porter un `geste`, joué en même temps. Scène `"dessine": false` : déjà dessinée à la
 1re image (pas de tracé progressif).
@@ -276,17 +303,42 @@ python scripts/render_js_anim.py --spec scene --scene ma_scene.json --duration 1
 renvoie (`Scene.monter` → `sons`, publiés dans `window.SONS`) et le montage les mixe (voir « Son et
 effets ») : pas à chaque foulée (`marcher`, `entrer`, `sortir`), `saut` puis réception, `chaise`
 (s'asseoir, se lever), `pose` (objet posé), `vibreur` (téléphone), `clavier` (ordinateur), `idee`
-(ampoule), `miaou` et `ronron` (chat), et le feutre pendant que chaque décor se dessine. En rendu manuel
+(ampoule), `miaou` et `ronron` (chat), `froisse` puis `poubelle` (jeter), `tampon`, `notification`
+(téléphone, e-mail), `pages` (calendrier, carton d'ellipse), `zoom` (coupe sèche de la caméra), le feutre
+de l'écriture dans un insert, un `ding` sur la phrase corrigée et un `buzz` sur la croix d'un nuage de
+pensée. Aucun son quand un décor se dessine (changement de scène). En rendu manuel
 d'un `.mp4`, la liste est écrite à côté (`.sons.json`).
 
 #### Format `dessin_anime` : le générateur écrit le dessin animé
 
 `--format dessin_anime` (avec `--capture-mode aucune`, imposé automatiquement) : Gemini écrit un mini
 dessin animé où **Léa et Karim jouent la situation**. Il reçoit tout le catalogue `dessins.json` (décors,
-objets et leurs ancres, actions, expressions, gestes) et des règles de mise en scène (positions au sol,
-face à face, objets posés ou tenus, personnage assis) :
+objets et leurs ancres, actions des personnages et des objets, expressions, gestes, cadres de caméra,
+icônes) et des règles de mise en scène (positions au sol, face à face, objets posés ou tenus, personnage
+assis) :
 
-- **Scénario** : 2 à ~4 scènes dessinées (`{"fond", "titre", "objets", "actions"}`, le même format que
+- **Série « Karim cherche un job »** (`serie` dans `formats.json` et `dessins.json`) : chaque reel est un
+  épisode numéroté (historique `output/content_history.json`, gardé d'un run à l'autre par le cache du
+  workflow). Gemini rend aussi `resume_episode` (une phrase : ce qui arrive à Karim, où il en est) ; les 5
+  derniers résumés sont rappelés à l'épisode suivant (continuité, clins d'œil, pas d'histoire refaite).
+  Couverture : surtitre « Karim cherche un job · ép. N » (`serie_titre` du scénario).
+- **Trame d'histoire** (`trames` de `dessins.json`, une par reel, la moins récemment utilisée ;
+  imposable par `--plan` : `"trame"`) : avant / après, ce que pense le recruteur, quiproquo, l'erreur en
+  direct, vrai ou faux, le chat juge (running gag), ça aurait pu être pire. Ajouter une trame = une
+  entrée `{id, nom, consigne}`, sans code.
+- **Chute** obligatoire juste avant le CTA (retournement ou réplique drôle, souvent un gros plan
+  `rapide` sur le visage qui réagit).
+- **Une scène = un lieu et un moment** : on ne change de scène que si le lieu ou le moment change
+  (`titre` ou `ellipse`) ; sinon les plans varient avec la caméra. Deux scènes de suite dans le même
+  décor sans titre ni ellipse sont fusionnées en une (`fusionner_meme_lieu`) : le décor ne se redessine
+  plus pour rien.
+- **Montrer au lieu de dire** : au moins une mise en scène « cinéma » par reel (`ACTIONS_MISE_EN_SCENE` :
+  caméra, `corriger`, `tamponner`, `afficher`, `notifier`, `imaginer`), le CV à l'écran dès que le
+  conseil porte sur une formulation ; ni `imaginer` ni `ellipse` en scène 1 (l'accroche occupe le haut).
+- **Personnages** : 2 parlent au plus dans tout le reel (Léa et Karim, ou Karim et le recruteur) ; un
+  troisième peut être là sans parler. L'appel à l'action est dit par un personnage `principal` (Léa ou
+  Karim, `role` dans `dessins.json`), de préférence un qui parle déjà.
+- **Scénario** : 1 à ~4 scènes dessinées (`{"fond", "titre" ou "ellipse", "objets", "actions"}`, le même format que
   ci-dessus), puis la scène CTA `{"cta": true, "qui": "lea", "texte": "..."}`. **Tout est dit par les
   personnages** (pas de voix off) : chaque `parler` porte une réplique de 16 mots au plus ; la 1re
   réplique est l'accroche (12 mots max, elle peut être à la 1re personne : « Pourquoi personne ne me
@@ -330,6 +382,8 @@ face à face, objets posés ou tenus, personnage assis) :
   Sinon : nouvelle synthèse du reel (`2_generate_voice.py --index N --force`), puis, si elle échoue
   encore, une synthèse par réplique (`--par-replique`, voix garantie, dialogue un peu moins liant).
   Deux voix de hauteurs trop proches (moins de 25 % d'écart) ne sont pas contrôlées.
+- **Caméra au montage** : une action `camera` sans instant prend celui de la réplique qui la suit (un
+  gros plan tombe avec la réplique, pas après la précédente).
 - **Synchro** : Whisper mesure quand chaque réplique est dite (`repliques` de la timeline,
   `4_generate_subtitles.py`) ; au montage, chaque bulle s'ouvre à cet instant et la bouche bouge le temps
   exact de la réplique (`run_pipeline.dessin_spec`) ; une action qui suit une réplique finissant à
@@ -405,7 +459,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 | conseil | Quiz trouve l'erreur (`trouve_erreur`) | ligne piégée puis révélation |
 | conseil | Je t'explique au tableau (`tableau_blanc`) | le mécanisme dessiné à la main (cartes schéma), puis la phrase à retenir (carte impact) |
 | conseil | Le message du recruteur (`dm_recruteur`) | un échange de messages fictif (carte conversation), puis le décryptage |
-| conseil | Dessin animé : Léa et Karim (`dessin_anime`) | mini dessin animé : Léa et Karim jouent la situation, chacun avec sa voix ; capture `aucune` uniquement |
+| conseil | Dessin animé : Karim cherche un job (`dessin_anime`) | série en mini dessin animé : Léa, Karim (et le recruteur) jouent la situation, chacun avec sa voix, sur une trame tirée en rotation ; capture `aucune` uniquement |
 | produit | Démo produit (`demo_produit`) | une fonctionnalité réelle par scène |
 | produit | Témoignage (`temoignage_produit`) | récit fictif à la 1re personne |
 | produit | Avant / Après avec OpusCV (`split_avant_apres`) | comparaison puis le chemin dans l'outil |
@@ -511,8 +565,9 @@ Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--ho
 ### Combinaison par reel (`--plan`)
 
 `--plan` impose, reel par reel, tout ou partie de la combinaison : une liste JSON d'objets aux clés
-`format`, `sujet`, `hook`, `theme`, `voix`, `registre`, `ambiance` (id de `audio.json`) et `angle`
-(sujet libre, à la place de `sujet`). Une clé absente ou vide reste automatique (rotation
+`format`, `sujet`, `hook`, `theme`, `voix`, `registre`, `ambiance` (id de `audio.json`), `trame`
+(dessin animé : id de `trames` dans `dessins.json`, proposé par la console quand le format est un dessin
+animé) et `angle` (sujet libre, à la place de `sujet`). Une clé absente ou vide reste automatique (rotation
 anti-répétition habituelle) ; une clé renseignée l'emporte sur l'option globale correspondante. Le
 nombre de reels est la longueur de la liste. Sujet imposé sans format : le format est tiré parmi ceux
 qui acceptent ce sujet. Les ids sont vérifiés avant tout appel IA (`catalog.validate_plan`).
@@ -598,7 +653,7 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
   changements de scène, clics de clavier, buzz, montée de tension. Garde-fous dans `audio.json` : volumes par effet, écart minimal, maximum par 10 s,
   liste `bannis` pour désactiver un effet.
 - **Bruitages du dessin animé** (`bruitages` dans `audio.json`) : pas, saut, chaise, objet posé,
-  vibreur, clavier, ampoule (synthétisés), miaou et ronron (enregistrements **CC0**, `assets/sfx/`,
+  vibreur, clavier, ampoule, papier froissé, corbeille, tampon, notification, pages, zoom (synthétisés), miaou et ronron (enregistrements **CC0**, `assets/sfx/`,
   sources dans `assets/sfx/LICENCES.md`). Émis par le moteur de dessin à l'instant de l'action, ils
   échappent à l'écart minimal et au maximum par 10 s (un même bruitage est seulement espacé de
   `bruitage_ecart_min_s`) ; volumes discrets réglables dans `volumes`.

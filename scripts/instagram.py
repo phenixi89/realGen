@@ -128,7 +128,9 @@ def export(script: dict, final_video: Path, plateformes: list[str]) -> list[Path
             # Couverture commune TikTok / Instagram : fond uni aux couleurs du theme, jamais une capture
             # (une capture floue derriere le titre le rend illisible dans la grille du profil).
             params = {**base, "titre": script.get("accroche_ecran") or script.get("titre") or "", "marque": BRAND}
-            if script.get("episode"):
+            if script.get("serie_titre"):  # dessin anime : « Karim cherche un job · ép. 4 »
+                params["surtitre"] = f"{script['serie_titre']} · ép. {script['episode']}"
+            elif script.get("episode"):
                 params["surtitre"] = f"Jour {script['episode']}/30"
             jobs_story.append(("couverture", params, Path(f"{stem}.couverture.jpg")))
         if "carrousel" in plateformes:

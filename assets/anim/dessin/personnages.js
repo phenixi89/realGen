@@ -16,6 +16,8 @@
     // Accessoire colore (touche de couleur legere) : chouchou corail pour Lea, cravate bleue pour Karim.
     lea: { nom: "Léa", tenue: "jupe", coiffure: "queue", cravate: false, couleur: "#ff7a6b" },
     karim: { nom: "Karim", tenue: "pantalon", coiffure: "courts", cravate: true, couleur: "#4f8dff" },
+    // Recruteur : degarni (cheveux gris sur les cotes), lunettes rondes, moustache, veste et cravate verte.
+    recruteur: { nom: "Le recruteur", tenue: "pantalon", coiffure: "degarni", cravate: true, couleur: "#5cc98a", lunettes: true, moustache: true, veste: true },
   };
   // Bras : les deux partent de l'epaule ; s = 1 bras avant (cote du regard), -1 bras arriere.
   const EPAULE = [4, -606], COUDE = [12, -490], POIGNET = [18, -388];
@@ -67,6 +69,11 @@
         P.lavis(haut, [[12, -616], [20, -600], [30, -500], [36, -476], [24, -484], [16, -600]], p.couleur, 0.55);
         P.trace(haut, [[12, -616], [20, -600], [30, -500], [36, -476], [24, -484], [16, -600], [12, -616]], { w: 2.6, passes: 2 });
       }
+      if (p.veste) {   // revers de la veste et deux boutons
+        P.trace(haut, [[-8, -630], [6, -560], [40, -470]], { w: 2.6, passes: 2 });
+        P.trace(haut, [[30, -612], [44, -566], [40, -470]], { w: 2.2, passes: 1 });
+        P.rond(haut, 40, -430, 4, 4, { w: 2, passes: 1 }); P.rond(haut, 41, -390, 4, 4, { w: 2, passes: 1 });
+      }
     }
     P.trace(haut, [[-2, -668], [-6, -632]], { w: 3.4 });                                       // cou
 
@@ -91,6 +98,14 @@
       P.trace(tete, [[20, -912], [-12, -870], [-30, -800]], { w: 1.4, passes: 1, jit: 1 });
       P.trace(tete, [[56, -906], [90, -884], [106, -852]], { w: 2.6, passes: 2, jit: 1 });
       P.trace(tete, [[74, -902], [102, -878], [114, -850]], { w: 2, passes: 1, jit: 1 });
+    } else if (p.coiffure === "degarni") {
+      // Crane degarni : couronne de cheveux gris a l'arriere, un reflet sur le dessus.
+      const arc = (r, a0, a1) => { const pts = []; for (let i = 0; i <= 10; i++) { const a = Math.PI * (a0 + (a1 - a0) * i / 10); pts.push([Math.cos(a) * r, -790 + Math.sin(a) * r]); } return pts; };
+      P.lavis(tete, [...arc(132, 0.78, 1.3), ...arc(104, 1.3, 0.78)], "#c9c9c9", 0.45);
+      P.trace(tete, arc(132, 0.78, 1.3), { w: 3.4 });
+      P.trace(tete, arc(106, 0.8, 1.28), { w: 2.2, passes: 1, jit: 1 });
+      for (const a of [0.86, 0.98, 1.1, 1.22]) P.trace(tete, [...arc(130, a, a + 0.03), ...arc(110, a + 0.05, a + 0.06)], { w: 1.6, passes: 1, jit: 0.8 });
+      P.trace(tete, arc(100, 1.58, 1.72), { w: 2, passes: 1, alpha: 0.6 });
     } else {
       P.trace(tete, [[78, -892], [40, -876], [-10, -872], [-64, -846], [-104, -790], [-112, -740]], { w: 3.8 });
       const arc = (r, a0, a1) => { const pts = []; for (let i = 0; i <= 8; i++) { const a = Math.PI * (a0 + (a1 - a0) * i / 8); pts.push([Math.cos(a) * r, -790 + Math.sin(a) * r]); } return pts; };
@@ -118,6 +133,16 @@
     P.trace(sourcil, [[66, -838], [84, -846], [102, -840]], { w: 3.4, passes: 2 });
     gsap.set(sourcil, { svgOrigin: `${ex} -842` });
     P.trace(tete, [[118, -796], [130, -782], [134, -772], [126, -767], [118, -766]], { w: 3, passes: 2, jit: 0.5 });   // nez
+    if (p.lunettes) {   // lunettes rondes (au-dessus de l'oeil, ne clignent pas)
+      P.lavisRond(tete, ex + 2, ey, 25, 25, "#bfe6ff", 0.18);
+      P.rond(tete, ex + 2, ey, 27, 27, { w: 3, passes: 2 });
+      P.trace(tete, [[ex - 25, ey - 4], [8, -800]], { w: 2.6, passes: 1 });
+      P.trace(tete, [[ex + 29, ey - 2], [118, -800]], { w: 2.4, passes: 1 });
+    }
+    if (p.moustache) {
+      P.lavis(tete, [[86, -770], [106, -778], [126, -768], [116, -760], [94, -762]], "#c9c9c9", 0.6);
+      P.trace(tete, [[84, -766], [96, -776], [108, -772], [120, -778], [130, -766]], { w: 4, passes: 2, jit: 0.6 });
+    }
 
     // Symboles manga.
     const signes = {};
@@ -133,6 +158,15 @@
     for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]])
       P.trace(signes.veine, [[44 + sx * 26, -870 + sy * 8], [44 + sx * 10, -870 + sy * 10], [44 + sx * 8, -870 + sy * 26]], { w: 3.4, passes: 1, jit: 0.6 });
     gsap.set(signes.veine, { svgOrigin: "44 -870" });
+    signes.rire = g(tete, { opacity: 0 });   // « ha ! » qui sautille au-dessus de la tete
+    P.texte(signes.rire, 150, -930, "ha !", { taille: 44 });
+    P.texte(signes.rire, 196, -870, "ha", { taille: 34, alpha: 0.8 });
+    signes.souffle = g(tete, { opacity: 0 });   // soulagement : petit nuage d'air devant la bouche
+    [[140, -752, 10], [160, -744, 14], [184, -752, 11]].forEach(([x, y, r]) => P.rond(signes.souffle, x, y, r, r * 0.8, { w: 2.2, passes: 1 }));
+    P.trace(signes.souffle, [[200, -768], [222, -772]], { w: 2, passes: 1 }); P.trace(signes.souffle, [[202, -740], [226, -736]], { w: 2, passes: 1 });
+    signes.rougeur = g(tete, { opacity: 0 });   // gene : joue rose hachuree
+    P.lavisRond(signes.rougeur, 66, -770, 26, 14, "#ff8fb1", 0.7);
+    for (let i = 0; i < 3; i++) P.trace(signes.rougeur, [[52 + i * 12, -762], [60 + i * 12, -780]], { w: 2, passes: 1, jit: 0.6 });
 
     // Bouches (a l'avant, sous l'oeil), une seule visible a la fois.
     const my = -752, B = (pts) => pts.map(([px, py]) => [92 + px, my + py]);
@@ -148,6 +182,12 @@
     P.trace(bouches.grande, B([[-15, -6], [12, -8], [11, 8], [-1, 15], [-12, 7], [-15, -6]]), { w: 3, passes: 2, jit: 0.5 });
     P.trace(bouches.grande, B([[-7, 9], [2, 4], [8, 8]]), { w: 2, passes: 1, jit: 0.3 });
     bouches.petite = g(tete, { opacity: 0 }); P.rond(bouches.petite, 92, my + 1, 6, 7, { w: 3, passes: 2 });
+    bouches.rire = g(tete, { opacity: 0 });   // grand D ouvert
+    P.trace(bouches.rire, B([[-18, -8], [16, -10], [12, 6], [-1, 16], [-14, 6], [-18, -8]]), { w: 3.2, passes: 2, jit: 0.5 });
+    P.trace(bouches.rire, B([[-12, -6], [12, -7]]), { w: 2, passes: 1, jit: 0.3 });
+    bouches.soulagement = g(tete, { opacity: 0 }); P.trace(bouches.soulagement, B([[-12, -3], [-1, 5], [11, -2]]), { w: 3.2, passes: 2, jit: 0.5 });
+    bouches.gene = g(tete, { opacity: 0 });   // ligne ondulee
+    P.trace(bouches.gene, B([[-14, 0], [-8, -4], [-2, 2], [4, -4], [10, 2], [14, -1]]), { w: 3, passes: 2, jit: 0.4 });
     gsap.set(tete, { svgOrigin: "0 -668" });
 
     // Bras (arriere puis avant), main avec paume et doigts ; ancre au creux de la main.
@@ -189,8 +229,11 @@
   const EXPR = {
     neutre: { s: [0, 0], yeux: 1 }, content: { s: [-6, -6], yeux: 0.8 }, choc: { s: [0, -14], yeux: 1.35 },
     doute: { s: [-14, -8], yeux: 0.9 }, triste: { s: [-14, 2], yeux: 0.85 }, agace: { s: [16, 4], yeux: 0.7 },
+    rire: { s: [-8, -12], yeux: 0.8 }, soulagement: { s: [-10, -4], yeux: 0.25 }, gene: { s: [-14, -2], yeux: 0.85 },
   };
-  const SIGNES = { content: "joues", choc: "choc", doute: "goutte", triste: "goutte", agace: "veine" };
+  const SIGNES = { content: ["joues"], choc: ["choc"], doute: ["goutte"], triste: ["goutte"], agace: ["veine"],
+    rire: ["joues", "rire"], soulagement: ["souffle"], gene: ["rougeur", "goutte"] };
+  const YEUX_FERMES_JOIE = ["content", "rire"];   // yeux en « ^ »
   const montrerBouche = (tl, it, nom, at) => { for (const [k, b] of Object.entries(it.bouches)) tl.set(b, { opacity: k === nom ? 1 : 0 }, at); };
 
   function expression(tl, it, nom, at) {
@@ -199,12 +242,16 @@
     tl.to(it.sourcil, { rotation: e.s[0], y: e.s[1], opacity: it.expr === "neutre" ? 0 : 1, duration: 0.2, ease: "power2.out" }, at)
       .to(it.yeux, { scaleY: e.yeux, scaleX: nom === "choc" ? 1.15 : 1, duration: 0.16 }, at)
       .to(it.pupille, { scale: nom === "choc" ? 0.4 : 1, duration: 0.12 }, at)
-      .set(it.oeil, { opacity: nom === "content" ? 0 : 1 }, at)
-      .set(it.joie, { opacity: nom === "content" ? 1 : 0 }, at);
-    const signe = SIGNES[it.expr];
-    for (const [k, grp] of Object.entries(it.signes)) tl.to(grp, { opacity: k === signe ? 1 : 0, duration: 0.15 }, at);
-    if (signe === "goutte") tl.fromTo(it.signes.goutte, { y: -6 }, { y: 10, duration: 0.6, ease: "power1.in", immediateRender: false }, at);
-    if (signe === "veine") tl.fromTo(it.signes.veine, { scale: 0.6 }, { scale: 1, duration: 0.18, yoyo: true, repeat: 3, ease: "power2.out", immediateRender: false }, at);
+      .set(it.oeil, { opacity: YEUX_FERMES_JOIE.includes(nom) ? 0 : 1 }, at)
+      .set(it.joie, { opacity: YEUX_FERMES_JOIE.includes(nom) ? 1 : 0 }, at);
+    const signe = SIGNES[it.expr] || [];
+    for (const [k, grp] of Object.entries(it.signes)) tl.to(grp, { opacity: signe.includes(k) ? 1 : 0, duration: 0.15 }, at);
+    if (signe.includes("goutte")) tl.fromTo(it.signes.goutte, { y: -6 }, { y: 10, duration: 0.6, ease: "power1.in", immediateRender: false }, at);
+    if (nom === "rire") tl.fromTo(it.tete, { y: 0 }, { y: -10, duration: 0.12, yoyo: true, repeat: 7, ease: "sine.inOut", immediateRender: false }, at)
+      .fromTo(it.signes.rire, { y: 0 }, { y: -14, duration: 0.18, yoyo: true, repeat: 5, ease: "sine.inOut", immediateRender: false }, at);
+    if (nom === "soulagement") tl.fromTo(it.signes.souffle, { x: -10, scale: 0.6 }, { x: 10, scale: 1, duration: 0.6, ease: "power2.out", immediateRender: false }, at)
+      .fromTo(it.haut, { y: it.assis ? 48 : 0 }, { y: it.assis ? 48 + 8 : 8, duration: 0.4, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, at);
+    if (signe.includes("veine")) tl.fromTo(it.signes.veine, { scale: 0.6 }, { scale: 1, duration: 0.18, yoyo: true, repeat: 3, ease: "power2.out", immediateRender: false }, at);
     if (nom === "choc") tl.fromTo(it.tete, { y: 0 }, { y: -14, duration: 0.14, yoyo: true, repeat: 1, ease: "power2.out", immediateRender: false }, at);
     montrerBouche(tl, it, it.expr, at);
     return 0.3;
@@ -368,7 +415,7 @@
     repos(tl, it, it.bras[1], at, d); repos(tl, it, it.bras[-1], at, d);
   }
   function sAsseoir(tl, it, a, ctx) {
-    const sup = ctx.objet(a.sur);
+    const sup = ctx.place(a.sur);   // chaise : sa place ; canape : la premiere place libre
     if (!sup) throw new Error(`s_asseoir : siege inconnu « ${a.sur} »`);
     let t = a.t;
     if (Math.abs(sup.x - ctx.x(it)) > 8) t += marcher(tl, it, { ...a, vers: sup.x }, ctx);
@@ -393,6 +440,80 @@
   }
   const sortir = (tl, it, a, ctx) => marcher(tl, it, { ...a, vers: a.vers === "gauche" ? -160 : 1240 }, ctx);
 
+  // Imaginer : nuage de pensee au-dessus de la scene, du cote du personnage, avec une icone
+  // dessinee (assets/anim/icones.js, champ "image"), une legende courte ("texte") et, en option,
+  // une grande croix rouge ("barre": true : ce qu'il ne faut pas faire). Main au menton pendant.
+  function imaginer(tl, it, a, ctx) {
+    const d = a.duree || 2.8;
+    const P = Dessin.pinceau(Dessin.hash("pensee" + a.t));
+    // Tete a l'ecran (sous le cadrage courant) ; le nuage reste hors camera, en haut de l'ecran.
+    const [tx, ty] = ctx.ecran(ctx.x(it), ctx.sol - ((it.hautTete || 1000) + 20) * ctx.ech);
+    const cx = Math.min(800, Math.max(280, tx + it._regard * 60)), cy = 400, rx = 230, ry = a.texte ? 150 : 125;
+    const grp = ctx.ecranGroupe();
+    gsap.set(grp, { opacity: 0 });
+    // Nuage : festons a main levee.
+    const pts = [];
+    for (let i = 0; i <= 64; i++) {
+      const ang = (i / 64) * Math.PI * 2, bosse = 1 + 0.07 * Math.abs(Math.sin(ang * 5));
+      pts.push([cx + Math.cos(ang) * rx * bosse, cy + Math.sin(ang) * ry * bosse]);
+    }
+    el("path", { d: smooth(pts) + "Z", fill: "#000000" }, grp);
+    P.trace(grp, pts, { w: 3.6, passes: 2, ferme: true });
+    // Petits ronds du nuage jusqu'a la tete.
+    if (ty > cy + ry + 40) [[0.25, 9], [0.5, 14], [0.75, 19]].forEach(([k, r]) => P.rond(grp, tx + (cx - tx) * (1 - k), ty + (cy + ry - ty) * (1 - k), r, r * 0.85, { w: 2.6, passes: 1 }));
+    const ico = (window.ICONES || {})[a.image] || (window.ICONES || {}).question;
+    if (ico) {
+      const ic = g(grp, { transform: `translate(${cx - 80} ${cy - (a.texte ? 128 : 92)}) scale(1.6)` });
+      for (const dd of ico.d) el("path", { d: dd, class: "tr icone", pathLength: 1, fill: "none", stroke: "#ffffff", "stroke-width": 3.4,
+        "stroke-linecap": "round", "stroke-linejoin": "round" }, ic);
+      tl.fromTo(ic.querySelectorAll("path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, stagger: 0.5 / ico.d.length, ease: "none", immediateRender: false }, a.t + 0.25);
+    }
+    if (a.texte) P.texte(grp, cx, cy + 112, a.texte, { taille: 46 });
+    if (a.barre) {
+      const croix = g(grp, { opacity: 0 });
+      P.trace(croix, [[cx - 120, cy - 110], [cx + 120, cy + 90]], { w: 9, passes: 2, couleur: "#ff5a5a" });
+      P.trace(croix, [[cx + 120, cy - 110], [cx - 120, cy + 90]], { w: 9, passes: 2, couleur: "#ff5a5a" });
+      tl.set(croix, { opacity: 1 }, a.t + Math.min(1.4, d * 0.55));
+      Dessin.son("buzz", a.t + Math.min(1.4, d * 0.55), { gain: 0.6 });
+    }
+    ctx.racine(grp);
+    tl.fromTo(grp, { opacity: 0, scale: 0.6, svgOrigin: `${cx} ${cy + ry}` }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.8)", immediateRender: false }, a.t)
+      .to(grp, { opacity: 0, duration: 0.25 }, a.t + d - 0.25);
+    Dessin.son("idee", a.t + 0.1, { gain: 0.6 });
+    geste(tl, it, "penser", a.t, d);
+    return d;
+  }
+  // Jeter l'objet tenu ("objet", defaut : celui en main) dans "dans" (corbeille) : boule de papier en cloche.
+  function jeter(tl, it, a, ctx) {
+    const b = it.bras[1], obj = a.objet || it.tient, cible = ctx.objet(a.dans);
+    if (!obj || !cible) return 0;
+    ctx.orienter(it, a.dans, a.t);
+    tl.to(b.haut, { rotation: OUT(1, 150), duration: 0.25, ease: "power2.in" }, a.t)
+      .to(b.haut, { rotation: OUT(1, 60), duration: 0.18, ease: "power3.out" }, a.t + 0.25);
+    ctx.basculer(obj, "∅", a.t + 0.33);
+    it.tient = null;
+    repos(tl, it, b, a.t + 0.6, 0.35);
+    const P = Dessin.pinceau(Dessin.hash("boule" + a.t));
+    const x0 = ctx.x(it) + it._regard * 40 * ctx.ech, y0 = ctx.sol - 760 * ctx.ech;
+    const x1 = cible.x, y1 = ctx.sol - 150 * cible.ech, vol = 0.65;
+    const boule = g(ctx.calque, { opacity: 0 });
+    el("circle", { cx: 0, cy: 0, r: 26, fill: "#000000" }, boule);
+    P.rond(boule, 0, 0, 26, 24, { w: 3.2, passes: 2 });
+    P.trace(boule, [[-14, -8], [2, 4], [12, -10]], { w: 2, passes: 1 }); P.trace(boule, [[-10, 12], [6, 8]], { w: 2, passes: 1 });
+    gsap.set(boule, { x: x0, y: y0 });
+    const haut = Math.min(y0, y1) - 260;
+    tl.set(boule, { opacity: 1 }, a.t + 0.33)
+      .fromTo(boule, { x: x0 }, { x: x1, duration: vol, ease: "none", immediateRender: false }, a.t + 0.33)
+      .fromTo(boule, { y: y0 }, { y: haut, duration: vol / 2, ease: "power2.out", immediateRender: false }, a.t + 0.33)
+      .to(boule, { y: y1, duration: vol / 2, ease: "power2.in" }, a.t + 0.33 + vol / 2)
+      .fromTo(boule, { rotation: 0 }, { rotation: 540, duration: vol, ease: "none", immediateRender: false }, a.t + 0.33)
+      .set(boule, { opacity: 0 }, a.t + 0.33 + vol);
+    if (cible.it._root) tl.fromTo(cible.it._orient, { rotation: -6, svgOrigin: "0 0" }, { rotation: 0, duration: 0.4, ease: "elastic.out(1.2, 0.4)", immediateRender: false }, a.t + 0.33 + vol);
+    Dessin.son("froisse", a.t);
+    Dessin.son("poubelle", a.t + 0.33 + vol);
+    return 0.33 + vol + 0.3;
+  }
+
   // Vie : respiration, queue de cheval, clignements ; regard pose a l'apparition.
   function vie(tl, it, t0, t1, decalage) {
     tl.to(it.corps, { rotation: 0.8, svgOrigin: "0 0", duration: 1.7, yoyo: true, repeat: Math.ceil((t1 - t0) / 1.7), ease: "sine.inOut" }, t0);
@@ -407,7 +528,7 @@
       categorie: "personnage", hauteur: 1030, nom: MODELES[type].nom, ancres: ["main_avant", "main_arriere", "tete"],
       dessiner, vie, poseInitiale, expressions: Object.keys(EXPR),
       gestes: ["salut", "montre", "hausse", "explique", "bras_croises", "tete_mains", "idee", "penser"],
-      actions: { parler, expression: (tl, it, a) => { expression(tl, it, a.expr, a.t); return a.geste ? geste(tl, it, a.geste, a.t, a.duree) : 0; }, geste: (tl, it, a) => geste(tl, it, a.geste, a.t, a.duree),
+      actions: { parler, imaginer, jeter, expression: (tl, it, a) => { expression(tl, it, a.expr, a.t); return a.geste ? geste(tl, it, a.geste, a.t, a.duree) : 0; }, geste: (tl, it, a) => geste(tl, it, a.geste, a.t, a.duree),
         marcher, entrer, sortir, regarder, tenir, poser, boire, telephoner, sauter, s_asseoir: sAsseoir, se_lever: seLever,
         bras_croises: posture("bras_croises"), tete_mains: posture("tete_mains"), idee: posture("idee"), penser: posture("penser") },
     });

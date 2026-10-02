@@ -3,11 +3,58 @@
 // porter une touche de couleur legere (lavis) et avoir des ancres (ou poser un
 // autre objet) et des actions.
 //   tasse (vapeur), telephone (vibrer), cv, ordinateur (taper), table (bureau),
-//   table_ronde (cafe), chaise, plante, horloge (murale), cadre (mural).
+//   table_ronde (cafe), chaise, plante, horloge (murale), cadre (mural), corbeille,
+//   tampon (tamponner), calendrier (mural, defiler), canape (deux places).
 // "prise" = point saisi par une main (tenir).
+// Inserts (gros plan plein cadre, ctx.insert du moteur) : cv.corriger (ligne barree puis
+// reecrite a la main), tampon.tamponner, ordinateur.afficher (e-mail a l'ecran),
+// telephone.notifier (notification sur l'ecran verrouille).
 (() => {
   const { g, el } = Dessin;
   const reg = Dessin.enregistrer;
+  const ROUGE = "#ff5a5a", VERT = "#5cc98a";
+
+  // Texte manuscrit ecrit au fil du temps dans un insert : coupe en lignes de `largeur` px,
+  // chaque ligne se devoile de gauche a droite (masque). -> { fin (s), bas (y sous la derniere ligne), lignes }
+  let nMasque = 0;
+  function ecrire(tl, parent, P, x, y, texte, { taille = 56, largeur = 760, t = 0, mps = 3.2, couleur = "#ffffff", ancre = "start" } = {}) {
+    const mots = String(texte || "").split(/\s+/).filter(Boolean), lignes = [];
+    const mesure = P.texte(parent, 0, -9999, "", { taille });
+    let cur = "";
+    for (const m of mots) {
+      mesure.textContent = cur ? cur + " " + m : m;
+      if (cur && mesure.getComputedTextLength() > largeur) { lignes.push(cur); cur = m; } else cur = mesure.textContent;
+    }
+    if (cur) lignes.push(cur);
+    mesure.remove();
+    const svg = parent.ownerSVGElement, defs = svg.querySelector("defs") || el("defs", {}, svg);
+    let tc = t;
+    const res = lignes.map((l, i) => {
+      const yy = y + i * taille * 1.22;
+      const txt = P.texte(parent, x, yy, l, { taille, ancre });
+      txt.setAttribute("fill", couleur);
+      const w = txt.getComputedTextLength(), x0 = ancre === "middle" ? x - w / 2 : x;
+      const id = "masque-ecrit-" + (++nMasque);
+      const cp = el("clipPath", { id }, defs), r = el("rect", { x: x0 - 6, y: yy - taille, width: 0, height: taille * 1.4 }, cp);
+      txt.setAttribute("clip-path", `url(#${id})`);
+      const d = Math.max(0.25, l.split(/\s+/).length / mps);
+      tl.fromTo(r, { attr: { width: 0 } }, { attr: { width: w + 12 }, duration: d, ease: "none", immediateRender: false }, tc);
+      tc += d + 0.05;
+      return { txt, x0, w, y: yy };
+    });
+    return { fin: tc, bas: y + lignes.length * taille * 1.22, lignes: res };
+  }
+  // Feuille de CV plein cadre (fond des inserts cv / tampon) : cadre papier, photo, lignes de titre.
+  function feuille(grp, P) {
+    el("rect", { x: 0, y: 0, width: 1080, height: 1920, fill: "#000000", opacity: 0.88 }, grp);
+    el("rect", { x: 116, y: 646, width: 848, height: 1048, fill: "#fff1c9", opacity: 0.1, class: "lavis" }, grp);
+    P.rect(grp, 110, 640, 860, 1060, { w: 4.2, passes: 2 });
+    P.rect(grp, 160, 690, 120, 140, { w: 3, passes: 1 });
+    P.trace(grp, [[320, 720], [640, 720]], { w: 5, passes: 1 });
+    P.trace(grp, [[320, 770], [560, 770]], { w: 3, passes: 1 });
+    P.trace(grp, [[320, 810], [600, 810]], { w: 2.4, passes: 1, alpha: 0.6 });
+    P.trace(grp, [[160, 880], [920, 880]], { w: 2, passes: 1, alpha: 0.5 });
+  }
 
   reg("tasse", {
     categorie: "objet", hauteur: 70, prise: [30, -30],
@@ -51,6 +98,26 @@
           .to(it.corps, { rotation: 0, duration: 0.05 }, a.t + d);
         return d;
       },
+      // Gros plan sur l'ecran : heure, puis une notification ("titre" = expediteur, "texte" = message).
+      notifier(tl, it, a, ctx) {
+        const P = Dessin.pinceau(Dessin.hash("notif" + a.t));
+        return ctx.insert(a.t, a.duree || 2.8, (grp, t0) => {
+          el("rect", { x: 0, y: 0, width: 1080, height: 1920, fill: "#000000", opacity: 0.88 }, grp);
+          el("rect", { x: 250, y: 650, width: 580, height: 990, fill: "#7fc8ff", opacity: 0.12, class: "lavis" }, grp);
+          P.rect(grp, 230, 620, 620, 1060, { w: 4.6, passes: 2 });
+          P.rect(grp, 250, 650, 580, 990, { w: 2, passes: 1, alpha: 0.5 });
+          P.texte(grp, 540, 820, a.heure || "18:42", { taille: 110 });
+          const carte = g(grp);
+          el("rect", { x: 270, y: 900, width: 540, height: 360, rx: 24, fill: "#000000" }, carte);
+          P.rect(carte, 270, 900, 540, 360, { w: 3.4, passes: 2 });
+          P.lavisRond(carte, 312, 945, 18, 18, VERT, 0.8);
+          P.texte(carte, 344, 958, a.titre || "Nouveau message", { taille: 40, ancre: "start" });
+          ecrire(tl, carte, P, 296, 1030, a.texte, { taille: 44, largeur: 490, t: t0 + 0.55, mps: 9 });
+          gsap.set(carte, { opacity: 0 });
+          tl.fromTo(carte, { opacity: 0, y: -80 }, { opacity: 1, y: 0, duration: 0.3, ease: "back.out(1.6)", immediateRender: false }, t0 + 0.35);
+          Dessin.son("notification", t0 + 0.35);
+        });
+      },
     },
   });
 
@@ -67,7 +134,135 @@
       P.texte(f, 22, -84, "CV", { taille: 18 });
       return { f };
     },
-    actions: {},
+    actions: {
+      // Gros plan sur le CV : "avant" s'ecrit, se fait barrer en rouge, puis "apres" s'ecrit dessous (surligne vert).
+      corriger(tl, it, a, ctx) {
+        const P = Dessin.pinceau(Dessin.hash("cv" + a.t));
+        const duree = a.duree || Math.min(7, 1.6 + (String(a.avant || "").split(/\s+/).length + String(a.apres || "").split(/\s+/).length) / 3.2 + 1.4);
+        return ctx.insert(a.t, duree, (grp, t0) => {
+          feuille(grp, P);
+          const av = ecrire(tl, grp, P, 170, 990, a.avant, { taille: 54, largeur: 740, t: t0 + 0.35 });
+          Dessin.son("feutre", t0 + 0.35, { duree: Math.max(0.4, av.fin - t0 - 0.4) });
+          const barre = g(grp);
+          for (const l of av.lignes) P.trace(barre, [[l.x0 - 10, l.y - 18], [l.x0 + l.w + 10, l.y - 22]], { w: 7, passes: 2, couleur: ROUGE });
+          tl.fromTo(barre.querySelectorAll("path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, ease: "power1.in", immediateRender: false }, av.fin + 0.1);
+          gsap.set(barre.querySelectorAll("path"), { strokeDashoffset: 1 });
+          if (a.apres) {
+            const yA = av.bas + 70;
+            P.trace(grp, [[150, yA - 20], [180, yA - 34], [150, yA - 48]], { w: 4, passes: 1, couleur: VERT });
+            const ap = ecrire(tl, grp, P, 200, yA, a.apres, { taille: 54, largeur: 720, t: av.fin + 0.55 });
+            for (const l of ap.lignes) {
+              const sl = P.lavis(grp, [[l.x0 - 6, l.y + 4], [l.x0 + l.w + 6, l.y + 4], [l.x0 + l.w + 6, l.y + 18], [l.x0 - 6, l.y + 18]], VERT, 0.55);
+              tl.fromTo(sl, { opacity: 0 }, { opacity: 0.55, duration: 0.3, immediateRender: false }, ap.fin);
+              gsap.set(sl, { opacity: 0 });
+            }
+            Dessin.son("feutre", av.fin + 0.55, { duree: Math.max(0.4, ap.fin - av.fin - 0.6) });
+            Dessin.son("ding", ap.fin, { gain: 0.7 });
+          }
+        });
+      },
+    },
+  });
+
+  reg("tampon", {
+    categorie: "objet", hauteur: 110, prise: [0, -80],
+    dessiner(parent, P) {
+      const corps = g(parent);
+      P.lavis(corps, [[-30, -28], [30, -28], [30, -6], [-30, -6]], ROUGE, 0.5);
+      P.rect(corps, -34, -30, 68, 26, { w: 3.2, passes: 2 });
+      P.trace(corps, [[-36, -2], [36, -2]], { w: 4, passes: 1 });
+      P.trace(corps, [[-8, -30], [-8, -70]], { w: 3, passes: 1 }); P.trace(corps, [[8, -30], [8, -70]], { w: 3, passes: 1 });
+      P.rond(corps, 0, -86, 20, 16, { w: 3.4, passes: 2 });
+      gsap.set(corps, { svgOrigin: "0 0" });
+      return { corps };
+    },
+    actions: {
+      // Coup de tampon : le tampon s'abat, puis gros plan sur un CV marque "texte" (rouge ou vert).
+      tamponner(tl, it, a, ctx) {
+        tl.to(it.corps, { y: 30, duration: 0.12, ease: "power3.in" }, a.t).to(it.corps, { y: 0, duration: 0.2 }, a.t + 0.14);
+        const P = Dessin.pinceau(Dessin.hash("tampon" + a.t)), couleur = a.couleur === "vert" ? VERT : ROUGE;
+        const d = ctx.insert(a.t + 0.1, a.duree || 2.4, (grp, t0) => {
+          feuille(grp, P);
+          for (let i = 0; i < 6; i++) P.trace(grp, [[160, 960 + i * 70], [880 - (i % 3) * 120, 960 + i * 70]], { w: 2.4, passes: 1, alpha: 0.5 });
+          const marque = g(grp);
+          const texte = String(a.texte || "REFUSÉ").toUpperCase();
+          const t = P.texte(marque, 540, 1240, texte, { taille: texte.length > 9 ? 92 : 120 });
+          t.setAttribute("fill", couleur);
+          const w = Math.min(820, t.getComputedTextLength() + 80);
+          P.rect(marque, 540 - w / 2, 1120, w, 160, { w: 7, passes: 2, couleur });
+          gsap.set(marque, { opacity: 0, svgOrigin: "540 1200", rotation: -12 });
+          tl.fromTo(marque, { opacity: 0, scale: 2.4 }, { opacity: 0.92, scale: 1, duration: 0.16, ease: "power4.in", immediateRender: false }, t0 + 0.45)
+            .fromTo(grp, { x: -10 }, { x: 0, duration: 0.25, ease: "elastic.out(1, 0.3)", immediateRender: false }, t0 + 0.61);
+          Dessin.son("tampon", t0 + 0.6);
+        });
+        return d + 0.1;
+      },
+    },
+  });
+
+  reg("corbeille", {
+    categorie: "decor", hauteur: 200,
+    dessiner(parent, P) {
+      const g0 = g(parent);
+      P.lavis(g0, [[-62, -176], [62, -176], [48, -4], [-48, -4]], "#9aa7b8", 0.3);
+      P.trace(g0, [[-66, -180], [66, -180], [50, 0], [-50, 0], [-66, -180]], { w: 3.6, ferme: true });
+      P.rond(g0, 0, -180, 66, 10, { w: 3, passes: 2 });
+      for (const x of [-34, 0, 34]) P.trace(g0, [[x * 1.25, -170], [x, -6]], { w: 1.8, passes: 1, alpha: 0.6 });
+      P.rond(g0, -18, -192, 20, 16, { w: 2.4, passes: 1 }); P.trace(g0, [[-28, -196], [-10, -188]], { w: 1.6, passes: 1 });
+      return {};
+    },
+  });
+
+  // Calendrier mural (place avec "y") : page du jour ; "defiler" fait s'envoler les pages (le temps passe).
+  reg("calendrier", {
+    categorie: "decor", hauteur: 160,
+    dessiner(parent, P, o) {
+      const g0 = g(parent);
+      P.lavis(g0, [[-66, -78], [66, -78], [66, -44], [-66, -44]], ROUGE, 0.5);
+      P.rect(g0, -70, -80, 140, 160, { w: 3.4, passes: 2 });
+      P.trace(g0, [[-70, -44], [70, -44]], { w: 2.6, passes: 1 });
+      for (const x of [-36, 36]) P.rond(g0, x, -86, 7, 9, { w: 2.4, passes: 1 });
+      const jour0 = Number(o.jour) || 12;
+      const nums = [];
+      for (let k = 0; k <= 8; k++) { const t = P.texte(g0, 0, 50, String(((jour0 + k - 1) % 31) + 1), { taille: 84 }); gsap.set(t, { opacity: k ? 0 : 1 }); nums.push(t); }
+      return { g0, nums, P };
+    },
+    actions: {
+      defiler(tl, it, a, ctx) {
+        const n = Math.min(8, a.fois || 3);
+        for (let k = 0; k < n; k++) {
+          const at = a.t + k * 0.32;
+          const page = g(it.g0);
+          el("rect", { x: -66, y: -40, width: 132, height: 116, fill: "#000000" }, page);
+          it.P.rect(page, -66, -40, 132, 116, { w: 2.6, passes: 1 });
+          gsap.set(page, { opacity: 0, svgOrigin: "0 -40" });
+          tl.set(page, { opacity: 1 }, at).set(it.nums[k], { opacity: 0 }, at).set(it.nums[k + 1], { opacity: 1 }, at)
+            .fromTo(page, { x: 0, y: 0, rotation: 0 }, { x: 140 - k * 30, y: -160, rotation: 50 + k * 15, duration: 0.6, ease: "power2.out", immediateRender: false }, at)
+            .to(page, { opacity: 0, duration: 0.2 }, at + 0.45);
+        }
+        Dessin.son("pages", a.t, { duree: n * 0.32 });
+        return n * 0.32 + 0.4;
+      },
+    },
+  });
+
+  // Canape de face, deux places (le moteur assoit le premier a gauche, le second a droite).
+  reg("canape", {
+    categorie: "decor", hauteur: 420, places: [-190, 190],
+    dessiner(parent, P) {
+      const g0 = g(parent);
+      P.lavis(g0, [[-320, -410], [320, -410], [312, -296], [-312, -296]], "#8f7fd6", 0.25);
+      P.trace(g0, [[-324, -284], [-338, -420], [338, -420], [324, -284]], { w: 3.8 });
+      P.lavis(g0, [[-300, -286], [300, -286], [300, -126], [-300, -126]], "#8f7fd6", 0.3);
+      P.rect(g0, -310, -290, 620, 70, { w: 3.4, passes: 2 });
+      P.trace(g0, [[0, -290], [0, -222]], { w: 2.4, passes: 1 });
+      for (const s of [-1, 1]) {
+        P.trace(g0, [[s * 310, -330], [s * 392, -330], [s * 392, -110], [s * 310, -110]], { w: 3.6 });
+        P.trace(g0, [[s * 338, -110], [s * 346, 0]], { w: 3.4 });
+      }
+      P.trace(g0, [[-310, -220], [-310, -120], [310, -120], [310, -220]], { w: 3.2 });
+      return { ancres: { assise: { groupe: g0, x: 0, y: -290 } } };
+    },
   });
 
   reg("ordinateur", {
@@ -88,6 +283,24 @@
         Dessin.son("clavier", a.t, { duree: d });
         it.lignes.forEach((l, i) => tl.set(l, { opacity: 1 }, a.t + (i + 1) * (d / (it.lignes.length + 1))));
         return d;
+      },
+      // Gros plan sur l'ecran : un e-mail ("titre" = objet, "texte" = corps) qui s'affiche.
+      afficher(tl, it, a, ctx) {
+        const P = Dessin.pinceau(Dessin.hash("ecran" + a.t));
+        const duree = a.duree || Math.min(6, 1.8 + String(a.texte || "").split(/\s+/).length / 4);
+        return ctx.insert(a.t, duree, (grp, t0) => {
+          el("rect", { x: 0, y: 0, width: 1080, height: 1920, fill: "#000000", opacity: 0.88 }, grp);
+          el("rect", { x: 96, y: 686, width: 888, height: 768, fill: "#7fc8ff", opacity: 0.1, class: "lavis" }, grp);
+          P.rect(grp, 90, 680, 900, 780, { w: 4.6, passes: 2 });
+          P.trace(grp, [[60, 1500], [1020, 1500], [1050, 1560], [30, 1560], [60, 1500]], { w: 4, passes: 2 });
+          P.trace(grp, [[90, 760], [990, 760]], { w: 2.4, passes: 1 });
+          [[130, ROUGE], [170, "#ffc94d"], [210, VERT]].forEach(([x, c]) => { P.lavisRond(grp, x, 720, 11, 11, c, 0.8); P.rond(grp, x, 720, 11, 11, { w: 2, passes: 1 }); });
+          P.texte(grp, 140, 840, "Objet :", { taille: 40, ancre: "start", alpha: 0.6 });
+          P.texte(grp, 290, 840, a.titre || "Votre candidature", { taille: 44, ancre: "start" });
+          P.trace(grp, [[140, 875], [940, 875]], { w: 1.8, passes: 1, alpha: 0.5 });
+          ecrire(tl, grp, P, 140, 960, a.texte, { taille: 50, largeur: 800, t: t0 + 0.4, mps: 7 });
+          Dessin.son("notification", t0 + 0.25, { gain: 0.8 });
+        });
       },
     },
   });

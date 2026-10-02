@@ -571,7 +571,7 @@
     },
     {
       "id": "dessin_anime",
-      "nom": "Dessin animé : Léa et Karim",
+      "nom": "Dessin animé : Karim cherche un job",
       "categorie": "conseil",
       "poids": 2,
       "cartes": "autorisees",
@@ -587,8 +587,9 @@
         "lettre",
         "linkedin"
       ],
-      "structure": "Mini dessin animé : Léa et Karim (personnages dessinés au trait) vivent une situation de candidat en 2 à 4 scènes dessinées (salle d'attente, café, bureau...). Scène 1 : l'accroche est la 1re réplique, dite par un personnage. Le problème se joue en situation, puis le conseil concret arrive dans le dialogue (l'un conseille l'autre, avec une phrase précise à dire ou à écrire). Dernière scène : un personnage dit l'appel à l'action pendant que l'écran d'appel à l'action s'affiche.",
-      "ton": "dialogue vivant et naturel entre deux amis, répliques bien distinctes, petite pause avant chaque chute"
+      "structure": "Mini dessin animé : Léa et Karim (personnages dessinés au trait) vivent une situation de candidat en 1 à 4 scènes dessinées, une par lieu ou moment (salle d'attente, café, salon, métro, bureau du recruteur, visio...). Scène 1 : l'accroche est la 1re réplique, dite par un personnage. Le problème se joue en situation, puis le conseil concret arrive dans le dialogue (l'un conseille l'autre, avec une phrase précise à dire ou à écrire). Dernière scène : un personnage dit l'appel à l'action pendant que l'écran d'appel à l'action s'affiche. Épisode d'une série : Karim cherche un job, d'épisode en épisode ; l'histoire suit la trame imposée et finit sur une chute avant l'appel à l'action.",
+      "ton": "dialogue vivant et naturel entre deux amis, répliques bien distinctes, petite pause avant chaque chute",
+      "serie": true
     }
   ]
 }

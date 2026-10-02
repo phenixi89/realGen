@@ -161,7 +161,7 @@ window.addEventListener("error", e => { const m = document.getElementById("msg")
 const WF = "generate-reels.yml";
 const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} }, del(k){ try{localStorage.removeItem(k)}catch{} } };
 let TOKEN = store.get("rg_token"), REPO = store.get("rg_repo") || "phenixi89/realGen",
-    CAT = { formats: [], themes: [], voix: [], sujets: [], hooks: [], ambiances: [] }, timer = null, blobUrls = [];
+    CAT = { formats: [], themes: [], voix: [], sujets: [], hooks: [], ambiances: [], trames: [] }, timer = null, blobUrls = [];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(t, ms = 4000){ const m = $("msg"); m.textContent = t; m.style.display = "block"; clearTimeout(m._t); m._t = setTimeout(() => m.style.display = "none", ms); }
@@ -191,9 +191,9 @@ async function catFile(name){
   return r.json();
 }
 async function loadCatalog(){
-  const errs = [], names = ["formats","themes","voix","sujets","hooks","audio"];
-  const [f, t, v, s, h, a] = await Promise.all(names.map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
-  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [] };
+  const errs = [], names = ["formats","themes","voix","sujets","hooks","audio","dessins"];
+  const [f, t, v, s, h, a, d] = await Promise.all(names.map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
+  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: d.trames || [] };
   for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${regs(x).includes("humour") ? ", humour" : ""})`, x.id));
   for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
   for (const x of CAT.hooks) $("f_hook").add(new Option(nice(x.id), x.id));
@@ -270,7 +270,7 @@ function showSujetsFor(fid){ const f = byId(CAT.formats, fid); setCatKind("sujet
   $("catalog").innerHTML = CAT.sujets.filter(x => compatible(f, x)).map(CARD.sujets).join(""); $("catInfo").textContent = `Sujets compatibles avec « ${f.nom} ».`; }
 
 // --- Compositeur : une combinaison par reel (input "plan" du workflow) ---
-const FIELDS = ["registre", "format", "sujet", "angle", "hook", "theme", "ambiance", "voix"];
+const FIELDS = ["registre", "format", "sujet", "angle", "trame", "hook", "theme", "ambiance", "voix"];
 const blank = () => ({ ...Object.fromEntries(FIELDS.map(k => [k, ""])), libre: false });
 let PLAN = (() => { try { const p = JSON.parse(store.get("rg_plan")); return Array.isArray(p) && p.length ? p.map(r => ({ ...blank(), ...r })) : [blank()]; } catch { return [blank()]; } })();
 const savePlan = () => store.set("rg_plan", JSON.stringify(PLAN));
@@ -290,9 +290,10 @@ function options(r, k){
     case "theme": return CAT.themes.filter(x => !r.registre || themeRegs(x).includes(r.registre));
     case "ambiance": return th ? CAT.ambiances.filter(a => (th.ambiances || [th.ambiance]).includes(a.id)) : CAT.ambiances;
     case "voix": return CAT.voix;
+    case "trame": return fmt && fmt.dessin ? CAT.trames : [];   // dessin anime : structure de l'histoire
   }
 }
-const OPT_LABEL = { format: x => `${x.nom} · ${x.categorie}`, hook: x => nice(x.id), theme: x => x.nom, ambiance: x => x.nom || nice(x.id), voix: x => `${x.id} : ${x.description}` };
+const OPT_LABEL = { format: x => `${x.nom} · ${x.categorie}`, hook: x => nice(x.id), theme: x => x.nom, ambiance: x => x.nom || nice(x.id), voix: x => `${x.id} : ${x.description}`, trame: x => x.nom };
 function selectHtml(i, k, r){
   const auto = `<option value="">Auto</option>`;
   if (k === "registre") return `<select onchange="setField(${i},'registre',this.value)">${auto}${["serieux","humour"].map(v => `<option value="${v}"${r.registre === v ? " selected" : ""}>${REG_LABEL[v]}</option>`).join("")}</select>`;
@@ -307,7 +308,7 @@ function selectHtml(i, k, r){
 function renderPlan(){
   if (!$("f_compose").checked) return;
   // Un choix devenu incompatible (registre, mode sans capture...) repasse en auto.
-  for (const r of PLAN) for (const k of ["format", "sujet", "hook", "theme", "ambiance"]) if (r[k] && CAT.formats.length && !options(r, k).some(x => x.id === r[k])) r[k] = "";
+  for (const r of PLAN) for (const k of ["format", "sujet", "trame", "hook", "theme", "ambiance"]) if (r[k] && CAT.formats.length && !options(r, k).some(x => x.id === r[k])) r[k] = "";
   savePlan();
   $("plan").innerHTML = PLAN.map((r, i) => {
     const fmt = byId(CAT.formats, r.format), suj = byId(CAT.sujets, r.sujet), hk = byId(CAT.hooks, r.hook), th = byId(CAT.themes, r.theme);
@@ -321,7 +322,7 @@ function renderPlan(){
     return `<div class="reelplan"><div class="head"><b>Reel ${i + 1}</b>
         <button title="Tirer une combinaison compatible au hasard" onclick="roll(${i})">🎲</button><button title="Dupliquer" onclick="dupReel(${i})">⧉</button>
         <button title="Supprimer" onclick="delReel(${i})"${PLAN.length === 1 ? " disabled" : ""}>✖</button></div>
-      <div class="grid">${FIELDS.filter(k => k !== "angle").map(k => `<div><label>${{ registre: "Registre", format: "Format", sujet: "Sujet", hook: "Accroche", theme: "Thème", ambiance: "Musique", voix: "Voix" }[k]}</label>${selectHtml(i, k, r)}</div>`).join("")}</div>
+      <div class="grid">${FIELDS.filter(k => k !== "angle" && (k !== "trame" || options(r, k).length)).map(k => `<div><label>${{ registre: "Registre", format: "Format", sujet: "Sujet", hook: "Accroche", theme: "Thème", ambiance: "Musique", voix: "Voix", trame: "Trame" }[k]}</label>${selectHtml(i, k, r)}</div>`).join("")}</div>
       ${r.libre ? `<label>Sujet libre</label><input value="${esc(r.angle)}" placeholder="ex : les jeunes diplômés face aux ATS" onchange="setField(${i},'angle',this.value)">` : ""}
       <div class="preview">${prev || "Tout en automatique : le générateur choisit."}</div></div>`;
   }).join("");

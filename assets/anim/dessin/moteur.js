@@ -24,6 +24,14 @@
 // la suite de la precedente, ou en meme temps qu'elle avec "avec": true.
 // "pause" (sans "qui") avance le temps de "duree". "parler" affiche une bulle.
 // Scene : "dessine": false = deja dessinee a la 1re image (pas de trace progressif).
+// "ellipse": "Une semaine plus tard" -> carton manuscrit en haut (pages qui s'envolent) au
+// debut de la scene, a la place du titre. "suite": true -> meme lieu, meme moment que la scene
+// precedente : coupe franche, sans fondu ni nouveau trace.
+// Camera (action sans "qui") : {"action": "camera", "cadre": "large" | "buste" | "visage" | "objet",
+//   "sur": id (personnage ou objet), "rapide": true (coupe seche + petit souffle)} ; jouee a
+//   l'instant de l'action suivante, sans la retarder. Les bulles suivent le cadrage.
+// Inserts (gros plan plein cadre sur un objet : CV corrige, ecran, telephone, tampon) :
+//   ctx.insert(t, duree, dessiner) -- au-dessus de la scene, sous les bulles.
 (() => {
   const { g, el, pinceau, hash, bouillonner, apparition, types } = Dessin;
   const DESSIN = 1.0, PREMIERE = 1.25, ECART = 0.25, FONDU = 0.35;
@@ -36,17 +44,43 @@
     Dessin.sons.liste = []; Dessin.sons.muet = false;
     let S = 0;
     scenes.forEach((sc, n) => {
-      const duree = jouerScene(tl, sc, n, S, { svg, bulles, titres, derniere: n === scenes.length - 1, surtitre: def.surtitre });
+      const duree = jouerScene(tl, sc, n, S, { svg, bulles, titres, derniere: n === scenes.length - 1, surtitre: def.surtitre,
+        coupeApres: !!(scenes[n + 1] && scenes[n + 1].suite) });
       S += duree;
     });
     return { tl, duree: S, sons: Dessin.sons.liste.slice().sort((x, y) => x.t - y.t) };
   }
 
+  // Carton d'ellipse (« Une semaine plus tard… ») : panneau manuscrit en haut, pages de
+  // calendrier qui s'envolent, puis il s'efface (~2,4 s).
+  function carton(tl, texte, S, titres) {
+    const c = document.createElement("div");
+    c.className = "ellipse";
+    c.innerHTML = '<span class="t"></span>';
+    c.querySelector(".t").textContent = frTypo(texte);
+    for (let i = 0; i < 3; i++) { const f = document.createElement("i"); f.className = "feuille"; c.appendChild(f); }
+    titres.appendChild(c);
+    gsap.set(c, { opacity: 0 });
+    tl.fromTo(c, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)", immediateRender: false }, S + 0.1)
+      .to(c, { opacity: 0, duration: 0.3 }, S + 2.4);
+    c.querySelectorAll(".feuille").forEach((f, i) => {
+      gsap.set(f, { opacity: 0 });
+      tl.fromTo(f, { opacity: 1, x: 0, y: 0, rotation: 0 }, { opacity: 0, x: (i - 1) * 160 + 60, y: -120 - i * 40, rotation: (i - 1) * 40 + 25,
+        duration: 0.7, ease: "power2.out", immediateRender: false }, S + 0.35 + i * 0.22);
+    });
+    Dessin.son("pages", S + 0.35);
+  }
+
   function jouerScene(tl, sc, n, S, dom) {
     const sol = sc.sol ?? 1650, ech = sc.echelle ?? 1.1;
-    const calque = g(dom.svg, { class: "scene" });
-    gsap.set(calque, { opacity: n === 0 ? 1 : 0 });
-    if (n > 0) tl.set(calque, { opacity: 1 }, S);
+    const scene = g(dom.svg, { class: "scene" });
+    gsap.set(scene, { opacity: n === 0 ? 1 : 0 });
+    if (n > 0) tl.set(scene, { opacity: 1 }, S);
+    // Camera : tout le decor et les objets dans un groupe recadre ; les inserts restent hors cadre.
+    const calque = g(scene, { class: "camera" });
+    gsap.set(calque, { svgOrigin: "0 0" });
+    const cadres = [{ t: -1, s: 1, x: 0, y: 0 }];
+    const finScene = sc.duree !== undefined ? S + sc.duree : Infinity;
 
     // Fond.
     const fondType = types["fond_" + (sc.fond || "vide")] || types.fond_vide;
@@ -111,21 +145,42 @@
       break;
     }
 
-    // Pose de depart : assis sur un siege ("assis": id), a sa place et tourne comme lui.
-    for (const o of sc.objets || []) {
-      if (!o.assis) continue;
-      const sup = objets[o.assis];
-      if (!sup) throw new Error(`« assis » : siege inconnu « ${o.assis} »`);
-      const it = objets[o.id].copies[""].it, s0 = sup.copies[""].it;
-      it._x = it._xInit = s0._x; it._regard = s0._regard;
-      gsap.set(it._root, { x: it._x }); gsap.set(it._orient, { scaleX: it._regard });
-      if (objets[o.id].type.poseInitiale) objets[o.id].type.poseInitiale(it, o);
-    }
-
     // Contexte donne aux actions (deplacements, regard, bascule d'objets).
+    const sieges = {};   // id d'un siege a plusieurs places -> places deja prises
     const ctx = {
-      debutScene: S,
-      objet: (id) => { const o = objets[id]; return o && { x: o.copies[""].it._x, regard: o.copies[""].it._regard }; },
+      debutScene: S, sol, ech, calque, finScene,
+      objet: (id) => { const o = objets[id]; return o && { x: o.copies[""].it._x, regard: o.copies[""].it._regard, it: o.copies[""].it,
+        type: o.type, ech: ech * (o.def.echelle ?? 1), def: o.def }; },
+      // Siege a plusieurs places (canape : type.places, en unites dessin) : la premiere libre.
+      place(id) {
+        const o = objets[id];
+        if (!o) return null;
+        const it = o.copies[""].it, places = o.type.places;
+        if (!places) return { x: it._x, regard: it._regard };
+        const prises = (sieges[id] ||= []);
+        const k = places.findIndex((_, i) => !prises.includes(i));
+        const i = k < 0 ? 0 : k;
+        prises.push(i);
+        return { x: it._x + places[i] * ech * (o.def.echelle ?? 1), regard: places[i] < 0 ? 1 : -1 };
+      },
+      racine(grp) { racines.push(grp); },
+      // Hors camera (nuage de pensee) : groupe au-dessus de la scene, et point de la scene -> ecran
+      // sous le cadrage courant (celui de la derniere action camera deja jouee).
+      ecranGroupe: () => g(scene, { "data-v": "a" }),
+      ecran(x, y) { const c = cadres[cadres.length - 1]; return [x * c.s + c.x, y * c.s + c.y]; },
+      // Insert plein cadre : panneau noir au-dessus de la scene (sous les bulles), dessine par
+      // dessiner(groupe, t0, duree) ; borne a la fin de la scene. -> duree jouee.
+      insert(t, duree, dessiner) {
+        const d = Math.max(0.6, Math.min(duree, finScene - 0.15 - t));
+        if (ctx.copie > 0) return d;   // objet en plusieurs copies (place, main) : un seul insert
+        const grp = g(scene, { class: "insert", "data-v": "a" });
+        gsap.set(grp, { opacity: 0 });
+        dessiner(grp, t, d);
+        racines.push(grp);
+        tl.fromTo(grp, { opacity: 0, scale: 0.9, svgOrigin: "540 1250" }, { opacity: 1, scale: 1, duration: 0.25, ease: "back.out(1.6)", immediateRender: false }, t)
+          .to(grp, { opacity: 0, duration: 0.2 }, t + d - 0.2);
+        return d;
+      },
       x: (it) => it._x, xInitial: (it) => it._xInit,
       placer: (it, x) => { it._x = x; },
       orienter(it, vers, t) {
@@ -149,6 +204,44 @@
       },
     };
 
+    // Pose de depart : assis sur un siege ("assis": id), a sa place et tourne comme lui.
+    for (const o of sc.objets || []) {
+      if (!o.assis) continue;
+      const sup = objets[o.assis];
+      if (!sup) throw new Error(`« assis » : siege inconnu « ${o.assis} »`);
+      const it = objets[o.id].copies[""].it, p = ctx.place(o.assis);
+      it._x = it._xInit = p.x; it._regard = p.regard;
+      gsap.set(it._root, { x: it._x }); gsap.set(it._orient, { scaleX: it._regard });
+      if (objets[o.id].type.poseInitiale) objets[o.id].type.poseInitiale(it, o);
+    }
+
+    // Camera : cadre vise -> echelle et decalage du groupe camera (bornes : jamais hors du decor).
+    const CADRES = { large: 1, buste: 1.45, visage: 2.0, objet: 2.2 };
+    function cadrer(a) {
+      const nom = CADRES[a.cadre] ? a.cadre : "large";
+      let s = CADRES[nom], cx = 540, cy = 960, vx = 540, vy = 960;
+      const o = a.sur && objets[a.sur];
+      if (nom !== "large" && o) {
+        const it = o.copies[""].it, e = ech * (o.def.echelle ?? 1);
+        if (o.type.categorie === "personnage") {
+          cx = it._x; cy = nom === "visage" ? sol - (it.assis ? 742 : 790) * e : sol - (it.assis ? 560 : 620) * e;
+          vy = nom === "visage" ? 1080 : 1150;
+        } else {   // objet : centre de son dessin (copie visible a ce moment)
+          const c = o.copies[o.visible] || o.copies[""];
+          const b = c.root.getBBox(), m = dom.svg.getScreenCTM().inverse().multiply(c.root.getScreenCTM());
+          const p = new DOMPoint(b.x + b.width / 2, b.y + b.height / 2).matrixTransform(m);
+          cx = p.x; cy = p.y; vy = 1150;
+          s = Math.min(3, Math.max(1.6, 420 / Math.max(b.width * m.a, b.height * m.d, 1)));
+        }
+      } else s = 1;
+      const x = Math.min(0, Math.max(1080 * (1 - s), vx - s * cx)), y = Math.min(0, Math.max(1920 * (1 - s), vy - s * cy));
+      const t = a.t, d = a.rapide ? 0.12 : 0.55;
+      tl.to(calque, { x, y, scale: s, duration: d, ease: a.rapide ? "power3.out" : "power2.inOut" }, t);
+      if (a.rapide) Dessin.son("zoom", t);
+      cadres.push({ t: t + d * 0.5, s, x, y });
+    }
+    const cadreA = (t) => cadres.filter((c) => c.t <= t).pop();
+
     // Actions, dans l'ordre.
     let curseur = PREMIERE, prec = { t: PREMIERE, fin: PREMIERE }, fin = PREMIERE;
     const repliques = [];
@@ -157,6 +250,7 @@
       const tRel = a.t ?? (a.avec ? prec.t : curseur);
       a.t = S + tRel;
       if (a.action === "pause") { curseur = tRel + (a.duree || 1); prec = { t: tRel, fin: curseur }; fin = Math.max(fin, curseur); continue; }
+      if (a.action === "camera") { cadrer(a); continue; }   // ne retarde pas l'action suivante
       const o = objets[a.qui];
       if (!o) throw new Error(`« qui » inconnu : ${a.qui}`);
       const fn = o.type.actions && o.type.actions[a.action];
@@ -165,10 +259,10 @@
       // Une seule copie (la premiere) signale ses bruitages : les autres jouent la meme action.
       let d = 0;
       Object.values(o.copies).forEach((c, i) => {
-        Dessin.sons.muet = i > 0;
+        Dessin.sons.muet = i > 0; ctx.copie = i;
         d = Math.max(d, fn(tl, c.it, a, ctx) || 0);
       });
-      Dessin.sons.muet = false;
+      Dessin.sons.muet = false; ctx.copie = 0;
       if (a.action === "parler" && a.texte) repliques.push({ a, it: o.copies[""].it, x: o.copies[""].it._x, ech: ech * (o.def.echelle ?? 1) });
       const finRel = tRel + d;
       if (!a.avec) curseur = finRel + ECART; else curseur = Math.max(curseur, finRel + ECART);
@@ -184,14 +278,17 @@
     if (fondType.vie) fondType.vie(tl, fond, S, S + duree);
     racines.forEach((r, i) => bouillonner(tl, r, S, S + duree, (i % 3) * 0.05));
     // "dessine": false -> scene complete des la 1re image (1re image d'un reel : elle decide du scroll).
-    if (sc.dessine !== false) {
-      apparition(tl, calque, S + (n ? 0.05 : 0), DESSIN);
-      Dessin.son("feutre", S + (n ? 0.05 : 0), { duree: DESSIN * 0.8 });
+    // Pas de bruit de feutre a l'apparition : il s'entendait a chaque changement de scene.
+    if (sc.dessine !== false && !sc.suite) apparition(tl, calque, S + (n ? 0.05 : 0), DESSIN);
+    // Scene suivante dans le meme lieu et le meme moment ("suite") : coupe franche, sans fondu.
+    if (!dom.derniere) {
+      if (dom.coupeApres) tl.set(scene, { opacity: 0 }, S + duree);
+      else tl.to(scene, { opacity: 0, duration: FONDU }, S + duree - 0.05);
     }
-    if (!dom.derniere) tl.to(calque, { opacity: 0, duration: FONDU }, S + duree - 0.05);
 
     // Titre de la scene (manuscrit, en haut).
-    const titre = sc.titre ?? (n === 0 ? dom.surtitre : null);
+    const titre = sc.ellipse ? null : sc.titre ?? (n === 0 ? dom.surtitre : null);
+    if (sc.ellipse && dom.titres) carton(tl, sc.ellipse, S, dom.titres);
     if (titre && dom.titres) {
       const t = document.createElement("div");
       t.className = "titre-scene"; t.textContent = frTypo(titre);
@@ -208,13 +305,17 @@
       r.fin = Math.min(r.a.t + r.a.duree + 0.12, suivante ? suivante.a.t - 0.02 : Infinity);
     });
     for (const r of repliques) {
+      // Position a l'ecran sous le cadrage de la camera a cet instant.
+      const c = cadreA(r.a.t + 0.2);
+      r.x = r.x * c.s + c.x;
+      const hautTete0 = sol - (r.it.hautTete || 1000) * r.ech - (r.it.assis ? -48 * r.ech : 0);
+      r.haut = Math.max(330, hautTete0 * c.s + c.y);
       const b = document.createElement("div"), gauche = r.x < 540;
       b.className = "bulle " + (gauche ? "g" : "d");
       b.innerHTML = '<span class="nom"></span><span class="t"></span>';
       b.querySelector(".nom").textContent = r.it.nom || "";
       b.querySelector(".t").textContent = frTypo(r.a.texte);
-      const hautTete = sol - (r.it.hautTete || 1000) * r.ech;
-      b.style.bottom = `${Math.round(1920 - hautTete + 36)}px`;
+      b.style.bottom = `${Math.round(1920 - r.haut + 36)}px`;
       if (gauche) b.style.left = `${Math.max(40, Math.round(r.x - 240))}px`; else b.style.right = `${Math.max(40, Math.round(1080 - r.x - 240))}px`;
       dom.bulles.appendChild(b);
       const rect = b.getBoundingClientRect();
