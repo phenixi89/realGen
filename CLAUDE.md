@@ -20,7 +20,8 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Vérifications avant commit : `python -m py_compile scripts/*.py` et `python scripts/catalog.py`
   (mêmes contrôles que `.github/workflows/test.yml`).
 - Enrichir le catalogue = éditer `catalog/*.json` (aucun code) ; documenter les champs dans le
-  `_doc` du fichier et dans le README.
+  `_doc` du fichier et dans le README. Un nouveau thème, décor, personnage, voix ou ambiance a un aperçu
+  dans la console : relancer `python scripts/apercus.py` et committer `docs/apercus/`.
 - Icônes dessinables : `assets/anim/icones.js` (JSON strict après `window.ICONES = `, lu aussi par
   `catalog.py`). Nouveau gabarit dessiné : s'appuyer sur `assets/anim/sketch.js`. Tout instant
   d'animation repris par `scripts/sound_design.py` doit rester identique des deux côtés.

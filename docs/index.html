@@ -70,6 +70,40 @@ details>summary{cursor:pointer;padding:6px 0}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .hidden{display:none}
 #msg{position:fixed;left:16px;right:16px;bottom:16px;max-width:560px;margin:auto;padding:12px 14px;border-radius:10px;background:var(--fg);color:var(--bg);display:none}
+/* Lancer : deux modes, puis un reel = des etapes repliables avec apercus (docs/apercus/). */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+@media (max-width:560px){.modes{grid-template-columns:1fr}}
+.modes button{text-align:left;padding:14px;border-radius:12px;border-width:2px}
+.modes button b{display:block;font-size:15px}.modes button small{display:block;margin-top:2px}
+.modes button.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--card))}
+.lot{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;align-items:stretch}
+.chipreel{flex:0 0 auto;display:flex;gap:8px;align-items:center;padding:6px 10px 6px 6px;border:2px solid var(--line);border-radius:12px;background:var(--bg);text-align:left;max-width:230px}
+.chipreel.on{border-color:var(--acc)}
+.chipreel img,.chipreel .mini{width:34px;height:46px;object-fit:cover;border-radius:6px;flex:none;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;font-size:18px}
+.chipreel span{font-size:12px;line-height:1.3;overflow:hidden}
+.chipreel.add{justify-content:center;min-width:90px;border-style:dashed}
+.etape{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--card)}
+.etape>button.tete{width:100%;display:flex;gap:10px;align-items:center;border:0;background:none;text-align:left;padding:12px 14px;border-radius:12px}
+.etape>button.tete .num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line);font-size:13px;font-weight:700;flex:none}
+.etape.fait>button.tete .num{background:var(--acc);border-color:var(--acc);color:#fff}
+.etape>button.tete .choix{margin-left:auto;color:var(--muted);font-size:13px;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.etape .corps{padding:0 14px 14px}
+.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.picks.txt{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+@media (max-width:560px){.picks{grid-template-columns:repeat(2,1fr)}.picks.txt{grid-template-columns:1fr}}
+.pick{position:relative;border:2px solid var(--line);border-radius:12px;padding:0;overflow:hidden;background:var(--bg);text-align:left;display:flex;flex-direction:column;cursor:pointer;color:var(--fg)}
+.pick.on{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 28%,transparent)}
+.pick.on::after{content:"✓";position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px}
+.pick img,.pick .ph{width:100%;aspect-ratio:3/4;object-fit:cover;background:#000;display:block}
+.pick .ph{display:grid;place-items:center;font-size:38px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff}
+.pick .tx{padding:8px 10px;font-size:12px;line-height:1.4;color:var(--muted)}.pick .tx b{display:block;font-size:14px;color:var(--fg);margin-bottom:2px}
+.pick .tx i{display:block;margin-top:4px}
+.pick .play{position:absolute;top:6px;right:6px;width:34px;height:34px;padding:0;border-radius:50%;font-size:14px;background:rgba(0,0,0,.6);color:#fff;border:0}
+.pick.son{flex-direction:row;align-items:center;gap:10px;padding:10px 46px 10px 12px}.pick.son .play{top:50%;transform:translateY(-50%)}
+.pick.son .tx{padding:0}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}.pills button{padding:5px 12px;border-radius:99px;font-size:13px}.pills button.on{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.galerie{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.galerie figure{margin:0;flex:0 0 120px}.galerie img{width:120px;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#000}.galerie figcaption{font-size:11px;color:var(--muted);text-align:center}
+.recap{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;margin-top:10px}
 .tag{display:inline-block;padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:12px;margin:2px}
 </style></head><body>
 <header><h1>Console realGen</h1><p>Reels OpusCV : lancer, suivre, récupérer</p></header>
@@ -87,7 +121,11 @@ details>summary{cursor:pointer;padding:6px 0}
 
 <section id="tab-launch" class="card">
   <h2>Nouveau lot de reels</h2>
-  <h3>1. L'essentiel</h3>
+  <div class="modes">
+    <button id="m_auto" onclick="setCompose(false)"><b>⚡ Laisse-moi faire</b><small>Tu choisis le nombre de reels, le générateur varie tout seul (format, sujet, thème…).</small></button>
+    <button id="m_compose" onclick="setCompose(true)"><b>🎨 Je compose mes reels</b><small>Pas à pas, en voyant les thèmes, les décors et en écoutant voix et musiques.</small></button>
+  </div>
+  <input id="f_compose" type="checkbox" class="hidden">
   <div class="grid">
     <div class="g-only"><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
     <div class="g-only"><label>Accroche <small>« Pourquoi… » = les plus performantes</small></label><select id="f_hook"><option value="">Rotation automatique</option></select></div>
@@ -95,15 +133,14 @@ details>summary{cursor:pointer;padding:6px 0}
       <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
       <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
   </div>
-  <h3>2. Un reel précis ? <small>(facultatif)</small></h3>
-  <label class="chk"><input id="f_compose" type="checkbox" onchange="setCompose(this.checked)"> Composer chaque reel moi-même (format, sujet, accroche, thème, ambiance, voix, registre)</label>
   <div id="composer" class="hidden">
-    <p class="muted">Un bloc par reel. « Auto » laisse le générateur choisir (rotation anti-répétition). Les listes ne proposent que ce qui est compatible avec les choix déjà faits. Astuce : l'onglet 📚 Catalogue a un bouton « ➕ Composer » sur chaque élément.</p>
+    <h3>Tes reels <small>(un clic pour modifier ; chaque étape laissée en « Auto » est choisie par le générateur)</small></h3>
+    <div class="lot" id="lot"></div>
     <div id="plan"></div>
-    <div class="row"><button onclick="addReel()">➕ Ajouter un reel</button><button onclick="rollAll()">🎲 Tout tirer au hasard</button><button onclick="resetPlan()">↺ Tout en automatique</button></div>
+    <div class="row" style="margin-top:6px"><button onclick="roll(CUR)">🎲 Tirer ce reel au hasard</button><button onclick="dupReel(CUR)">⧉ Dupliquer</button><button onclick="resetReel(CUR)">↺ Ce reel en auto</button><button onclick="delReel(CUR)">🗑 Retirer</button></div>
   </div>
   <p id="capWarn" class="warn hidden"></p>
-  <details style="margin-top:14px"><summary><b>3. Options avancées</b> <small>(durée, format, thème, voix, capture, reprise…)</small></summary>
+  <details style="margin-top:14px"><summary><b>Options avancées</b> <small>(durée, format, thème, voix, capture, reprise…)</small></summary>
   <div class="grid">
     <div><label>Durée</label><select id="f_duration"><option>15</option><option selected>25</option><option>30</option><option>45</option><option>60</option></select></div>
     <div class="g-only"><label>Format <small>vide = auto</small></label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
@@ -132,7 +169,7 @@ details>summary{cursor:pointer;padding:6px 0}
     <label class="chk"><input id="f_allow_ai_quota" type="checkbox"> Autoriser quota IA (entretien)</label>
   </div>
   </details>
-  <div class="row" style="margin-top:14px"><button class="primary" id="go" onclick="launch()">Lancer le workflow</button></div>
+  <div class="row" style="margin-top:14px;align-items:center"><button class="primary" id="go" onclick="launch()">Lancer le workflow</button><span class="muted" id="goInfo"></span></div>
 </section>
 
 <section id="tab-runs" class="card hidden"><h2>Derniers runs <small id="refresh"></small></h2><div id="runs">Chargement…</div></section>
@@ -193,7 +230,7 @@ async function catFile(name){
 async function loadCatalog(){
   const errs = [], names = ["formats","themes","voix","sujets","hooks","audio","dessins"];
   const [f, t, v, s, h, a, d] = await Promise.all(names.map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
-  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: d.trames || [] };
+  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: d.trames || [], dessins: d, decors: d.fonds || [] };
   for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${regs(x).includes("humour") ? ", humour" : ""})`, x.id));
   for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
   for (const x of CAT.hooks) $("f_hook").add(new Option(nice(x.id), x.id));
@@ -228,7 +265,7 @@ const colors = th => Object.values(th.couleurs || {}).filter(c => typeof c === "
 
 // --- Onglet Catalogue : fiches lisibles, recherche, filtres ---
 let catKind = store.get("rg_cat") || "formats";
-const KINDS = { formats: "Formats", sujets: "Sujets", hooks: "Accroches", themes: "Thèmes", ambiances: "Ambiances", voix: "Voix" };
+const KINDS = { formats: "Formats", sujets: "Sujets", hooks: "Accroches", themes: "Thèmes", ambiances: "Ambiances", voix: "Voix", trames: "Trames (dessin animé)", decors: "Décors (dessin animé)" };
 const PLAN_FIELD = { formats: "format", sujets: "sujet", hooks: "hook", themes: "theme", ambiances: "ambiance", voix: "voix" };
 function setCatKind(k){ catKind = k; store.set("rg_cat", k); renderCatalog(); }
 function renderCatalog(){
@@ -241,11 +278,14 @@ function renderCatalog(){
   if (reg && catKind === "hooks") items = items.filter(x => regs(x).includes(reg));
   if (reg && catKind === "themes") items = items.filter(x => themeRegs(x).includes(reg));
   if (catKind === "sujets") items = [...items].sort((a, b) => (a.famille || "").localeCompare(b.famille || ""));
-  $("catInfo").textContent = { formats: "Structure de la vidéo : comment le reel est construit.", sujets: "De quoi parle le reel. Un sujet ne va qu'avec les formats de même catégorie qui acceptent un de ses tags.", hooks: "Style des 2 premières secondes (décisives pour la rétention).", themes: "Couleurs, polices, style de sous-titres et musiques possibles.", ambiances: "Musique de fond synthétisée (aucun droit d'auteur). Chaque thème en propose quelques-unes.", voix: "Voix off Gemini." }[catKind]
+  $("catInfo").textContent = { formats: "Structure de la vidéo : comment le reel est construit.", sujets: "De quoi parle le reel. Un sujet ne va qu'avec les formats de même catégorie qui acceptent un de ses tags.", hooks: "Style des 2 premières secondes (décisives pour la rétention).", themes: "Couleurs, polices, style de sous-titres et musiques possibles.", ambiances: "Musique de fond synthétisée (aucun droit d'auteur). Chaque thème en propose quelques-unes. ▶ pour écouter.", voix: "Voix off Gemini. ▶ pour écouter.", trames: "Structures d'histoire du dessin animé, une par épisode (rotation).", decors: "Lieux où Léa, Karim et le recruteur jouent la scène." }[catKind]
     + ` ${items.length} élément(s).`;
   $("catalog").innerHTML = items.map(CARD[catKind]).join("") || `<p class="muted">Aucun résultat.</p>`;
+  hydrate($("catalog"));
 }
-const useBtn = (kind, id) => `<button onclick="useInPlan('${PLAN_FIELD[kind]}','${esc(id)}')">➕ Composer</button>`;
+const useBtn = (kind, id) => PLAN_FIELD[kind] ? `<button onclick="useInPlan('${PLAN_FIELD[kind]}','${esc(id)}')">➕ Composer</button>` : "";
+PLAN_FIELD.trames = "trame";
+const vignette = chemin => `<img data-apercu="${esc(chemin)}" alt="" loading="lazy" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#000">`;
 const regTags = r => r.map(x => `<span class="tag${x === "humour" ? " hum" : ""}">${REG_LABEL[x] || x}</span>`).join("");
 const CARD = {
   formats: x => { const n = CAT.sujets.filter(s => compatible(x, s)).length;
@@ -257,26 +297,67 @@ const CARD = {
       <p><b>${esc(x.texte)}</b></p><p class="muted">${n} format(s) compatible(s)</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("sujets", x.id)}</div></div>`; },
   hooks: x => `<div class="item"><h4>${esc(nice(x.id))}</h4><div>${regTags(regs(x))}</div><p>${esc(x.consigne)}</p>
       ${x.exemple ? `<p class="quote">« ${esc(x.exemple)} »</p>` : ""}<span class="id">${esc(x.id)}</span><div class="foot">${useBtn("hooks", x.id)}</div></div>`,
-  themes: x => `<div class="item"><div class="swatches">${colors(x).map(c => `<span style="background:${esc(c)}"></span>`).join("")}</div><h4>${esc(x.nom)}</h4>
+  themes: x => `<div class="item">${vignette(`themes/${x.id}.jpg`)}<div class="swatches">${colors(x).map(c => `<span style="background:${esc(c)}"></span>`).join("")}</div><h4>${esc(x.nom)}</h4>
       <div>${regTags(themeRegs(x))}${x.dessin ? `<span class="tag">dessin : ${esc(x.dessin)}</span>` : ""}</div>
       <p class="muted">Polices : ${esc((x.police_titre || "").replace(/\.ttf$/, ""))} / ${esc((x.police_texte || "").replace(/\.ttf$/, ""))} · sous-titres ${esc((x.sous_titres || {}).style || "")}</p>
       <p class="muted">Musiques : ${esc((x.ambiances || [x.ambiance]).filter(Boolean).map(ambName).join(", "))}</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("themes", x.id)}</div></div>`,
   ambiances: x => { const th = CAT.themes.filter(t => (t.ambiances || [t.ambiance]).includes(x.id)).map(t => t.nom);
-    return `<div class="item"><h4>${esc(x.nom || nice(x.id))}</h4><p class="muted">${x.bpm ? `${x.bpm} BPM` : ""}${x.instrument ? ` · ${esc(x.instrument)}` : ""}</p>
+    return `<div class="item"><h4>${esc(x.nom || nice(x.id))} <button onclick="ecouter('ambiances/${esc(x.id)}.mp3', this)" class="play" style="position:static;background:var(--acc)">▶</button></h4><p class="muted">${x.bpm ? `${x.bpm} BPM` : ""}${x.instrument ? ` · ${esc(x.instrument)}` : ""}</p>
       <p class="muted">Thèmes : ${esc(th.join(", ") || "aucun")}</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("ambiances", x.id)}</div></div>`; },
-  voix: x => `<div class="item"><h4>${esc(x.id)}</h4><p>${esc(x.description)}</p><div class="foot">${useBtn("voix", x.id)}</div></div>`,
+  trames: x => `<div class="item"><h4>${esc(x.nom)}</h4><p>${esc(x.consigne)}</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("trames", x.id)}</div></div>`,
+  decors: x => `<div class="item">${vignette(`decors/${x.id}.jpg`)}<h4>${esc(nice(x.id))}</h4><p>${esc(x.description)}</p><span class="id">${esc(x.id)}</span></div>`,
+  voix: x => `<div class="item"><h4>${esc(x.id)} <button onclick="ecouter('voix/${esc(x.id)}.mp3', this)" class="play" style="position:static;background:var(--acc)">▶</button></h4><p>${esc(x.description)}</p><div class="foot">${useBtn("voix", x.id)}</div></div>`,
 };
 function showSujetsFor(fid){ const f = byId(CAT.formats, fid); setCatKind("sujets"); $("catCat").value = f.categorie; $("catQ").value = "";
   $("catalog").innerHTML = CAT.sujets.filter(x => compatible(f, x)).map(CARD.sujets).join(""); $("catInfo").textContent = `Sujets compatibles avec « ${f.nom} ».`; }
 
-// --- Compositeur : une combinaison par reel (input "plan" du workflow) ---
+// --- Apercus (docs/apercus/, scripts/apercus.py) : servis a cote de la page (GitHub Pages) ou, sinon, lus par l'API ---
+const APERCUS = new Map(); let apercusRelatifs = null;
+async function apercu(chemin){
+  if (APERCUS.has(chemin)) return APERCUS.get(chemin);
+  const p = (async () => {
+    if (apercusRelatifs === null) { try { apercusRelatifs = location.protocol.startsWith("http") && (await fetch("apercus/" + chemin, { method: "HEAD" })).ok; } catch { apercusRelatifs = false; } }
+    if (apercusRelatifs) return "apercus/" + chemin;
+    const r = await gh(`/contents/docs/apercus/${chemin}`, { headers: { Accept: "application/vnd.github.raw+json" } });
+    return URL.createObjectURL(await r.blob());
+  })().catch(() => null);
+  APERCUS.set(chemin, p);
+  return p;
+}
+// Remplit les <img data-apercu="..."> d'un bloc qui vient d'etre rendu.
+function hydrate(root){ root.querySelectorAll("img[data-apercu]").forEach(async img => { const u = await apercu(img.dataset.apercu); if (u) img.src = u; else img.replaceWith(Object.assign(document.createElement("div"), { className: "ph", textContent: img.dataset.ph || "🖼" })); }); }
+const lecteur = new Audio(); let sonEnCours = null;
+async function ecouter(chemin, btn){
+  event && event.stopPropagation();
+  document.querySelectorAll(".play").forEach(b => b.textContent = "▶");
+  if (sonEnCours === chemin && !lecteur.paused) { lecteur.pause(); sonEnCours = null; return; }
+  const u = await apercu(chemin); if (!u) return toast("Aperçu audio indisponible (lancer scripts/apercus.py)");
+  lecteur.src = u; sonEnCours = chemin; btn.textContent = "■"; lecteur.play().catch(() => {});
+  lecteur.onended = () => { btn.textContent = "▶"; sonEnCours = null; };
+}
+const img = (chemin, ph = "🖼") => `<img data-apercu="${esc(chemin)}" data-ph="${ph}" alt="" loading="lazy">`;
+const playBtn = chemin => `<button class="play" title="Écouter" onclick="ecouter('${esc(chemin)}', this)">▶</button>`;
+// Image representative d'un format : dessin anime -> un decor ; cartes -> la carte la plus proche ; captures -> l'app.
+const FORMAT_CARTE = [[/meme|starter/, "meme"], [/mythe|vrai_ou_faux|red_green|attentes/, "texte"], [/avant_apres|split|traducteur|trois_niveaux/, "comparaison"],
+  [/liste|checklist|tier|top_bottom/, "liste"], [/tableau|vu_par/, "schema"], [/dm_|question_recruteur|reaction/, "conversation"], [/scanner|decryptage/, "scan"], [/trouve/, "impact"]];
+function fmtImg(f){
+  if (f.dessin) return img("decors/cafe.jpg", "🎬");
+  if (f.cartes === "aucune") return `<div class="ph">📱</div>`;
+  const k = (FORMAT_CARTE.find(([re]) => re.test(f.id)) || [, "texte"])[1];
+  return img(`cartes/${k}.jpg`, "🃏");
+}
+const premiere = t => { const m = String(t || "").match(/^.*?[.!?](\s|$)/); return (m ? m[0] : String(t || "")).slice(0, 140); };
+
+// --- Compositeur : une combinaison par reel (input "plan" du workflow), editee etape par etape ---
 const FIELDS = ["registre", "format", "sujet", "angle", "trame", "hook", "theme", "ambiance", "voix"];
 const blank = () => ({ ...Object.fromEntries(FIELDS.map(k => [k, ""])), libre: false });
 let PLAN = (() => { try { const p = JSON.parse(store.get("rg_plan")); return Array.isArray(p) && p.length ? p.map(r => ({ ...blank(), ...r })) : [blank()]; } catch { return [blank()]; } })();
+let CUR = 0, ETAPE = "format", FILTRE_FMT = "", RECH_SUJET = "";
 const savePlan = () => store.set("rg_plan", JSON.stringify(PLAN));
 function setCompose(on){
   $("f_compose").checked = on; store.set("rg_compose", on ? "1" : "");
   $("composer").classList.toggle("hidden", !on);
+  $("m_auto").classList.toggle("on", !on); $("m_compose").classList.toggle("on", on);
   document.querySelectorAll("#tab-launch .g-only").forEach(e => e.classList.toggle("hidden", on));
   renderPlan(); checkCapture();
 }
@@ -284,7 +365,8 @@ function setCompose(on){
 function options(r, k){
   const fmt = byId(CAT.formats, r.format), suj = byId(CAT.sujets, r.sujet), th = byId(CAT.themes, r.theme);
   switch (k) {
-    case "format": return CAT.formats.filter(f => (!r.registre || regs(f).includes(r.registre)) && (!suj || compatible(f, suj)) && (!sansCap() || sansCapOk(f)) && (sansCap() || !f.dessin));
+    // Dessin anime toujours propose : le choisir passe la capture en « Sans capture » (setField).
+    case "format": return CAT.formats.filter(f => (!r.registre || regs(f).includes(r.registre)) && (!suj || compatible(f, suj)) && (!sansCap() || sansCapOk(f)));
     case "sujet": return CAT.sujets.filter(x => !fmt || compatible(fmt, x));
     case "hook": return CAT.hooks.filter(x => !r.registre || regs(x).includes(r.registre));
     case "theme": return CAT.themes.filter(x => !r.registre || themeRegs(x).includes(r.registre));
@@ -293,46 +375,105 @@ function options(r, k){
     case "trame": return fmt && fmt.dessin ? CAT.trames : [];   // dessin anime : structure de l'histoire
   }
 }
-const OPT_LABEL = { format: x => `${x.nom} · ${x.categorie}`, hook: x => nice(x.id), theme: x => x.nom, ambiance: x => x.nom || nice(x.id), voix: x => `${x.id} : ${x.description}`, trame: x => x.nom };
-function selectHtml(i, k, r){
-  const auto = `<option value="">Auto</option>`;
-  if (k === "registre") return `<select onchange="setField(${i},'registre',this.value)">${auto}${["serieux","humour"].map(v => `<option value="${v}"${r.registre === v ? " selected" : ""}>${REG_LABEL[v]}</option>`).join("")}</select>`;
-  const opts = options(r, k);
-  if (k === "sujet") {
-    const fam = {}; for (const x of opts) (fam[x.famille || "divers"] ||= []).push(x);
-    return `<select onchange="setField(${i},'sujet',this.value)">${auto}<option value="__angle"${r.libre ? " selected" : ""}>✎ Sujet libre (angle écrit)…</option>` +
-      Object.keys(fam).sort().map(f => `<optgroup label="${esc(nice(f))}">${fam[f].map(x => `<option value="${esc(x.id)}"${r.sujet === x.id ? " selected" : ""}>${esc(x.texte.length > 90 ? x.texte.slice(0, 88) + "…" : x.texte)}</option>`).join("")}</optgroup>`).join("") + `</select>`;
+const OPT_LABEL = { format: x => x.nom, hook: x => nice(x.id), theme: x => x.nom, ambiance: x => x.nom || nice(x.id), voix: x => x.id, trame: x => x.nom };
+const nomDe = (k, id) => { const x = byId(k === "hook" ? CAT.hooks : CAT[k === "theme" ? "themes" : k === "format" ? "formats" : k === "ambiance" ? "ambiances" : k === "voix" ? "voix" : k === "trame" ? "trames" : "sujets"], id); return x ? (k === "sujet" ? x.texte : OPT_LABEL[k](x)) : id; };
+const dessinDe = r => { const f = byId(CAT.formats, r.format); return !!(f && f.dessin); };
+// Etapes d'un reel : titre, resume du choix, contenu.
+const ETAPES = [
+  { k: "format", titre: "Le format", resume: r => [r.registre ? REG_LABEL[r.registre] : "", r.format ? nomDe("format", r.format) : "Auto"].filter(Boolean).join(" · ") },
+  { k: "sujet", titre: "Le sujet", resume: r => r.libre ? (r.angle ? `✎ ${r.angle}` : "✎ à écrire") : r.sujet ? nomDe("sujet", r.sujet) : "Auto" },
+  { k: "histoire", titre: "L'histoire (dessin animé)", si: dessinDe, resume: r => r.trame ? nomDe("trame", r.trame) : "Auto (trame en rotation)" },
+  { k: "style", titre: "Le style : thème, musique, voix", resume: r => [r.theme ? nomDe("theme", r.theme) : "Thème auto", r.ambiance ? nomDe("ambiance", r.ambiance) : "", !dessinDe(r) && r.voix ? r.voix : ""].filter(Boolean).join(" · ") },
+  { k: "accroche", titre: "L'accroche (2 premières secondes)", resume: r => r.hook ? nomDe("hook", r.hook) : "Auto" },
+];
+const tuile = (on, onclick, visuel, titre, texte = "", extra = "") => `<div class="pick${on ? " on" : ""}" role="button" tabindex="0" onclick="${onclick}" onkeydown="if(event.key==='Enter')this.click()">${visuel}<div class="tx"><b>${esc(titre)}</b>${texte}</div>${extra}</div>`;
+// Tuile « Auto » : grande dans les grilles d'images, compacte dans les listes de texte (compact = true).
+const AUTO = (k, on, txt = "Le générateur choisit (rotation anti-répétition)", compact = false) =>
+  tuile(on, `setField(CUR,'${k}','')`, compact ? "" : `<div class="ph">🎲</div>`, compact ? "🎲 Auto" : "Auto", esc(txt));
+function corpsEtape(k, r){
+  if (k === "format") {
+    const tous = options({ ...r, format: "" }, "format");
+    const filtres = { "": "Tous", conseil: "Conseil", produit: "Produit", humour: "Humour possible", dessin: "Dessin animé" };
+    const liste = tous.filter(f => !FILTRE_FMT || (FILTRE_FMT === "dessin" ? f.dessin : FILTRE_FMT === "humour" ? regs(f).includes("humour") : f.categorie === FILTRE_FMT));
+    return `<label>Registre</label><div class="pills">${["", "serieux", "humour"].map(v => `<button class="${r.registre === v ? "on" : ""}" onclick="setField(CUR,'registre','${v}')">${v ? REG_LABEL[v] : "Auto"}</button>`).join("")}</div>
+      ${sansCap() ? `<p class="muted">Lot « Sans capture » : les formats qui filment l'app sont masqués (Options avancées → Capture pour les retrouver).</p>` : ""}
+      <label>Formats</label><div class="pills">${Object.entries(filtres).map(([v, l]) => `<button class="${FILTRE_FMT === v ? "on" : ""}" onclick="FILTRE_FMT='${v}';renderPlan()">${l}</button>`).join("")}</div>
+      <div class="picks">${AUTO("format", !r.format, "Mix conseil / produit")}${liste.map(f => tuile(r.format === f.id, `setField(CUR,'format','${esc(f.id)}')`, fmtImg(f), f.nom,
+        `${esc(premiere(f.structure))}<i>${f.dessin ? "🎬 dessin animé" : f.cartes === "aucune" ? "📱 captures de l'app" : "🃏 " + esc(CARTES[f.cartes] || "")}${regs(f).includes("humour") ? " · 😄 humour" : ""}</i>`)).join("")}</div>`;
   }
-  return `<select onchange="setField(${i},'${k}',this.value)">${auto}${opts.map(x => `<option value="${esc(x.id)}"${r[k] === x.id ? " selected" : ""}>${esc(OPT_LABEL[k](x))}</option>`).join("")}</select>`;
+  if (k === "sujet") {
+    const q = RECH_SUJET.toLowerCase(), liste = options(r, "sujet").filter(x => !q || x.texte.toLowerCase().includes(q));
+    const fam = {}; for (const x of liste) (fam[x.famille || "divers"] ||= []).push(x);
+    return `<input type="search" placeholder="Chercher un sujet (ex : entretien, LinkedIn, reconversion)" value="${esc(RECH_SUJET)}" oninput="RECH_SUJET=this.value;renderEditeur(true)">
+      <div class="picks txt" style="margin-top:10px">${AUTO("sujet", !r.sujet && !r.libre, "Le générateur choisit le sujet le plus prometteur", true)}
+        ${tuile(r.libre, `setField(CUR,'sujet','__angle')`, "", "✎ Mon propre sujet", "Écris l'angle toi-même")}</div>
+      ${r.libre ? `<label>Ton sujet</label><input value="${esc(r.angle)}" placeholder="ex : les jeunes diplômés face aux ATS" onchange="setField(CUR,'angle',this.value)">` : ""}
+      ${Object.keys(fam).sort().map(f => `<h3>${esc(nice(f))}</h3><div class="picks txt">${fam[f].map(x => tuile(r.sujet === x.id, `setField(CUR,'sujet','${esc(x.id)}')`, "", x.texte)).join("")}</div>`).join("") || `<p class="muted">Aucun sujet ne correspond.</p>`}`;
+  }
+  if (k === "histoire") {
+    const D = CAT.dessins || {}, perso = (D.objets || []).filter(o => o.categorie === "personnage");
+    return `<p class="muted">${esc((D.serie || {}).titre ? `Série « ${D.serie.titre} » : chaque reel est un épisode. ` : "")}La trame donne la structure de l'histoire ; Gemini écrit le reste.</p>
+      <div class="picks txt">${AUTO("trame", !r.trame, "La trame la moins récemment utilisée", true)}${(CAT.trames || []).map(t => tuile(r.trame === t.id, `setField(CUR,'trame','${esc(t.id)}')`, "", t.nom, esc(t.consigne))).join("")}</div>
+      <h3>Les personnages <small>(voix écoutables)</small></h3>
+      <div class="picks">${perso.map(p => `<div class="pick">${img(`personnages/${p.id}.jpg`, "🙂")}${playBtn(`voix/${p.voix}.mp3`)}<div class="tx"><b>${esc(p.nom)}</b>${esc(p.description.split(":").pop())}<i>voix ${esc(p.voix)}</i></div></div>`).join("")}</div>
+      <h3>Les décors <small>(Gemini les choisit selon l'histoire)</small></h3>
+      <div class="galerie">${(D.fonds || []).map(f => `<figure>${img(`decors/${f.id}.jpg`, "🏠")}<figcaption>${esc(nice(f.id))}</figcaption></figure>`).join("")}</div>`;
+  }
+  if (k === "style") {
+    const dessin = dessinDe(r);
+    return `<h3>Thème <small>(couleurs, polices, sous-titres${dessin ? " ; le dessin animé garde son trait blanc, le thème habille l'accroche et la fin" : ""})</small></h3>
+      <div class="picks">${AUTO("theme", !r.theme)}${options(r, "theme").map(t => tuile(r.theme === t.id, `setField(CUR,'theme','${esc(t.id)}')`, img(`themes/${t.id}.jpg`, "🎨"), t.nom)).join("")}</div>
+      <h3>Musique <small>${r.theme ? "(celles du thème choisi)" : ""}</small></h3>
+      <div class="picks txt">${AUTO("ambiance", !r.ambiance, "Une des musiques du thème", true)}${options(r, "ambiance").map(a => tuile(r.ambiance === a.id, `setField(CUR,'ambiance','${esc(a.id)}')`, "", a.nom || nice(a.id), a.bpm ? `${a.bpm} BPM${a.instrument ? " · " + esc(a.instrument) : ""}` : "", playBtn(`ambiances/${a.id}.mp3`)).replace('class="pick', 'class="pick son')).join("")}</div>
+      ${dessin ? `<p class="muted">Voix : en dessin animé, chaque personnage a la sienne (étape « L'histoire »).</p>` : `<h3>Voix off</h3>
+      <div class="picks txt">${AUTO("voix", !r.voix, "Rotation des voix", true)}${CAT.voix.map(v => tuile(r.voix === v.id, `setField(CUR,'voix','${esc(v.id)}')`, "", v.id, esc(v.description), playBtn(`voix/${v.id}.mp3`)).replace('class="pick', 'class="pick son')).join("")}</div>`}`;
+  }
+  if (k === "accroche") return `<div class="picks txt">${AUTO("hook", !r.hook, undefined, true)}${options(r, "hook").map(h => tuile(r.hook === h.id, `setField(CUR,'hook','${esc(h.id)}')`, "", nice(h.id), `${esc(h.consigne)}${h.exemple ? `<i>« ${esc(h.exemple)} »</i>` : ""}`)).join("")}</div>`;
+  return "";
 }
+function renderLot(){
+  $("lot").innerHTML = PLAN.map((r, i) => {
+    const vis = r.theme ? img(`themes/${r.theme}.jpg`, "🎬") : `<div class="mini">${dessinDe(r) ? "🎬" : "🎲"}</div>`;
+    const quoi = [r.format ? nomDe("format", r.format) : "Format auto", r.libre ? r.angle : r.sujet ? nomDe("sujet", r.sujet) : ""].filter(Boolean).join(" · ");
+    return `<button class="chipreel${i === CUR ? " on" : ""}" onclick="CUR=${i};renderPlan()">${vis}<span><b>Reel ${i + 1}</b><br>${esc(quoi.length > 60 ? quoi.slice(0, 58) + "…" : quoi)}</span></button>`;
+  }).join("") + `<button class="chipreel add" onclick="addReel()">➕ Reel</button>`;
+  hydrate($("lot"));
+}
+function renderEditeur(garderFocus){
+  const r = PLAN[CUR], etapes = ETAPES.filter(e => !e.si || e.si(r));
+  if (!etapes.some(e => e.k === ETAPE)) ETAPE = "format";
+  const focus = garderFocus && document.activeElement && document.activeElement.type === "search";
+  $("plan").innerHTML = etapes.map((e, n) => {
+    const fait = e.k === "histoire" ? !!r.trame : e.k === "style" ? !!(r.theme || r.ambiance || r.voix) : e.k === "sujet" ? !!(r.sujet || r.libre) : !!r[e.k === "accroche" ? "hook" : e.k];
+    const ouvert = ETAPE === e.k;
+    return `<div class="etape${fait ? " fait" : ""}"><button class="tete" onclick="ETAPE=ETAPE==='${e.k}'?'':'${e.k}';renderEditeur()"><span class="num">${fait ? "✓" : n + 1}</span><b>${esc(e.titre)}</b><span class="choix">${esc(e.resume(r))}</span><span>${ouvert ? "▲" : "▼"}</span></button>
+      ${ouvert ? `<div class="corps">${corpsEtape(e.k, r)}${n < etapes.length - 1 ? `<div class="row" style="margin-top:12px"><button class="primary" onclick="ouvrirEtape('${etapes[n + 1].k}')">Étape suivante →</button></div>` : ""}</div>` : ""}</div>`;
+  }).join("") + `<div class="recap"><b>Reel ${CUR + 1}</b> · ${etapes.map(e => `${esc(e.titre.split(" (")[0].replace(/^L[ea'] ?/, ""))} : <b>${esc(e.resume(r))}</b>`).join(" · ")}${cartesPerdues(byId(CAT.formats, r.format)) ? `<br><span class="warn">${CARTES_WARN}</span>` : ""}</div>`;
+  hydrate($("plan"));
+  if (focus) { const s = $("plan").querySelector("input[type=search]"); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }
+}
+function ouvrirEtape(k){ ETAPE = k; renderEditeur(); const e = [...$("plan").querySelectorAll(".etape")].find(x => x.querySelector(".corps")); if (e) e.scrollIntoView({ behavior: "smooth", block: "start" }); }
 function renderPlan(){
-  if (!$("f_compose").checked) return;
+  if (!$("f_compose").checked) return updateGoInfo();
   // Un choix devenu incompatible (registre, mode sans capture...) repasse en auto.
   for (const r of PLAN) for (const k of ["format", "sujet", "trame", "hook", "theme", "ambiance"]) if (r[k] && CAT.formats.length && !options(r, k).some(x => x.id === r[k])) r[k] = "";
-  savePlan();
-  $("plan").innerHTML = PLAN.map((r, i) => {
-    const fmt = byId(CAT.formats, r.format), suj = byId(CAT.sujets, r.sujet), hk = byId(CAT.hooks, r.hook), th = byId(CAT.themes, r.theme);
-    const prev = [
-      fmt ? `<b>Format</b> ${esc(fmt.structure)}` : "",
-      suj ? `<b>Sujet</b> ${esc(suj.texte)}` : r.angle ? `<b>Sujet libre</b> ${esc(r.angle)}${fmt ? "" : " (format Démo produit par défaut)"}` : "",
-      hk ? `<b>Accroche</b> ${esc(hk.consigne)} <i>« ${esc(hk.exemple || "")} »</i>` : "",
-      th ? `<b>Thème</b> <span class="swatches" style="display:inline-flex;width:90px;height:12px;vertical-align:middle">${colors(th).map(c => `<span style="background:${esc(c)}"></span>`).join("")}</span> ${esc(th.nom)}` : "",
-      cartesPerdues(fmt) ? `<span class="warn">${CARTES_WARN}</span>` : "",
-    ].filter(Boolean).join("<br>");
-    return `<div class="reelplan"><div class="head"><b>Reel ${i + 1}</b>
-        <button title="Tirer une combinaison compatible au hasard" onclick="roll(${i})">🎲</button><button title="Dupliquer" onclick="dupReel(${i})">⧉</button>
-        <button title="Supprimer" onclick="delReel(${i})"${PLAN.length === 1 ? " disabled" : ""}>✖</button></div>
-      <div class="grid">${FIELDS.filter(k => k !== "angle" && (k !== "trame" || options(r, k).length)).map(k => `<div><label>${{ registre: "Registre", format: "Format", sujet: "Sujet", hook: "Accroche", theme: "Thème", ambiance: "Musique", voix: "Voix", trame: "Trame" }[k]}</label>${selectHtml(i, k, r)}</div>`).join("")}</div>
-      ${r.libre ? `<label>Sujet libre</label><input value="${esc(r.angle)}" placeholder="ex : les jeunes diplômés face aux ATS" onchange="setField(${i},'angle',this.value)">` : ""}
-      <div class="preview">${prev || "Tout en automatique : le générateur choisit."}</div></div>`;
-  }).join("");
+  CUR = Math.min(CUR, PLAN.length - 1);
+  savePlan(); renderLot(); renderEditeur(); updateGoInfo();
+}
+function updateGoInfo(){
+  const compose = $("f_compose").checked, n = compose ? PLAN.length : Number($("f_n").value || 3);
+  const dessin = compose && PLAN.some(dessinDe);
+  $("goInfo").textContent = `${n} reel${n > 1 ? "s" : ""}` + (dessin ? " · dessin animé : capture « Sans capture » automatique" : "");
 }
 function setField(i, k, v){
-  const r = PLAN[i];
+  const r = PLAN[i], f = k === "format" && byId(CAT.formats, v);
+  if (f && f.dessin && !sansCap()) {
+    // Le dessin animé ne montre pas l'app : tout le lot passe en « Sans capture » (le workflow l'exige).
+    $("f_capture_mode").value = "aucune";
+    toast("Dessin animé : capture passée en « Sans capture » pour ce lot (les formats qui filment l'app ne sont plus proposés).", 7000);
+  }
   if (k === "sujet") { r.libre = v === "__angle"; r.sujet = r.libre ? "" : v; if (!r.libre) r.angle = ""; }
-  else if (k === "angle") r.angle = v.trim();
   else r[k] = v;
-  if (k === "theme" && r.ambiance && !options(r, "ambiance").some(a => a.id === r.ambiance)) r.ambiance = "";
   renderPlan();
 }
 const pick = list => list.length ? list[Math.floor(Math.random() * list.length)].id : "";
@@ -340,20 +481,21 @@ function roll(i){
   const r = blank();
   r.registre = Math.random() < 0.3 ? "humour" : "serieux";
   r.format = pick(options(r, "format")); r.sujet = pick(options(r, "sujet")); r.hook = pick(options(r, "hook"));
-  r.theme = pick(options(r, "theme")); r.ambiance = pick(options(r, "ambiance")); r.voix = pick(options(r, "voix"));
+  r.theme = pick(options(r, "theme")); r.ambiance = pick(options(r, "ambiance")); r.voix = pick(options(r, "voix")); r.trame = pick(options(r, "trame"));
   PLAN[i] = r; renderPlan();
 }
 function rollAll(){ PLAN.forEach((_, i) => roll(i)); }
-function addReel(){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.push(blank()); renderPlan(); }
-function dupReel(i){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.splice(i + 1, 0, { ...PLAN[i] }); renderPlan(); }
-function delReel(i){ PLAN.splice(i, 1); renderPlan(); }
+function addReel(){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.push(blank()); CUR = PLAN.length - 1; ETAPE = "format"; renderPlan(); }
+function dupReel(i){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.splice(i + 1, 0, { ...PLAN[i] }); CUR = i + 1; renderPlan(); }
+function delReel(i){ if (PLAN.length === 1) { PLAN = [blank()]; } else PLAN.splice(i, 1); CUR = Math.max(0, Math.min(CUR, PLAN.length - 1)); renderPlan(); }
+function resetReel(i){ PLAN[i] = blank(); renderPlan(); }
 function resetPlan(){ PLAN = PLAN.map(blank); renderPlan(); }
 function useInPlan(k, id){
   if (!$("f_compose").checked) { PLAN = [blank()]; setCompose(true); }
   let i = PLAN.length - 1;
   if (PLAN[i][k]) { if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.push(blank()); i++; }
   PLAN[i][k] = id; if (k === "sujet") Object.assign(PLAN[i], { angle: "", libre: false });
-  renderPlan();
+  CUR = i; renderPlan();
   toast(PLAN[i][k] === id ? `Ajouté au reel ${i + 1} (onglet 🚀 Lancer)` : `Incompatible avec les choix du reel ${i + 1} : laissé en automatique`);
 }
 function planInput(){
@@ -507,6 +649,7 @@ async function start(){
   showTab(store.get("rg_tab") || "launch");
 }
 $("f_capture_mode").addEventListener("change", () => { renderPlan(); checkCapture(); });
+$("f_n").addEventListener("input", updateGoInfo);
 $("f_format").addEventListener("change", checkCapture);
 $("repo").value = REPO; setCompose(!!store.get("rg_compose")); start();
 </script></body></html>

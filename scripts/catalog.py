@@ -736,10 +736,24 @@ def validate_catalog() -> list[str]:
     return errors
 
 
+def apercus_manquants() -> list[str]:
+    """Apercus de la console (docs/apercus/, scripts/apercus.py) absents pour un element du catalogue."""
+    base = ROOT / "docs" / "apercus"
+    attendus = ([f"themes/{t['id']}.jpg" for t in themes()] + [f"cartes/{k}.jpg" for k in CARD_TYPES]
+                + [f"decors/{f['id']}.jpg" for f in dessins()["fonds"]] + [f"personnages/{p}.jpg" for p in personnages()]
+                + [f"voix/{v}.mp3" for v in dict.fromkeys([v["id"] for v in voices()] + [p["voix"] for p in personnages().values()])]
+                + [f"ambiances/{a['id']}.mp3" for a in ambiances()])
+    return [a for a in attendus if not (base / a).exists()]
+
+
 if __name__ == "__main__":
     problems = validate_catalog()
     for p in problems:
         print(f"ERREUR: {p}", file=sys.stderr)
+    manquants = apercus_manquants()
+    if manquants:  # pas bloquant : la console affiche alors une vignette neutre
+        print(f"ATTENTION: {len(manquants)} apercu(s) de la console manquant(s) ({', '.join(manquants[:6])}"
+              f"{'...' if len(manquants) > 6 else ''}) : python scripts/apercus.py", file=sys.stderr)
     print(f"{len(formats())} formats, {len(sujets())} sujets, {len(hooks())} accroches, {len(themes())} themes, "
           f"{len(icons())} icones, {len(dessins()['fonds'])} fonds et {len(dessins()['objets'])} objets dessines")
     for f in formats():

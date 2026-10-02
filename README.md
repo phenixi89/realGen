@@ -785,26 +785,35 @@ ouvrir la page dans Chrome, Firefox ou Edge. Si l'onglet Catalogue (et les liste
 Thème, Voix) reste vide, la console affiche l'erreur : le plus souvent, le token n'a pas la
 permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en bas de l'écran.
 
-- **Onglet 🚀 Lancer**, en trois zones : 1. l'essentiel (nombre de reels, **accroche** imposée à tous les reels,
-  plateformes) ; 2. la composition reel par reel (facultative, ci-dessous) ; 3. les options avancées, repliées
-  par défaut (durée, format, thème, registre, voix, capture, animations, reprise, angle, scénario manuel, cases).
-  Le bouton « Lancer le workflow » est en bas.
-- **Compositeur** (onglet 🚀 Lancer, case « Composer chaque reel moi-même ») : un bloc par reel
-  (jusqu'à 10) avec registre, format, sujet (groupés par famille, ou sujet libre), accroche, thème,
-  musique et voix. « Auto » laisse le générateur choisir. Les listes ne proposent que les choix
-  compatibles (sujet ↔ format, registre ↔ format/accroche/thème, musiques du thème, formats jouables
-  en capture `aucune`). Aperçu sous chaque bloc (structure du format, texte du sujet, exemple
-  d'accroche, couleurs du thème). 🎲 tire une combinaison compatible, ⧉ duplique. Envoyé au workflow
-  dans le champ `plan` ; les champs globaux Nombre, Accroche, Format, Thème, Registre, Voix et Angle sont alors
-  masqués. Capture par défaut : « Captures desktop + zoom » (`screenshots`). Un format à cartes
-  choisi avec une capture vidéo (`video`, `video_desktop`) affiche un avertissement : ses cartes y
-  seraient remplacées par des captures. Le format dessin animé (`dessin_anime`) n'est proposé au
-  compositeur qu'en capture « Sans capture » ; choisi comme format global avec une autre capture, un
-  message indique que la capture passera automatiquement à « Sans capture ». La composition est mémorisée
-  dans le navigateur.
-- **Catalogue** : fiches par type (formats, sujets, accroches, thèmes, ambiances, voix) avec recherche
-  et filtres catégorie / registre ; formats : structure, visuel, sujets compatibles (« Voir ses
-  sujets ») ; thèmes : nuancier, polices, musiques. « ➕ Composer » ajoute l'élément au compositeur
+- **Onglet 🚀 Lancer** : deux modes en haut. **⚡ Laisse-moi faire** : nombre de reels, accroche
+  imposée (facultative) et plateformes, le générateur varie le reste. **🎨 Je compose mes reels** : la
+  liste des reels du lot en haut (vignette du thème, format et sujet ; un clic pour modifier, ➕ pour en
+  ajouter, jusqu'à 10), puis le reel en cours **étape par étape**, chaque étape repliable avec son
+  choix résumé dans l'en-tête et une coche une fois faite : 1. **le format** (registre, filtres
+  Tous / Conseil / Produit / Humour / Dessin animé, une vignette par format : la carte animée la plus
+  proche, l'app pour les formats en captures, un décor pour le dessin animé) ; 2. **le sujet**
+  (recherche, groupés par famille, ou sujet libre) ; 3. **l'histoire**, pour le dessin animé seulement
+  (trames, personnages avec leur voix à écouter, décors) ; 4. **le style** (thèmes en vignettes de
+  couverture, musiques du thème et voix off avec ▶ pour écouter) ; 5. **l'accroche** (consigne et
+  exemple). « Auto » sur une étape = le générateur choisit. Récapitulatif sous les étapes ; 🎲 tire le
+  reel au hasard (combinaison compatible), ⧉ duplique, ↺ le remet en auto. Choisir le dessin animé passe
+  la capture du lot en « Sans capture » (le workflow l'exige) et le signale. Les options avancées
+  (durée, capture, animations, reprise, scénario manuel, cases) restent repliées en bas ; sous le
+  bouton « Lancer le workflow », le nombre de reels du lot. Envoyé au workflow dans le champ `plan`.
+  Un format à cartes choisi avec une capture vidéo (`video`, `video_desktop`) affiche un
+  avertissement : ses cartes y seraient remplacées par des captures. La composition est mémorisée dans
+  le navigateur.
+- **Aperçus** (`docs/apercus/`, produits par `python scripts/apercus.py`) : couverture de chaque thème,
+  chaque carte animée (texte d'exemple sans chiffre présenté comme réel), chaque décor et personnage du
+  dessin animé, une phrase de chaque voix (enregistrements de CTA) et 8 s de chaque musique, en JPEG et
+  MP3 légers (~1,5 Mo en tout). Servis à côté de la page (GitHub Pages), sinon lus par l'API GitHub
+  avec le token. À relancer après un ajout au catalogue (thème, décor, personnage, voix, ambiance ;
+  `--seulement themes,decors`, `--force` pour tout refaire) : `python scripts/catalog.py` signale les
+  aperçus manquants (sans bloquer : la console montre alors une vignette neutre).
+- **Catalogue** : fiches par type (formats, sujets, accroches, thèmes, ambiances, voix, trames et décors
+  du dessin animé) avec recherche et filtres catégorie / registre ; formats : structure, visuel, sujets
+  compatibles (« Voir ses sujets ») ; thèmes : vignette, nuancier, polices, musiques ; voix et ambiances :
+  ▶ pour écouter ; décors : vignette. « ➕ Composer » ajoute l'élément au compositeur
   (dernier reel si ce champ y est libre, sinon nouveau reel).
 
 ### Créer le token GitHub (fine-grained)
