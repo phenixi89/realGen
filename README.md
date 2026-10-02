@@ -314,6 +314,13 @@ face à face, objets posés ou tenus, personnage assis) :
   Gemini (« TTS the following conversation… ») : une consigne libre en français a inversé les voix à
   l'essai. La réplique finale (CTA) vient de l'enregistrement de la voix du personnage qui la dit
   (voir « CTA enregistré »).
+- **Contrôle des voix** (`scripts/voix_controle.py`) : Gemini fond parfois tout le dialogue dans une
+  seule voix (run 58 : Karim dit avec la voix de Léa). Après Whisper, chaque réplique doit avoir au
+  moins 40 % de ses trames plus proches (en hauteur) de la voix de son personnage que de l'autre ;
+  hauteur de référence d'une voix = mesurée sur ses enregistrements de CTA (`assets/voix_cta/`).
+  Sinon : nouvelle synthèse du reel (`2_generate_voice.py --index N --force`), puis, si elle échoue
+  encore, une synthèse par réplique (`--par-replique`, voix garantie, dialogue un peu moins liant).
+  Deux voix de hauteurs trop proches (moins de 25 % d'écart) ne sont pas contrôlées.
 - **Synchro** : Whisper mesure quand chaque réplique est dite (`repliques` de la timeline,
   `4_generate_subtitles.py`) ; au montage, chaque bulle s'ouvre à cet instant et la bouche bouge le temps
   exact de la réplique (`run_pipeline.dessin_spec`) ; une action qui suit une réplique finissant à

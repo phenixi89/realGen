@@ -464,10 +464,30 @@ def main():
         subs_force = force_flag_for("subs") or (["--force"] if audio_regenerated else [])
         if audio_regenerated and not force_flag_for("subs"):
             print(f"[{i}] audio plus recent que les sous-titres existants -> regeneration")
-        run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
-             "--audio", str(audio_path), "--scripts", str(scripts_path), "--index", str(i),
-             "--out", str(subs_path), "--timeline-out", str(timeline_path),
-             "--model", args.whisper_model, *(["--synthetic"] if args.sans_voix else []), *subs_force])
+        def sous_titres(force_args):
+            run([sys.executable, str(ROOT / "4_generate_subtitles.py"),
+                 "--audio", str(audio_path), "--scripts", str(scripts_path), "--index", str(i),
+                 "--out", str(subs_path), "--timeline-out", str(timeline_path),
+                 "--model", args.whisper_model, *(["--synthetic"] if args.sans_voix else []), *force_args])
+        sous_titres(subs_force)
+
+        # Dessin anime : chaque replique doit etre dite par la voix de son personnage (Gemini
+        # multi-locuteurs fond parfois le dialogue dans une seule voix) -> une nouvelle synthese,
+        # puis replique par replique (voix garantie). Voir voix_controle.py.
+        voices = scripts[i - 1].get("voix_personnages") or {}
+        if voices and not args.sans_voix and timeline_path.exists():
+            import voix_controle
+            for essai in (1, 2):
+                ok, detail = voix_controle.repliques_bien_dites(
+                    audio_path, json.loads(timeline_path.read_text(encoding="utf-8")), voices)
+                if ok:
+                    break
+                print(f"[{i}] voix confondues ({detail}) -> nouvelle synthese"
+                      f"{' replique par replique' if essai == 2 else ''}")
+                run([sys.executable, str(ROOT / "2_generate_voice.py"),
+                     "--scripts", str(scripts_path), "--voice", args.voice, "--out", str(out / "audio"),
+                     "--index", str(i), "--force", *(["--par-replique"] if essai == 2 else [])])
+                sous_titres(["--force"])
 
         # Animations : placees d'apres la timeline (debut de chaque scene).
         #    Un choix d'animations different du dernier montage de ce reel

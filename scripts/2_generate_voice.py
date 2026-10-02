@@ -107,6 +107,23 @@ def synthesize_dialogue(client, lines: list[tuple[str, str]], voices: dict[str, 
         wf.writeframes(audio_data)
 
 
+def synthesize_lines(client, lines: list[tuple[str, str]], voices: dict[str, str], pcm_path: Path,
+                     tone: str = DEFAULT_TONE):
+    """Repli : une synthese par replique, chacune avec la voix de son personnage, mises bout a bout."""
+    import numpy as np
+    parts = []
+    for n, (qui, texte) in enumerate(lines):
+        tmp = pcm_path.with_suffix(f".l{n}.wav")
+        synthesize(client, texte, voices[qui], tmp, tone)
+        parts += [_pcm(tmp), np.zeros(int(0.25 * SR_TTS))]
+        tmp.unlink()
+    with wave.open(str(pcm_path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(SR_TTS)
+        wf.writeframes(np.clip(np.concatenate(parts[:-1]), -32768, 32767).astype(np.int16).tobytes())
+
+
 def cta_filename(voice: str, phrase: str) -> str:
     """Un enregistrement par (voix, phrase exacte) : changer la phrase en cree un autre."""
     return f"{voice}_{hashlib.sha1(phrase.encode('utf-8')).hexdigest()[:10]}.ogg"
@@ -196,6 +213,10 @@ def main():
     parser.add_argument("--out", type=str, default="output/audio")
     parser.add_argument("--force", action="store_true",
                          help="Regenere meme si le mp3 existe deja pour un reel")
+    parser.add_argument("--index", type=int, default=0, help="Seulement ce reel (1 = le premier) ; 0 = tous")
+    parser.add_argument("--par-replique", action="store_true",
+                        help="Dessin anime : une synthese par replique au lieu d'un seul appel multi-locuteurs "
+                             "(repli quand Gemini a confondu les voix, cf. voix_controle.py)")
     parser.add_argument("--precompute-cta", action="store_true",
                          help="Enregistre les phrases de CTA du catalogue pour chaque voix (assets/voix_cta/), puis s'arrete")
     args = parser.parse_args()
@@ -219,6 +240,8 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for i, script in enumerate(scripts, 1):
+        if args.index and i != args.index:
+            continue
         text = script_to_text(script)
         if not text:
             print(f"[{i}] script vide, ignore")
@@ -267,7 +290,10 @@ def main():
                 body_lines = lines[:-1] if cta_voice and lines else lines
                 body_text = " ".join(s["texte"].strip() for s in script["scenes"][:-1]) if cta_voice else text
                 if lines:
-                    synthesize_dialogue(client, body_lines, voices, wav_path, tone)
+                    if args.par_replique:
+                        synthesize_lines(client, body_lines, voices, wav_path, tone)
+                    else:
+                        synthesize_dialogue(client, body_lines, voices, wav_path, tone)
                 else:
                     synthesize(client, body_text, voice, wav_path, tone)
                 if cta_voice:
