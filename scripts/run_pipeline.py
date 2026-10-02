@@ -323,6 +323,15 @@ def main():
     if args.format and catalog.get_format(args.format).get("dessin") and args.capture_mode != "aucune":
         print(f"Format dessin anime '{args.format}' : --capture-mode aucune impose (aucune capture de l'app)")
         args.capture_mode = "aucune"
+    if args.plan and args.capture_mode != "aucune":  # un reel dessin anime dans le plan (console) : meme regle que --format
+        try:
+            dessin_plan = [it.get("format") for it in json.loads(args.plan)
+                           if isinstance(it, dict) and it.get("format") in {f["id"] for f in catalog.formats() if f.get("dessin")}]
+        except (ValueError, AttributeError):
+            dessin_plan = []  # plan illisible : 1_generate_script.py le signalera
+        if dessin_plan:
+            print(f"Format dessin anime '{dessin_plan[0]}' dans --plan : --capture-mode aucune impose (aucune capture de l'app)")
+            args.capture_mode = "aucune"
     if args.capture_mode != "aucune" and not args.saas_url:
         parser.error("--saas-url est obligatoire, sauf avec --capture-mode aucune")
 

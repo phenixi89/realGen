@@ -89,7 +89,8 @@ Aucune connexion à l'app ni compte de démo : le reel est fait uniquement de pl
 - **Formats** : seulement les formats conseil qui ont des cartes (`catalog.sans_captures_ok`), une démo
   produit sans image du produit ne montrerait rien ; `--format` d'un autre format est refusé. Le format
   **dessin animé** (`dessin_anime`, voir « Dessin animé ») n'existe que dans ce mode : demandé avec
-  `--format dessin_anime`, il y bascule tout seul ; il n'est jamais tiré au sort avec captures.
+  `--format dessin_anime` ou par un reel de `--plan` (console « Je compose mes reels »), il y bascule tout seul
+  pour tout le run (les autres reels du plan sont alors des conseils à cartes) ; il n'est jamais tiré au sort avec captures.
 - **Scénario** : Gemini écrit une carte animée pour chaque scène sauf la 1re et la dernière. Il n'y a pas de
   champ `feature`. La 1re scène porte `"illustration": "<id d'icône>"` : une icône dessinée à la main
   (`assets/anim/illustration.html`) sous l'accroche. La dernière scène est le CTA animé.
