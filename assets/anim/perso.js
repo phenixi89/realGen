@@ -14,7 +14,7 @@
 // l'etat EXACT a l'instant t, dans les deux sens -- rendu reproductible.
 //
 // Ajouter un personnage = ajouter une entree a PERSOS (couleurs, coiffure,
-// accessoire, barbe). Une couleur "var(--c1)" suit le theme du reel.
+// accessoire, visage doux/carre). Une couleur "var(--c1)" suit le theme du reel.
 // A charger apres gsap et common.js.
 (() => {
   const NS = "http://www.w3.org/2000/svg";
@@ -22,12 +22,12 @@
     femme: {
       nom: "Léa", peau: "#efc6a4", peauOmbre: "#d9a682", cheveux: "#3a2418", cheveuxReflet: "#5b3b27",
       veste: "#27324d", vesteOmbre: "#1b2338", interieur: "var(--c1)", levres: "#a3544b",
-      coiffure: "carre", accessoire: "collier", barbe: false,
+      coiffure: "carre", accessoire: "collier", visage: "doux", cils: true,
     },
     homme: {
-      nom: "Karim", peau: "#b87a52", peauOmbre: "#99623f", cheveux: "#1b130e", cheveuxReflet: "#30241b",
-      veste: "#a8825f", vesteOmbre: "#8a6847", interieur: "#dce6f2", levres: "#74402f",
-      coiffure: "courts", accessoire: "lunettes", barbe: true,
+      nom: "Karim", peau: "#e6b993", peauOmbre: "#cc9a75", cheveux: "#3d2c21", cheveuxReflet: "#5e4636",
+      veste: "#a8825f", vesteOmbre: "#8a6847", interieur: "#dce6f2", levres: "#a0604e",
+      coiffure: "raie", accessoire: "lunettes", visage: "carre", cils: false,
     },
   };
 
@@ -67,6 +67,11 @@
     return n;
   };
   const g = (parent, attrs = {}) => el("g", attrs, parent);
+  // Formes du visage : doux (menton fin, joues arrondies), carre (machoire marquee).
+  const VISAGES = {
+    doux: "M-64,-1030 Q-66,-962 -42,-934 Q-18,-910 0,-909 Q18,-910 42,-934 Q66,-962 64,-1030 Q62,-1102 0,-1103 Q-62,-1102 -64,-1030Z",
+    carre: "M-67,-1032 Q-68,-972 -54,-948 Q-30,-912 0,-909 Q30,-912 54,-948 Q68,-972 67,-1032 Q65,-1104 0,-1105 Q-65,-1104 -67,-1032Z",
+  };
 
   function dessiner(svg, id, x, y, echelle, cote) {
     const p = PERSOS[id] || PERSOS.femme;
@@ -90,18 +95,23 @@
     // Tete.
     const tete = g(corps);
     for (const s of [-1, 1]) el("ellipse", { cx: 68 * s, cy: -1008, rx: 10, ry: 17, fill: p.peauOmbre }, tete);
-    el("path", { d: "M-68,-1030 Q-70,-952 -42,-930 Q0,-904 42,-930 Q70,-952 68,-1030 Q66,-1102 0,-1102 Q-66,-1102 -68,-1030Z", fill: p.peau }, tete);
+    el("path", { d: VISAGES[p.visage] || VISAGES.doux, fill: p.peau }, tete);
     el("path", { d: `M${40 * cote},-1090 Q${74 * cote},-1040 ${60 * cote},-962 Q${50 * cote},-935 ${30 * cote},-922 Q${62 * cote},-990 ${40 * cote},-1090Z`, fill: p.peauOmbre, opacity: 0.45 }, tete);
-    if (p.barbe) el("path", { d: "M-67,-1000 Q-66,-950 -42,-930 Q0,-902 42,-930 Q66,-950 67,-1000 Q60,-962 32,-948 Q0,-942 -32,-948 Q-60,-962 -67,-1000Z", fill: p.cheveux, opacity: 0.88 }, tete);
-    el("path", { d: "M2,-1004 Q9,-984 -3,-979", fill: "none", stroke: p.peauOmbre, "stroke-width": 3.5, "stroke-linecap": "round" }, tete);
+    // Nez : arete + aile (trait fin), ombre sous le menton.
+    el("path", { d: "M3,-1010 Q10,-988 3,-980 M-7,-982 Q-3,-976 3,-980", fill: "none", stroke: p.peauOmbre, "stroke-width": 3.2, "stroke-linecap": "round" }, tete);
+    el("path", { d: "M-26,-922 Q0,-912 26,-922", fill: "none", stroke: p.peauOmbre, "stroke-width": 3, "stroke-linecap": "round", opacity: 0.6 }, tete);
 
-    // Yeux (points sombres + reflet ; ils suivent l'interlocuteur) et sourcils fins.
+    // Yeux en amande : iris sombre + reflet (il suit l'interlocuteur), paupiere
+    // superieure (avec un trait de cil vers l'exterieur si cils), sourcils fins.
     const yeux = g(tete), iris = [];
     for (const s of [-1, 1]) {
-      const i = g(yeux);
-      el("ellipse", { cx: 26 * s, cy: -1012, rx: 7, ry: 9, fill: "#1d1512" }, i);
-      el("circle", { cx: 26 * s + 2.5, cy: -1015, r: 2, fill: "#ffffff", opacity: 0.8 }, i);
+      const x = 26 * s, i = g(yeux);
+      el("ellipse", { cx: x, cy: -1011, rx: 6.5, ry: 7.5, fill: "#241914" }, i);
+      el("circle", { cx: x + 2.2, cy: -1013.5, r: 1.8, fill: "#ffffff", opacity: 0.85 }, i);
       iris.push(i);
+      el("path", { d: `M${x - 12},-1012 Q${x},-1024 ${x + 12},-1012`, fill: "none", stroke: "#2a1d18", "stroke-width": p.cils ? 4 : 3,
+        "stroke-linecap": "round" }, yeux);
+      if (p.cils) el("path", { d: `M${x + 11 * s},-1013 L${x + 15 * s},-1017`, fill: "none", stroke: "#2a1d18", "stroke-width": 3, "stroke-linecap": "round" }, yeux);
     }
     gsap.set(yeux, { svgOrigin: "0 -1012" });
     const sourcils = [-1, 1].map((s) => {
@@ -111,8 +121,9 @@
       return sc;
     });
     if (p.accessoire === "lunettes") {
-      for (const s of [-1, 1]) el("rect", { x: 26 * s - 19, y: -1026, width: 38, height: 27, rx: 8, fill: "rgba(255,255,255,.08)", stroke: "#1f1c1a", "stroke-width": 3.5 }, tete);
-      el("path", { d: "M-7,-1014 Q0,-1019 7,-1014", fill: "none", stroke: "#1f1c1a", "stroke-width": 3.5 }, tete);
+      // Monture fine couleur ecaille.
+      for (const s of [-1, 1]) el("rect", { x: 26 * s - 18, y: -1025, width: 36, height: 25, rx: 9, fill: "rgba(255,255,255,.06)", stroke: "#6b4a32", "stroke-width": 2.6 }, tete);
+      el("path", { d: "M-8,-1014 Q0,-1018 8,-1014", fill: "none", stroke: "#6b4a32", "stroke-width": 2.6 }, tete);
     }
     const bouches = {};
     for (const [k, b] of Object.entries(BOUCHES)) {
@@ -125,8 +136,10 @@
       el("path", { d: "M-74,-1026 Q-80,-1112 0,-1110 Q76,-1108 74,-1018 Q56,-1076 -6,-1082 Q-44,-1062 -74,-1026Z", fill: p.cheveux }, tete);
       el("path", { d: "M-30,-1092 Q20,-1100 54,-1080", fill: "none", stroke: p.cheveuxReflet, "stroke-width": 7, "stroke-linecap": "round" }, tete);
     } else {
-      el("path", { d: "M-70,-1036 Q-74,-1114 0,-1112 Q74,-1114 70,-1036 Q64,-1080 22,-1084 Q-30,-1094 -70,-1036Z", fill: p.cheveux }, tete);
-      el("path", { d: "M-34,-1098 Q10,-1106 46,-1092", fill: "none", stroke: p.cheveuxReflet, "stroke-width": 6, "stroke-linecap": "round" }, tete);
+      // Courts, raie sur le cote, un peu de volume sur le dessus.
+      el("path", { d: "M-70,-1026 Q-80,-1114 -8,-1122 Q76,-1124 73,-1032 Q68,-1076 36,-1086 Q4,-1094 -22,-1080 Q-52,-1068 -70,-1026Z", fill: p.cheveux }, tete);
+      el("path", { d: "M-24,-1116 Q-31,-1098 -26,-1080", fill: "none", stroke: p.cheveuxReflet, "stroke-width": 3, "stroke-linecap": "round" }, tete);
+      el("path", { d: "M-8,-1110 Q30,-1116 56,-1094", fill: "none", stroke: p.cheveuxReflet, "stroke-width": 6, "stroke-linecap": "round" }, tete);
     }
     gsap.set(tete, { svgOrigin: "0 -935" });
 

@@ -197,9 +197,9 @@ récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
 Deux personnages en **illustration éditoriale**, dessinés en SVG et animés par GSAP
 (`assets/anim/perso.js`) : **Léa** (`femme`, carré brun, veste bleu nuit sur un haut à la couleur
-d'accent du thème, collier fin) et **Karim** (`homme`, veste camel, chemise claire, barbe courte,
-lunettes fines). Proportions réalistes, palette sobre, aplats sans contour avec ombres douces, visage
-minimal (yeux en points, traits fins). Ils sont assis à mi-corps derrière un bureau d'entretien (avec une
+d'accent du thème, collier fin) et **Karim** (`homme`, veste camel, chemise claire, cheveux courts
+châtain foncé avec raie sur le côté, lunettes fines couleur écaille). Proportions réalistes, palette sobre, aplats sans contour avec ombres douces, visage
+fin (yeux en amande avec paupière, nez dessiné, visage doux pour Léa, mâchoire marquée pour Karim). Ils sont assis à mi-corps derrière un bureau d'entretien (avec une
 feuille de CV et un stylo), avant-bras posés dessus. Chacun a 6 expressions (`neutre`, `content`,
 `choc`, `doute`, `triste`, `agace` : sourcils, yeux et bouche) et 4 gestes, avec des bras articulés au
 coude : `explique` (mains levées devant soi), `montre` (vers l'autre personnage), `hausse` (épaules,
@@ -219,8 +219,8 @@ python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&replique
 
 Pas encore branché au générateur de scénarios (ni bouche synchronisée sur la voix off, ni effets
 sonores) : à utiliser en rendu manuel pour tester le rendu. Ajouter un personnage = ajouter une entrée
-à `PERSOS` dans `perso.js` (couleurs, coiffure `carre`/`courts`, accessoire `collier`/`lunettes`,
-`barbe` ; une couleur `var(--c1)` suit le thème).
+à `PERSOS` dans `perso.js` (couleurs, coiffure `carre`/`raie`, accessoire `collier`/`lunettes`,
+`visage` `doux`/`carre`, `cils` ; une couleur `var(--c1)` suit le thème).
 
 ## Ligne éditoriale : le catalogue (`catalog/`)
 
