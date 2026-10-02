@@ -1,0 +1,105 @@
+<!doctype html>
+<!--
+  Scene "dialogue" : deux personnages colores (assets/anim/perso.js) se parlent,
+  une bulle par replique au-dessus de celui qui parle. Pendant sa replique, le
+  personnage bouge la bouche et sautille ; l'autre le regarde. Expression et
+  geste au choix par replique.
+  Parametres :
+    repliques  "g:texte {expr,geste}|d:texte|..." -- g = personnage de gauche,
+               d = de droite ; {expr,geste} optionnel en fin de replique
+               (expr : neutre, content, choc, doute, triste, agace ;
+                geste : salut, montre, hausse) ; 6 repliques max ;
+    gauche / droite  id du personnage (perso.js PERSOS : femme, homme) ;
+    surtitre, bg + theme.
+  Duree : chaque replique dure 0,9 s + 0,28 s par mot (entre 1,4 et 4 s).
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card_base.css">
+<style>
+  #kwrap{position:absolute;top:220px;width:100%;text-align:center}
+  #scene{position:absolute;inset:0}
+  .bulle{position:absolute;bottom:1010px;max-width:880px;padding:34px 44px;border-radius:48px;background:#ffffff;color:#1a1030;
+    font-weight:700;font-size:66px;line-height:1.18;border:8px solid var(--bc);box-shadow:0 22px 60px rgba(0,0,0,.35)}
+  .bulle.g{left:50px;transform-origin:220px 120%}
+  .bulle.d{right:50px;transform-origin:calc(100% - 220px) 120%}
+  .bulle::after{content:"";position:absolute;bottom:-46px;width:56px;height:56px;background:#ffffff;
+    border-right:8px solid var(--bc);border-bottom:8px solid var(--bc);transform:rotate(45deg) skew(12deg,12deg)}
+  .bulle.g::after{left:190px;bottom:-34px}
+  .bulle.d::after{right:190px;bottom:-34px}
+  .nom{display:block;font-size:38px;font-weight:800;color:var(--bc);margin-bottom:6px;letter-spacing:.03em}
+</style></head><body>
+<div id="bg"></div><div id="grad"></div><div id="grid"></div>
+<div id="kwrap"><div class="kicker" id="kicker"></div></div>
+<svg id="scene" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div id="bulles"></div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script src="perso.js"></script>
+<script>
+  const FIRST_AT = 0.7, GAP = 0.3;
+  const lignes = param("repliques", "g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}|g:Normal, ton CV fait trois pages ! {choc,montre}|d:Ah… je coupe tout alors ? {doute}|g:Garde l'essentiel : une page. {content,salut}")
+    .split("|").map((s) => {
+      const i = s.indexOf(":"), qui = s.slice(0, i).trim() === "d" ? "d" : "g";
+      let texte = s.slice(i + 1).trim(), expr = "", geste = "";
+      const m = texte.match(/\s*\{([^}]*)\}\s*$/);
+      if (m) { [expr = "", geste = ""] = m[1].split(",").map((x) => x.trim()); texte = texte.slice(0, m.index).trim(); }
+      return { qui, texte: frTypo(texte), expr, geste };
+    }).filter((l) => l.texte).slice(0, 6);
+  // Cadence (identique dans sound_design.py si la scene y est sonorisee un jour).
+  const dureeLigne = (l) => Math.min(4, Math.max(1.4, 0.9 + 0.28 * l.texte.split(/\s+/).length));
+  let t = FIRST_AT;
+  for (const l of lignes) { l.de = t; l.a = t + dureeLigne(l); t = l.a + GAP; }
+  const FIN = (lignes.at(-1)?.a || FIRST_AT) + 0.9;
+
+  const kicker = param("surtitre", ""); document.getElementById("kicker").textContent = kicker;
+  if (!kicker) document.getElementById("kicker").style.display = "none";
+  const bg = param("bg", ""); let bgReady = null;
+  if (bg) { document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
+
+  const svg = document.getElementById("scene");
+  const ids = { g: param("gauche", "femme"), d: param("droite", "homme") };
+  const persos = {
+    g: Perso.dessiner(svg, ids.g, 262, 1990, 1.25, 1),
+    d: Perso.dessiner(svg, ids.d, 818, 1990, 1.25, -1),
+  };
+  const box = document.getElementById("bulles");
+  const bulles = lignes.map((l) => {
+    const b = document.createElement("div"), p = Perso.PERSOS[ids[l.qui]] || Perso.PERSOS.femme;
+    b.className = `bulle ${l.qui}`;
+    b.style.setProperty("--bc", p.haut);
+    b.innerHTML = '<span class="nom"></span><span class="t"></span>';
+    b.querySelector(".nom").textContent = p.nom;
+    b.querySelector(".t").textContent = l.texte;
+    box.appendChild(b);
+    return b;
+  });
+
+  FONTS_READY.then(() => {
+    const tl = gsap.timeline({ paused: true })
+      .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
+      .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2.2)" }, 0.05)
+      .from(persos.g.root, { y: 500, duration: 0.55, ease: "back.out(1.2)" }, 0)
+      .from(persos.d.root, { y: 500, duration: 0.55, ease: "back.out(1.2)" }, 0.12);
+    gsap.set(bulles, { opacity: 0, scale: 0.4 });
+    for (const k of ["g", "d"]) {
+      Perso.expression(tl, persos[k], "neutre", 0);
+      Perso.regarder(tl, persos[k], 7 * persos[k].cote, 0);
+      Perso.vie(tl, persos[k], FIN, k === "g" ? 0 : 0.9);
+    }
+    lignes.forEach((l, i) => {
+      const lui = persos[l.qui], autre = persos[l.qui === "g" ? "d" : "g"];
+      if (l.expr) Perso.expression(tl, lui, l.expr, l.de - 0.1);
+      if (autre.expr !== "neutre") Perso.expression(tl, autre, "neutre", l.de);  // celui qui ecoute se detend
+      if (l.geste) Perso.geste(tl, lui, l.geste, l.de + 0.1);
+      Perso.regarder(tl, lui, 0, l.de);                 // celui qui parle regarde la camera
+      Perso.regarder(tl, autre, 7 * autre.cote, l.de);  // l'autre le regarde
+      Perso.parler(tl, lui, l.de + 0.05, l.a - 0.1);
+      tl.to(bulles[i], { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, l.de);
+      if (i < lignes.length - 1) tl.to(bulles[i], { opacity: 0, scale: 0.85, duration: 0.15 }, l.a + GAP - 0.05);
+    });
+    addAmbient(tl, 8);
+    expose(tl, bgReady);
+    window.DURATION = FIN;
+  });
+</script></body></html>

@@ -147,7 +147,8 @@ Paramètres des gabarits : `points_corriger` (`lines` séparées par `|`, 5 au p
 `label`, `fin`, `cta`), `score_ats` (`from`, `to`, `label`, `lines` séparées par `|`, `cta`),
 `illustration` (`icone`, `titre` optionnel),
 `cta` (`brand`, `title`, `sub`, `button`, `bg`), `meme` (`haut`, `bas`, `icone`), `carrousel` (`kind` =
-`couverture`/`point`/`fin`, `n`, `total`, `titre`, `texte`, `bouton`), `couverture` (`titre`, `surtitre`, `bg`).
+`couverture`/`point`/`fin`, `n`, `total`, `titre`, `texte`, `bouton`), `couverture` (`titre`, `surtitre`, `bg`),
+`dialogue` (`repliques`, `gauche`, `droite`, `surtitre`, `bg` : voir « Personnages »).
 Image fixe (état final du gabarit, taille libre) : `--out fichier.png --size 1080x1350`. Pour prévisualiser un gabarit, ouvre simplement le
 fichier `.html` dans un navigateur (lecture en boucle) ; pour le rendre à part :
 
@@ -191,6 +192,29 @@ python scripts/render_js_anim.py --spec "schema?titre=Le tri ATS&etapes=cv:Ton C
 
 `highlight` a besoin de la position des cartes, enregistrée dans `captures.json` par les captures
 récentes : sur des captures plus anciennes, relance avec `--from-step video`.
+
+### Personnages (`perso.js`, gabarit `dialogue`) — prototype
+
+Deux personnages colorés, dessinés en SVG et animés par GSAP (`assets/anim/perso.js`) : **Léa**
+(`femme`, haut rose, cheveux longs, boucles d'oreilles) et **Karim** (`homme`, haut turquoise, lunettes
+orange). Style plat avec ombres douces et contours teintés, cadrés en plan taille (buste, bras, tête).
+Chacun a 6 expressions (`neutre`, `content`, `choc`, `doute`, `triste`, `agace` : sourcils, yeux et
+bouche), 3 gestes (`salut`, `montre` vers l'autre personnage, `hausse` des épaules), bouge la bouche
+pendant sa réplique, respire, cligne des yeux et regarde celui qui parle. Tout passe par la timeline :
+le rendu est déterministe, comme les autres gabarits.
+
+Le gabarit `dialogue` les fait se parler, une bulle par réplique au-dessus de celui qui parle :
+`repliques` = `g:texte {expr,geste}|d:texte|…` (`g` = gauche, `d` = droite, `{expr,geste}` optionnel,
+6 répliques au plus), `gauche` / `droite` (id du personnage, `femme` et `homme` par défaut), `surtitre`,
+`bg` + thème. Chaque réplique dure 0,9 s + 0,28 s par mot (entre 1,4 et 4 s).
+
+```bash
+python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&repliques=g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}" --duration 7 --out /tmp/dialogue.mp4
+```
+
+Pas encore branché au générateur de scénarios (ni bouche synchronisée sur la voix off, ni effets
+sonores) : à utiliser en rendu manuel pour tester le rendu. Ajouter un personnage = ajouter une entrée
+à `PERSOS` dans `perso.js` (couleurs, coiffure `longs`/`courts`, accessoire `boucles`/`lunettes`).
 
 ## Ligne éditoriale : le catalogue (`catalog/`)
 
