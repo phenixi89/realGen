@@ -39,7 +39,7 @@
     ],
     "actions": {
       "parler": "bulle + bouche ; champs texte, expr, geste (optionnels), duree (auto : 0,9 s + 0,28 s par mot)",
-      "expression": "champ expr",
+      "expression": "champ expr ; geste optionnel joué en même temps",
       "geste": "champ geste",
       "marcher": "champ vers (x en px) ; regarde dans le sens de la marche",
       "entrer": "arrive hors champ depuis (gauche/droite) jusqu'a sa place (ou vers)",

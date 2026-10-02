@@ -139,6 +139,14 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
                 errors.append(f"scene {n} : '{o['id']}' sur '{o['sur']}' : objet ou ancre inconnus (declarer le support avant)")
                 continue
         o = dict(o)
+        if t["categorie"] == "objet" and not o.get("sur") and o.get("y") is None:
+            # Objet a main (tasse, ordinateur...) pose par terre : sur une table de la scene, sinon retire.
+            table = next((i for i, ti in ids.items() if "dessus" in (ti.get("ancres") or [])), None)
+            errors.append(f"scene {n} : '{o['id']}' pose par terre : mets-le sur une table (\"sur\": \"table.dessus\") "
+                          f"ou dans une main (\"sur\": \"lea.main_avant\")")
+            if not table:
+                continue
+            o = {k: v for k, v in o.items() if k not in ("x", "regard")} | {"sur": f"{table}.dessus"}
         if t.get("mural") and o.get("y") is None and not o.get("sur"):
             o["y"] = MURAL_Y  # sinon pose au sol
         if o.get("x") is not None and not o.get("regard") and not o.get("sur") \

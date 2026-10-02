@@ -126,7 +126,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     if cards:
         for i, s in enumerate(scenes):
             if s.get("dessin"):
-                scene_anims[i] = dessin_spec(s, t_scenes[i], under_hook=i == 0 and show_hook)
+                scene_anims[i] = dessin_spec(s, t_scenes[i], under_hook=i == 0 and show_hook, first=i == 0)
     if sans_captures:
         for i, t in enumerate(t_scenes):
             if i not in scene_anims:
@@ -196,7 +196,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     return video_args, assemble_args, sfx_cues
 
 
-def dessin_spec(scene: dict, timing: dict, under_hook: bool = False) -> str:
+def dessin_spec(scene: dict, timing: dict, under_hook: bool = False, first: bool = False) -> str:
     """
     Scene dessinee du scenario -> "scene?scene=<json>" (assets/anim/scene.html) : chaque
     replique ("parler") est placee a l'instant ou la voix la dit et dure ce qu'elle dure
@@ -211,6 +211,8 @@ def dessin_spec(scene: dict, timing: dict, under_hook: bool = False) -> str:
         a["duree"] = round(max(r["end"] - r["start"], 0.6), 2)
     sc["duree"] = round(timing["end"] - start, 2)
     sc.update(DESSIN_SOUS_ACCROCHE if under_hook else DESSIN_CADRAGE)
+    if first:
+        sc["dessine"] = False  # 1re image du reel complete (c'est elle qui retient ou fait scroller)
     return "scene?" + urlencode({"scene": json.dumps(sc, ensure_ascii=False, separators=(",", ":"))})
 
 

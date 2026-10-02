@@ -257,6 +257,8 @@ Objet : `x` (px, 0-1080) au sol, ou `sur` (`id.ancre` : posé sur / tenu par un 
 `y` (px) pour un objet mural ; `regard` (`gauche`/`droite`) ; `echelle` (multiplie celle de la scène,
 1,1 par défaut) ; `assis` (personnage : id d'une chaise). Actions jouées dans l'ordre : à la suite de la précédente, en même temps avec
 `"avec": true`, ou à `t` secondes du début de la scène ; `{"action": "pause", "duree": 1}` avance le temps.
+`expression` peut porter un `geste`, joué en même temps. Scène `"dessine": false` : déjà dessinée à la
+1re image (pas de tracé progressif).
 Une réplique dure 0,9 s + 0,28 s par mot (entre 1,4 et 4 s) ; la première action démarre après le dessin
 du décor (~1,2 s). `catalog.validate_scene_dessin(scene)` vérifie une scène contre `catalog/dessins.json`
 (fond, types, ancres, actions, expressions) ; `python scripts/catalog.py` vérifie que le catalogue et le
@@ -291,7 +293,9 @@ face à face, objets posés ou tenus, personnage assis) :
   expression ou geste inconnus sont retirés (le rendu ne casse jamais) et signalés à Gemini, qui corrige
   (3 essais). Corrigé sans le relancer : geste écrit en expression (et l'inverse), action `expr` →
   `expression` ; personnage, animal ou chaise sans `regard` tourné vers le centre ; objet mural sans `y`
-  accroché à 700 px ; `boire` / `telephoner` avec un `objet` pas encore en main → `tenir` ajouté avant.
+  accroché à 700 px ; `boire` / `telephoner` avec un `objet` pas encore en main → `tenir` ajouté avant ;
+  objet à main (tasse, ordinateur…) posé par terre → posé sur la table de la scène (sinon retiré),
+  et signalé.
   Le montage repasse chaque scène par ce contrôle (corrections récentes appliquées aux anciens scénarios). Dans `scripts.json`, une scène porte `repliques` (`[{qui, texte}]`), `dessin` (la scène
   jouable) et `texte` (les répliques bout à bout) ; le reel porte `dessin: true` et `voix_personnages`.
 - **Voix** : toutes les répliques en **un seul appel** Gemini TTS multi-locuteurs, une voix par
@@ -306,7 +310,11 @@ face à face, objets posés ou tenus, personnage assis) :
   --no-captions`) ; la 1re scène est cadrée plus large et plus bas (`DESSIN_SOUS_ACCROCHE`) pour que
   l'accroche affichée en grand en haut ne cache pas la 1re bulle, les autres un peu plus petites qu'en
   rendu libre (`DESSIN_CADRAGE`) pour qu'une bulle de 3 lignes reste sous le titre de scène. Une bulle
-  s'efface au plus tard quand la suivante s'ouvre.
+  s'efface au plus tard quand la suivante s'ouvre. La 1re scène est complète dès la 1re image
+  (`"dessine": false`) : c'est l'image qui retient ou fait scroller ; les suivantes se dessinent.
+- **Durée** : le dialogue à deux voix se dit à ~2,9 mots/s (mesuré) ; budget de mots calculé à 2,8
+  mots/s (`DIALOGUE_WORDS_PER_SECOND` : 25 s ≈ 70 mots, de 60 à 78), rappelé à Gemini en nombre de
+  répliques de 6 à 8 mots.
 
 ```bash
 python scripts/run_pipeline.py --n 1 --format dessin_anime --duration 25

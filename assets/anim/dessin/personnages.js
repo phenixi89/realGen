@@ -407,7 +407,7 @@
       categorie: "personnage", hauteur: 1030, nom: MODELES[type].nom, ancres: ["main_avant", "main_arriere", "tete"],
       dessiner, vie, poseInitiale, expressions: Object.keys(EXPR),
       gestes: ["salut", "montre", "hausse", "explique", "bras_croises", "tete_mains", "idee", "penser"],
-      actions: { parler, expression: (tl, it, a) => expression(tl, it, a.expr, a.t), geste: (tl, it, a) => geste(tl, it, a.geste, a.t, a.duree),
+      actions: { parler, expression: (tl, it, a) => { expression(tl, it, a.expr, a.t); return a.geste ? geste(tl, it, a.geste, a.t, a.duree) : 0; }, geste: (tl, it, a) => geste(tl, it, a.geste, a.t, a.duree),
         marcher, entrer, sortir, regarder, tenir, poser, boire, telephoner, sauter, s_asseoir: sAsseoir, se_lever: seLever,
         bras_croises: posture("bras_croises"), tete_mains: posture("tete_mains"), idee: posture("idee"), penser: posture("penser") },
     });

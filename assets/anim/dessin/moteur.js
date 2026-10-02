@@ -23,6 +23,7 @@
 // Actions : jouees dans l'ordre ; "t" (s, depuis le debut de la scene) sinon a
 // la suite de la precedente, ou en meme temps qu'elle avec "avec": true.
 // "pause" (sans "qui") avance le temps de "duree". "parler" affiche une bulle.
+// Scene : "dessine": false = deja dessinee a la 1re image (pas de trace progressif).
 (() => {
   const { g, el, pinceau, hash, bouillonner, apparition, types } = Dessin;
   const DESSIN = 1.0, PREMIERE = 1.25, ECART = 0.25, FONDU = 0.35;
@@ -182,8 +183,11 @@
       for (const c of Object.values(o.copies)) if (o.type.vie) o.type.vie(tl, c.it, S, S + duree, (k++ % 3) * 0.45);
     if (fondType.vie) fondType.vie(tl, fond, S, S + duree);
     racines.forEach((r, i) => bouillonner(tl, r, S, S + duree, (i % 3) * 0.05));
-    apparition(tl, calque, S + (n ? 0.05 : 0), DESSIN);
-    Dessin.son("feutre", S + (n ? 0.05 : 0), { duree: DESSIN * 0.8 });
+    // "dessine": false -> scene complete des la 1re image (1re image d'un reel : elle decide du scroll).
+    if (sc.dessine !== false) {
+      apparition(tl, calque, S + (n ? 0.05 : 0), DESSIN);
+      Dessin.son("feutre", S + (n ? 0.05 : 0), { duree: DESSIN * 0.8 });
+    }
     if (!dom.derniere) tl.to(calque, { opacity: 0, duration: FONDU }, S + duree - 0.05);
 
     // Titre de la scene (manuscrit, en haut).

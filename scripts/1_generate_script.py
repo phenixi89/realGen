@@ -101,6 +101,9 @@ FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
 # de texte -- c'est le texte qui fixe la duree reelle du reel, pas l'inverse.
 WORDS_PER_SECOND = 2.6
 FAST_WORDS_PER_SECOND = 3.4
+# Dessin anime (dialogue TTS a deux voix, repliques courtes) : ~2,9 mots/s mesures sur les
+# premiers reels ; un peu en dessous pour garder de l'air entre les repliques.
+DIALOGUE_WORDS_PER_SECOND = 2.8
 MAX_ATTEMPTS = 3
 ACCROCHE_MAX_WORDS = 8
 ANIM_KEYS = ("anim", "overlay")
@@ -122,8 +125,8 @@ def words_per_second(tone: str = "") -> float:
     return FAST_WORDS_PER_SECOND if re.search(r"rapide|haletant", tone or "", re.I) else WORDS_PER_SECOND
 
 
-def word_budget(duration: int, tone: str = "") -> tuple[int, int, int]:
-    target = round(duration * words_per_second(tone))
+def word_budget(duration: int, tone: str = "", dialogue: bool = False) -> tuple[int, int, int]:
+    target = round(duration * (DIALOGUE_WORDS_PER_SECOND if dialogue else words_per_second(tone)))
     return target, round(target * 0.85), round(target * 1.12)
 
 
@@ -311,7 +314,7 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
     fmt, hook = plan["format"], plan["hook"]
     humour = plan.get("registre") == "humour"
     catalog_features = "\n".join(f'- "{fid}" : {f.description}' for fid, f in available_features().items())
-    target, lo_w, hi_w = word_budget(duration, catalog.tone_for(fmt, plan.get("registre")))
+    target, lo_w, hi_w = word_budget(duration, catalog.tone_for(fmt, plan.get("registre")), bool(fmt.get("dessin")))
     lo_s, hi_s = scene_bounds(duration)
     cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
     structure = fmt["structure"].replace("{episode}", str(plan["episode"] or 1))
@@ -412,6 +415,10 @@ Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
     if dessin:
         lo_s, hi_s = dessin_bounds(duration)
         cards_rule = proof_rule = annotation_rule = ""
+        # Volume de texte rendu concret : le dialogue deborde sinon (93 mots pour 73 au plus, run 57).
+        cards_rule = (f"LONGUEUR : {lo_w} à {hi_w} mots EN TOUT, CTA compris (environ {target}) : par exemple "
+                      f"{max(6, round(target / 7))} à {max(7, round(target / 6))} répliques de 6 à 8 mots. "
+                      "Compte tes mots avant de répondre : un texte trop long fait dépasser la durée du reel.")
     if dessin:
         screen_rule = dessin_rules() + """Tu peux citer OpusCV à la fin comme l'outil qui aide, sans décrire d'écran que le spectateur ne voit pas.
 """
@@ -661,7 +668,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
     if dessin:
         scenes, problems = dessin_scenes(data)
         return scenes, problems + common_problems(scenes, data, duration, tone, recent_hooks, None,
-                                                  dessin_bounds(duration))
+                                                  dessin_bounds(duration), dialogue=True)
     problems = []
     scenes = []
     for raw in data.get("scenes") or []:
@@ -753,7 +760,8 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
 
 
 def common_problems(scenes: list[dict], data: dict, duration: int, tone: str, recent_hooks: list[str] | None,
-                    forced: list[dict] | None, bounds: tuple[int, int] | None = None) -> list[str]:
+                    forced: list[dict] | None, bounds: tuple[int, int] | None = None,
+                    dialogue: bool = False) -> list[str]:
     """Controles communs a tous les formats : phrases bannies, volume de texte, accents, accroche."""
     problems = []
     banned = banned_phrases(" ".join(s["texte"] for s in scenes))
@@ -761,7 +769,7 @@ def common_problems(scenes: list[dict], data: dict, duration: int, tone: str, re
         problems.append("formulations trop génériques à remplacer par du concret : " + ", ".join(banned))
 
     words = sum(len(s["texte"].split()) for s in scenes)
-    _, lo_w, hi_w = word_budget(duration, tone)
+    _, lo_w, hi_w = word_budget(duration, tone, dialogue)
     lo_s, hi_s = bounds or scene_bounds(duration)
     if not scenes:
         problems.append("aucune scène exploitable")
