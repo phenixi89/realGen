@@ -1,0 +1,42 @@
+{
+  "_doc": "Dessin anime 'trait blanc' (assets/anim/scene.html, moteur assets/anim/dessin/). Une scene = un fond + des objets places + des actions jouees dans l'ordre ; plusieurs scenes s'enchainent. fonds : decors (id = fond de la scene). objets : tout ce qui se place dans une scene -- personnage, animal, objet (se tient, se pose), decor (meuble, element mural) ; ancres = points ou poser / tenir un autre objet ('sur': 'id.ancre') ; actions = actions propres au type ; mural = place avec 'y' (px, centre de l'objet) au lieu du sol. personnage : expressions, gestes et actions communes a tous les personnages. Ajouter un type = l'ecrire dans assets/anim/dessin/*.js (Dessin.enregistrer) puis le declarer ici ; python scripts/catalog.py verifie que les deux correspondent.",
+  "fonds": [
+    {"id": "vide", "description": "Sol a main levee, cailloux, herbe, une petite fleur rose."},
+    {"id": "bureau", "description": "Mur, sol en perspective, fenetre (ciel bleute), etagere de livres colores."},
+    {"id": "cafe", "description": "Suspensions a la lumiere chaude, ardoise du menu, carrelage."},
+    {"id": "salle_attente", "description": "Porte des RH (plaque orange), affiche « On recrute ! », chaises au fond, horloge qui tourne."}
+  ],
+  "personnage": {
+    "expressions": ["neutre", "content", "choc", "doute", "triste", "agace"],
+    "gestes": ["salut", "montre", "hausse", "explique"],
+    "actions": {
+      "parler": "bulle + bouche ; champs texte, expr, geste (optionnels), duree (auto : 0,9 s + 0,28 s par mot)",
+      "expression": "champ expr",
+      "geste": "champ geste",
+      "marcher": "champ vers (x en px) ; regarde dans le sens de la marche",
+      "entrer": "arrive hors champ depuis (gauche/droite) jusqu'a sa place (ou vers)",
+      "sortir": "part hors champ vers (gauche/droite)",
+      "regarder": "champ vers : gauche, droite ou id d'un objet",
+      "tenir": "champ objet : le prend dans la main avant",
+      "poser": "champ objet (defaut : celui tenu), sur (id.ancre ; defaut : sa place d'origine)",
+      "boire": "porte la tasse tenue a la bouche",
+      "telephoner": "porte le telephone tenu a l'oreille",
+      "sauter": "petits sauts de joie ; champ fois (defaut 2)"
+    }
+  },
+  "objets": [
+    {"id": "lea", "categorie": "personnage", "description": "Léa : queue de cheval (chouchou corail), veste cintrée, jupe.", "ancres": ["main_avant", "main_arriere", "tete"]},
+    {"id": "karim", "categorie": "personnage", "description": "Karim : cheveux courts avec un épi, chemise, cravate bleue, pantalon.", "ancres": ["main_avant", "main_arriere", "tete"]},
+    {"id": "chat", "categorie": "animal", "description": "Chat roux de profil, queue qui bouge.", "actions": ["marcher", "traverser", "miauler", "dormir"]},
+    {"id": "tasse", "categorie": "objet", "description": "Tasse orange qui fume (se tient, se pose)."},
+    {"id": "telephone", "categorie": "objet", "description": "Téléphone à l'écran bleuté.", "actions": ["vibrer"]},
+    {"id": "cv", "categorie": "objet", "description": "Feuille de CV (photo, lignes)."},
+    {"id": "ordinateur", "categorie": "objet", "description": "Ordinateur portable ; des lignes apparaissent à l'écran.", "actions": ["taper"]},
+    {"id": "table", "categorie": "decor", "description": "Bureau avec tiroir.", "ancres": ["dessus", "dessus_gauche", "dessus_droite"]},
+    {"id": "table_ronde", "categorie": "decor", "description": "Table ronde de café.", "ancres": ["dessus", "dessus_gauche", "dessus_droite"]},
+    {"id": "chaise", "categorie": "decor", "description": "Chaise de profil.", "ancres": ["assise"]},
+    {"id": "plante", "categorie": "decor", "description": "Plante verte en pot terracotta, feuilles qui bougent."},
+    {"id": "horloge", "categorie": "decor", "mural": true, "description": "Horloge murale, aiguilles qui tournent."},
+    {"id": "cadre", "categorie": "decor", "mural": true, "description": "Diplôme encadré (sceau doré)."}
+  ]
+}

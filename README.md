@@ -148,7 +148,8 @@ Paramètres des gabarits : `points_corriger` (`lines` séparées par `|`, 5 au p
 `illustration` (`icone`, `titre` optionnel),
 `cta` (`brand`, `title`, `sub`, `button`, `bg`), `meme` (`haut`, `bas`, `icone`), `carrousel` (`kind` =
 `couverture`/`point`/`fin`, `n`, `total`, `titre`, `texte`, `bouton`), `couverture` (`titre`, `surtitre`, `bg`),
-`dialogue` (`style`, `repliques`, `gauche`, `droite`, `surtitre`, `bg` : voir « Personnages »).
+`dialogue` (`style`, `repliques`, `gauche`, `droite`, `fond`, `surtitre`, `bg` : voir « Gabarit `dialogue` »), `scene` (`scene` :
+JSON d'une ou plusieurs scènes, voir « Dessin animé »).
 Image fixe (état final du gabarit, taille libre) : `--out fichier.png --size 1080x1350`. Pour prévisualiser un gabarit, ouvre simplement le
 fichier `.html` dans un navigateur (lecture en boucle) ; pour le rendre à part :
 
@@ -193,52 +194,94 @@ python scripts/render_js_anim.py --spec "schema?titre=Le tri ATS&etapes=cv:Ton C
 `highlight` a besoin de la position des cartes, enregistrée dans `captures.json` par les captures
 récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
-### Personnages (`perso_trait.js` / `perso.js`, gabarit `dialogue`) — prototype
+### Dessin animé : scènes, fonds et objets (`scene`, `assets/anim/dessin/`) — prototype
 
-Deux styles au choix (`style` du gabarit `dialogue`) :
+Moteur de dessin animé **pensé par objet, pas par scène** : tout ce qui apparaît est un *objet*
+(personnage, animal, objet, élément de décor, fond), et une **scène = un fond + des objets placés + des
+actions**. Plusieurs scènes s'enchaînent dans un même rendu (fondu, puis le nouveau décor se dessine).
 
-**`trait` (par défaut)** — `assets/anim/perso_trait.js` : dessin à la main blanc sur fond noir, dans
-l'esprit des petites histoires dessinées qui tournent sur TikTok (sans en reprendre les personnages).
-Chaque trait est un trait principal assuré doublé de fines passes d'esquisse ; les cercles (têtes, yeux)
-ondulent doucement et finissent par un léger dépassement, comme un coup de crayon. Deux variantes du dessin
-alternent environ 6 fois par seconde (traits qui « bouillonnent ») et tout se dessine à l'apparition.
-Personnages **de profil** : grosse tête ronde, œil blanc plein avec la pupille noire à l'avant et un reflet,
-petit nez, petite bouche souriante qui enchaîne trois ouvertures quand il parle, sourcil seulement quand
-l'expression le demande ; corps de profil, bras le long du corps (mains avec doigts), jambes fines, pieds
-ovales. **Léa** : queue de cheval haute qui se balance, ligne de cheveux en S, frange, cil, veste cintrée et
-jupe ; **Karim** : cheveux courts avec un épi, chemise, cravate, pantalon. Sol à main levée avec cailloux,
-touffes d'herbe et ombre hachurée sous chaque personnage. **Effets manga** : yeux en « ^ » et joues
-hachurées quand il est `content`, pupille minuscule + traits d'effroi + « ! » sous le `choc`, goutte de
-sueur qui glisse (`doute`, `triste`), veine en croix qui pulse sur le front (`agace`). Bulles noires au
-contour irrégulier, texte et surtitre manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe).
+Style « trait blanc » sur fond noir, dans l'esprit des petites histoires dessinées qui tournent sur TikTok
+(sans en reprendre les personnages) : trait principal assuré doublé de fines passes d'esquisse ; cercles qui
+ondulent doucement et finissent par un léger dépassement ; deux variantes du dessin alternent environ
+6 fois par seconde (traits qui « bouillonnent ») ; tout se dessine à l'apparition ; **touches de couleur
+légères** (lavis transparent un peu décalé du trait, posé après le dessin, comme une aquarelle). Le décor
+de fond est tracé plus fin et plus transparent (profondeur). Bulles noires au contour irrégulier, texte et
+titres manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe), comme les autres gabarits.
 
-**`editorial`** — `assets/anim/perso.js` : deux personnages en **illustration éditoriale**, dessinés en SVG et animés par GSAP
-(`assets/anim/perso.js`) : **Léa** (`femme`, carré brun, veste bleu nuit sur un haut à la couleur
-d'accent du thème, collier fin) et **Karim** (`homme`, veste camel, chemise claire, cheveux courts
-châtain foncé avec raie sur le côté, lunettes fines couleur écaille). Proportions réalistes, palette sobre, aplats sans contour avec ombres douces, visage
-fin (yeux en amande avec paupière, nez dessiné, visage doux pour Léa, mâchoire marquée pour Karim). Ils sont assis à mi-corps derrière un bureau d'entretien (avec une
-feuille de CV et un stylo), avant-bras posés dessus. Chacun a 6 expressions (`neutre`, `content`,
-`choc`, `doute`, `triste`, `agace` : sourcils, yeux et bouche) et 4 gestes, avec des bras articulés au
-coude : `explique` (mains levées devant soi), `montre` (vers l'autre personnage), `hausse` (épaules,
-mains qui s'ouvrent), `salut`. Celui qui parle bouge la bouche et la tête ; l'autre le regarde et revient
-à une expression neutre ; tous deux respirent et clignent des yeux. Tout passe par la timeline : le rendu
-est déterministe, comme les autres gabarits.
+| Fichier | Rôle |
+|---|---|
+| `dessin/pinceau.js` | trait à main levée, cercles, rectangles, texte manuscrit, lavis de couleur, bouillonnement, apparition ; registre des types (`Dessin.enregistrer`) |
+| `dessin/personnages.js` | **Léa** (`lea` : queue de cheval qui se balance avec un chouchou corail, veste cintrée, jupe, cil) et **Karim** (`karim` : cheveux courts avec un épi, chemise, cravate bleue, pantalon) |
+| `dessin/animaux.js` | `chat` roux (queue qui bouge ; `marcher`/`traverser`, `miauler`, `dormir`) |
+| `dessin/objets.js` | `tasse` (orange, qui fume), `telephone` (`vibrer`), `cv`, `ordinateur` (`taper`), `table` (bureau), `table_ronde`, `chaise`, `plante` (feuilles qui bougent), `horloge` et `cadre` (muraux) |
+| `dessin/fonds.js` | `vide` (sol, cailloux, herbe, une fleur rose), `bureau` (fenêtre bleutée, livres colorés), `cafe` (suspensions à la lumière chaude, ardoise du menu), `salle_attente` (porte des RH à la plaque orange, affiche « On recrute ! », chaises, horloge qui tourne) |
+| `dessin/moteur.js` | assemble les scènes : place les objets, joue les actions, bulles, titres, enchaînement |
+| `catalog/dessins.json` | la liste des fonds, objets (ancres, actions), expressions, gestes et actions des personnages |
 
-Le gabarit `dialogue` les fait se parler, une bulle par réplique au-dessus de celui qui parle (prénom
-au-dessus du texte) : `style` (`trait` ou `editorial`), `repliques` = `g:texte {expr,geste}|d:texte|…`
-(`g` = gauche, `d` = droite, `{expr,geste}` optionnel, 6 répliques au plus), `gauche` / `droite` (id du
-personnage, `femme` et `homme` par défaut), `surtitre`, `bg` + thème. Chaque réplique dure 0,9 s +
-0,28 s par mot (entre 1,4 et 4 s).
+**Personnages** (de profil, regard retourné par le moteur) : grosse tête ronde, œil blanc plein à pupille
+noire et reflet, petit nez, petite bouche qui enchaîne trois ouvertures quand il parle, sourcil seulement
+quand l'expression le demande ; bras articulés (épaule, coude) et mains avec doigts, jambes articulées à la
+hanche (marche). 6 expressions (`neutre`, `content`, `choc`, `doute`, `triste`, `agace`) avec **effets
+manga** (yeux « ^ » et joues hachurées, effroi + « ! », goutte de sueur, veine en croix), 4 gestes (`salut`,
+`montre`, `hausse`, `explique`) et des actions : `parler` (bulle), `expression`, `geste`, `marcher`
+(`vers`), `entrer` / `sortir` (par la gauche ou la droite), `regarder` (`vers` : côté ou objet), `tenir`
+(`objet` : le prend dans la main avant), `poser` (`objet`, `sur`), `boire` (tasse tenue), `telephoner`
+(téléphone tenu), `sauter`. Ancres : `main_avant`, `main_arriere`, `tete`.
+
+**Format d'une scène** (JSON ; `{"scenes": [...], "surtitre": "..."}` pour en enchaîner plusieurs) :
+
+```json
+{"fond": "cafe", "titre": "Après l'entretien",
+ "objets": [{"id": "table", "type": "table_ronde", "x": 540},
+            {"id": "tasse", "type": "tasse", "sur": "table.dessus_gauche"},
+            {"id": "lea", "type": "lea", "x": 270, "regard": "droite"},
+            {"id": "karim", "type": "karim", "x": 810, "regard": "gauche"},
+            {"id": "horloge", "type": "horloge", "x": 900, "y": 600}],
+ "actions": [{"qui": "karim", "action": "parler", "texte": "Ils m'ont dit : on vous rappelle.", "expr": "triste", "geste": "hausse"},
+             {"qui": "lea", "action": "tenir", "objet": "tasse"},
+             {"qui": "lea", "action": "boire"},
+             {"qui": "karim", "action": "parler", "texte": "Euh… non.", "expr": "choc", "avec": true}]}
+```
+
+Objet : `x` (px, 0-1080) au sol, ou `sur` (`id.ancre` : posé sur / tenu par un objet déclaré avant), ou
+`y` (px) pour un objet mural ; `regard` (`gauche`/`droite`) ; `echelle` (multiplie celle de la scène,
+1,1 par défaut). Actions jouées dans l'ordre : à la suite de la précédente, en même temps avec
+`"avec": true`, ou à `t` secondes du début de la scène ; `{"action": "pause", "duree": 1}` avance le temps.
+Une réplique dure 0,9 s + 0,28 s par mot (entre 1,4 et 4 s) ; la première action démarre après le dessin
+du décor (~1,2 s). `catalog.validate_scene_dessin(scene)` vérifie une scène contre `catalog/dessins.json`
+(fond, types, ancres, actions, expressions) ; `python scripts/catalog.py` vérifie que le catalogue et le
+code correspondent. Ajouter un objet = l'écrire dans `assets/anim/dessin/*.js` (`Dessin.enregistrer`) et le
+déclarer dans `catalog/dessins.json`.
 
 ```bash
-python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&repliques=g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}" --duration 7 --out /tmp/dialogue.mp4
+python scripts/render_js_anim.py --spec scene --duration 37 --out /tmp/demo.mp4                    # démo : 3 décors
+python scripts/render_js_anim.py --spec scene --scene ma_scene.json --duration 12 --out /tmp/s.mp4  # sa propre scène
 ```
 
 Pas encore branché au générateur de scénarios (ni bouche synchronisée sur la voix off, ni effets
-sonores) : à utiliser en rendu manuel pour tester le rendu. Ajouter un personnage = ajouter une entrée
-à `PERSOS` dans `perso_trait.js` (tenue `jupe`/`pantalon`, coiffure `queue`/`courts`, accessoire
-`cravate`) ou `perso.js` (couleurs, coiffure `carre`/`raie`, accessoire `collier`/`lunettes`,
-`visage` `doux`/`carre`, `cils` ; une couleur `var(--c1)` suit le thème).
+sonores) : à utiliser en rendu manuel. Prochaines étapes : postures (assis, bras croisés, tête dans les
+mains, idée), puis scènes composées par le générateur à partir du catalogue.
+
+### Gabarit `dialogue` : deux personnages qui se parlent
+
+Raccourci pour un dialogue simple : `repliques` = `g:texte {expr,geste}|d:texte|…` (`g` = gauche, `d` =
+droite, `{expr,geste}` optionnel, 6 répliques au plus), `gauche` / `droite` (personnage : `femme`/`lea`,
+`homme`/`karim`), `surtitre`. Deux styles (`style`) :
+
+- **`trait`** (par défaut) : les répliques deviennent une scène du moteur ci-dessus (fond `fond`, `vide` par
+  défaut) ; celui qui écoute revient à une expression neutre.
+- **`editorial`** — `assets/anim/perso.js` : deux personnages en **illustration éditoriale** colorée :
+  **Léa** (carré brun, veste bleu nuit sur un haut à la couleur d'accent du thème, collier fin) et **Karim**
+  (veste camel, chemise claire, cheveux courts châtain foncé avec raie sur le côté, lunettes fines couleur
+  écaille). Proportions réalistes, palette sobre, aplats sans contour avec ombres douces, visage fin. Assis
+  à mi-corps derrière un bureau d'entretien (feuille de CV et stylo), mêmes expressions et gestes, bras
+  articulés au coude ; `bg` + thème. Ajouter un personnage = une entrée de `PERSOS` dans `perso.js`
+  (couleurs, coiffure `carre`/`raie`, accessoire `collier`/`lunettes`, `visage` `doux`/`carre`, `cils` ;
+  une couleur `var(--c1)` suit le thème).
+
+```bash
+python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&repliques=g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}" --duration 9 --out /tmp/dialogue.mp4
+```
 
 ## Ligne éditoriale : le catalogue (`catalog/`)
 

@@ -20,8 +20,10 @@ Usage (test/apercu d'un gabarit) :
     python render_js_anim.py --spec "score_ats?from=35&to=92" --out /tmp/frames
     python render_js_anim.py --spec cta --duration 4 --out /tmp/cta.mp4
     python render_js_anim.py --spec "carrousel?kind=couverture&titre=3 erreurs" --size 1080x1350 --out /tmp/s.png
+    python render_js_anim.py --spec scene --scene ma_scene.json --duration 20 --out /tmp/scene.mp4
 """
 import argparse
+import json
 import shutil
 import subprocess
 import tempfile
@@ -127,9 +129,13 @@ def main():
     parser.add_argument("--duration", type=float, default=None, help="Duree en s (defaut : celle du gabarit)")
     parser.add_argument("--size", type=str, default=None,
                          help="Image fixe LxH (ex : 1080x1350) : --out en .png/.jpg, etat final du gabarit")
+    parser.add_argument("--scene", type=str, default=None,
+                         help="Fichier JSON d'une scene de dessin anime (gabarit scene) : passe en parametre ?scene=")
     args = parser.parse_args()
 
     name, params = parse_spec(args.spec)
+    if args.scene:
+        params["scene"] = json.dumps(json.loads(Path(args.scene).read_text(encoding="utf-8")), ensure_ascii=False)
     out = Path(args.out)
     if out.suffix.lower() in (".png", ".jpg", ".jpeg"):
         w, _, h = (args.size or f"{SIZE[0]}x{SIZE[1]}").partition("x")

@@ -1,0 +1,17 @@
+/* Dessin anime "trait blanc" (scene.html, dialogue.html style trait) : fond noir,
+   traits blancs, ecriture manuscrite (Kalam, licence OFL dans assets/fonts/). */
+@font-face{font-family:HandT;src:url("../../fonts/Kalam-Bold.ttf")}
+body.dessin{background:#000}
+body.dessin .tr{stroke-dasharray:1}
+body.dessin [data-v="a"] .vb,body.dessin [data-v="b"] .va{display:none}
+body.dessin .manuscrit{font-family:HandT,"DejaVu Sans",sans-serif;font-weight:700}
+/* Titre de scene : manuscrit, souligne, en haut. */
+body.dessin #titres{position:absolute;top:105px;left:0;right:0;text-align:center}
+body.dessin .titre-scene{position:absolute;left:0;right:0;margin:auto;width:max-content;max-width:900px;color:#fff;
+  font:700 76px HandT,"DejaVu Sans",sans-serif;padding:0 14px 4px;border-bottom:4px solid #fff}
+/* Bulles : noires au contour irregulier, texte manuscrit ; la queue pointe vers celui qui parle (--queue). */
+body.dessin .bulle{position:absolute;max-width:860px;background:#000;color:#fff;font:700 64px/1.18 HandT,"DejaVu Sans",sans-serif;
+  border:4px solid #fff;border-radius:255px 24px 225px 24px/24px 225px 24px 255px;padding:28px 46px 34px;box-sizing:border-box;box-shadow:none}
+body.dessin .bulle::after{content:"";position:absolute;bottom:-27px;left:var(--queue,200px);width:44px;height:44px;background:#000;
+  border-right:4px solid #fff;border-bottom:4px solid #fff;transform:rotate(45deg)}
+body.dessin .bulle .nom{display:block;font:700 34px HandT,sans-serif;color:#fff;opacity:.55;margin-bottom:0;text-transform:none;letter-spacing:0}

@@ -24,6 +24,10 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Icônes dessinables : `assets/anim/icones.js` (JSON strict après `window.ICONES = `, lu aussi par
   `catalog.py`). Nouveau gabarit dessiné : s'appuyer sur `assets/anim/sketch.js`. Tout instant
   d'animation repris par `scripts/sound_design.py` doit rester identique des deux côtés.
+- Dessin animé (`assets/anim/scene.html`) : un type (personnage, animal, objet, décor, fond) = un
+  `Dessin.enregistrer` dans `assets/anim/dessin/*.js` **et** une entrée dans `catalog/dessins.json`
+  (`catalog.py` vérifie la correspondance). Penser par objet, pas par scène ; touches de couleur légères
+  (lavis) plutôt qu'aplats.
 - Polices : uniquement sous licence libre (OFL), licence copiée dans `assets/fonts/`.
 - Après un run du workflow `generate-reels.yml`, l'analyse se fait sur l'artefact `output`
   (images extraites des reels, loudness mesurée avec `ffmpeg -af ebur128`, cible -14 LUFS).

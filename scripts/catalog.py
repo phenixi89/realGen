@@ -41,6 +41,9 @@ CARD_TYPES = {"texte": "carte", "chiffre": "chiffre", "comparaison": "comparaiso
 # Marque dessinee sur la derniere etape d'une carte schema (assets/anim/schema.html).
 SCHEMA_MARKS = ("entoure", "barre", "coche")
 ICONS_JS = ROOT / "assets" / "anim" / "icones.js"
+# Dessin anime "trait blanc" : types dessinables (fonds, personnages, objets) declares
+# dans catalog/dessins.json et ecrits dans assets/anim/dessin/*.js.
+DESSIN_JS = ROOT / "assets" / "anim" / "dessin"
 
 # Fenetre sur laquelle on mesure le mix conseil/produit deja publie.
 MIX_WINDOW = 10
@@ -81,6 +84,59 @@ def icons() -> dict[str, dict]:
     start = re.search(r"^window\.ICONES = ", text, re.M).end()  # en debut de ligne (pas celui du commentaire)
     body = text[start:].strip().removesuffix(";")
     return json.loads(body)
+
+
+def dessins() -> dict:
+    return _load("dessins")
+
+
+def _types_dessin_js() -> dict[str, set[str]]:
+    """Types enregistres dans le code : fonds (fonds.js), personnages (MODELES), objets / animaux."""
+    fonds_js = (DESSIN_JS / "fonds.js").read_text(encoding="utf-8")
+    perso_js = (DESSIN_JS / "personnages.js").read_text(encoding="utf-8")
+    autres = "".join((DESSIN_JS / f).read_text(encoding="utf-8") for f in ("objets.js", "animaux.js"))
+    modeles = perso_js[perso_js.index("const MODELES"):perso_js.index("};", perso_js.index("const MODELES"))]
+    return {"fonds": set(re.findall(r'\breg\("([a-z_]+)"', fonds_js)),
+            "objets": set(re.findall(r'^\s+([a-z_]+): \{ nom:', modeles, re.M))
+            | set(re.findall(r'(?:\breg|Dessin\.enregistrer)\("([a-z_]+)"', autres))}
+
+
+def validate_scene_dessin(scene: dict) -> list[str]:
+    """Verifie une scene (ou {"scenes": [...]}) du dessin anime contre catalog/dessins.json."""
+    cat = dessins()
+    fonds_ = {f["id"] for f in cat["fonds"]}
+    objets_ = {o["id"]: o for o in cat["objets"]}
+    perso = cat["personnage"]
+    errors = []
+    for n, sc in enumerate(scene.get("scenes") or [scene], 1):
+        if sc.get("fond", "vide") not in fonds_:
+            errors.append(f"scene {n} : fond inconnu '{sc.get('fond')}' (choix : {sorted(fonds_)})")
+        ids = {}
+        for o in sc.get("objets") or []:
+            t = objets_.get(o.get("type"))
+            if not t:
+                errors.append(f"scene {n} : type d'objet inconnu '{o.get('type')}'")
+                continue
+            ids[o.get("id")] = t
+            if o.get("sur"):
+                cible, _, anc = o["sur"].partition(".")
+                if cible not in ids or anc not in (ids[cible].get("ancres") or []):
+                    errors.append(f"scene {n} : '{o['id']}' sur '{o['sur']}' : objet ou ancre inconnus (declarer le support avant)")
+        for a in sc.get("actions") or []:
+            if a.get("action") == "pause":
+                continue
+            t = ids.get(a.get("qui"))
+            if not t:
+                errors.append(f"scene {n} : action sur un objet absent '{a.get('qui')}'")
+                continue
+            possibles = list(perso["actions"]) if t["categorie"] == "personnage" else (t.get("actions") or [])
+            if a.get("action") not in possibles:
+                errors.append(f"scene {n} : action '{a.get('action')}' impossible pour {a.get('qui')} (choix : {possibles})")
+            if a.get("expr") and a["expr"] not in perso["expressions"]:
+                errors.append(f"scene {n} : expression inconnue '{a['expr']}'")
+            if a.get("geste") and a["geste"] not in perso["gestes"]:
+                errors.append(f"scene {n} : geste inconnu '{a['geste']}'")
+    return errors
 
 
 def _by_id(items: list[dict], item_id: str, kind: str) -> dict:
@@ -417,6 +473,19 @@ def validate_catalog() -> list[str]:
             errors.append(f"icones.js : nom ou traits manquants pour {bad}")
     except (ValueError, OSError) as e:
         errors.append(f"icones.js illisible (JSON strict attendu apres 'window.ICONES = ') : {e}")
+    try:
+        cat, js = dessins(), _types_dessin_js()
+        declares = {"fonds": {f["id"] for f in cat["fonds"]}, "objets": {o["id"] for o in cat["objets"]}}
+        for kind in ("fonds", "objets"):
+            for missing in sorted(declares[kind] - js[kind]):
+                errors.append(f"dessins.json : {kind} '{missing}' absent du code assets/anim/dessin/")
+            for extra in sorted(js[kind] - declares[kind]):
+                errors.append(f"dessins.json : {kind} '{extra}' existe dans le code mais n'est pas declare")
+        for o in cat["objets"]:
+            if o.get("categorie") not in ("personnage", "animal", "objet", "decor"):
+                errors.append(f"dessins.json : objet {o['id']} : categorie inconnue")
+    except (ValueError, OSError, KeyError) as e:
+        errors.append(f"dessins.json ou assets/anim/dessin/ illisible : {e}")
     if not (FONTS_DIR / HAND_FONT).exists():
         errors.append(f"police manuscrite {HAND_FONT} absente de assets/fonts/")
     if set(config()["mix"]) - {f["categorie"] for f in formats()}:
@@ -429,7 +498,7 @@ if __name__ == "__main__":
     for p in problems:
         print(f"ERREUR: {p}", file=sys.stderr)
     print(f"{len(formats())} formats, {len(sujets())} sujets, {len(hooks())} accroches, {len(themes())} themes, "
-          f"{len(icons())} icones")
+          f"{len(icons())} icones, {len(dessins()['fonds'])} fonds et {len(dessins()['objets'])} objets dessines")
     for f in formats():
         print(f"  {f['id']:22} [{f['categorie']}/{'+'.join(registres_of(f))}] {len(compatible_sujets(f))} sujets compatibles")
     sys.exit(1 if problems else 0)

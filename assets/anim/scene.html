@@ -1,0 +1,69 @@
+<!doctype html>
+<!--
+  Dessin anime "trait blanc" : une ou plusieurs scenes (fond + personnages,
+  animaux, objets, decor + actions), assemblees par assets/anim/dessin/moteur.js.
+  Parametre : scene = JSON d'une scene ou {"scenes": [...], "surtitre": "..."}
+  (format detaille dans moteur.js et catalog/dessins.json). Sans parametre :
+  scene de demonstration en trois decors.
+  Rendu : python scripts/render_js_anim.py --spec scene --scene ma_scene.json --out /tmp/s.mp4 --duration 20
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="stylesheet" href="dessin/dessin.css">
+<style>
+  html,body{margin:0;width:1080px;height:1920px;overflow:hidden}
+  #scene{position:absolute;inset:0}
+  #erreur{position:absolute;left:40px;right:40px;top:40px;color:#ff6b6b;font:32px monospace;white-space:pre-wrap}
+</style></head><body class="dessin">
+<svg id="scene" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div id="titres"></div><div id="bulles"></div><div id="erreur"></div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script src="dessin/pinceau.js"></script>
+<script src="dessin/personnages.js"></script>
+<script src="dessin/animaux.js"></script>
+<script src="dessin/objets.js"></script>
+<script src="dessin/fonds.js"></script>
+<script src="dessin/moteur.js"></script>
+<script>
+  const DEMO = { scenes: [
+    { fond: "salle_attente", titre: "Lundi, 9 h",
+      objets: [ { id: "karim", type: "karim", x: 680, regard: "gauche" }, { id: "cv", type: "cv", sur: "karim.main_avant" },
+                { id: "lea", type: "lea", x: 300, regard: "droite" } ],
+      actions: [ { qui: "lea", action: "entrer", depuis: "gauche" },
+                 { qui: "lea", action: "parler", texte: "Karim ? C'est à toi !", expr: "content", geste: "salut" },
+                 { qui: "karim", action: "parler", texte: "J'ai mon CV… et le trac !", expr: "doute" },
+                 { qui: "karim", action: "marcher", vers: 935 } ] },
+    { fond: "cafe", titre: "Après l'entretien",
+      objets: [ { id: "table", type: "table_ronde", x: 540 }, { id: "tasse", type: "tasse", sur: "table.dessus_gauche" },
+                { id: "tel", type: "telephone", sur: "table.dessus_droite" },
+                { id: "lea", type: "lea", x: 270, regard: "droite" }, { id: "karim", type: "karim", x: 810, regard: "gauche" },
+                { id: "chat", type: "chat", x: 1000, regard: "gauche", echelle: 0.9 } ],
+      actions: [ { qui: "karim", action: "parler", texte: "Ils m'ont dit : on vous rappelle.", expr: "triste", geste: "hausse" },
+                 { qui: "lea", action: "tenir", objet: "tasse" }, { qui: "lea", action: "boire" },
+                 { qui: "chat", action: "traverser", vers: 560, avec: true },
+                 { qui: "lea", action: "parler", texte: "Ton CV, tu l'as adapté à l'offre ?", expr: "doute" },
+                 { qui: "tel", action: "vibrer" }, { qui: "chat", action: "miauler", avec: true },
+                 { qui: "karim", action: "parler", texte: "Euh… non.", expr: "choc" } ] },
+    { fond: "bureau", titre: "Une semaine plus tard",
+      objets: [ { id: "cadre", type: "cadre", x: 955, y: 700 }, { id: "plante", type: "plante", x: 990, echelle: 0.9 },
+                { id: "table", type: "table", x: 470 }, { id: "pc", type: "ordinateur", sur: "table.dessus" },
+                { id: "karim", type: "karim", x: 200, regard: "droite" }, { id: "lea", type: "lea", x: 760, regard: "gauche" } ],
+      actions: [ { qui: "karim", action: "parler", texte: "CV adapté, envoyé en 2 minutes !", expr: "content", geste: "explique" },
+                 { qui: "pc", action: "taper", avec: true },
+                 { qui: "lea", action: "parler", texte: "Et alors ?", expr: "doute" },
+                 { qui: "karim", action: "sauter" },
+                 { qui: "karim", action: "parler", texte: "Entretien jeudi !", expr: "content", avec: true },
+                 { qui: "lea", action: "parler", texte: "Bravo !", expr: "content", geste: "salut" } ] },
+  ] };
+  const svg = document.getElementById("scene");
+  let def;
+  try { def = JSON.parse(param("scene", "") || "null") || DEMO; } catch (e) { document.getElementById("erreur").textContent = "JSON de scene invalide : " + e.message; }
+  const hand = document.fonts ? document.fonts.load("64px HandT").catch(() => null) : null;
+  if (def) Promise.all([FONTS_READY, hand]).then(() => {
+    try {
+      const { tl, duree } = Scene.monter(def, { svg, bulles: document.getElementById("bulles"), titres: document.getElementById("titres") });
+      expose(tl);
+      window.DURATION = duree;
+    } catch (e) { document.getElementById("erreur").textContent = "Scene : " + e.message; console.error(e); }
+  });
+</script></body></html>

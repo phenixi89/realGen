@@ -2,24 +2,23 @@
 <!--
   Scene "dialogue" : deux personnages se parlent, une bulle par replique
   au-dessus de celui qui parle. Deux styles (?style=) :
-    trait     (defaut) assets/anim/perso_trait.js : dessin blanc tremble sur
-              fond noir, de profil sur un sol a main levee, bulles manuscrites ;
+    trait     (defaut) dessin anime blanc sur fond noir : la scene est confiee au
+              moteur assets/anim/dessin/moteur.js (fond ?fond=, vide par defaut ;
+              personnages Lea et Karim, voir scene.html pour des scenes completes) ;
     editorial assets/anim/perso.js : illustration editoriale coloree, assis de
               part et d'autre d'un bureau d'entretien.
-   Pendant sa replique, le personnage
-  bouge la bouche et la tete ; l'autre le regarde et revient a une expression
-  neutre. Expression et geste au choix par replique.
   Parametres :
     repliques  "g:texte {expr,geste}|d:texte|..." -- g = personnage de gauche,
                d = de droite ; {expr,geste} optionnel en fin de replique
                (expr : neutre, content, choc, doute, triste, agace ;
                 geste : explique, montre, hausse, salut) ; 6 repliques max ;
-    gauche / droite  id du personnage (PERSOS : femme, homme) ;
-    style (trait, editorial), surtitre, bg + theme (style editorial).
+    gauche / droite  personnage (femme / lea, homme / karim) ;
+    style (trait, editorial), fond (style trait), surtitre, bg + theme (style editorial).
   Duree : chaque replique dure 0,9 s + 0,28 s par mot (entre 1,4 et 4 s).
 -->
 <html lang="fr"><head><meta charset="utf-8">
 <link rel="stylesheet" href="_card_base.css">
+<link rel="stylesheet" href="dessin/dessin.css">
 <style>
   #kwrap{position:absolute;top:220px;width:100%;text-align:center}
   #scene{position:absolute;inset:0}
@@ -31,34 +30,23 @@
   .bulle.g::after{left:200px}
   .bulle.d::after{right:200px}
   .nom{display:block;font-size:32px;font-weight:700;color:var(--bc);margin-bottom:8px;letter-spacing:.12em;text-transform:uppercase}
-  /* Style trait : noir et blanc, ecriture manuscrite (Kalam, OFL), bulles au contour irregulier. */
-  @font-face{font-family:HandT;src:url("../fonts/Kalam-Bold.ttf")}
-  body.trait{background:#000}
-  body.trait #bg,body.trait #grad,body.trait #grid{display:none}
-  body.trait .kicker{background:none;box-shadow:none;color:#fff;font:700 76px HandT,"DejaVu Sans",sans-serif;text-transform:none;
-    letter-spacing:0;border-radius:0;padding:0 14px 4px;border-bottom:4px solid #fff}
-  body.trait #kwrap{top:105px}
-  body.trait .bulle{bottom:1372px;max-width:860px;background:#000;color:#fff;font:700 64px/1.18 HandT,"DejaVu Sans",sans-serif;
-    border:4px solid #fff;border-radius:255px 24px 225px 24px/24px 225px 24px 255px;box-shadow:none;padding:28px 46px 34px}
-  body.trait .bulle::after{background:#000;border-right:4px solid #fff;border-bottom:4px solid #fff;border-radius:0;bottom:-27px;width:44px;height:44px}
-  body.trait .nom{font:700 34px HandT,sans-serif;color:#fff;opacity:.55;letter-spacing:0;text-transform:none;margin-bottom:0}
-  .tr{stroke-dasharray:1}
-  [data-v="a"] .vb,[data-v="b"] .va{display:none}
+  body.dessin #bg,body.dessin #grad,body.dessin #grid,body.dessin #kwrap{display:none}
 </style></head><body>
 <div id="bg"></div><div id="grad"></div><div id="grid"></div>
 <div id="kwrap"><div class="kicker" id="kicker"></div></div>
 <svg id="scene" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
-<div id="bulles"></div>
+<div id="titres"></div><div id="bulles"></div>
 <script src="vendor/gsap.min.js"></script>
 <script src="common.js"></script>
 <script src="perso.js"></script>
-<script src="perso_trait.js"></script>
+<script src="dessin/pinceau.js"></script>
+<script src="dessin/personnages.js"></script>
+<script src="dessin/animaux.js"></script>
+<script src="dessin/objets.js"></script>
+<script src="dessin/fonds.js"></script>
+<script src="dessin/moteur.js"></script>
 <script>
   const TRAIT = param("style", "trait") !== "editorial";
-  const Moteur = TRAIT ? PersoTrait : Perso;
-  if (TRAIT) document.body.classList.add("trait");
-  // En style trait, les personnages se dessinent d'abord (~1,2 s).
-  const FIRST_AT = TRAIT ? 1.4 : 0.7, GAP = 0.3;
   const lignes = param("repliques", "g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}|g:Normal, ton CV fait trois pages ! {choc,montre}|d:Ah… je coupe tout alors ? {doute}|g:Garde l'essentiel : une page. {content,explique}")
     .split("|").map((s) => {
       const i = s.indexOf(":"), qui = s.slice(0, i).trim() === "d" ? "d" : "g";
@@ -67,82 +55,104 @@
       if (m) { [expr = "", geste = ""] = m[1].split(",").map((x) => x.trim()); texte = texte.slice(0, m.index).trim(); }
       return { qui, texte: frTypo(texte), expr, geste };
     }).filter((l) => l.texte).slice(0, 6);
-  // Cadence (identique dans sound_design.py si la scene y est sonorisee un jour).
-  const dureeLigne = (l) => Math.min(4, Math.max(1.4, 0.9 + 0.28 * l.texte.split(/\s+/).length));
-  let t = FIRST_AT;
-  for (const l of lignes) { l.de = t; l.a = t + dureeLigne(l); t = l.a + GAP; }
-  const FIN = (lignes.at(-1)?.a || FIRST_AT) + 0.9;
+  if (TRAIT) dialogueTrait(); else dialogueEditorial();
 
-  const kicker = param("surtitre", ""); document.getElementById("kicker").textContent = kicker;
-  if (!kicker) document.getElementById("kicker").style.display = "none";
-  const bg = param("bg", ""); let bgReady = null;
-  if (bg) { document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
-    bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
-
-  const svg = document.getElementById("scene");
-  const ids = { g: param("gauche", "femme"), d: param("droite", "homme") };
-  const persos = TRAIT ? {
-    g: PersoTrait.dessiner(svg, ids.g, 300, 1650, 1.1, 1),
-    d: PersoTrait.dessiner(svg, ids.d, 780, 1650, 1.1, -1),
-  } : {
-    g: Perso.dessiner(svg, ids.g, 265, 2336, 1.32, 1),
-    d: Perso.dessiner(svg, ids.d, 815, 2336, 1.32, -1),
-  };
-  const sol = TRAIT ? PersoTrait.sol(svg, 1650, [300, 780]) : null;
-  // Bureau d'entretien (devant les personnages) : plateau, chant, facade, une feuille (le CV) et un stylo.
-  const NSVG = "http://www.w3.org/2000/svg";
-  const deco = (tag, attrs, parent = svg) => { const n = document.createElementNS(NSVG, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.appendChild(n); return n; };
-  if (!TRAIT) {
-  deco("path", { d: "M-20,1590 L1100,1590 L1100,1662 L-20,1662Z", fill: "#b48d68" });
-  deco("path", { d: "M-20,1590 L1100,1590", stroke: "#d2ad87", "stroke-width": 6 });
-  deco("path", { d: "M-20,1662 L1100,1662 L1100,1930 L-20,1930Z", fill: "#7d5f43" });
-  deco("path", { d: "M-20,1662 L1100,1662", stroke: "#5f4732", "stroke-width": 4 });
-  const feuille = deco("g", { transform: "translate(465 1604) rotate(-4)" });
-  deco("rect", { x: 0, y: 0, width: 150, height: 46, rx: 3, fill: "#f7f4ee" }, feuille);
-  deco("rect", { x: 14, y: 10, width: 60, height: 7, rx: 3, fill: "#9aa3b5" }, feuille);
-  deco("rect", { x: 14, y: 24, width: 110, height: 5, rx: 2, fill: "#cfd5df" }, feuille);
-  deco("rect", { x: 14, y: 34, width: 90, height: 5, rx: 2, fill: "#cfd5df" }, feuille);
-  deco("rect", { x: 640, y: 1622, width: 110, height: 9, rx: 4, fill: "#1f2433", transform: "rotate(8 695 1626)" });
-  }
-  const box = document.getElementById("bulles");
-  const bulles = lignes.map((l) => {
-    const b = document.createElement("div"), p = Moteur.PERSOS[ids[l.qui]] || Moteur.PERSOS.femme;
-    b.className = `bulle ${l.qui}`;
-    b.style.setProperty("--bc", p.veste || "#ffffff");
-    b.innerHTML = '<span class="nom"></span><span class="t"></span>';
-    b.querySelector(".nom").textContent = p.nom;
-    b.querySelector(".t").textContent = l.texte;
-    box.appendChild(b);
-    return b;
-  });
-
-  const handReady = TRAIT && document.fonts ? document.fonts.load("64px HandT").catch(() => null) : null;
-  Promise.all([FONTS_READY, handReady]).then(() => {
-    const tl = gsap.timeline({ paused: true })
-      .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
-      .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2.2)" }, 0.05);
-    if (TRAIT) PersoTrait.animerSol(tl, sol, FIN);
-    else tl.from(persos.g.root, { y: 420, duration: 0.55, ease: "back.out(1.2)" }, 0)
-      .from(persos.d.root, { y: 420, duration: 0.55, ease: "back.out(1.2)" }, 0.12);
-    gsap.set(bulles, { opacity: 0, scale: 0.4 });
-    for (const k of ["g", "d"]) {
-      Moteur.expression(tl, persos[k], "neutre", 0);
-      Moteur.regarder(tl, persos[k], 5 * persos[k].cote, 0);
-      Moteur.vie(tl, persos[k], FIN, k === "g" ? 0 : 0.9);
-    }
+  // Style trait : les repliques deviennent une scene du moteur de dessin anime.
+  function dialogueTrait() {
+    document.body.classList.add("dessin");
+    const TYPES = { femme: "lea", homme: "karim", lea: "lea", karim: "karim" };
+    const actions = [];
     lignes.forEach((l, i) => {
-      const lui = persos[l.qui], autre = persos[l.qui === "g" ? "d" : "g"];
-      if (l.expr) Moteur.expression(tl, lui, l.expr, l.de - 0.1);
-      if (autre.expr !== "neutre") Moteur.expression(tl, autre, "neutre", l.de);  // celui qui ecoute se detend
-      if (l.geste) Moteur.geste(tl, lui, l.geste, l.de + 0.1);
-      Moteur.regarder(tl, lui, 0, l.de);                 // celui qui parle regarde la camera
-      Moteur.regarder(tl, autre, 5 * autre.cote, l.de);  // l'autre le regarde
-      Moteur.parler(tl, lui, l.de + 0.05, l.a - 0.1);
-      tl.to(bulles[i], { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, l.de);
-      if (i < lignes.length - 1) tl.to(bulles[i], { opacity: 0, scale: 0.85, duration: 0.15 }, l.a + GAP - 0.05);
+      actions.push({ qui: l.qui, action: "parler", texte: l.texte, expr: l.expr || undefined, geste: l.geste || undefined });
+      const autre = l.qui === "g" ? "d" : "g";
+      if (i) actions.push({ qui: autre, action: "expression", expr: "neutre", avec: true });   // celui qui ecoute se detend
     });
-    if (!TRAIT) addAmbient(tl, 8);
-    expose(tl, Promise.all([bgReady, handReady]));
-    window.DURATION = FIN;
-  });
+    const def = { surtitre: param("surtitre", ""), scenes: [{ fond: param("fond", "vide"),
+      objets: [{ id: "g", type: TYPES[param("gauche", "femme")] || "lea", x: 300, regard: "droite" },
+               { id: "d", type: TYPES[param("droite", "homme")] || "karim", x: 780, regard: "gauche" }], actions }] };
+    const hand = document.fonts ? document.fonts.load("64px HandT").catch(() => null) : null;
+    Promise.all([FONTS_READY, hand]).then(() => {
+      const { tl, duree } = Scene.monter(def, { svg: document.getElementById("scene"), bulles: document.getElementById("bulles"), titres: document.getElementById("titres") });
+      expose(tl);
+      window.DURATION = duree;
+    });
+  }
+
+  // Style editorial (perso.js) : assis de part et d'autre d'un bureau d'entretien.
+  function dialogueEditorial() {
+    const Moteur = Perso;
+    const FIRST_AT = 0.7, GAP = 0.3;
+    // Cadence (identique dans sound_design.py si la scene y est sonorisee un jour).
+    const dureeLigne = (l) => Math.min(4, Math.max(1.4, 0.9 + 0.28 * l.texte.split(/\s+/).length));
+    let t = FIRST_AT;
+    for (const l of lignes) { l.de = t; l.a = t + dureeLigne(l); t = l.a + GAP; }
+    const FIN = (lignes.at(-1)?.a || FIRST_AT) + 0.9;
+
+    const kicker = param("surtitre", ""); document.getElementById("kicker").textContent = kicker;
+    if (!kicker) document.getElementById("kicker").style.display = "none";
+    const bg = param("bg", ""); let bgReady = null;
+    if (bg) { document.getElementById("bg").style.backgroundImage = `url("${bg}")`;
+      bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
+
+    const svg = document.getElementById("scene");
+    const ids = { g: param("gauche", "femme"), d: param("droite", "homme") };
+    const persos = {
+      g: Perso.dessiner(svg, ids.g, 265, 2336, 1.32, 1),
+      d: Perso.dessiner(svg, ids.d, 815, 2336, 1.32, -1),
+    };
+    // Bureau d'entretien (devant les personnages) : plateau, chant, facade, une feuille (le CV) et un stylo.
+    const NSVG = "http://www.w3.org/2000/svg";
+    const deco = (tag, attrs, parent = svg) => { const n = document.createElementNS(NSVG, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.appendChild(n); return n; };
+    {
+    deco("path", { d: "M-20,1590 L1100,1590 L1100,1662 L-20,1662Z", fill: "#b48d68" });
+    deco("path", { d: "M-20,1590 L1100,1590", stroke: "#d2ad87", "stroke-width": 6 });
+    deco("path", { d: "M-20,1662 L1100,1662 L1100,1930 L-20,1930Z", fill: "#7d5f43" });
+    deco("path", { d: "M-20,1662 L1100,1662", stroke: "#5f4732", "stroke-width": 4 });
+    const feuille = deco("g", { transform: "translate(465 1604) rotate(-4)" });
+    deco("rect", { x: 0, y: 0, width: 150, height: 46, rx: 3, fill: "#f7f4ee" }, feuille);
+    deco("rect", { x: 14, y: 10, width: 60, height: 7, rx: 3, fill: "#9aa3b5" }, feuille);
+    deco("rect", { x: 14, y: 24, width: 110, height: 5, rx: 2, fill: "#cfd5df" }, feuille);
+    deco("rect", { x: 14, y: 34, width: 90, height: 5, rx: 2, fill: "#cfd5df" }, feuille);
+    deco("rect", { x: 640, y: 1622, width: 110, height: 9, rx: 4, fill: "#1f2433", transform: "rotate(8 695 1626)" });
+    }
+    const box = document.getElementById("bulles");
+    const bulles = lignes.map((l) => {
+      const b = document.createElement("div"), p = Moteur.PERSOS[ids[l.qui]] || Moteur.PERSOS.femme;
+      b.className = `bulle ${l.qui}`;
+      b.style.setProperty("--bc", p.veste || "#ffffff");
+      b.innerHTML = '<span class="nom"></span><span class="t"></span>';
+      b.querySelector(".nom").textContent = p.nom;
+      b.querySelector(".t").textContent = l.texte;
+      box.appendChild(b);
+      return b;
+    });
+
+    FONTS_READY.then(() => {
+      const tl = gsap.timeline({ paused: true })
+        .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
+        .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2.2)" }, 0.05);
+      tl.from(persos.g.root, { y: 420, duration: 0.55, ease: "back.out(1.2)" }, 0)
+        .from(persos.d.root, { y: 420, duration: 0.55, ease: "back.out(1.2)" }, 0.12);
+      gsap.set(bulles, { opacity: 0, scale: 0.4 });
+      for (const k of ["g", "d"]) {
+        Moteur.expression(tl, persos[k], "neutre", 0);
+        Moteur.regarder(tl, persos[k], 5 * persos[k].cote, 0);
+        Moteur.vie(tl, persos[k], FIN, k === "g" ? 0 : 0.9);
+      }
+      lignes.forEach((l, i) => {
+        const lui = persos[l.qui], autre = persos[l.qui === "g" ? "d" : "g"];
+        if (l.expr) Moteur.expression(tl, lui, l.expr, l.de - 0.1);
+        if (autre.expr !== "neutre") Moteur.expression(tl, autre, "neutre", l.de);  // celui qui ecoute se detend
+        if (l.geste) Moteur.geste(tl, lui, l.geste, l.de + 0.1);
+        Moteur.regarder(tl, lui, 0, l.de);                 // celui qui parle regarde la camera
+        Moteur.regarder(tl, autre, 5 * autre.cote, l.de);  // l'autre le regarde
+        Moteur.parler(tl, lui, l.de + 0.05, l.a - 0.1);
+        tl.to(bulles[i], { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, l.de);
+        if (i < lignes.length - 1) tl.to(bulles[i], { opacity: 0, scale: 0.85, duration: 0.15 }, l.a + GAP - 0.05);
+      });
+      addAmbient(tl, 8);
+      expose(tl, bgReady);
+      window.DURATION = FIN;
+    });
+  }
 </script></body></html>
