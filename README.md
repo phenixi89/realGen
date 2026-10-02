@@ -39,6 +39,7 @@ export $(cat .env | xargs)
 | `GEMINI_MODEL` | non | Modèle texte (défaut : `gemini-flash-latest`) |
 | `GEMINI_TTS_MODEL` | non | Modèle des voix (défaut : `gemini-3.8-flash-tts`, choisi à l'écoute après le run 58) |
 | `GEMINI_TTS_FALLBACK_MODEL` | non | Modèle des voix de secours si le principal reste indisponible (défaut : `gemini-3.1-flash-tts-preview`) |
+| `GEMINI_TTS_RPM` | non | Requêtes TTS par minute à ne pas dépasser (défaut : 10, quota du niveau 1) : les appels en rafale sont espacés |
 | `ALLOW_AI_QUOTA_FEATURES` | non | `1` pour inclure la simulation d'entretien IA (consomme le quota IA du compte démo) |
 
 ## Utilisation
@@ -703,7 +704,10 @@ si le premier chargement dépasse le délai habituel.
   le run. Pour le scénario, les deux derniers essais passent sur un modèle de repli
   (`GEMINI_FALLBACK_MODEL`, `gemini-2.5-flash` par défaut) ; dès que le repli a répondu, les appels
   suivants du même script partent directement sur lui (le run 58 perdait ~1 min 45 par appel à
-  réessayer le modèle principal). Une autre erreur (clé invalide…) arrête tout de suite.
+  réessayer le modèle principal). Une autre erreur (clé invalide…) arrête tout de suite, comme un
+  quota du jour épuisé (429 « per day ») : la voix passe alors directement au modèle de secours, qui
+  a son propre quota. Quotas du niveau 1 pour les voix : 10 requêtes/minute et 100/jour par modèle ;
+  un reel = 1 appel, mais `--precompute-cta` en fait 60 (à lancer un jour sans run).
 - Voix : `gemini-3.8-flash-tts` (version stable) ; le secours `gemini-3.1-flash-tts-preview` est une préversion (pas de SLA garanti).
 - Whisper tourne en CPU (`--model small` par défaut) ; largement suffisant pour des reels de 15-30s.
 - Aucun GPU nécessaire pour ce pipeline (pas d'avatar animé, juste du screen-record + montage).

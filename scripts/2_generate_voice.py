@@ -61,6 +61,20 @@ def _ecrire_audio(response, pcm_path: Path):
 
 
 MODELE_UTILISE = None  # modele qui a produit la derniere synthese (principal ou repli)
+# Quota Gemini TTS au niveau 1 : 10 requetes/minute (et 100/jour) par modele. Les appels en rafale
+# (replique par replique, --precompute-cta) sont espaces pour ne pas declencher de 429.
+TTS_RPM = int(os.environ.get("GEMINI_TTS_RPM", "10"))
+_dernier_appel = 0.0
+
+
+def _cadence():
+    """Attend ce qu'il faut pour rester sous TTS_RPM requetes par minute (marge de 10 %)."""
+    global _dernier_appel
+    import time
+    attente = 60 / TTS_RPM * 1.1 - (time.monotonic() - _dernier_appel)
+    if attente > 0:
+        time.sleep(attente)
+    _dernier_appel = time.monotonic()
 
 
 def _avec_repli(appel, label: str):
@@ -88,6 +102,7 @@ def synthesize(client, text: str, voice: str, pcm_path: Path, tone: str = DEFAUL
     from google.genai import types
 
     def appel(model):
+        _cadence()
         if _metadonnees_parole(model):
             contents = [types.Content(role="user", parts=[
                 types.Part(text=text, speech_metadata=types.SpeechMetadata(style=tone))])]
@@ -134,6 +149,7 @@ def synthesize_dialogue(client, lines: list[tuple[str, str]], voices: dict[str, 
             for qui in speakers]))
 
     def appel(model):
+        _cadence()
         if _metadonnees_parole(model):
             contents = [types.Content(role="user", parts=[
                 types.Part(text=texte, speech_metadata=types.SpeechMetadata(
@@ -223,7 +239,9 @@ def precompute_cta(client, force: bool = False):
     """
     Enregistre chaque phrase de CTA du catalogue pour chaque voix (rotation + personnages) dans
     assets/voix_cta/. force : reenregistre tout (a faire apres un changement de modele TTS, sinon
-    la phrase finale n'a pas le meme grain que le reste du reel).
+    la phrase finale n'a pas le meme grain que le reste du reel). Un appel par voix et par
+    phrase (60 aujourd'hui) : plus de la moitie du quota journalier du modele TTS au niveau 1
+    (100/jour) -- a lancer un jour sans run prevu.
     """
     cfg = catalog.config()
     phrases = list(dict.fromkeys(p for k in ("ctas_conseil", "ctas_produit") for p in cfg.get(k) or []))

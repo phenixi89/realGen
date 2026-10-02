@@ -10,7 +10,8 @@ Attentes : 15, 30, 60, 90 s (~3 min 15 au total). Si `fallback_model` est
 donne, les deux derniers essais passent sur ce modele (autre pool de capacite) ; une
 fois que le repli a repondu a la place du principal, les appels suivants du meme
 processus partent directement sur le repli (sinon chaque appel reperdait ~1 min 45).
-Toute autre erreur (cle invalide, requete refusee...) remonte immediatement.
+Toute autre erreur (cle invalide, requete refusee...) remonte immediatement, comme un quota
+du JOUR epuise (429 "PerDay") : reessayer dans la minute n'y change rien.
 """
 import time
 
@@ -42,6 +43,11 @@ def generate_with_retry(client, *, model: str, fallback_model: str | None = None
         except Exception as exc:  # google.genai.errors.APIError et derivees
             code = _code(exc)
             if code not in RETRY_CODES or n == attempts - 1:
+                raise
+            if code == 429 and any(m in str(exc).lower() for m in ("perday", "per_day")):
+                # Quota du JOUR epuise (ex. 100 requetes/jour pour un modele TTS au niveau 1) :
+                # attendre ne sert a rien, l'appelant passe a son repli (autre modele, autre quota).
+                print(f"    {label} : quota journalier de {current} epuise", flush=True)
                 raise
             wait = WAITS[n]
             nxt = fallback_model if fallback_model and n + 1 >= attempts - 2 else model
