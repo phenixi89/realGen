@@ -70,6 +70,7 @@ from pathlib import Path
 
 import catalog
 from features import available_features, normalize_feature_id
+from gemini_retry import generate_with_retry
 
 PRODUCT_CONTEXT = """Produit : OpusCV (SaaS opuscv.tech, application app.opuscv.tech), qui aide à sortir un CV prêt à envoyer,
 corrigé, mis en page et décliné par offre d'emploi.
@@ -92,6 +93,8 @@ Plan gratuit pour commencer (quelques CV et actions IA), plan Pro illimité.
 Ton de marque : direct, concret, orienté résultat (décrocher des entretiens), jamais « corporate »."""
 
 MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+# Modele de repli quand le principal reste surcharge (503) apres plusieurs essais (gemini_retry.py).
+FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
 
 # Debit de la voix TTS (style "rythme rapide pour reseaux sociaux") mesure sur
 # les voix Gemini FR : ~2.6 mots/s. Sert a traduire la duree cible en volume
@@ -134,8 +137,8 @@ def scene_bounds(duration: int) -> tuple[int, int]:
 def _gemini_json(client, prompt: str, temperature: float) -> dict:
     from google.genai import types
 
-    response = client.models.generate_content(
-        model=MODEL_NAME,
+    response = generate_with_retry(
+        client, model=MODEL_NAME, fallback_model=FALLBACK_MODEL, label="Gemini (scenario)",
         contents=prompt,
         config=types.GenerateContentConfig(response_mime_type="application/json", temperature=temperature),
     )

@@ -524,6 +524,10 @@ si le premier chargement dépasse le délai habituel.
   l'app est traduite et Chromium headless annonce l'anglais, ce qui cassait le parcours (libellés
   français attendus) et aurait filmé une interface anglaise.
 
+- **Surcharge Gemini** (503 « high demand », 429, 500/502/504) : chaque appel (scénario, choix du sujet,
+  voix) attend puis réessaie (15, 30, 60 puis 90 s, `scripts/gemini_retry.py`) au lieu de faire échouer
+  le run. Pour le scénario, les deux derniers essais passent sur un modèle de repli
+  (`GEMINI_FALLBACK_MODEL`, `gemini-2.5-flash` par défaut). Une autre erreur (clé invalide…) arrête tout de suite.
 - Le modèle TTS Gemini est en statut *preview* côté Google (pas de SLA garanti) — teste régulièrement la qualité de sortie.
 - Whisper tourne en CPU (`--model small` par défaut) ; largement suffisant pour des reels de 15-30s.
 - Aucun GPU nécessaire pour ce pipeline (pas d'avatar animé, juste du screen-record + montage).

@@ -15,6 +15,7 @@ import wave
 from pathlib import Path
 
 
+from gemini_retry import generate_with_retry
 from script_text import script_to_text
 
 # Voix disponibles cote Gemini TTS (exemples courants a adapter selon la doc a jour)
@@ -32,8 +33,8 @@ def synthesize(client, text: str, voice: str, pcm_path: Path, tone: str = DEFAUL
     """Appelle l'API Gemini TTS et ecrit le flux audio en wav (PCM 24kHz 16-bit mono)."""
     from google.genai import types
 
-    response = client.models.generate_content(
-        model=TTS_MODEL_NAME,
+    response = generate_with_retry(
+        client, model=TTS_MODEL_NAME, label="Gemini TTS",
         contents=f"[style: {tone}] {text}",
         config=types.GenerateContentConfig(
             response_modalities=["AUDIO"],
