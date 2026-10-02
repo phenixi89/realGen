@@ -348,7 +348,7 @@ assis) :
   imposable par `--plan` : `"trame"`) : 17 trames : avant / après, ce que pense le recruteur, quiproquo,
   l'erreur en direct, vrai ou faux, le chat juge (running gag), ça aurait pu être pire, la règle à retenir,
   à la place du recruteur (rôles inversés), dix minutes avant (compte à rebours), deux lendemains, le faux
-  conseil, l'enquête, flashback, la répétition générale, le coup de fil surprise, ce que je ne dis jamais.
+  conseil, l'enquête, flashback, la répétition générale, le coup de fil surprise (la voix du recruteur au téléphone n'est jamais entendue : seuls Karim et Léa parlent), ce que je ne dis jamais (seuls Karim et le recruteur parlent).
   Ajouter une trame = une entrée `{id, nom, consigne}`, sans code.
 - **Chute** obligatoire juste avant le CTA (retournement ou réplique drôle, souvent un gros plan
   `rapide` sur le visage qui réagit).
@@ -357,7 +357,7 @@ assis) :
   sans ellipse sont fusionnées en une (`fusionner_meme_lieu`, titre de la seconde oublié ; run 61 :
   « Deux minutes après » dans le même salon) : le décor ne se redessine plus pour rien.
 - **Répliques dites à voix haute** : pas de « POV » ni de code des réseaux dans une réplique (contrôlé :
-  Gemini reformule) ; l'accroche `pov` (`"dessin": false` dans `hooks.json`) n'est jamais tirée pour le
+  Gemini reformule) ; les accroches `pov` et `personne_moi` (`"dessin": false` dans `hooks.json` : écrites, elles ne se disent pas) n'est jamais tirée pour le
   dessin animé (ni proposée par la console, refusée dans `--plan`). OpusCV n'a que ses fonctions réelles :
   aucun chiffre de performance inventé dans la bouche d'un personnage (« trois variantes en deux clics »).
 - **Montrer au lieu de dire** : au moins une mise en scène « cinéma » par reel (`ACTIONS_MISE_EN_SCENE` :
@@ -462,7 +462,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 |---|---|---|
 | `catalog/formats.json` | **Structure** de la vidéo (34 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
 | `catalog/sujets.json` | **De quoi** parle la vidéo (165 sujets, 14 familles), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, carrière et emploi (négocier, démissionner, choisir une offre, premier jour…), métiers (CV de commercial, de développeur, de soignant…), familles produit (dont les nouveautés : 6 mises en page, conversion de langue, chiffres sans invention, sections libres, lettre en PDF…) |
-| `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
+| `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` et, pour celles centrées sur le CV (`erreur_visible`, `comparaison_inattendue`), des `tags` : elles ne sont tirées que pour un sujet de ce tag (pas pour « démissionner proprement ») | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
 | `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`), `registres` (absent = tous) | violet nuit, corail, vert, bleu corporate, bande dessinée pop, sitcom pastel… |
 | `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), mix de registres (`registres` : sérieux 70 % / humour 30 %), règles d'écriture humoristique (`consigne_humour`, `ton_humour`), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), textes Instagram (`instagram`), scène preuve, phrases bannies | |
 

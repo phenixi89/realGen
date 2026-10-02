@@ -381,12 +381,12 @@
     {
       "id": "coup_de_fil",
       "nom": "Le coup de fil surprise",
-      "consigne": "Le téléphone sonne au pire moment (métro, courses, canapé) : c'est un recruteur. Karim doit improviser sous pression ; Léa, à côté, lui souffle les bons réflexes (se présenter, demander un créneau, noter). Tension comique, puis réussite."
+      "consigne": "Le téléphone sonne au pire moment (métro, courses, canapé) : c'est un recruteur. On n'entend QUE Karim et Léa (la voix du recruteur au bout du fil n'est jamais entendue) : Karim répète ou reformule à voix haute ce qu'il entend (« Demain, quatorze heures ? »), Léa lui souffle les bons réflexes (se présenter, demander un créneau, noter). Tension comique, puis réussite."
     },
     {
       "id": "confidence_recruteur",
       "nom": "Ce que je ne dis jamais",
-      "consigne": "Dans l'ascenseur ou la salle d'attente, le recruteur lâche à Karim, off the record, ce qu'il ne dit jamais en entretien. Révélation franche, un peu gênante, qui change la façon de se préparer ; Léa conclut par un geste concret."
+      "consigne": "Dans l'ascenseur ou la salle d'attente, le recruteur lâche à Karim, off the record, ce qu'il ne dit jamais en entretien. Seuls Karim et le recruteur parlent (Léa, si elle est là, ne dit rien : elle réagit par ses gestes) ; l'appel à l'action est dit par Karim. Révélation franche, un peu gênante, qui change la façon de se préparer."
     }
   ]
 }

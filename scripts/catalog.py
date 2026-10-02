@@ -520,9 +520,13 @@ def hook_ok_dessin(h: dict) -> bool:
     return h.get("dessin", True) is not False
 
 
-def pick_hook(history: list[dict], rng: random.Random, registre: str | None = None, dessin: bool = False) -> dict:
-    pool = [h for h in hooks() if (registre is None or registre in registres_of(h)) and (not dessin or hook_ok_dessin(h))] \
-        or [h for h in hooks() if not dessin or hook_ok_dessin(h)]
+def pick_hook(history: list[dict], rng: random.Random, registre: str | None = None, dessin: bool = False,
+              tags: list[str] | None = None) -> dict:
+    """Accroche tiree (registre, dessin anime, tags du sujet : une accroche a "tags" exige un tag commun avec le sujet)."""
+    def ok_tags(h):
+        return tags is None or not h.get("tags") or bool(set(h["tags"]) & set(tags))
+    pool = [h for h in hooks() if (registre is None or registre in registres_of(h)) and (not dessin or hook_ok_dessin(h)) and ok_tags(h)] \
+        or [h for h in hooks() if (not dessin or hook_ok_dessin(h)) and ok_tags(h)]
     return weighted_pick(pool, _recent(history, "hook", config()["historique_hooks"]), rng)
 
 

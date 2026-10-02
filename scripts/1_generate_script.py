@@ -242,7 +242,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         else:
             sujet = choose_sujet(client, fmt, working, rng)
         hid, tid = ov.get("hook") or hook_id, ov.get("theme") or theme_id
-        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin")))
+        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin")), sujet.get("tags"))
         theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre)
         voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng)
         cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
