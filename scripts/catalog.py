@@ -123,7 +123,7 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
         errors.append(f"scene {n} : fond inconnu '{sc.get('fond')}' (choix : {sorted(fonds_)})")
         clean["fond"] = "vide"
     ids, objets = {}, []
-    for o in sc.get("objets") or []:
+    for o in _ordre_supports([o for o in sc.get("objets") or [] if isinstance(o, dict)]):
         if not isinstance(o, dict):
             continue
         t = objets_.get(o.get("type"))
@@ -169,6 +169,12 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
             errors.append(f"scene {n} : action sur un objet absent '{a.get('qui')}'")
             continue
         a = _corrige_expr_geste(a, perso) if t["categorie"] == "personnage" else a
+        if t["categorie"] == "personnage" and a.get("action") not in perso["actions"]:
+            # Action d'objet donnee a un personnage (Lea "taper") : rendue a l'objet de la scene qui la sait.
+            porteurs = [i for i, ti in ids.items() if a.get("action") in (ti.get("actions") or [])]
+            if len(porteurs) == 1:
+                a = {**a, "qui": porteurs[0]}
+                t = ids[porteurs[0]]
         possibles = list(perso["actions"]) if t["categorie"] == "personnage" else (t.get("actions") or [])
         if a.get("action") not in possibles:
             errors.append(f"scene {n} : action '{a.get('action')}' impossible pour {a.get('qui')} (choix : {possibles})")
@@ -191,13 +197,39 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
             tenus[a["qui"]] = a.get("objet")
         elif a["action"] == "poser":
             tenus.pop(a["qui"], None)
+        suite = None
+        if a.get("geste") and a["geste"] not in perso["gestes"] and a["geste"] in perso["actions"] \
+                and t["categorie"] == "personnage":
+            # "geste": "sauter" -> action a part, jouee en meme temps.
+            suite = {"qui": a["qui"], "action": a.pop("geste"), "avec": True}
         for champ, liste in (("expr", perso["expressions"]), ("geste", perso["gestes"])):
             if a.get(champ) and a[champ] not in liste:
                 errors.append(f"scene {n} : {champ} inconnu '{a[champ]}' (choix : {liste})")
                 del a[champ]
         actions.append(a)
+        if suite:
+            actions.append(suite)
     clean["objets"], clean["actions"] = objets, actions
     return clean, errors
+
+
+def _ordre_supports(objets: list[dict]) -> list[dict]:
+    """Un support (table, chaise, personnage qui tient) passe avant ce qui s'y pose / s'y assoit."""
+    ids = {o.get("id") for o in objets}
+    def dep(o):
+        cible = str(o.get("sur") or "").split(".")[0] or o.get("assis")
+        return cible if cible in ids and cible != o.get("id") else None
+    restants, rangés, vus = list(objets), [], set()
+    while restants:
+        prets = [o for o in restants if dep(o) is None or dep(o) in vus]
+        if not prets:  # cycle : ordre d'origine, le controle signalera
+            rangés += restants
+            break
+        for o in prets:
+            rangés.append(o)
+            vus.add(o.get("id"))
+            restants.remove(o)
+    return rangés
 
 
 def _corrige_expr_geste(a: dict, perso: dict) -> dict:
@@ -211,6 +243,8 @@ def _corrige_expr_geste(a: dict, perso: dict) -> dict:
         a["action"] = "expression"
     if a.get("action") in perso["expressions"]:
         a["expr"], a["action"] = a["action"], "expression"
+    if a.get("action") in perso["gestes"] and a["action"] not in perso["actions"]:
+        a["geste"], a["action"] = a["action"], "geste"
     if a.get("expr") in perso["gestes"] and a.get("geste") in perso["expressions"]:
         a["expr"], a["geste"] = a["geste"], a["expr"]  # inverses
     if a.get("expr") in perso["gestes"] and a["expr"] not in perso["expressions"]:

@@ -295,7 +295,16 @@ face à face, objets posés ou tenus, personnage assis) :
   `expression` ; personnage, animal ou chaise sans `regard` tourné vers le centre ; objet mural sans `y`
   accroché à 700 px ; `boire` / `telephoner` avec un `objet` pas encore en main → `tenir` ajouté avant ;
   objet à main (tasse, ordinateur…) posé par terre → posé sur la table de la scène (sinon retiré),
-  et signalé.
+  et signalé ; support déclaré après ce qu'il porte → objets réordonnés ; geste écrit comme une action
+  (`"action": "montre"`) → action `geste` ; action d'objet donnée à un personnage (Léa qui « tape ») →
+  rendue à l'objet de la scène qui la sait ; action écrite comme geste (`"geste": "sauter"`) → jouée à
+  part, en même temps. Si aucune tentative n'est parfaite, la plus propre (le moins de problèmes) est
+  gardée, pas la dernière ; une scène restée sans action visible reçoit alors une posture pour celui qui
+  écoute (`penser` après une question, sinon `bras_croises`).
+- **Mise en scène exigée** : chaque scène dessinée a au moins une action visible (pas seulement des
+  paroles), et le reel au moins 2 actions qui s'entendent (`ACTIONS_BRUITEES` : entrer, marcher,
+  s'asseoir, poser, vibrer, taper, miauler, idée…) ; l'accroche parlée n'a ni pourcentage ni statistique ;
+  une révélation annoncée doit arriver avant le CTA.
   Le montage repasse chaque scène par ce contrôle (corrections récentes appliquées aux anciens scénarios). Dans `scripts.json`, une scène porte `repliques` (`[{qui, texte}]`), `dessin` (la scène
   jouable) et `texte` (les répliques bout à bout) ; le reel porte `dessin: true` et `voix_personnages`.
 - **Voix** : toutes les répliques en **un seul appel** Gemini TTS multi-locuteurs, une voix par
@@ -445,7 +454,8 @@ sont tirés parmi plusieurs variantes.
 
 **Originalité** : formats POV, « ce que le recruteur voit vraiment », tier list, red flag / green flag,
 quiz « trouve l'erreur » ; Gemini doit apporter un élément concret par scène (exemple de formulation,
-cas précis), les conseils génériques de `phrases_bannies` sont refusés, et la dernière phrase répond
+cas précis), les conseils génériques et promesses intenables (« entretien garanti ») de `phrases_bannies`
+sont refusés, et la dernière phrase répond
 à l'accroche pour que la vidéo boucle naturellement ; dès la scène 2, une **boucle ouverte** (révélation promise, tenue vers la fin) retient le spectateur au-delà des 3 premières secondes.
 
 Les formats à cartes affichent des **cartes animées** à la place des captures (en

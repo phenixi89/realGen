@@ -114,6 +114,12 @@ MAX_ANNOTATIONS = 2
 CARROUSEL_MIN, CARROUSEL_MAX = 4, 8
 # Dessin anime (formats "dessin": true) : une replique tient dans une bulle.
 REPLIQUE_MAX_WORDS = 16
+# Actions sans parole qui ne se voient presque pas (ne comptent pas comme "action" d'une scene).
+ACTIONS_PAROLE = ("parler", "expression", "geste", "regarder", "pause")
+# Actions qui font un bruitage (Dessin.son dans assets/anim/dessin/) : au moins 2 par reel.
+ACTIONS_BRUITEES = ("marcher", "entrer", "sortir", "sauter", "s_asseoir", "se_lever", "poser", "vibrer",
+                    "taper", "miauler", "dormir", "traverser", "idee")
+MIN_BRUITAGES = 2
 # Sans aucun de ces caracteres sur tout un script, le texte a ete ecrit sans
 # accents : les sous-titres (texte exact du script) seraient faux.
 ACCENT_RE = re.compile(r"[éèêëàâùûüîïôçœÉÈÊÀÂÙÛÎÔÇ]")
@@ -297,11 +303,17 @@ Mise en scène :
   - 3 à 7 objets par scène : les personnages présents + au moins un objet ou meuble qui situe l'action ;
   - "parler" porte UNE réplique ("texte" : 3 à {REPLIQUE_MAX_WORDS} mots, une phrase orale), avec "expr" et "geste"
     accordés au texte (geste optionnel) ; 2 à 5 répliques par scène ;
-  - 1 à 3 actions sans parole par scène, utiles à l'histoire (entrer, s'asseoir, tenir puis boire, téléphone qui
-    vibre, chat qui miaule...), à la suite ou en même temps que la réplique précédente ("avec": true) ;
+  - CHAQUE scène a 1 à 3 actions sans parole qui se voient, utiles à l'histoire (entrer, s'asseoir, tenir puis
+    boire, poser, téléphone qui vibre, ordinateur qui tape, chat qui miaule ou dort, sauter de joie, idée...),
+    à la suite ou en même temps que la réplique précédente ("avec": true) ; au moins {MIN_BRUITAGES} dans le reel
+    qui s'entendent : {", ".join(ACTIONS_BRUITEES)} ; un personnage peut entrer pendant que l'autre parle ;
+    le chat (une scène au plus) apporte une petite touche d'humour ;
   - "titre" (optionnel, 2 à 4 mots : lieu ou moment, ex : « Lundi, 9 h ») : jamais sur la scène 1 ;
   - varie les décors d'une scène à l'autre quand l'histoire change de lieu ou de moment.
-Scène 1 : l'accroche est la 1re réplique (12 mots max), dite tout de suite, avant toute autre action.
+Scène 1 : l'accroche est la 1re réplique (12 mots max, sans pourcentage ni statistique), dite tout de suite,
+avant toute autre action ; la scène 1 a ensuite, elle aussi, au moins une action visible.
+Une révélation annoncée (« je te donne LA phrase », « attends la suite ») arrive EXPLICITEMENT plus loin dans le
+dialogue, avant le CTA : jamais de promesse sans suite.
 Dernière scène = l'appel à l'action, SANS décor : {{"cta": true, "qui": "lea", "texte": "..."}} -- un personnage
 le dit pendant que l'écran d'appel à l'action s'affiche.
 Dans ce format, l'accroche (1re réplique) peut être à la 1re personne (« Pourquoi personne ne me rappelle ? »)
@@ -796,6 +808,26 @@ def common_problems(scenes: list[dict], data: dict, duration: int, tone: str, re
     return problems
 
 
+def completer_mise_en_scene(scenes: list[dict]) -> None:
+    """
+    Dernier recours (apres les tentatives) : une scene dessinee restee sans action visible
+    recoit une posture pour celui qui ecoute la 1re replique (il reflechit si c'est une
+    question, sinon il croise les bras) -- jamais un plan fige ou seules les bouches bougent.
+    """
+    for s in scenes:
+        d = s.get("dessin")
+        if not d or any(a.get("action") not in ACTIONS_PAROLE for a in d["actions"]):
+            continue
+        parler = [i for i, a in enumerate(d["actions"]) if a.get("action") == "parler"]
+        presents = [o["id"] for o in d["objets"] if o["id"] in catalog.personnages() or o["type"] in catalog.personnages()]
+        if not parler or not presents:
+            continue
+        orateur = d["actions"][parler[0]]["qui"]
+        ecoute = next((p for p in presents if p != orateur), orateur)
+        posture = "penser" if d["actions"][parler[0]]["texte"].rstrip().endswith("?") else "bras_croises"
+        d["actions"].insert(parler[0] + 1, {"qui": ecoute, "action": posture, "avec": True})
+
+
 def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
     """
     Format dessin anime -> scenes du scenario :
@@ -850,6 +882,19 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
         problems.append(f"{len(parleurs)} personnages parlent ({', '.join(parleurs)}) : 2 au plus")
     if scenes and len(scenes[0]["repliques"][0]["texte"].split()) > 12:
         problems.append("l'accroche (1re réplique) dépasse 12 mots")
+    if scenes and "%" in scenes[0]["repliques"][0]["texte"]:
+        problems.append("l'accroche (1re réplique) contient un pourcentage : pas de statistique inventée")
+    dessinees = [s for s in scenes if "dessin" in s]
+    muettes = [i + 1 for i, s in enumerate(scenes) if "dessin" in s
+               and not any(a.get("action") not in ACTIONS_PAROLE for a in s["dessin"]["actions"])]
+    if muettes:
+        problems.append(f"scène(s) {', '.join(map(str, muettes))} sans action visible (que des paroles) : "
+                        "ajoute une action (entrer, s'asseoir, poser, vibrer, taper, miauler...)")
+    bruits = sum(1 for s in dessinees for a in s["dessin"]["actions"]
+                 if a.get("action") in ACTIONS_BRUITEES or a.get("geste") == "idee")
+    if dessinees and bruits < MIN_BRUITAGES:
+        problems.append(f"{bruits} action(s) qui s'entendent, il en faut au moins {MIN_BRUITAGES} "
+                        f"({', '.join(ACTIONS_BRUITEES)})")
     return scenes, problems
 
 
@@ -859,6 +904,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
     feedback = None
     best: list[dict] = []
     best_data: dict = {}
+    best_problems: list[str] | None = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             data = _gemini_json(client, build_prompt(plan, duration, forced, feedback, recent_hooks), 0.9)
@@ -870,7 +916,9 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
                                     wants_proof(fmt) and not sans_captures and not fmt.get("dessin"),
                                     catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")))
         if scenes:
-            best, best_data = scenes, data
+            # Garde la tentative la plus propre (pas forcement la derniere) si aucune n'est parfaite.
+            if best_problems is None or len(problems) <= len(best_problems):
+                best, best_data, best_problems = scenes, data, problems
         if not problems:
             break
         feedback = " ; ".join(problems)
@@ -883,6 +931,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
             scene.setdefault("carte", fallback_card(scene["texte"]))
     dessin_fields = {}
     if fmt.get("dessin"):
+        completer_mise_en_scene(best)
         # Une voix par personnage qui parle (2_generate_voice.py, un seul appel multi-locuteurs).
         parleurs = dict.fromkeys(r["qui"] for s in best for r in s.get("repliques", []))
         dessin_fields = {"dessin": True,
