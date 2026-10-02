@@ -1,15 +1,23 @@
 {
-  "_doc": "Styles d'accroche (2 premieres secondes). Un style est tire par reel en evitant les plus recents, et impose a Gemini pour la scene 1 et le texte affiche a l'ecran (accroche_ecran). Ajouter un style = ajouter une entree. registres : registres compatibles ('serieux' et/ou 'humour', absent = ['serieux']) : un reel humour ne tire que des accroches marquees 'humour'.",
+  "_doc": "Styles d'accroche (2 premieres secondes). Un style est tire par reel en evitant les plus recents, et impose a Gemini pour la scene 1 et le texte affiche a l'ecran (accroche_ecran). Ajouter un style = ajouter une entree. registres : registres compatibles ('serieux' et/ou 'humour', absent = ['serieux']) : un reel humour ne tire que des accroches marquees 'humour'. poids : probabilité relative du tirage (1 par défaut) ; les accroches « Pourquoi… ? » centrées sur une douleur vécue (question_choc, pourquoi_douleur) sont favorisées car ce sont celles qui ont le mieux performé.",
   "hooks": [
     {
       "id": "question_choc",
       "consigne": "Une question directe qui touche une peur ou une frustration du chercheur d'emploi.",
-      "exemple": "Pourquoi personne ne répond à tes candidatures ?"
+      "exemple": "Pourquoi personne ne répond à tes candidatures ?",
+      "poids": 3
+    },
+    {
+      "id": "pourquoi_douleur",
+      "poids": 3,
+      "consigne": "Une question « Pourquoi… ? » sur une douleur précise et vécue du candidat (silence après une candidature ou un entretien, lettre jamais lue, CV ignoré) : le spectateur doit se reconnaître tout de suite.",
+      "exemple": "Pourquoi personne ne lit ta lettre de motivation ?"
     },
     {
       "id": "chiffre",
       "consigne": "Un chiffre marquant et plausible (sans inventer de statistique précise sur OpusCV), présenté comme un constat.",
-      "exemple": "75 % des CV ne sont jamais lus par un humain."
+      "exemple": "75 % des CV ne sont jamais lus par un humain.",
+      "poids": 0.5
     },
     {
       "id": "erreur",
@@ -19,7 +27,8 @@
     {
       "id": "contre_intuitif",
       "consigne": "Une affirmation qui contredit une idée reçue, pour créer la surprise.",
-      "exemple": "Un beau CV peut te coûter l'entretien."
+      "exemple": "Un beau CV peut te coûter l'entretien.",
+      "poids": 0.7
     },
     {
       "id": "pov",
@@ -38,7 +47,8 @@
     {
       "id": "secret",
       "consigne": "Révéler un fonctionnement caché du recrutement.",
-      "exemple": "Ce que les recruteurs ne te disent jamais sur ton CV."
+      "exemple": "Ce que les recruteurs ne te disent jamais sur ton CV.",
+      "poids": 0.5
     },
     {
       "id": "liste_numerotee",
@@ -47,7 +57,8 @@
       "registres": [
         "serieux",
         "humour"
-      ]
+      ],
+      "poids": 0.5
     },
     {
       "id": "interpellation_metier",

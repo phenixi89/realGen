@@ -262,7 +262,7 @@ Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
 - le **sujet** est choisi par Gemini dans cette famille, parmi ceux compatibles avec le format et non traités
   récemment ; hors des familles ATS / rédaction, le prompt lui interdit de dériver vers l'ATS, les mots-clés
   ou le chiffrage des résultats ;
-- l'**accroche** et le **thème** tournent (tirage pondéré par `poids`, sans les plus récents) ;
+- l'**accroche** et le **thème** tournent (tirage pondéré par `poids`, sans les plus récents) ; les accroches « Pourquoi… ? » sur une douleur vécue (`question_choc`, `pourquoi_douleur`, poids 3) sont favorisées, les listes, chiffres et « secrets » réduits (poids 0,5) car ils ont moins bien performé ;
 - une accroche trop proche d'une accroche déjà publiée est refusée et Gemini recommence ;
 - tout est historisé dans `output/content_history.json` (persisté entre les runs CI par le cache).
 
@@ -296,7 +296,7 @@ sont tirés parmi plusieurs variantes.
 **Originalité** : formats POV, « ce que le recruteur voit vraiment », tier list, red flag / green flag,
 quiz « trouve l'erreur » ; Gemini doit apporter un élément concret par scène (exemple de formulation,
 cas précis), les conseils génériques de `phrases_bannies` sont refusés, et la dernière phrase répond
-à l'accroche pour que la vidéo boucle naturellement.
+à l'accroche pour que la vidéo boucle naturellement ; dès la scène 2, une **boucle ouverte** (révélation promise, tenue vers la fin) retient le spectateur au-delà des 3 premières secondes.
 
 Les formats à cartes affichent des **cartes animées** à la place des captures (en
 `--capture-mode screenshots` ou `aucune`), dont Gemini choisit le type selon le contenu :
@@ -366,8 +366,12 @@ Le même reel vertical 9:16 sert de Reel Instagram ; `scripts/instagram.py` (app
 |---|---|---|
 | `tiktok` | `reel_XX.txt` | légende courte + 4 à 6 hashtags |
 | `instagram` | `reel_XX.instagram.txt` | légende Instagram (1re ligne accrocheuse visible avant « plus », résumé des conseils, question, invitation à enregistrer) + 5 hashtags au plus (`instagram.hashtags_max`) |
-| `instagram` | `reel_XX.couverture.jpg` | couverture 1080×1920 : l'accroche en grand sur une image floutée du reel, texte dans la zone commune aux recadrages de la grille (3:4 et carré) |
+| `tiktok` ou `instagram` | `reel_XX.couverture.jpg` | couverture 1080×1920 : l'accroche en grand sur un fond uni aux couleurs du thème (jamais une capture, illisible une fois réduite dans la grille), texte dans la zone commune aux recadrages de la grille (3:4 et carré). À importer comme couverture à la publication (voir ci-dessous) |
 | `carrousel` | `reel_XX_carrousel/01.png…` + `legende.txt` | carrousel 4:5 (1080×1350) : couverture, une idée par diapositive (numéro, barre de progression, « Glisse → »), diapositive finale d'appel à l'action (`instagram.carrousel_fin`) |
+
+**Couverture TikTok** : à la publication, TikTok propose « Modifier la couverture » : choisir une image de la
+vidéo ou en importer une depuis la galerie du téléphone (`reel_XX.couverture.jpg`). Sans cela, la grille du
+profil affiche une image de la vidéo au hasard, sous-titres compris.
 
 Les textes Instagram et les 4 à 8 diapositives du carrousel sont écrits par Gemini avec le scénario
 (`legende_instagram`, `hashtags_instagram`, `carrousel`) ; à défaut (ancien scénario, scénario manuel

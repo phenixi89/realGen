@@ -495,7 +495,7 @@ def main():
         # (instagram) et carrousel 4:5 (carrousel), cf. instagram.py.
         if "tiktok" in args.plateformes:
             write_caption_file(scripts[i - 1], final_path.with_suffix(".txt"))
-        insta = [k for k in args.plateformes if k != "tiktok"]
+        insta = list(args.plateformes)  # tiktok => couverture seule
         if insta:
             run([sys.executable, str(ROOT / "instagram.py"), "--scripts", str(scripts_path), "--index", str(i),
                  "--final", str(final_path), "--plateformes", ",".join(insta)])

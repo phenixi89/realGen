@@ -4,9 +4,9 @@ Declinaisons Instagram d'un reel (run_pipeline.py --plateformes) :
   instagram -> reel_XX.instagram.txt : legende propre a Instagram (1re ligne
                accrocheuse, resume, question, invitation a enregistrer) et
                hashtags limites a config.json instagram.hashtags_max ;
-               reel_XX.couverture.jpg : couverture 1080x1920 (assets/anim/
+  tiktok ou instagram -> reel_XX.couverture.jpg : couverture 1080x1920 (assets/anim/
                couverture.html), texte dans la zone visible en grille 3:4 et 1:1,
-               sur une image du reel floutee.
+               sur un fond uni aux couleurs du theme (TikTok et Instagram).
   carrousel -> reel_XX_carrousel/01.png... : carrousel 4:5 (1080x1350,
                assets/anim/carrousel.html) -- couverture, une idee par
                diapositive, diapositive finale d'appel a l'action
@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 import catalog
-from render_js_anim import file_uri, render_stills
+from render_js_anim import render_stills
 
 PLATEFORMES = ("tiktok", "instagram", "carrousel")
 CARROUSEL_SIZE = (1080, 1350)
@@ -111,18 +111,6 @@ def carrousel_slides(script: dict) -> list[dict]:
     return slides
 
 
-def _grab_frame(video: Path, out: Path) -> Path | None:
-    """Image du reel (a 40 % de sa duree) pour le fond de la couverture."""
-    try:
-        dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
-                                    str(video)], capture_output=True, text=True, check=True).stdout.strip())
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{dur * 0.4:.2f}", "-i", str(video),
-                        "-frames:v", "1", str(out)], check=True)
-        return out if out.exists() else None
-    except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
-        return None
-
-
 def export(script: dict, final_video: Path, plateformes: list[str]) -> list[Path]:
     """Ecrit les declinaisons demandees a cote de final_video ; -> fichiers ecrits."""
     theme = catalog.get_theme(script.get("theme"))
@@ -136,12 +124,12 @@ def export(script: dict, final_video: Path, plateformes: list[str]) -> list[Path
             txt = final_video.with_suffix(".instagram.txt")
             txt.write_text(caption, encoding="utf-8")
             written.append(txt)
+        if "instagram" in plateformes or "tiktok" in plateformes:
+            # Couverture commune TikTok / Instagram : fond uni aux couleurs du theme, jamais une capture
+            # (une capture floue derriere le titre le rend illisible dans la grille du profil).
             params = {**base, "titre": script.get("accroche_ecran") or script.get("titre") or "", "marque": BRAND}
             if script.get("episode"):
                 params["surtitre"] = f"Jour {script['episode']}/30"
-            frame = _grab_frame(final_video, Path(tmp) / "frame.jpg") if final_video.exists() else None
-            if frame:
-                params["bg"] = file_uri(frame)
             jobs_story.append(("couverture", params, Path(f"{stem}.couverture.jpg")))
         if "carrousel" in plateformes:
             folder = Path(f"{stem}_carrousel")
@@ -169,7 +157,7 @@ def main():
     parser.add_argument("--index", type=int, required=True, help="Numero du reel (1 = premier scenario)")
     parser.add_argument("--final", type=str, required=True, help="Reel final (.mp4) : les fichiers sont ecrits a cote")
     parser.add_argument("--plateformes", type=parse_plateformes, default=["instagram", "carrousel"],
-                         help="instagram (legende + couverture), carrousel ; tiktok est ignore ici")
+                         help="tiktok (couverture), instagram (legende + couverture), carrousel")
     args = parser.parse_args()
     scripts = json.loads(Path(args.scripts).read_text(encoding="utf-8"))
     if not 1 <= args.index <= len(scripts):

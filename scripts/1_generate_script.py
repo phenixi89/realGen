@@ -414,6 +414,9 @@ Contraintes :
   un cas précis ou une astuce actionnable immédiatement ;
 - RESTE SUR LE SUJET : {off_topic}
 - RYTHME : phrases courtes et percutantes, une idée par scène, aucune phrase de transition creuse ;
+- BOUCLE OUVERTE : dès la scène 2, promets une révélation placée plus tard (« et la 3ᵉ erreur est la pire »,
+  « reste jusqu'à la fin pour la phrase à copier ») et tiens-la dans les dernières scènes : c'est ce qui
+  retient le spectateur au-delà des 3 premières secondes ;
 - BOUCLE : la dernière phrase répond ou fait écho à l'accroche, pour que la vidéo s'enchaîne
   naturellement si elle recommence.
 
