@@ -195,18 +195,23 @@ récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
 ### Personnages (`perso.js`, gabarit `dialogue`) — prototype
 
-Deux personnages colorés, dessinés en SVG et animés par GSAP (`assets/anim/perso.js`) : **Léa**
-(`femme`, haut rose, cheveux longs, boucles d'oreilles) et **Karim** (`homme`, haut turquoise, lunettes
-orange). Style plat avec ombres douces et contours teintés, cadrés en plan taille (buste, bras, tête).
-Chacun a 6 expressions (`neutre`, `content`, `choc`, `doute`, `triste`, `agace` : sourcils, yeux et
-bouche), 3 gestes (`salut`, `montre` vers l'autre personnage, `hausse` des épaules), bouge la bouche
-pendant sa réplique, respire, cligne des yeux et regarde celui qui parle. Tout passe par la timeline :
-le rendu est déterministe, comme les autres gabarits.
+Deux personnages en **illustration éditoriale**, dessinés en SVG et animés par GSAP
+(`assets/anim/perso.js`) : **Léa** (`femme`, carré brun, veste bleu nuit sur un haut à la couleur
+d'accent du thème, collier fin) et **Karim** (`homme`, veste camel, chemise claire, barbe courte,
+lunettes fines). Proportions réalistes, palette sobre, aplats sans contour avec ombres douces, visage
+minimal (yeux en points, traits fins). Ils sont assis à mi-corps derrière un bureau d'entretien (avec une
+feuille de CV et un stylo), avant-bras posés dessus. Chacun a 6 expressions (`neutre`, `content`,
+`choc`, `doute`, `triste`, `agace` : sourcils, yeux et bouche) et 4 gestes, avec des bras articulés au
+coude : `explique` (mains levées devant soi), `montre` (vers l'autre personnage), `hausse` (épaules,
+mains qui s'ouvrent), `salut`. Celui qui parle bouge la bouche et la tête ; l'autre le regarde et revient
+à une expression neutre ; tous deux respirent et clignent des yeux. Tout passe par la timeline : le rendu
+est déterministe, comme les autres gabarits.
 
-Le gabarit `dialogue` les fait se parler, une bulle par réplique au-dessus de celui qui parle :
-`repliques` = `g:texte {expr,geste}|d:texte|…` (`g` = gauche, `d` = droite, `{expr,geste}` optionnel,
-6 répliques au plus), `gauche` / `droite` (id du personnage, `femme` et `homme` par défaut), `surtitre`,
-`bg` + thème. Chaque réplique dure 0,9 s + 0,28 s par mot (entre 1,4 et 4 s).
+Le gabarit `dialogue` les fait se parler, une bulle par réplique au-dessus de celui qui parle (prénom
+en petites capitales, liseré à la couleur de sa veste) : `repliques` = `g:texte {expr,geste}|d:texte|…`
+(`g` = gauche, `d` = droite, `{expr,geste}` optionnel, 6 répliques au plus), `gauche` / `droite` (id du
+personnage, `femme` et `homme` par défaut), `surtitre`, `bg` + thème. Chaque réplique dure 0,9 s +
+0,28 s par mot (entre 1,4 et 4 s).
 
 ```bash
 python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&repliques=g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}" --duration 7 --out /tmp/dialogue.mp4
@@ -214,7 +219,8 @@ python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&replique
 
 Pas encore branché au générateur de scénarios (ni bouche synchronisée sur la voix off, ni effets
 sonores) : à utiliser en rendu manuel pour tester le rendu. Ajouter un personnage = ajouter une entrée
-à `PERSOS` dans `perso.js` (couleurs, coiffure `longs`/`courts`, accessoire `boucles`/`lunettes`).
+à `PERSOS` dans `perso.js` (couleurs, coiffure `carre`/`courts`, accessoire `collier`/`lunettes`,
+`barbe` ; une couleur `var(--c1)` suit le thème).
 
 ## Ligne éditoriale : le catalogue (`catalog/`)
 

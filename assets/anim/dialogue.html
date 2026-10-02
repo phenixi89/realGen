@@ -1,14 +1,15 @@
 <!doctype html>
 <!--
-  Scene "dialogue" : deux personnages colores (assets/anim/perso.js) se parlent,
-  une bulle par replique au-dessus de celui qui parle. Pendant sa replique, le
-  personnage bouge la bouche et sautille ; l'autre le regarde. Expression et
-  geste au choix par replique.
+  Scene "dialogue" : deux personnages (assets/anim/perso.js, style illustration
+  editoriale) assis de part et d'autre d'un bureau se parlent, une bulle par
+  replique au-dessus de celui qui parle. Pendant sa replique, le personnage
+  bouge la bouche et la tete ; l'autre le regarde et revient a une expression
+  neutre. Expression et geste au choix par replique.
   Parametres :
     repliques  "g:texte {expr,geste}|d:texte|..." -- g = personnage de gauche,
                d = de droite ; {expr,geste} optionnel en fin de replique
                (expr : neutre, content, choc, doute, triste, agace ;
-                geste : salut, montre, hausse) ; 6 repliques max ;
+                geste : explique, montre, hausse, salut) ; 6 repliques max ;
     gauche / droite  id du personnage (perso.js PERSOS : femme, homme) ;
     surtitre, bg + theme.
   Duree : chaque replique dure 0,9 s + 0,28 s par mot (entre 1,4 et 4 s).
@@ -18,15 +19,14 @@
 <style>
   #kwrap{position:absolute;top:220px;width:100%;text-align:center}
   #scene{position:absolute;inset:0}
-  .bulle{position:absolute;bottom:1010px;max-width:880px;padding:34px 44px;border-radius:48px;background:#ffffff;color:#1a1030;
-    font-weight:700;font-size:66px;line-height:1.18;border:8px solid var(--bc);box-shadow:0 22px 60px rgba(0,0,0,.35)}
-  .bulle.g{left:50px;transform-origin:220px 120%}
-  .bulle.d{right:50px;transform-origin:calc(100% - 220px) 120%}
-  .bulle::after{content:"";position:absolute;bottom:-46px;width:56px;height:56px;background:#ffffff;
-    border-right:8px solid var(--bc);border-bottom:8px solid var(--bc);transform:rotate(45deg) skew(12deg,12deg)}
-  .bulle.g::after{left:190px;bottom:-34px}
-  .bulle.d::after{right:190px;bottom:-34px}
-  .nom{display:block;font-size:38px;font-weight:800;color:var(--bc);margin-bottom:6px;letter-spacing:.03em}
+  .bulle{position:absolute;bottom:1100px;max-width:900px;padding:32px 44px 36px;border-radius:26px;background:#ffffff;color:#161b2b;
+    font-weight:600;font-size:62px;line-height:1.2;border-left:14px solid var(--bc);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  .bulle.g{left:46px;transform-origin:230px 120%}
+  .bulle.d{right:46px;transform-origin:calc(100% - 230px) 120%}
+  .bulle::after{content:"";position:absolute;bottom:-24px;width:48px;height:48px;background:#ffffff;transform:rotate(45deg);border-radius:6px}
+  .bulle.g::after{left:200px}
+  .bulle.d::after{right:200px}
+  .nom{display:block;font-size:32px;font-weight:700;color:var(--bc);margin-bottom:8px;letter-spacing:.12em;text-transform:uppercase}
 </style></head><body>
 <div id="bg"></div><div id="grad"></div><div id="grid"></div>
 <div id="kwrap"><div class="kicker" id="kicker"></div></div>
@@ -37,7 +37,7 @@
 <script src="perso.js"></script>
 <script>
   const FIRST_AT = 0.7, GAP = 0.3;
-  const lignes = param("repliques", "g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}|g:Normal, ton CV fait trois pages ! {choc,montre}|d:Ah… je coupe tout alors ? {doute}|g:Garde l'essentiel : une page. {content,salut}")
+  const lignes = param("repliques", "g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}|g:Normal, ton CV fait trois pages ! {choc,montre}|d:Ah… je coupe tout alors ? {doute}|g:Garde l'essentiel : une page. {content,explique}")
     .split("|").map((s) => {
       const i = s.indexOf(":"), qui = s.slice(0, i).trim() === "d" ? "d" : "g";
       let texte = s.slice(i + 1).trim(), expr = "", geste = "";
@@ -60,14 +60,27 @@
   const svg = document.getElementById("scene");
   const ids = { g: param("gauche", "femme"), d: param("droite", "homme") };
   const persos = {
-    g: Perso.dessiner(svg, ids.g, 262, 1990, 1.25, 1),
-    d: Perso.dessiner(svg, ids.d, 818, 1990, 1.25, -1),
+    g: Perso.dessiner(svg, ids.g, 265, 2336, 1.32, 1),
+    d: Perso.dessiner(svg, ids.d, 815, 2336, 1.32, -1),
   };
+  // Bureau d'entretien (devant les personnages) : plateau, chant, facade, une feuille (le CV) et un stylo.
+  const NSVG = "http://www.w3.org/2000/svg";
+  const deco = (tag, attrs, parent = svg) => { const n = document.createElementNS(NSVG, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.appendChild(n); return n; };
+  deco("path", { d: "M-20,1590 L1100,1590 L1100,1662 L-20,1662Z", fill: "#b48d68" });
+  deco("path", { d: "M-20,1590 L1100,1590", stroke: "#d2ad87", "stroke-width": 6 });
+  deco("path", { d: "M-20,1662 L1100,1662 L1100,1930 L-20,1930Z", fill: "#7d5f43" });
+  deco("path", { d: "M-20,1662 L1100,1662", stroke: "#5f4732", "stroke-width": 4 });
+  const feuille = deco("g", { transform: "translate(465 1604) rotate(-4)" });
+  deco("rect", { x: 0, y: 0, width: 150, height: 46, rx: 3, fill: "#f7f4ee" }, feuille);
+  deco("rect", { x: 14, y: 10, width: 60, height: 7, rx: 3, fill: "#9aa3b5" }, feuille);
+  deco("rect", { x: 14, y: 24, width: 110, height: 5, rx: 2, fill: "#cfd5df" }, feuille);
+  deco("rect", { x: 14, y: 34, width: 90, height: 5, rx: 2, fill: "#cfd5df" }, feuille);
+  deco("rect", { x: 640, y: 1622, width: 110, height: 9, rx: 4, fill: "#1f2433", transform: "rotate(8 695 1626)" });
   const box = document.getElementById("bulles");
   const bulles = lignes.map((l) => {
     const b = document.createElement("div"), p = Perso.PERSOS[ids[l.qui]] || Perso.PERSOS.femme;
     b.className = `bulle ${l.qui}`;
-    b.style.setProperty("--bc", p.haut);
+    b.style.setProperty("--bc", p.veste);
     b.innerHTML = '<span class="nom"></span><span class="t"></span>';
     b.querySelector(".nom").textContent = p.nom;
     b.querySelector(".t").textContent = l.texte;
@@ -79,12 +92,12 @@
     const tl = gsap.timeline({ paused: true })
       .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
       .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2.2)" }, 0.05)
-      .from(persos.g.root, { y: 500, duration: 0.55, ease: "back.out(1.2)" }, 0)
-      .from(persos.d.root, { y: 500, duration: 0.55, ease: "back.out(1.2)" }, 0.12);
+      .from(persos.g.root, { y: 420, duration: 0.55, ease: "back.out(1.2)" }, 0)
+      .from(persos.d.root, { y: 420, duration: 0.55, ease: "back.out(1.2)" }, 0.12);
     gsap.set(bulles, { opacity: 0, scale: 0.4 });
     for (const k of ["g", "d"]) {
       Perso.expression(tl, persos[k], "neutre", 0);
-      Perso.regarder(tl, persos[k], 7 * persos[k].cote, 0);
+      Perso.regarder(tl, persos[k], 5 * persos[k].cote, 0);
       Perso.vie(tl, persos[k], FIN, k === "g" ? 0 : 0.9);
     }
     lignes.forEach((l, i) => {
@@ -93,7 +106,7 @@
       if (autre.expr !== "neutre") Perso.expression(tl, autre, "neutre", l.de);  // celui qui ecoute se detend
       if (l.geste) Perso.geste(tl, lui, l.geste, l.de + 0.1);
       Perso.regarder(tl, lui, 0, l.de);                 // celui qui parle regarde la camera
-      Perso.regarder(tl, autre, 7 * autre.cote, l.de);  // l'autre le regarde
+      Perso.regarder(tl, autre, 5 * autre.cote, l.de);  // l'autre le regarde
       Perso.parler(tl, lui, l.de + 0.05, l.a - 0.1);
       tl.to(bulles[i], { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, l.de);
       if (i < lignes.length - 1) tl.to(bulles[i], { opacity: 0, scale: 0.85, duration: 0.15 }, l.a + GAP - 0.05);
