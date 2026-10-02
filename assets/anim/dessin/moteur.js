@@ -90,7 +90,7 @@
     const fondRoot = g(calque, { "data-v": "a" });
     const xsSol = (sc.objets || []).filter((o) => o.x !== undefined && o.y === undefined && !o.sur).map((o) => o.x);
     const fond = fondType.dessiner(fondRoot, pinceau(hash("fond" + (sc.fond || "vide")) ^ n), { sol, xs: xsSol });
-    const racines = [fondRoot];
+    const racines = [];   // groupes qui "bouillonnent" (traits qui tremblent) : personnages et animaux seulement ; decor et objets restent fixes
 
     // Objets : une copie par emplacement (place d'origine, mains, supports) ;
     // une seule visible a la fois (ctx.basculer). Les personnages n'ont qu'une copie.
@@ -119,7 +119,7 @@
       } else {
         root = g(calque, { "data-v": "a" });
         gsap.set(root, { x: o.x ?? 540, y: o.y ?? sol, scale: ech * (o.echelle ?? 1) });
-        racines.push(root);
+        if (type.categorie === "personnage" || type.categorie === "animal") racines.push(root);
       }
       const orient = g(root);
       if (!cible) gsap.set(orient, { scaleX: SENS[o.regard] || 1 });

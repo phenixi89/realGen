@@ -251,6 +251,8 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
         elif a["action"] == "poser":
             tenus.pop(a["qui"], None)
         suite = None
+        if a.get("geste") in GESTES_MAIN_AU_VISAGE and tenus.get(a.get("qui")):
+            del a["geste"]  # la main qui tient l'objet monte devant le visage (telephone sur l'oeil en gros plan)
         if a.get("geste") and a["geste"] not in perso["gestes"] and a["geste"] in perso["actions"] \
                 and t["categorie"] == "personnage":
             # "geste": "sauter" -> action a part, jouee en meme temps.
@@ -276,6 +278,7 @@ TEXTES_ACTIONS = {
     "comparer": {"titre_gauche": (False, 3), "texte_gauche": (True, 12), "titre_droite": (False, 3), "texte_droite": (True, 12)},
 }
 ELLIPSE_MAX_MOTS = 6
+GESTES_MAIN_AU_VISAGE = ("idee", "tete_mains", "penser")   # gestes qui levent la main avant : pas avec un objet en main
 
 
 def _textes_action(a: dict) -> list[str]:
@@ -582,13 +585,30 @@ def validate_plan(plan: list, sans_captures: bool = False) -> list[str]:
     return errors
 
 
-def pick_ambiance(theme: dict, history: list[dict], rng: random.Random) -> str | None:
-    """Ambiance musicale parmi celles du theme ("ambiances"), en evitant les 2 plus recentes."""
+def pick_ambiance(theme: dict, history: list[dict], rng: random.Random, fmt: dict | None = None) -> str | None:
+    """Ambiance musicale parmi celles du theme ("ambiances"), en evitant les 2 plus recentes.
+    Format a "ambiances" (dessin anime : musiques douces sous un dialogue) : celles du theme qui y figurent,
+    sinon celles du format."""
     options = theme.get("ambiances") or ([theme["ambiance"]] if theme.get("ambiance") else [])
+    if fmt and fmt.get("ambiances"):
+        options = [a for a in options if a in fmt["ambiances"]] or list(fmt["ambiances"])
     if not options:
         return None
     recent = _recent(history, "ambiance", 2)
     return rng.choice([a for a in options if a not in recent] or options)
+
+
+def pick_lieu(history: list[dict], rng: random.Random) -> dict | None:
+    """Decor (dessins.json "fonds", hors « vide ») le moins recemment utilise par un dessin anime
+    (history "fonds"), au hasard entre les jamais utilises : propose a l'IA comme lieu de l'episode."""
+    pool = [f for f in dessins()["fonds"] if f["id"] != "vide"]
+    if not pool:
+        return None
+    vus = [f for h in history for f in (h.get("fonds") or [])]
+    def age(f):
+        return len(vus) - 1 - max(i for i, v in enumerate(vus) if v == f["id"]) if f["id"] in vus else 10 ** 6
+    plus_vieux = max(age(f) for f in pool)
+    return rng.choice([f for f in pool if age(f) == plus_vieux])
 
 
 def famille_rotation(sujets_: list[dict], history: list[dict]) -> list[dict]:

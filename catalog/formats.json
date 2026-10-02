@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes animees : texte, chiffre, comparaison, liste, schema dessine, conversation, scan ATS, impact -- assets/anim/ -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params). registres : registres d'ecriture compatibles, 'serieux' et/ou 'humour' (absent = ['serieux']) ; le registre de chaque reel est tire selon config.json 'registres'. ton_humour : ton de lecture quand le format est joue en registre humour (sinon config.json 'ton_humour'). Carte 'meme' (assets/anim/meme.html) : texte du haut (la situation), icone dessinee, chute en bas -- proposee a l'IA en registre humour. dessin : true -> mini dessin anime (assets/anim/scene.html) : les personnages de catalog/dessins.json jouent des scenes ecrites par l'IA (decor, objets, actions, repliques dites a plusieurs voix) ; --capture-mode aucune uniquement (impose automatiquement si le format est demande).",
+  "_doc": "Formats de reels = STRUCTURE de la video (le sujet vient de sujets.json). categorie : 'conseil' (contenu utile, le produit n'est qu'un outil) ou 'produit' (demo). cartes : 'aucune' (captures du produit uniquement), 'autorisees' ou 'majoritaires' (scenes en cartes animees : texte, chiffre, comparaison, liste, schema dessine, conversation, scan ATS, impact -- assets/anim/ -- necessite --capture-mode screenshots, sinon la capture de la scene est montree). sujets : tags de sujets.json acceptes. serie : true -> numero d'episode automatique. Ajouter un format = ajouter une entree, aucun code a toucher. ton : consigne de lecture donnee a la voix (TTS). habillage : surimpression sur tout le reel ('chrono' = chronometre, cf. assets/anim/chrono.html ; params habillage_params). registres : registres d'ecriture compatibles, 'serieux' et/ou 'humour' (absent = ['serieux']) ; le registre de chaque reel est tire selon config.json 'registres'. ton_humour : ton de lecture quand le format est joue en registre humour (sinon config.json 'ton_humour'). Carte 'meme' (assets/anim/meme.html) : texte du haut (la situation), icone dessinee, chute en bas -- proposee a l'IA en registre humour. dessin : true -> mini dessin anime (assets/anim/scene.html) : les personnages de catalog/dessins.json jouent des scenes ecrites par l'IA (decor, objets, actions, repliques dites a plusieurs voix) ; --capture-mode aucune uniquement (impose automatiquement si le format est demande). ambiances : (dessin anime) musiques proposees a ce format : celles du theme qui y figurent, sinon celles-ci (musiques douces sous un dialogue ; pas de synthwave / trap / tension tech).",
   "formats": [
     {
       "id": "demo_produit",
@@ -590,7 +590,19 @@
       ],
       "structure": "Mini-série dessinée : Léa et Karim (personnages au trait) vivent une VRAIE scène de recherche d'emploi ou de vie professionnelle en 1 à 4 scènes dessinées, une par lieu ou moment (salle d'attente, café, salon, métro, bureau du recruteur, visio...). Le reel est un mini-scénario en 3 actes : (1) l'accroche, dite par un personnage, pose une envie et un obstacle ; (2) Karim tente, ça coince, un retournement apporte UN principe de conseil concret et retenable (une phrase à dire ou à écrire, une règle nommée) ; (3) Karim l'applique et ça marche, puis une chute qui redit le conseil de façon mémorable. Le sujet est le CONSEIL emploi/recrutement, jamais le produit : OpusCV n'apparaît que dans l'appel à l'action final, dit par un personnage pendant que l'écran d'appel à l'action s'affiche. Épisode d'une série : Karim cherche un job, d'épisode en épisode ; l'histoire suit la trame imposée.",
       "ton": "dialogue vivant et naturel entre deux amis, répliques bien distinctes, petite pause avant chaque chute",
-      "serie": true
+      "serie": true,
+      "ambiances": [
+        "jazz_cafe",
+        "bossa_douce",
+        "ukulele_bonne_humeur",
+        "boite_a_musique",
+        "cinema_doux",
+        "ambient_matin",
+        "acoustique",
+        "piano_minimal",
+        "lofi_chill",
+        "comique_sautillant"
+      ]
     }
   ]
 }

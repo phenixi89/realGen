@@ -239,8 +239,7 @@
       return { defile, poignees };
     },
     vie(tl, f, t0, t1) {
-      tl.fromTo(f.defile, { x: 0 }, { x: -1100 * Math.max(1, (t1 - t0) / 4), duration: t1 - t0, ease: "none", immediateRender: false }, t0)
-        .fromTo(f.poignees, { rotation: -5 }, { rotation: 5, duration: 0.9, yoyo: true, repeat: Math.ceil((t1 - t0) / 0.9), ease: "sine.inOut", immediateRender: false }, t0);
+      tl.fromTo(f.defile, { x: 0 }, { x: -1100 * Math.max(1, (t1 - t0) / 4), duration: t1 - t0, ease: "none", immediateRender: false }, t0);
     },
   });
 
@@ -423,9 +422,6 @@
       P.lavisRond(grp, 1006, m - 140, 26, 32, "#ff8fb1", 0.5); P.rond(grp, 1006, m - 140, 26, 32, { w: 2.2, passes: 1, alpha: 0.7 });
       sol(grp, P, y, xs, { cailloux: false });
       return { guirlande };
-    },
-    vie(tl, f, t0, t1) {
-      tl.fromTo(f.guirlande, { rotation: -0.8 }, { rotation: 0.8, duration: 1.4, yoyo: true, repeat: Math.ceil((t1 - t0) / 1.4), ease: "sine.inOut", immediateRender: false }, t0);
     },
   });
 })();

@@ -42,6 +42,10 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
     OpusCV n'est cité que dans l'appel à l'action final, jamais dans une réplique de l'histoire ;
   - aucune fonction ni chiffre de performance inventé sur OpusCV dans la bouche d'un personnage ;
   - bulles petites et translucides, sans prénom du personnage (la place est comptée) ;
+  - le décor et les objets ne bougent jamais (le « bouillonnement » des traits ne concerne que les personnages et
+    les animaux) ; seuls les effets de lumière et de temps (lampe, horloge, ville du métro…) sont animés ;
+  - au moins un plan original par reel (caméra `dessous` / `epaule` / `lent`, ou split-screen) ; musiques douces
+    seulement (`ambiances` du format dans `formats.json`) ;
   - rien ne cache la scène : les bulles passent au-dessus des têtes, les gros plans (inserts) sous la
     zone des bulles, le nuage de pensée du côté libre ; aucun son au changement de scène.
 - Sons enregistrés (`assets/sfx/`) : licence CC0 uniquement, source notée dans `assets/sfx/LICENCES.md`.

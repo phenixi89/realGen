@@ -372,7 +372,9 @@ function options(r, k){
     // Dessin anime : l'accroche est dite par un personnage (hooks.json "dessin": false = exclue, ex : POV).
     case "hook": return CAT.hooks.filter(x => (!r.registre || regs(x).includes(r.registre)) && (!dessinDe(r) || x.dessin !== false) && (!x.tags || !r.sujet || (((CAT.sujets.find(u => u.id === r.sujet) || {}).tags || x.tags).some(t => x.tags.includes(t)))));
     case "theme": return CAT.themes.filter(x => !r.registre || themeRegs(x).includes(r.registre));
-    case "ambiance": return th ? CAT.ambiances.filter(a => (th.ambiances || [th.ambiance]).includes(a.id)) : CAT.ambiances;
+    case "ambiance": { const fm = byId(CAT.formats, r.format), liste = th ? CAT.ambiances.filter(a => (th.ambiances || [th.ambiance]).includes(a.id)) : CAT.ambiances;
+      if (!fm || !fm.ambiances) return liste;   // format a musiques douces (dessin animé) : celles du thème qui y figurent, sinon celles du format
+      const dans = liste.filter(a => fm.ambiances.includes(a.id)); return dans.length ? dans : CAT.ambiances.filter(a => fm.ambiances.includes(a.id)); }
     case "voix": return CAT.voix;
     case "trame": return fmt && fmt.dessin ? CAT.trames : [];   // dessin anime : structure de l'histoire
   }

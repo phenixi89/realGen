@@ -394,9 +394,6 @@
       gsap.set(feuilles, { svgOrigin: "0 -130" });
       return { feuilles };
     },
-    vie(tl, it, t0, t1) {
-      tl.fromTo(it.feuilles, { rotation: -1.5 }, { rotation: 1.5, duration: 1.6, yoyo: true, repeat: Math.ceil((t1 - t0) / 1.6), ease: "sine.inOut", immediateRender: false }, t0);
-    },
   });
 
   // Horloge murale (placee avec "y" : origine au centre) ; les aiguilles tournent.

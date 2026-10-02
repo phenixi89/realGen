@@ -103,7 +103,7 @@ WORDS_PER_SECOND = 2.6
 FAST_WORDS_PER_SECOND = 3.4
 # Dessin anime (dialogue TTS a deux voix, repliques courtes) : ~2,9 mots/s mesures sur les
 # premiers reels ; un peu en dessous pour garder de l'air entre les repliques.
-DIALOGUE_WORDS_PER_SECOND = 2.8
+DIALOGUE_WORDS_PER_SECOND = 2.3   # mesure au run 64 : 78 mots = 33,7 s (voix posees, pauses avant les chutes)
 MAX_ATTEMPTS = 3
 ACCROCHE_MAX_WORDS = 8
 ANIM_KEYS = ("anim", "overlay")
@@ -246,7 +246,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre)
         voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng)
         cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
-        ambiance = ov.get("ambiance") or catalog.pick_ambiance(theme, working, rng)
+        ambiance = ov.get("ambiance") or catalog.pick_ambiance(theme, working, rng, fmt)
         plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice, "registre": registre,
                 "cta": cta, "cta_anim": cta_anim, "ambiance": ambiance,
                 "episode": catalog.series_episode(working, fmt["id"]) if fmt.get("serie") else None,
@@ -255,6 +255,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
             plan["trame"] = next((t for t in catalog.trames() if t["id"] == ov.get("trame")), None) \
                 or catalog.pick_trame(working, rng)
             plan["episodes_precedents"] = catalog.series_resumes(working, fmt["id"]) if fmt.get("serie") else []
+            plan["lieu"] = catalog.pick_lieu(working, rng)
         plans.append(plan)
         working.append({"format": fmt["id"], "categorie": fmt["categorie"], "sujet": sujet["id"],
                         "trame": (plan.get("trame") or {}).get("id"),
@@ -305,6 +306,11 @@ DRAMATURGIE = """ÉCRITURE DE SCÉNARISTE (un vrai mini-scénario, pas un dialog
   - UN FUSIL DE TCHEKHOV : un objet ou une réplique posé tôt (la tasse, le chat, une phrase répétée) revient dans la
     chute, transformé ;
   - LA CHUTE reformule le conseil en une formule mémorable (la punchline EST le conseil), puis l'appel à l'action ;
+  - ACCROCHE CLAIRE : la 1re réplique se comprend seule en 3 secondes, sans contexte (une situation, une peur ou
+    une question simple), jamais une formule énigmatique ;
+  - PROMESSE TENUE : ce qu'un personnage annonce (« la formule », « la phrase exacte ») est dit tel quel plus loin,
+    entre « guillemets français », mot pour mot, avant la chute : le spectateur repart avec UNE phrase qu'il peut
+    copier ou dire à voix haute (jamais seulement « apporte une info utile » : laquelle, avec quels mots ?) ;
   - ORIGINALITÉ : évite l'histoire attendue (« Karim rate son entretien, Léa lui explique ») ; choisis un angle
     inattendu (inversion des rôles, point de vue du recruteur, décompte, enquête, deux futurs...) et une situation
     précise, jamais « un entretien » en général.
@@ -325,6 +331,10 @@ def dessin_rules(plan: dict | None = None) -> str:
     trame = plan.get("trame")
     trame_rule = (f"""TRAME DE CET ÉPISODE : « {trame['nom']} » -- {trame['consigne']}
 """ if trame else "")
+    lieu = plan.get("lieu")
+    lieu_rule = (f"""LIEU À PRIVILÉGIER : « {lieu['id']} » ({lieu['description'].split('.')[0]}) : au moins une scène s'y passe, si l'histoire s'y prête
+(sinon un autre lieu du catalogue, mais pas toujours le salon ni le bureau).
+""" if lieu else "")
     serie = cat.get("serie") or {}
     serie_rule = ""
     if serie and plan.get("episode"):
@@ -372,6 +382,9 @@ CAMÉRA (action SANS "qui", jouée en même temps que l'action suivante) : {{"ac
   avant progressif (3 s : une tension qui monte) ; "dessous" : le personnage domine (le recruteur qui juge,
   une prise de confiance) ; "epaule" + "depuis": id = on regarde "sur" par-dessus l'épaule de l'autre
   (un face-à-face tendu) ; revenir en "large" ensuite. Varie les plans : jamais deux fois le même cadre de suite.
+  AU MOINS UN plan original par reel : cadre "dessous", cadre "epaule", "lent": true ou un split-screen
+  (objet "diptyque" + action "comparer") ; un personnage qui TIENT un objet (téléphone, tasse) ne fait pas de
+  geste « idee », « tete_mains » ou « penser » (la main monterait devant son visage) : il le pose avant.
 Mise en scène :
   - "x" = position au sol, de 0 à 1080 : les personnages vers 250 et 820, face à face ("regard" droite / gauche),
     meubles au centre (table vers x 540) ; objet mural : "x" et "y" (600 à 850) ; objet posé : "sur": "table.dessus"
@@ -409,7 +422,7 @@ Mise en scène :
     l'action final ; l'histoire donne un conseil emploi/recrutement valable avec ou sans outil, et aucun
     personnage n'invente de chiffre de performance (« 50 refus évités ») ni de fonction.
 {DRAMATURGIE}
-{trame_rule}{serie_rule}CHUTE : juste avant l'appel à l'action, une chute : un retournement ou une réplique drôle (un sourire en
+{lieu_rule}{trame_rule}{serie_rule}CHUTE : juste avant l'appel à l'action, une chute : un retournement ou une réplique drôle (un sourire en
 registre sérieux), souvent soulignée par un gros plan "rapide" sur le visage qui réagit.
 Scène 1 : l'accroche est la 1re réplique (12 mots max, sans pourcentage ni statistique), dite tout de suite,
 avant toute autre action ; la scène 1 a ensuite, elle aussi, au moins une action visible.
@@ -617,6 +630,8 @@ Contraintes :
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est
   affiché tel quel en sous-titres ;
 - pas d'emoji, pas de hashtag, pas d'indication de mise en scène dans les textes ;
+- les exemples de phrases de CV ou de lettre n'inventent AUCUN chiffre précis (pas « 200 k€ de ventes ») :
+  formule sans chiffre, ou « [ton chiffre] » quand il en faut un ;
 - ORIGINALITÉ : aucun conseil générique ou évident (interdit : {banned}) ;
   chaque scène apporte un élément concret : un exemple de formulation, une phrase à dire ou à écrire,
   un cas précis ou une astuce actionnable immédiatement ;
@@ -1010,6 +1025,11 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
         if any(re.search(r"\bPOV\b", r["texte"]) for r in s_["repliques"]):
             problems.append("« POV » dans une réplique : ça ne se dit pas dans un dialogue, reformule (« Imagine… », « Toi, tu… »)")
             break
+    originaux = sum(1 for s_ in scenes if "dessin" in s_ for a in s_["dessin"]["actions"]
+                    if a.get("action") == "comparer" or (a.get("action") == "camera" and (a.get("lent") or a.get("cadre") in ("dessous", "epaule"))))
+    if any("dessin" in s_ for s_ in scenes) and not originaux:
+        problems.append('aucun plan original : ajoute un cadre caméra "dessous" ou "epaule", un travelling "lent": true, '
+                        'ou un split-screen (objet "diptyque" + action "comparer")')
     mises_en_scene = sum(1 for s_ in scenes if "dessin" in s_ for a in s_["dessin"]["actions"]
                          if a.get("action") in ACTIONS_MISE_EN_SCENE)
     if any("dessin" in s_ for s_ in scenes) and not mises_en_scene:
@@ -1355,6 +1375,7 @@ def main():
          "hook": s.get("hook"), "theme": s.get("theme"), "voix": s.get("voix"), "ambiance": s.get("ambiance"),
          "registre": s.get("registre"), "titre": s.get("titre"), "trame": s.get("trame"),
          "resume": s.get("resume_episode"),
+         "fonds": [sc["dessin"].get("fond") for sc in s.get("scenes", []) if sc.get("dessin")],
          "accroche": s.get("accroche_ecran") or (s["scenes"][0]["texte"] if s["scenes"] else "")}
         for s in scenarios])
     print(f"OK -> {out_path} ({len(scenarios)} scenarios)")

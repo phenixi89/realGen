@@ -210,7 +210,9 @@ sans bruit : le feutre qui s'entendait à chaque changement de scène a été re
 Style « trait blanc » sur fond noir, dans l'esprit des petites histoires dessinées qui tournent sur TikTok
 (sans en reprendre les personnages) : trait principal assuré doublé de fines passes d'esquisse ; cercles qui
 ondulent doucement et finissent par un léger dépassement ; deux variantes du dessin alternent environ
-6 fois par seconde (traits qui « bouillonnent ») ; tout se dessine à l'apparition ; **touches de couleur
+6 fois par seconde (traits qui « bouillonnent », **personnages et animaux seulement** : le décor et les objets — tableau,
+fenêtre, meubles, plante — ne bougent jamais ; seuls restent animés les effets de lumière et de temps : lampe, vapeur de la
+tasse, aiguilles de l'horloge, ville qui défile dans le métro, afficheur d'ascenseur, point d'enregistrement de la visio) ; tout se dessine à l'apparition ; **touches de couleur
 légères** (lavis transparent un peu décalé du trait, posé après le dessin, comme une aquarelle). Le décor
 de fond est tracé plus fin et plus transparent (profondeur). Bulles **petites et translucides** (fond noir à 58 %, la scène reste visible dessous ; contour irrégulier, queue en deux traits),
 sans prénom du personnage, texte et titres manuscrits (Kalam). Déterministe (pseudo-hasard à graine fixe), comme les autres gabarits.
@@ -220,7 +222,7 @@ sans prénom du personnage, texte et titres manuscrits (Kalam). Déterministe (p
 | `dessin/pinceau.js` | trait à main levée, cercles, rectangles, texte manuscrit, lavis de couleur, bouillonnement, apparition ; registre des types (`Dessin.enregistrer`) |
 | `dessin/personnages.js` | **Léa** (`lea` : queue de cheval qui se balance avec un chouchou corail, veste cintrée, jupe, cil), **Karim** (`karim` : cheveux courts avec un épi, chemise, cravate bleue, pantalon) et **le recruteur** (`recruteur` : crâne dégarni aux cheveux gris, lunettes rondes, moustache, veste, cravate verte ; voix Charon) |
 | `dessin/animaux.js` | `chat` roux (queue qui bouge ; `marcher`/`traverser`, `miauler`, `dormir`) |
-| `dessin/objets.js` | `tasse` (orange, qui fume), `telephone` (`vibrer`, `notifier`), `cv` (`corriger`), `ordinateur` (`taper`, `afficher`), `table` (bureau), `table_ronde`, `chaise`, `canape` (deux places), `plante` (feuilles qui bougent), `corbeille`, `tampon` (`tamponner`), `horloge`, `cadre` et `calendrier` (`defiler`) (muraux) |
+| `dessin/objets.js` | `tasse` (orange, qui fume), `telephone` (`vibrer`, `notifier`), `cv` (`corriger`), `ordinateur` (`taper`, `afficher`), `table` (bureau), `table_ronde`, `chaise`, `canape` (deux places), `plante`, `corbeille`, `tampon` (`tamponner`), `horloge`, `cadre` et `calendrier` (`defiler`) (muraux) |
 | `dessin/fonds.js` | `vide` (sol, cailloux, herbe, une fleur rose), `bureau` (fenêtre bleutée, livres colorés), `cafe` (suspensions à la lumière chaude, ardoise du menu), `salle_attente` (porte des RH à la plaque orange, affiche « On recrute ! », chaises, horloge qui tourne), `salle_entretien` (fenêtre à stores, tableau blanc, porte-manteau), `salon` (rideaux corail, lampadaire, tableau, tapis), `metro` (la ville défile derrière les vitres, poignées qui se balancent), `visio` (appel vidéo : deux vignettes, point d'enregistrement, boutons), `ascenseur` (portes coulissantes, afficheur d'étage qui monte, boutons), `open_space` (bureaux et écrans au fond, baie vitrée, suspensions), `bureau_manager` (baie sur la ville au crépuscule, diplômes, bibliothèque, « Direction »), `salon_emploi` (banderole, fanions qui bougent, stands RH / Tech / Vente) |
 | `dessin/moteur.js` | assemble les scènes : place les objets, joue les actions, caméra, inserts, bulles, titres, cartons d'ellipse, enchaînement |
 | `catalog/dessins.json` | la liste des fonds, objets (ancres, actions), expressions, gestes et actions des personnages |
@@ -425,9 +427,19 @@ assis) :
   rendu libre (`DESSIN_CADRAGE`) pour qu'une bulle de 3 lignes reste sous le titre de scène. Une bulle
   s'efface au plus tard quand la suivante s'ouvre. La 1re scène est complète dès la 1re image
   (`"dessine": false`) : c'est l'image qui retient ou fait scroller ; les suivantes se dessinent.
-- **Durée** : le dialogue à deux voix se dit à ~2,9 mots/s (mesuré) ; budget de mots calculé à 2,8
-  mots/s (`DIALOGUE_WORDS_PER_SECOND` : 25 s ≈ 70 mots, de 60 à 78), rappelé à Gemini en nombre de
-  répliques de 6 à 8 mots.
+- **Durée** : le dialogue à deux voix se dit à ~2,3 mots/s (mesuré au run 64 : 78 mots = 33,7 s, voix posées et
+  pauses avant les chutes) ; budget de mots calculé à 2,3 mots/s (`DIALOGUE_WORDS_PER_SECOND` : 25 s ≈ 58 mots, de
+  49 à 64), rappelé à Gemini en nombre de répliques de 6 à 8 mots.
+- **Variété** : un **lieu à privilégier** est proposé à chaque épisode (`pick_lieu` : le décor le moins récemment
+  utilisé, mémorisé dans `fonds` de l'historique) ; **au moins un plan original** par reel est exigé (cadre `dessous`
+  ou `epaule`, `"lent": true`, ou split-screen `diptyque.comparer`), sinon nouvelle tentative.
+- **Objet en main** : un personnage qui tient un objet ne fait pas de geste `idee`, `tete_mains` ni `penser` (la main
+  monterait devant son visage : téléphone sur l'œil en gros plan) ; le geste est retiré à la validation.
+- **Écriture** : l'accroche se comprend seule en 3 secondes ; une promesse (« la formule », « la phrase exacte ») est
+  tenue par une phrase dite mot pour mot entre « guillemets français » avant la chute.
+- **Musique** : le format a ses propres musiques douces (`"ambiances"` dans `formats.json` : jazz de café, bossa,
+  ukulélé, boîte à musique, cinéma doux, matinale, acoustique, piano minimal, lo-fi, comique sautillant) : celles du
+  thème qui y figurent, sinon celles du format ; jamais de synthwave ni de trap sous un dialogue.
 
 ```bash
 python scripts/run_pipeline.py --n 1 --format dessin_anime --duration 25
@@ -526,6 +538,7 @@ Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
   récemment ; hors des familles ATS / rédaction, le prompt lui interdit de dériver vers l'ATS, les mots-clés
   ou le chiffrage des résultats ;
 - l'**accroche** et le **thème** tournent (tirage pondéré par `poids`, sans les plus récents) ; les accroches « Pourquoi… ? » sur une douleur vécue (`question_choc`, `pourquoi_douleur`, poids 3) sont favorisées, les listes, chiffres et « secrets » réduits (poids 0,5) car ils ont moins bien performé ;
+- les **exemples de phrases** de CV ou de lettre donnés dans un reel n'inventent aucun chiffre précis (« 200 k€ de ventes ») : formule sans chiffre ou « [ton chiffre] » (consigne commune à tous les formats) ;
 - une accroche trop proche d'une accroche déjà publiée est refusée et Gemini recommence ;
 - tout est historisé dans `output/content_history.json` (persisté entre les runs CI par le cache).
 
