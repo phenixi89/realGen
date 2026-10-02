@@ -43,6 +43,7 @@ SCHEMA_MARKS = ("entoure", "barre", "coche")
 ICONS_JS = ROOT / "assets" / "anim" / "icones.js"
 # Dessin anime "trait blanc" : types dessinables (fonds, personnages, objets) declares
 # dans catalog/dessins.json et ecrits dans assets/anim/dessin/*.js.
+MURAL_Y = 700          # hauteur par defaut d'un objet mural du dessin anime (px)
 DESSIN_JS = ROOT / "assets" / "anim" / "dessin"
 
 # Fenetre sur laquelle on mesure le mix conseil/produit deja publie.
@@ -137,9 +138,18 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
             if cible not in ids or anc not in (ids[cible].get("ancres") or []):
                 errors.append(f"scene {n} : '{o['id']}' sur '{o['sur']}' : objet ou ancre inconnus (declarer le support avant)")
                 continue
+        o = dict(o)
+        if t.get("mural") and o.get("y") is None and not o.get("sur"):
+            o["y"] = MURAL_Y  # sinon pose au sol
+        if o.get("x") is not None and not o.get("regard") and not o.get("sur") \
+                and (t["categorie"] in ("personnage", "animal") or t["id"] == "chaise"):
+            o["regard"] = "droite" if float(o["x"]) < 540 else "gauche"  # tourne vers le centre de la scene
         ids[o["id"]] = t
         objets.append(o)
-    actions = []
+    actions, tenus = [], {}   # tenus : personnage -> objet en main
+    for o in objets:
+        if o.get("sur") and str(o["sur"]).endswith(".main_avant"):
+            tenus[o["sur"].split(".")[0]] = o["id"]
     for a in sc.get("actions") or []:
         if not isinstance(a, dict):
             continue
@@ -150,6 +160,7 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
         if not t:
             errors.append(f"scene {n} : action sur un objet absent '{a.get('qui')}'")
             continue
+        a = _corrige_expr_geste(a, perso) if t["categorie"] == "personnage" else a
         possibles = list(perso["actions"]) if t["categorie"] == "personnage" else (t.get("actions") or [])
         if a.get("action") not in possibles:
             errors.append(f"scene {n} : action '{a.get('action')}' impossible pour {a.get('qui')} (choix : {possibles})")
@@ -159,6 +170,19 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
             errors.append(f"scene {n} : {a['action']} de {a['qui']} vise un objet absent ({', '.join(map(str, cibles))})")
             continue
         a = dict(a)
+        if a["action"] in ("boire", "telephoner") and a.get("objet"):
+            # Boire / telephoner = avec l'objet en main : on le prend d'abord s'il ne l'est pas.
+            if tenus.get(a["qui"]) != a["objet"]:
+                if str(a["objet"]).split(".")[0] in ids:
+                    actions.append({"qui": a["qui"], "action": "tenir", "objet": a["objet"],
+                                    **({"avec": True} if a.get("avec") else {})})
+                    tenus[a["qui"]] = a["objet"]
+                    a.pop("avec", None)
+            a.pop("objet")
+        if a["action"] == "tenir":
+            tenus[a["qui"]] = a.get("objet")
+        elif a["action"] == "poser":
+            tenus.pop(a["qui"], None)
         for champ, liste in (("expr", perso["expressions"]), ("geste", perso["gestes"])):
             if a.get(champ) and a[champ] not in liste:
                 errors.append(f"scene {n} : {champ} inconnu '{a[champ]}' (choix : {liste})")
@@ -166,6 +190,29 @@ def clean_scene_dessin(sc: dict, n: int = 1) -> tuple[dict, list[str]]:
         actions.append(a)
     clean["objets"], clean["actions"] = objets, actions
     return clean, errors
+
+
+def _corrige_expr_geste(a: dict, perso: dict) -> dict:
+    """
+    Confusions frequentes de l'IA, corrigees sans la relancer : un geste ecrit en "expr"
+    passe en "geste" (s'il est libre), une expression ecrite en "geste" passe en "expr" ;
+    action "expr" -> "expression", action portant le nom d'une expression -> "expression".
+    """
+    a = dict(a)
+    if a.get("action") == "expr":
+        a["action"] = "expression"
+    if a.get("action") in perso["expressions"]:
+        a["expr"], a["action"] = a["action"], "expression"
+    if a.get("expr") in perso["gestes"] and a.get("geste") in perso["expressions"]:
+        a["expr"], a["geste"] = a["geste"], a["expr"]  # inverses
+    if a.get("expr") in perso["gestes"] and a["expr"] not in perso["expressions"]:
+        if not a.get("geste"):
+            a["geste"] = a["expr"]
+        del a["expr"]
+    if a.get("geste") in perso["expressions"] and a["geste"] not in perso["gestes"]:
+        a.setdefault("expr", a["geste"])
+        del a["geste"]
+    return a
 
 
 def validate_scene_dessin(scene: dict) -> list[str]:

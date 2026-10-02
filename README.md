@@ -289,7 +289,10 @@ face à face, objets posés ou tenus, personnage assis) :
   rappelle ? ») ; `accroche_ecran` reste au « tu ». 2 personnages qui parlent au plus.
 - **Contrôle** : chaque scène passe par `catalog.clean_scene_dessin` : objet, ancre, siège, action,
   expression ou geste inconnus sont retirés (le rendu ne casse jamais) et signalés à Gemini, qui corrige
-  (3 essais). Dans `scripts.json`, une scène porte `repliques` (`[{qui, texte}]`), `dessin` (la scène
+  (3 essais). Corrigé sans le relancer : geste écrit en expression (et l'inverse), action `expr` →
+  `expression` ; personnage, animal ou chaise sans `regard` tourné vers le centre ; objet mural sans `y`
+  accroché à 700 px ; `boire` / `telephoner` avec un `objet` pas encore en main → `tenir` ajouté avant.
+  Le montage repasse chaque scène par ce contrôle (corrections récentes appliquées aux anciens scénarios). Dans `scripts.json`, une scène porte `repliques` (`[{qui, texte}]`), `dessin` (la scène
   jouable) et `texte` (les répliques bout à bout) ; le reel porte `dessin: true` et `voix_personnages`.
 - **Voix** : toutes les répliques en **un seul appel** Gemini TTS multi-locuteurs, une voix par
   personnage (`voix` dans `dessins.json` : Léa = Aoede, Karim = Puck). Consigne au format de la doc

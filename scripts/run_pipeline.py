@@ -199,7 +199,8 @@ def dessin_spec(scene: dict, timing: dict, under_hook: bool = False) -> str:
     replique ("parler") est placee a l'instant ou la voix la dit et dure ce qu'elle dure
     (timeline "repliques", 4_generate_subtitles.py) -- bulle et bouche suivent la voix.
     """
-    sc = json.loads(json.dumps(scene["dessin"]))
+    # Repasse par le controle du catalogue : corrections ajoutees depuis l'ecriture du scenario.
+    sc = catalog.clean_scene_dessin(json.loads(json.dumps(scene["dessin"])))[0]
     start = timing["start"]
     parler = [a for a in sc.get("actions", []) if a.get("action") == "parler"]
     for a, r in zip(parler, timing.get("repliques") or []):
