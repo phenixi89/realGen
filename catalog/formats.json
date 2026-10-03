@@ -604,40 +604,6 @@
         "comique_sautillant"
       ],
       "ton_humour": "pince-sans-rire et complice, avec un sourire dans la voix, débit vif et naturel, répliques enchaînées sans pause entre les personnages, une très courte pause seulement avant la chute"
-    },
-    {
-      "id": "documentaire_nature",
-      "nom": "Documentaire animalier : le candidat dans son habitat",
-      "categorie": "conseil",
-      "poids": 2,
-      "cartes": "majoritaires",
-      "documentaire": true,
-      "registres": [
-        "humour",
-        "serieux"
-      ],
-      "sujets": [
-        "cv",
-        "candidature",
-        "entretien",
-        "lettre",
-        "linkedin",
-        "emploi"
-      ],
-      "structure": "Faux documentaire animalier de 3 plans + l'appel à l'action. Une voix off calme et solennelle observe le candidat (ou le recruteur, le CV, l'ATS) comme une espèce animale dans son habitat naturel et raconte un VRAI problème de recherche d'emploi : (1) le plan d'ouverture présente l'espèce et son habitat (légende : nom, faux nom latin, détail) et pose le problème ; (2) le comportement qui coince, vu comme un réflexe animal, avec ses conséquences ; (3) le tournant : UN conseil concret et retenable, énoncé avec une phrase exacte entre « guillemets », puis le résultat et une chute pince-sans-rire. Le sujet est le CONSEIL emploi / recrutement, jamais le produit : OpusCV n'apparaît que dans l'appel à l'action final. Chaque plan est un paysage en silhouettes avec un ou deux animaux qui jouent l'idée de la phrase (autruche = on ignore le problème, paon = CV trop chargé, lion = recruteur qui fait la sieste, gnous = la foule des candidats).",
-      "ton": "voix off de documentaire animalier : posée, grave et chaleureuse, ton solennel avec un humour pince-sans-rire, débit lent et très articulé, longues pauses entre les phrases",
-      "ton_humour": "voix off de documentaire animalier : posée, grave, solennelle et délicieusement pince-sans-rire, débit lent, de longues pauses avant les chutes",
-      "voix": [
-        "Charon"
-      ],
-      "themes": [
-        "doc_savane",
-        "doc_nuit"
-      ],
-      "ambiances": [
-        "documentaire_savane",
-        "documentaire_nuit"
-      ]
     }
   ]
 }
