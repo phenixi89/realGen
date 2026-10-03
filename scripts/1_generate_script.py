@@ -60,6 +60,7 @@ Usage:
 Necessite GEMINI_API_KEY (sauf scenario fourni entierement redige).
 """
 import argparse
+import difflib
 import json
 import math
 import os
@@ -113,7 +114,7 @@ MAX_ANNOTATIONS = 2
 # Carrousel Instagram : diapositives ecrites par l'IA (hors diapositive finale, ajoutee au rendu).
 CARROUSEL_MIN, CARROUSEL_MAX = 4, 8
 # Dessin anime (formats "dessin": true) : une replique tient dans une bulle.
-REPLIQUE_MAX_WORDS = 16
+REPLIQUE_MAX_WORDS = 12   # phrases courtes et simples (une idée par réplique)
 # Actions sans parole qui ne se voient presque pas (ne comptent pas comme "action" d'une scene).
 ACTIONS_PAROLE = ("parler", "expression", "geste", "regarder", "pause", "camera")
 # Mise en scene "cinema" (gros plans, inserts, nuage de pensee, carton d'ellipse) : au moins une par reel.
@@ -290,30 +291,24 @@ def dessin_bounds(duration: int) -> tuple[int, int]:
     return 2, max(4, math.ceil(duration / 6))
 
 
-DRAMATURGIE = """ÉCRITURE DE SCÉNARISTE (un vrai mini-scénario, pas un dialogue de FAQ) :
-  - ACTE 1 (accroche, ~15 % du reel) : Karim VEUT quelque chose de précis aujourd'hui (décrocher cet entretien, ne pas
-    perdre cette offre) et un obstacle se dresse : l'enjeu est clair dès la 1re scène ;
-  - ACTE 2 : il tente à sa façon, ça coince (on le voit), puis un RETOURNEMENT surprenant apporte le conseil ;
-  - ACTE 3 : il applique, ça marche (on le voit aussi), puis la chute.
-  - LE CONSEIL est UN principe retenable, concret et contre-intuitif quand c'est possible : une règle courte et
-    nommée (« la règle des 3 secondes ») ou une phrase exacte à dire ou à écrire, avec un exemple. Un conseil de
-    spécialiste du recrutement (ce que les recruteurs font vraiment), jamais une généralité (« sois toi-même ») ;
-  - MONTRE, NE FAIS PAS LA LEÇON : le conseil passe par une action ou un essai raté puis réussi ; jamais plus de
-    2 répliques de suite où un personnage explique pendant que l'autre ne fait que dire « ah oui » ;
-  - PERSONNAGES AVEC UN CARACTÈRE : Karim, optimiste, de bonne foi et maladroit ; Léa, pince-sans-rire, pédagogue sans
-    être donneuse de leçons ; le recruteur, pressé mais honnête. Les gags viennent de leurs caractères et d'un
-    sous-texte (honte, espoir, orgueil), pas de blagues plaquées ;
-  - UN FUSIL DE TCHEKHOV : un objet ou une réplique posé tôt (la tasse, le chat, une phrase répétée) revient dans la
-    chute, transformé ;
-  - LA CHUTE reformule le conseil en une formule mémorable (la punchline EST le conseil), puis l'appel à l'action ;
-  - ACCROCHE CLAIRE : la 1re réplique se comprend seule en 3 secondes, sans contexte (une situation, une peur ou
-    une question simple), jamais une formule énigmatique ;
-  - PROMESSE TENUE : ce qu'un personnage annonce (« la formule », « la phrase exacte ») est dit tel quel plus loin,
-    entre « guillemets français », mot pour mot, avant la chute : le spectateur repart avec UNE phrase qu'il peut
-    copier ou dire à voix haute (jamais seulement « apporte une info utile » : laquelle, avec quels mots ?) ;
-  - ORIGINALITÉ : évite l'histoire attendue (« Karim rate son entretien, Léa lui explique ») ; choisis un angle
-    inattendu (inversion des rôles, point de vue du recruteur, décompte, enquête, deux futurs...) et une situation
-    précise, jamais « un entretien » en général.
+DRAMATURGIE = """ÉCRITURE : UN PROBLÈME, UNE SOLUTION, EN MOTS SIMPLES (un mini-scénario, pas une fiche pratique lue à deux voix) :
+  - LANGAGE : les mots de tous les jours, des phrases courtes (une idée par réplique, 12 mots au plus), qu'un enfant de
+    12 ans comprend. Aucun jargon, aucune formule de coach, aucun nom de « règle » ou de « méthode » inventé
+    (« la règle du cadre », « la méthode des 3 P » sont interdits) : on dit simplement quoi faire ;
+  - CONTEXTE : dans les 2 premières répliques, le spectateur sait QUI a un problème, DANS QUELLE SITUATION (un entretien
+    jeudi, un CV envoyé sans réponse, une offre bizarre) et QUEL EST le problème. Jamais de phrase abstraite sans situation ;
+  - PROBLÈME (au début) : un problème précis que le spectateur a vécu, montré dans une situation réelle (pas une idée) ;
+  - SOLUTION (au milieu) : UNE seule chose à faire, concrète, avec les mots exacts à dire ou à écrire entre « guillemets
+    français » (la phrase qu'on peut copier), et POURQUOI ça marche en une courte phrase simple ;
+  - RÉSULTAT (à la fin) : on VOIT que ça marche (gros plan, mail reçu, tampon), puis une chute courte ;
+  - Karim vit le problème et agit ; Léa l'aide en 1 ou 2 répliques à la fois, comme une amie, jamais en donnant un cours :
+    jamais plus de 2 répliques de suite par le même personnage ;
+  - MONTRE, NE FAIS PAS LA LEÇON : le conseil passe par un essai raté puis réussi, pas par un discours ;
+  - PERSONNAGES : Karim est maladroit et de bonne foi, Léa est pince-sans-rire, le recruteur pressé mais honnête ; les gags
+    viennent d'eux, pas de blagues plaquées ;
+  - PROMESSE TENUE : ce qu'un personnage annonce (« je te donne la phrase ») est dit mot pour mot plus loin, avant la chute ;
+  - ORIGINALITÉ : évite l'histoire attendue (« Karim rate son entretien, Léa lui explique ») : choisis une situation précise
+    et surprenante (inversion des rôles, point de vue du recruteur, décompte...), mais toujours compréhensible tout de suite.
 """
 
 
@@ -332,8 +327,8 @@ def dessin_rules(plan: dict | None = None) -> str:
     trame_rule = (f"""TRAME DE CET ÉPISODE : « {trame['nom']} » -- {trame['consigne']}
 """ if trame else "")
     lieu = plan.get("lieu")
-    lieu_rule = (f"""LIEU À PRIVILÉGIER : « {lieu['id']} » ({lieu['description'].split('.')[0]}) : au moins une scène s'y passe, si l'histoire s'y prête
-(sinon un autre lieu du catalogue, mais pas toujours le salon ni le bureau).
+    lieu_rule = (f"""LIEU POSSIBLE : « {lieu['id']} » ({lieu['description'].split('.')[0]}). À utiliser SEULEMENT s'il colle à l'histoire ;
+sinon choisis le lieu logique pour la situation (un entretien se passe dans la salle d'entretien, un appel chez soi...).
 """ if lieu else "")
     serie = cat.get("serie") or {}
     serie_rule = ""
@@ -433,8 +428,9 @@ satisfaction ») : elle dit d'où ils viennent (« avec TES vrais chiffres : com
 n'écrit jamais un chiffre que le candidat ne lui a pas donné. Citations entre « guillemets français ».
 Dernière scène = l'appel à l'action, SANS décor : {{"cta": true, "qui": "lea", "texte": "..."}} -- un personnage
 le dit pendant que l'écran d'appel à l'action s'affiche.
-Dans ce format, l'accroche (1re réplique) peut être à la 1re personne (« Pourquoi personne ne me rappelle ? »)
-ou s'adresser à l'autre personnage ; "accroche_ecran" reste au « tu » et s'adresse au spectateur.
+Dans ce format, "accroche_ecran" est le TITRE de la vidéo, de préférence une question au « tu » qui s'adresse au
+spectateur ; la 1re réplique est une vraie phrase de la scène (à la 1re personne : « Pourquoi personne ne me
+rappelle ? », ou une question à l'autre personnage), jamais le titre recopié ni un slogan.
 """
 
 
@@ -592,6 +588,22 @@ Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonc
 
 {PRODUCT_CONTEXT}
 """)
+    hook_rule = (f"""ACCROCHE (décisive pour la rétention) : une QUESTION simple, que le spectateur se pose vraiment, sur un problème
+précis qu'il a vécu (inspiration de style, sans la recopier : « {hook['id']} » — {hook['consigne']} ; ex. « {hook['exemple']} »).
+Deux façons, au choix, et JAMAIS un slogan ni un titre dit par un personnage :
+  - le TITRE à l'écran ("accroche_ecran") est la question (« Pourquoi personne ne te rappelle après un entretien ? »,
+    2e personne, 12 mots max), et la 1re réplique est une vraie phrase de la scène ;
+  - ou la 1re réplique est la question, posée par un personnage dans la situation (« Pourquoi personne ne me rappelle ? »),
+    et le titre à l'écran la reprend autrement.
+Le titre et la bulle ne se répètent pas. Pas de nombre annoncé (« 3 conseils », « 2 questions ») : dis ce qu'on va
+apprendre, c'est tout. Un chiffre ne s'écrit que s'il est concret et vrai (7 jours, 30 secondes) ; JAMAIS de
+statistique inventée (« 80 % des candidats »).""" if dessin else f"""ACCROCHE (scène 1, décisive pour la rétention) : style « {hook['id']} » — {hook['consigne']}
+Exemple de ton (ne pas recopier) : « {hook['exemple']} »
+Règles strictes de l'accroche (0-3 s) : 2e personne du singulier (« tu », « ton », « tes ») ; elle déclenche
+une émotion forte (peur de l'échec, curiosité, gain de temps, injustice du recrutement) ; elle intègre un
+chiffre précis quand c'est possible, mais UNIQUEMENT un chiffre concret ou vérifiable (une durée,
+un nombre de lignes, de boîtes, d'étapes : 6 secondes, 30 secondes, 3 lignes, 50 boîtes) ; JAMAIS de
+statistique ni de pourcentage inventé (« 80 % des candidats », « 4 candidats sur 5 »…).""")
     corps = ("Corps : l'histoire (voir DESSIN ANIMÉ ci-dessous) pose vite le problème précis, puis le conseil concret de "
              "recruteur, appliqué et visible ; rythme rapide, phrases courtes, zéro blabla." if dessin else
              "Corps (3-20 s) : expose vite le problème précis, puis la solution concrète apportée par OpusCV (montrée à\n"
@@ -604,13 +616,7 @@ Structure attendue : {structure}
 {registre_rule}
 SUJET : {plan['sujet']['texte']}
 
-ACCROCHE (scène 1, décisive pour la rétention) : style « {hook['id']} » — {hook['consigne']}
-Exemple de ton (ne pas recopier) : « {hook['exemple']} »
-Règles strictes de l'accroche (0-3 s) : 2e personne du singulier (« tu », « ton », « tes ») ; elle déclenche
-une émotion forte (peur de l'échec, curiosité, gain de temps, injustice du recrutement) ; elle intègre un
-chiffre précis quand c'est possible, mais UNIQUEMENT un chiffre concret ou vérifiable (une durée,
-un nombre de lignes, de boîtes, d'étapes : 6 secondes, 30 secondes, 3 lignes, 50 boîtes) ; JAMAIS de
-statistique ni de pourcentage inventé (« 80 % des candidats », « 4 candidats sur 5 »…).
+{hook_rule}
 {corps}
 Public : des CANDIDATS qui cherchent un emploi (jamais des recruteurs) ; le CTA parle de leur recherche
 (décrocher un entretien, un job), pas de « recrutements ».
@@ -814,6 +820,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
     """
     if dessin:
         scenes, problems = dessin_scenes(data)
+        problems = problems + dessin_texte_problems(scenes, data)
         return scenes, problems + common_problems(scenes, data, duration, tone, recent_hooks, None,
                                                   dessin_bounds(duration), dialogue=True)
     problems = []
@@ -961,6 +968,37 @@ def completer_mise_en_scene(scenes: list[dict]) -> None:
         ecoute = next((p for p in presents if p != orateur), orateur)
         posture = "penser" if d["actions"][parler[0]]["texte"].rstrip().endswith("?") else "bras_croises"
         d["actions"].insert(parler[0] + 1, {"qui": ecoute, "action": posture, "avec": True})
+
+
+NOMBRE_ANNONCE = re.compile(r"\b\d+\s*(questions?|conseils?|erreurs?|astuces?|phrases?|raisons?|r[èe]gles?|[ée]tapes?|signes?|secrets?)\b", re.I)
+
+
+def dessin_texte_problems(scenes: list[dict], data: dict) -> list[str]:
+    """Texte du dessin animé : accroche-question, bulle distincte du titre, langage simple, pas de monologue."""
+    problems = []
+    accroche = str(data.get("accroche_ecran") or "").strip()
+    reps = [(r["qui"], r["texte"]) for s_ in scenes if "dessin" in s_ for r in s_["repliques"]]
+    if not reps:
+        return problems
+    premiere = reps[0][1]
+    if not (accroche.endswith("?") or "?" in premiere):
+        problems.append("l'accroche doit être une QUESTION : soit le titre à l'écran (accroche_ecran), soit la 1re réplique "
+                        "posée par un personnage dans la situation")
+    if difflib.SequenceMatcher(None, catalog._norm(premiere), catalog._norm(accroche)).ratio() >= 0.6:
+        problems.append("la 1re réplique répète le titre à l'écran : la bulle est une vraie phrase de la scène, "
+                        "le titre est affiché à part")
+    if NOMBRE_ANNONCE.search(accroche):
+        problems.append(f"nombre annoncé dans le titre (« {accroche} ») : dis ce qu'on va apprendre, sans compter "
+                        "(« 2 questions », « 3 conseils »…)")
+    if any(re.search(r"\br[èe]gle (du|des|de la|de l')\b", t, re.I) for _, t in reps):
+        problems.append("une « règle du … » inventée n'est pas comprise : dis simplement quoi faire, avec la phrase exacte")
+    suite = 1
+    for (q0, _), (q1, _) in zip(reps, reps[1:]):
+        suite = suite + 1 if q0 == q1 else 1
+        if suite >= 3:
+            problems.append(f"{q1} parle 3 fois de suite : alterne les personnages (pas de cours, une conversation)")
+            break
+    return problems
 
 
 def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:

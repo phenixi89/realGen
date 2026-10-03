@@ -342,14 +342,21 @@ assis) :
   Le prompt est celui d'un scénariste + expert marketing (pas d'« informations produit ») : OpusCV n'est cité
   que dans l'appel à l'action final ; un « OpusCV » dans une réplique de l'histoire est refusé par la
   validation (nouvelle tentative).
-- **Écriture de scénariste** (consigne `DRAMATURGIE` de `1_generate_script.py`) : 3 actes (envie + obstacle,
-  essai raté puis retournement qui apporte le conseil, application réussie + chute), un conseil unique,
-  concret et retenable (règle nommée ou phrase exacte), « montrer plutôt qu'expliquer » (pas de leçon de plus de
-  2 répliques), personnages à caractère (Karim maladroit et optimiste, Léa pince-sans-rire, recruteur pressé
-  mais honnête), un « fusil de Tchekhov » qui revient dans la chute, chute = le conseil reformulé.
+- **Un problème, une solution, en mots simples** (consigne `DRAMATURGIE` de `1_generate_script.py`) : le reel pose un
+  problème précis vécu par le candidat (dans une situation réelle : entretien jeudi, CV sans réponse, offre bizarre), puis UNE
+  solution concrète avec la phrase exacte à dire ou écrire entre « guillemets français », puis le résultat montré et une
+  chute courte. Langage de tous les jours, réplique de 12 mots au plus, aucun jargon ni « règle du … » inventé ; le
+  contexte (qui, quelle situation, quel problème) est donné dans les 2 premières répliques. Karim vit le problème, Léa
+  l'aide comme une amie : jamais 3 répliques de suite par le même personnage, « montrer plutôt qu'expliquer ».
+- **Accroche = une question** : soit le **titre à l'écran** (`accroche_ecran`, au « tu », ex. « Pourquoi personne ne te
+  rappelle après un entretien ? »), soit la **1re réplique** posée par un personnage dans la situation (« Pourquoi
+  personne ne me rappelle ? »). Jamais un slogan ni le titre dit dans une bulle : la bulle est une vraie phrase de la
+  scène, qui ne répète pas le titre. Pas de nombre annoncé dans le titre (« 3 conseils », « 2 questions »). Contrôlé par
+  `dessin_texte_problems` (nouvelle tentative sinon) ; les accroches `chiffre` et `liste_numerotee` sont exclues du
+  dessin animé.
 - **Trame d'histoire** (`trames` de `dessins.json`, une par reel, la moins récemment utilisée ;
   imposable par `--plan` : `"trame"`) : 17 trames : avant / après, ce que pense le recruteur, quiproquo,
-  l'erreur en direct, vrai ou faux, le chat juge (running gag), ça aurait pu être pire, la règle à retenir,
+  l'erreur en direct, vrai ou faux, le chat juge (running gag), ça aurait pu être pire, la phrase à retenir,
   à la place du recruteur (rôles inversés), dix minutes avant (compte à rebours), deux lendemains, le faux
   conseil, l'enquête, flashback, la répétition générale, le coup de fil surprise (la voix du recruteur au téléphone n'est jamais entendue : seuls Karim et Léa parlent), ce que je ne dis jamais (seuls Karim et le recruteur parlent).
   Ajouter une trame = une entrée `{id, nom, consigne}`, sans code.
@@ -430,13 +437,14 @@ assis) :
 - **Durée** : le dialogue à deux voix se dit à ~2,3 mots/s (mesuré au run 64 : 78 mots = 33,7 s, voix posées et
   pauses avant les chutes) ; budget de mots calculé à 2,3 mots/s (`DIALOGUE_WORDS_PER_SECOND` : 25 s ≈ 58 mots, de
   49 à 64), rappelé à Gemini en nombre de répliques de 6 à 8 mots.
-- **Variété** : un **lieu à privilégier** est proposé à chaque épisode (`pick_lieu` : le décor le moins récemment
-  utilisé, mémorisé dans `fonds` de l'historique) ; **au moins un plan original** par reel est exigé (cadre `dessous`
-  ou `epaule`, `"lent": true`, ou split-screen `diptyque.comparer`), sinon nouvelle tentative.
+- **Variété** : un **lieu possible** est proposé à chaque épisode (`pick_lieu` : le décor le moins récemment utilisé,
+  mémorisé dans `fonds` de l'historique), à n'utiliser que s'il colle à l'histoire ; **au moins un plan original** par
+  reel est exigé (cadre `dessous` ou `epaule`, `"lent": true`, ou split-screen `diptyque.comparer`), sinon nouvelle
+  tentative.
 - **Objet en main** : un personnage qui tient un objet ne fait pas de geste `idee`, `tete_mains` ni `penser` (la main
   monterait devant son visage : téléphone sur l'œil en gros plan) ; le geste est retiré à la validation.
-- **Écriture** : l'accroche se comprend seule en 3 secondes ; une promesse (« la formule », « la phrase exacte ») est
-  tenue par une phrase dite mot pour mot entre « guillemets français » avant la chute.
+- **Promesse tenue** : ce qu'un personnage annonce (« je te donne la phrase ») est dit mot pour mot plus loin,
+  avant la chute.
 - **Musique** : le format a ses propres musiques douces (`"ambiances"` dans `formats.json` : jazz de café, bossa,
   ukulélé, boîte à musique, cinéma doux, matinale, acoustique, piano minimal, lo-fi, comique sautillant) : celles du
   thème qui y figurent, sinon celles du format ; jamais de synthwave ni de trap sous un dialogue.
