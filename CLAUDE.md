@@ -41,6 +41,9 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   - un problème puis une solution, en mots simples (réplique de 12 mots au plus, pas de jargon ni de « règle du … »
     inventé) ; l'accroche est une question (titre à l'écran ou 1re réplique d'un personnage), jamais le titre dit dans
     une bulle ni un nombre annoncé (`dessin_texte_problems`) ;
+  - le titre (6 mots au plus, accrocheur) s'affiche seul plein écran 1 s avant la scène (jamais sur les personnages) ;
+    le scénario passe une relecture « spectateur qui ne sait rien » (`relecture_dessin`) : s'il ne se comprend pas
+    seul, il est réécrit ;
   - ouverture de 8 mots au plus qui nomme de qui on parle et ne répète pas le titre, solution enseignée avec une phrase
     exacte entre « guillemets », aucune réplique adressée au public (`dessin_texte_problems`) ; budget de mots calé sur
     la vitesse réelle de la voix (`output/vitesse_voix.json`) ;

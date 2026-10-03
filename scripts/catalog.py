@@ -30,6 +30,9 @@ FONTS_DIR = ROOT / "assets" / "fonts"
 DEFAULT_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 # Police manuscrite des dessins (cartes schema, annotations) -- OFL, assets/fonts/.
 HAND_FONT = "Kalam-Bold.ttf"
+# Dessin anime : le titre occupe seul l'ecran cette duree (s), puis la voix et la scene commencent
+# (2_generate_voice.py ajoute ce silence en tete, run_pipeline.py affiche le titre pendant ce temps).
+TITRE_DESSIN_S = 1.0
 DESSIN_SUPPORTS = ("papier", "craie", "neon")
 CARD_MODES = ("aucune", "autorisees", "majoritaires")
 CARD_STYLES = ("normal", "mythe", "realite", "avant", "apres")

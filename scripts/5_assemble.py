@@ -203,13 +203,14 @@ def make_overlay_clips(overlays: list[tuple[float, str]], duration: float, tmp_d
 
 def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path,
              overlays: list[tuple[float, str]] | None = None, theme: dict | None = None,
-             hook_text: str = "", hook_duration: float = HOOK_DEFAULT_S,
+             hook_text: str = "", hook_duration: float = HOOK_DEFAULT_S, hook_plein: bool = False,
              ambiance_id: str | None = None, sfx_cues: list[dict] | None = None,
              keywords: list[str] | None = None, progress_bar: bool = True, loop_ending: bool = True,
              punch: bool = True, captions: bool = True):
     """
     theme : catalog/themes.json (sous-titres, animations, watermark, musique).
     hook_text : accroche affichee en grand des la premiere image (assets/anim/hook.html).
+    hook_plein : l'accroche occupe seule tout l'ecran (fond uni) pendant hook_duration (dessin anime).
     ambiance_id : musique (catalog/audio.json), sinon celle du theme.
     sfx_cues : effets sonores [{"t", "name", ...}] (sound_design.plan_cues).
     keywords : mots-cles colores dans les sous-titres.
@@ -240,7 +241,8 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
     tmp = tempfile.TemporaryDirectory()
     overlays = list(overlays or [])
     if hook_text:
-        overlays.insert(0, (0.0, "hook?" + urlencode({"text": hook_text, "dur": f"{min(hook_duration, duration):.2f}"})))
+        overlays.insert(0, (0.0, "hook?" + urlencode({"text": hook_text, "dur": f"{min(hook_duration, duration):.2f}",
+                                                      **({"plein": "1"} if hook_plein else {})})))
     overlay_clips = make_overlay_clips(overlays, duration, Path(tmp.name), theme)
     layers = [video, make_watermark_clip(duration, theme), *overlay_clips,
               *(make_caption_clips(cues, theme, {norm_word(k) for k in keywords or []}) if captions else [])]
@@ -297,6 +299,8 @@ def main():
                          help="Accroche affichee en grand des la premiere image (vide = aucune)")
     parser.add_argument("--hook-duration", type=float, default=HOOK_DEFAULT_S,
                          help="Duree d'affichage de l'accroche, en s")
+    parser.add_argument("--hook-plein", action="store_true",
+                         help="L'accroche occupe seule tout l'ecran (fond uni), puis la scene commence (dessin anime)")
     parser.add_argument("--ambiance", type=str, default=None,
                          help="Ambiance musicale (catalog/audio.json), sinon celle du theme")
     parser.add_argument("--sfx", type=str, default=None,
@@ -321,7 +325,7 @@ def main():
     assemble(Path(args.video), Path(args.audio), Path(args.subs), Path(args.out),
              overlays=[parse_overlay(v) for v in args.overlay],
              theme=catalog.get_theme(args.theme) if args.theme else None,
-             hook_text=args.hook_text, hook_duration=args.hook_duration, ambiance_id=args.ambiance,
+             hook_text=args.hook_text, hook_duration=args.hook_duration, hook_plein=args.hook_plein, ambiance_id=args.ambiance,
              sfx_cues=json.loads(Path(args.sfx).read_text(encoding="utf-8")) if args.sfx else [],
              keywords=[k for k in args.keywords.split("|") if k.strip()],
              progress_bar=not args.no_progress_bar, loop_ending=not args.no_loop, punch=not args.no_punch,

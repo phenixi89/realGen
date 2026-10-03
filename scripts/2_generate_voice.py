@@ -103,12 +103,26 @@ def noter_vitesse(chemin: Path, script: dict, mp3_path: Path) -> None:
         duree = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(mp3_path)],
                                      capture_output=True, text=True, check=True).stdout.strip())
         mots = sum(len(s.get("texte", "").split()) for s in script.get("scenes", []))
+        if script.get("accroche_ecran"):
+            duree -= catalog.TITRE_DESSIN_S  # silence du titre, pas de la voix
         mesures = json.loads(chemin.read_text(encoding="utf-8")) if chemin.exists() else []
         mesures.append({"dessin": True, "mots": mots, "duree": round(duree, 2), "registre": script.get("registre")})
         chemin.write_text(json.dumps(mesures[-20:], ensure_ascii=False), encoding="utf-8")
         print(f"    vitesse : {mots} mots en {duree:.1f} s = {mots / duree:.2f} mots/s (budget des prochains dessins animes)")
     except (OSError, ValueError, subprocess.SubprocessError):
         pass  # mesure facultative : jamais bloquante
+
+
+def silence_en_tete(wav_path: Path, secondes: float):
+    """Dessin anime : le titre s'affiche seul avant la scene, la voix ne commence qu'apres."""
+    import numpy as np
+    raw = _pcm(wav_path)
+    out = np.concatenate([np.zeros(int(secondes * SR_TTS)), raw])
+    with wave.open(str(wav_path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(SR_TTS)
+        wf.writeframes(np.clip(out, -32768, 32767).astype(np.int16).tobytes())
 
 
 def synthesize(client, text: str, voice: str, pcm_path: Path, tone: str = DEFAULT_TONE):
@@ -348,6 +362,8 @@ def main():
         # Empreinte = tout ce qui change le son : texte, voix, ton (ou silence).
         fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone} | {TTS_MODEL_NAME}]\n{text_key}"
 
+        if script.get("dessin") and script.get("accroche_ecran") and not args.silent:
+            fingerprint += f"\n[titre seul {catalog.TITRE_DESSIN_S} s]"
         wav_path = out_dir / f"reel_{i:02d}.wav"
         mp3_path = out_dir / f"reel_{i:02d}.mp3"
         # Sidecar avec le texte exact ayant produit ce mp3 : 1_generate_script.py
@@ -389,6 +405,8 @@ def main():
                     clip = cta_clip(client, cta_voice, last["texte"].strip(), out_dir.parent / "voix_cta")
                     print(f"    CTA enregistre reutilise : {clip.name}")
                     append_cta(wav_path, clip, wav_path)
+                if script.get("dessin") and script.get("accroche_ecran"):
+                    silence_en_tete(wav_path, catalog.TITRE_DESSIN_S)
                 convert_to_mp3(wav_path, mp3_path)
             text_path.write_text(fingerprint, encoding="utf-8")
             print(f"    -> {mp3_path}")

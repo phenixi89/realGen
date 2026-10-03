@@ -348,12 +348,23 @@ assis) :
   chute courte. Langage de tous les jours, réplique de 12 mots au plus, aucun jargon ni « règle du … » inventé ; le
   contexte (qui, quelle situation, quel problème) est donné dans les 2 premières répliques. Karim vit le problème, Léa
   l'aide comme une amie : jamais 3 répliques de suite par le même personnage, « montrer plutôt qu'expliquer ».
-- **Accroche = une question** : soit le **titre à l'écran** (`accroche_ecran`, au « tu », ex. « Pourquoi personne ne te
-  rappelle après un entretien ? »), soit la **1re réplique** posée par un personnage dans la situation (« Pourquoi
+- **Accroche = une question** : soit le **titre à l'écran** (`accroche_ecran`, au « tu », 6 mots au plus, ex. « Pourquoi
+  personne ne te rappelle ? »), soit la **1re réplique** posée par un personnage dans la situation (« Pourquoi
   personne ne me rappelle ? »). Jamais un slogan ni le titre dit dans une bulle : la bulle est une vraie phrase de la
   scène, qui ne répète pas le titre. Pas de nombre annoncé dans le titre (« 3 conseils », « 2 questions »). Contrôlé par
   `dessin_texte_problems` (nouvelle tentative sinon) ; les accroches `chiffre` et `liste_numerotee` sont exclues du
   dessin animé.
+- **Titre seul, une seconde** : le titre n'est plus affiché par-dessus les personnages. Il occupe **tout l'écran seul**
+  (fond uni aux couleurs du thème, texte centré très gros, `hook.html` paramètre `plein`, `5_assemble.py --hook-plein`)
+  pendant `catalog.TITRE_DESSIN_S` = 1 s, puis la scène de Karim et Léa prend la suite à la coupe. La voix attend : 
+  `2_generate_voice.py` ajoute ce silence en tête de l'audio (mesure de vitesse de voix corrigée d'autant), si bien que
+  la timeline, les bulles et les bruitages restent calés sur la voix. 6 mots au plus (`dessin_texte_problems`).
+- **Relecture du scénario** : une fois les contrôles de forme passés, un second appel Gemini (`relecture_dessin`) lit le
+  titre, les répliques et ce qui est dessiné comme un spectateur qui ne sait rien : il raconte l'histoire en deux phrases
+  et signale ce qui ne se comprend pas (rôles flous ou inversés sans explication, réplique qui ne répond pas à la
+  précédente, chute à deviner, nombre dit qui ne correspond pas au dessin). Un défaut relance l'écriture (jusqu'à 3
+  tentatives, la meilleure est gardée) ; la consigne `DRAMATURGIE` demande la même relecture à l'auteur. Un échec de
+  l'appel de relecture n'empêche jamais la génération.
 - **Ouverture et solution enseignée** (contrôlés par `dessin_texte_problems`, nouvelle tentative sinon) : la 1re
   réplique fait 8 mots au plus, nomme de qui ou de quoi on parle (pas de « lui », « elle », « ça » sans antécédent) et
   ne partage pas 2 mots clés avec le titre ; aucune réplique ne s'adresse au public (« reste pour… », « abonne-toi »,
@@ -435,11 +446,11 @@ assis) :
   serait jamais vue. Chaque scène devient un plan `scene` de 3b ; la
   dernière est le CTA animé, dit par un personnage.
 - **Montage** : pas de sous-titres incrustés (le texte est dans les bulles, `5_assemble.py
-  --no-captions`) ; la 1re scène est cadrée plus large et plus bas (`DESSIN_SOUS_ACCROCHE`) pour que
-  l'accroche affichée en grand en haut ne cache pas la 1re bulle, les autres un peu plus petites qu'en
-  rendu libre (`DESSIN_CADRAGE`) pour qu'une bulle de 3 lignes reste sous le titre de scène. Une bulle
-  s'efface au plus tard quand la suivante s'ouvre. La 1re scène est complète dès la 1re image
-  (`"dessine": false`) : c'est l'image qui retient ou fait scroller ; les suivantes se dessinent.
+  --no-captions`) ; toutes les scènes ont le même cadrage
+  (`DESSIN_CADRAGE`, un peu plus petit qu'en rendu libre pour qu'une bulle de 3 lignes reste sous le titre de scène) :
+  le titre n'est plus sur la scène, il la précède (voir « Titre seul, une seconde »). Une bulle
+  s'efface au plus tard quand la suivante s'ouvre. La 1re scène est complète dès son apparition
+  (`"dessine": false`) ; les suivantes se dessinent.
 - **Durée** : la vitesse de la voix varie d'un run à l'autre (2,0 mots/s au run 66, 2,8 au run 65 : tout le texte, CTA
   compris). `2_generate_voice.py` mesure donc mots dits / durée de l'audio de chaque dessin animé
   (`output/vitesse_voix.json`, gardé par le cache du workflow) et `1_generate_script.py` cale son budget de mots sur la

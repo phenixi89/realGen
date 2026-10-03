@@ -333,6 +333,14 @@ DRAMATURGIE = """ÉCRITURE : UN PROBLÈME, UNE SOLUTION, EN MOTS SIMPLES (un min
   - PERSONNAGES : Karim est maladroit et de bonne foi, Léa est pince-sans-rire, le recruteur pressé mais honnête ; les gags
     viennent d'eux, pas de blagues plaquées ;
   - PROMESSE TENUE : ce qu'un personnage annonce (« je te donne la phrase ») est dit mot pour mot plus loin, avant la chute ;
+  - COMPRÉHENSION (le point le plus important) : relis ton histoire comme un spectateur qui n'a QUE le titre et les
+    répliques, sans connaître l'histoire. Il doit pouvoir la raconter en deux phrases : qui est qui (le recruteur, le
+    candidat), ce qui ne va pas, ce qu'on essaie, ce qui se passe, pourquoi c'est drôle. Chaque réplique répond à la
+    précédente (pas de sujet nouveau qui sort de nulle part, pas de « suite » promise) ; un personnage garde le même
+    rôle d'un bout à l'autre, sauf si l'inversion est dite clairement (« Attends, c'est toi le recruteur ? ») ;
+    la chute découle de ce qu'on vient de voir, en une idée, sans qu'il faille la deviner ;
+  - CE QU'ON DIT = CE QU'ON VOIT : un nombre ou un objet cité dans une réplique correspond exactement à ce qui est dessiné
+    (si le CV montré liste 10 technos, on dit « dix » et pas « vingt » ; si un texte barré est montré, on le dit) ;
   - ORIGINALITÉ : évite l'histoire attendue (« Karim rate son entretien, Léa lui explique ») : choisis une situation précise
     et surprenante (inversion des rôles, point de vue du recruteur, décompte...), mais toujours compréhensible tout de suite.
 """
@@ -455,7 +463,7 @@ n'écrit jamais un chiffre que le candidat ne lui a pas donné. Citations entre 
 Dernière scène = l'appel à l'action, SANS décor : {{"cta": true, "qui": "lea", "texte": "..."}} -- un personnage
 le dit pendant que l'écran d'appel à l'action s'affiche.
 Dans ce format, "accroche_ecran" est le TITRE de la vidéo, de préférence une question au « tu » qui s'adresse au
-spectateur ; la 1re réplique est une vraie phrase de la scène (à la 1re personne : « Pourquoi personne ne me
+spectateur, 6 mots au plus (il s'affiche seul, plein écran, une seconde avant la scène) ; la 1re réplique est une vraie phrase de la scène (à la 1re personne : « Pourquoi personne ne me
 rappelle ? », ou une question à l'autre personnage), jamais le titre recopié ni un slogan.
 """
 
@@ -617,8 +625,9 @@ Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonc
     hook_rule = (f"""ACCROCHE (décisive pour la rétention) : une QUESTION simple, que le spectateur se pose vraiment, sur un problème
 précis qu'il a vécu (inspiration de style, sans la recopier : « {hook['id']} » — {hook['consigne']} ; ex. « {hook['exemple']} »).
 Deux façons, au choix, et JAMAIS un slogan ni un titre dit par un personnage :
-  - le TITRE à l'écran ("accroche_ecran") est la question (« Pourquoi personne ne te rappelle après un entretien ? »,
-    2e personne, 12 mots max), et la 1re réplique est une vraie phrase de la scène ;
+  - le TITRE à l'écran ("accroche_ecran") est la question (« Pourquoi personne ne te rappelle ? »,
+    2e personne), et la 1re réplique est une vraie phrase de la scène ; ce TITRE s'affiche SEUL, plein écran, UNE seconde
+    avant la scène : 6 mots au plus, accrocheur, lisible d'un coup d'œil ;
   - ou la 1re réplique est la question, posée par un personnage dans la situation (« Pourquoi personne ne me rappelle ? »),
     et le titre à l'écran la reprend autrement.
 Le titre et la bulle ne se répètent pas. Pas de nombre annoncé (« 3 conseils », « 2 questions ») : dis ce qu'on va
@@ -1021,11 +1030,13 @@ def dessin_texte_problems(scenes: list[dict], data: dict) -> list[str]:
     if re.search(r"\b(lui|leur|leurs|elle|elles|ils|ça|cela|celui|celle)\b|\bil (?!y a|faut)", premiere.lower()):
         problems.append("la 1re réplique parle de « lui / elle / ça » sans qu'on sache de qui ou de quoi : nomme la personne "
                         "ou la chose (le recruteur, mon CV, cette offre)")
+    if len(accroche.split()) > 6:
+        problems.append(f"le titre fait {len(accroche.split())} mots : il s'affiche seul une seconde, 6 mots au plus, accrocheur")
     commun = _mots_cles(premiere) & _mots_cles(accroche)
     if len(commun) >= 2:
         problems.append(f"la 1re réplique et le titre à l'écran disent la même chose (mots communs : {', '.join(sorted(commun))}) : "
                         "la bulle fait avancer la scène, le titre pose la question")
-    if any(re.search(r"reste pour|rester jusqu|attends la suite|jusqu'à la fin|dans cette vid[ée]o|abonne|like|commente", t, re.I) for _, t in reps):
+    if any(re.search(r"reste pour|rester jusqu|attends la suite|[ée]coute (bien )?la suite|jusqu'à la fin|dans cette vid[ée]o|abonne|like|commente", t, re.I) for _, t in reps):
         problems.append("une réplique s'adresse au public (« reste pour… », « attends la suite », « abonne-toi ») : "
                         "les personnages parlent entre eux, l'appel à l'action est réservé à la dernière scène")
     if not any("«" in t and "»" in t for _, t in reps):
@@ -1147,6 +1158,50 @@ def dessin_scenes(data: dict) -> tuple[list[dict], list[str]]:
     return scenes, problems
 
 
+def relecture_dessin(client, data: dict, scenes: list[dict]) -> list[str]:
+    """
+    Relecture du dessin anime par un second appel : un lecteur qui ne connait QUE le titre et les repliques (et ce qui
+    est dessine) raconte l'histoire puis dit ce qui ne se comprend pas. Run 67 : roles qui s'inversent sans
+    explication, chute illisible, « vingt technos » dit devant un CV qui en liste dix. Echec de l'appel : aucun probleme
+    (la relecture ne bloque jamais la generation).
+    """
+    reps, dessin = [], []
+    for sc in scenes:
+        reps += [f"{r['qui']} : {r['texte']}" for r in sc.get("repliques", [])]
+        d = sc.get("dessin")
+        if d:
+            dessin.append(f"décor {d.get('fond', 'vide')} ; objets : {', '.join(o['type'] for o in d.get('objets', []))}")
+            dessin += [f"texte barré / corrigé à l'écran : « {a.get('avant', '')} » devient « {a.get('apres', '')} »"
+                       for a in d.get("actions", []) if a.get("action") == "corriger"]
+    prompt = f"""Tu relis le scénario d'un mini dessin animé de 25 secondes (conseil emploi / recrutement, deux personnages,
+Karim et Léa) AVANT tournage. Tu es un spectateur qui ne connaît QUE ce qui suit, rien d'autre.
+
+TITRE affiché seul une seconde : « {data.get('accroche_ecran', '')} »
+RÉPLIQUES, dans l'ordre :
+{chr(10).join(reps)}
+CE QUI EST DESSINÉ : {' | '.join(dessin) or 'rien de précis'}
+
+Travail :
+1. Raconte l'histoire en deux phrases, comme si tu la découvrais (qui est qui, ce qui se passe, la chute).
+2. Cherche tout ce qui ne se comprend pas du premier coup : un personnage dont on ne sait pas s'il est le recruteur ou le
+   candidat, un changement de rôle sans explication, une réplique qui ne répond pas à la précédente, une chute qu'il faut
+   deviner ou qui n'est pas drôle, un nombre dit qui ne correspond pas à ce qui est dessiné, un conseil flou ou faux.
+3. Verdict sévère : "comprehensible" est false si l'un de ces défauts gêne la compréhension d'un spectateur pressé.
+
+Réponds en JSON : {{"histoire": "...", "comprehensible": true|false, "problemes": ["défaut précis et comment le corriger", ...]}}"""
+    try:
+        verdict = _gemini_json(client, prompt, 0.2)
+    except Exception as e:  # noqa: BLE001 -- facultatif : jamais bloquant
+        print(f"    relecture ignorée ({e})")
+        return []
+    problemes = [str(x).strip() for x in verdict.get("problemes") or [] if str(x).strip()]
+    if verdict.get("comprehensible") is False or problemes:
+        print(f"    relecture : {verdict.get('histoire', '')}")
+        return ["relecture : " + " ; ".join(problemes or ["histoire pas comprise du premier coup"])
+                + " -- réécris l'histoire pour qu'elle se comprenne seule"]
+    return []
+
+
 def fusionner_meme_lieu(scenes: list[dict]) -> list[dict]:
     """
     Deux scenes dessinees de suite dans le meme decor, sans ellipse (meme lieu, meme moment) : une seule
@@ -1187,6 +1242,8 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks,
                                     wants_proof(fmt) and not sans_captures and not fmt.get("dessin"),
                                     catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")))
+        if scenes and not problems and fmt.get("dessin"):
+            problems = relecture_dessin(client, data, scenes)
         if scenes:
             # Garde la tentative la plus propre (pas forcement la derniere) si aucune n'est parfaite.
             if best_problems is None or len(problems) <= len(best_problems):

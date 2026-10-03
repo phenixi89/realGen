@@ -47,9 +47,6 @@ HOOK_MAX_S = 4.0
 # --capture-mode aucune : icone du plan illustre quand la scene n'en donne pas.
 ILLUSTRATION_DEFAULT = "cv"
 CAPTURE_MODES = ["video", "screenshots", "video_desktop", "aucune"]
-# Dessin anime : 1re scene cadree plus large et plus bas, sous l'accroche affichee en grand
-# (assets/anim/hook.html, haut de l'ecran) -- sinon la 1re bulle passerait dessous.
-DESSIN_SOUS_ACCROCHE = {"echelle": 0.78, "sol": 1790}
 # Autres scenes : un peu plus petites et plus bas qu'en rendu libre (1,1 / 1650) -- une bulle
 # de 3 lignes reste sous le titre de scene (haut de l'ecran).
 DESSIN_CADRAGE = {"echelle": 0.95, "sol": 1720}
@@ -126,7 +123,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     if cards:
         for i, s in enumerate(scenes):
             if s.get("dessin"):
-                scene_anims[i] = dessin_spec(s, t_scenes[i], under_hook=i == 0 and show_hook, first=i == 0)
+                scene_anims[i] = dessin_spec(s, t_scenes[i], first=i == 0)
     if sans_captures:
         for i, t in enumerate(t_scenes):
             if i not in scene_anims:
@@ -179,7 +176,11 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         assemble_args += ["--ambiance", script["ambiance"]]
     if script.get("mots_cles"):
         assemble_args += ["--keywords", "|".join(script["mots_cles"])]
-    if show_hook:
+    if show_hook and script.get("dessin"):
+        # Dessin anime : le titre occupe seul l'ecran (voix et scene commencent apres, cf. 2_generate_voice.py).
+        assemble_args += ["--hook-text", script["accroche_ecran"], "--hook-plein",
+                          "--hook-duration", f"{catalog.TITRE_DESSIN_S:.2f}"]
+    elif show_hook:
         first_scene = t_scenes[0]["end"] - t_scenes[0]["start"]
         assemble_args += ["--hook-text", script["accroche_ecran"],
                           "--hook-duration", f"{min(max(first_scene, HOOK_MIN_S), HOOK_MAX_S):.2f}"]
@@ -196,7 +197,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     return video_args, assemble_args, sfx_cues
 
 
-def dessin_spec(scene: dict, timing: dict, under_hook: bool = False, first: bool = False) -> str:
+def dessin_spec(scene: dict, timing: dict, first: bool = False) -> str:
     """
     Scene dessinee du scenario -> "scene?scene=<json>" (assets/anim/scene.html) : chaque
     replique ("parler") est placee a l'instant ou la voix la dit et dure ce qu'elle dure
@@ -223,7 +224,7 @@ def dessin_spec(scene: dict, timing: dict, under_hook: bool = False, first: bool
             fin_parole = a["t"] + a["duree"]
         elif a.get("t") is None and not a.get("avec") and fin_parole > sc["duree"] - 1.0:
             a["avec"] = True  # plus de place apres la replique : jouee pendant, sinon jamais vue
-    sc.update(DESSIN_SOUS_ACCROCHE if under_hook else DESSIN_CADRAGE)
+    sc.update(DESSIN_CADRAGE)
     if first:
         sc["dessine"] = False  # 1re image du reel complete (c'est elle qui retient ou fait scroller)
     return "scene?" + urlencode({"scene": json.dumps(sc, ensure_ascii=False, separators=(",", ":"))})
