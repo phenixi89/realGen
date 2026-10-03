@@ -363,7 +363,7 @@ def main():
         # Empreinte = tout ce qui change le son : texte, voix, ton (ou silence).
         fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone} | {TTS_MODEL_NAME}]\n{text_key}"
 
-        if script.get("dessin") and script.get("accroche_ecran") and not args.silent:
+        if (script.get("dessin") or script.get("titre_seul")) and script.get("accroche_ecran") and not args.silent:
             fingerprint += f"\n[titre seul {catalog.TITRE_DESSIN_S} s, pause chute {CTA_PAUSE_DESSIN_S} s]"
         wav_path = out_dir / f"reel_{i:02d}.wav"
         mp3_path = out_dir / f"reel_{i:02d}.mp3"
@@ -406,12 +406,12 @@ def main():
                     clip = cta_clip(client, cta_voice, last["texte"].strip(), out_dir.parent / "voix_cta")
                     print(f"    CTA enregistre reutilise : {clip.name}")
                     append_cta(wav_path, clip, wav_path, CTA_PAUSE_DESSIN_S if lines else CTA_PAUSE_S)
-                if script.get("dessin") and script.get("accroche_ecran"):
+                if (script.get("dessin") or script.get("titre_seul")) and script.get("accroche_ecran"):
                     silence_en_tete(wav_path, catalog.TITRE_DESSIN_S)
                 convert_to_mp3(wav_path, mp3_path)
             text_path.write_text(fingerprint, encoding="utf-8")
             print(f"    -> {mp3_path}")
-            if not args.silent and script.get("dessin"):
+            if not args.silent and (script.get("dessin") or script.get("jeu")):
                 noter_vitesse(out_dir.parent / "vitesse_voix.json", script, mp3_path)
         except Exception as e:
             print(f"    ERREUR sur le script {i}: {e}", file=sys.stderr)

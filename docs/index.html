@@ -229,9 +229,9 @@ async function catFile(name){
   return r.json();
 }
 async function loadCatalog(){
-  const errs = [], names = ["formats","themes","voix","sujets","hooks","audio","dessins"];
-  const [f, t, v, s, h, a, d] = await Promise.all(names.map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
-  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: d.trames || [], dessins: d, decors: d.fonds || [] };
+  const errs = [], names = ["formats","themes","voix","sujets","hooks","audio","dessins","jeu"];
+  const [f, t, v, s, h, a, d, j] = await Promise.all(names.map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
+  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: d.trames || [], dessins: d, decors: d.fonds || [], niveaux: j.niveaux || [], boss: j.boss || [] };
   for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${regs(x).includes("humour") ? ", humour" : ""})`, x.id));
   for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
   for (const x of CAT.hooks) $("f_hook").add(new Option(nice(x.id), x.id));
@@ -266,7 +266,7 @@ const colors = th => Object.values(th.couleurs || {}).filter(c => typeof c === "
 
 // --- Onglet Catalogue : fiches lisibles, recherche, filtres ---
 let catKind = store.get("rg_cat") || "formats";
-const KINDS = { formats: "Formats", sujets: "Sujets", hooks: "Accroches", themes: "Thèmes", ambiances: "Ambiances", voix: "Voix", trames: "Trames (dessin animé)", decors: "Décors (dessin animé)" };
+const KINDS = { formats: "Formats", sujets: "Sujets", hooks: "Accroches", themes: "Thèmes", ambiances: "Ambiances", voix: "Voix", trames: "Trames (dessin animé)", decors: "Décors (dessin animé)", niveaux: "Niveaux (jeu vidéo)", boss: "Boss (jeu vidéo)" };
 const PLAN_FIELD = { formats: "format", sujets: "sujet", hooks: "hook", themes: "theme", ambiances: "ambiance", voix: "voix" };
 function setCatKind(k){ catKind = k; store.set("rg_cat", k); renderCatalog(); }
 function renderCatalog(){
@@ -279,7 +279,7 @@ function renderCatalog(){
   if (reg && catKind === "hooks") items = items.filter(x => regs(x).includes(reg));
   if (reg && catKind === "themes") items = items.filter(x => themeRegs(x).includes(reg));
   if (catKind === "sujets") items = [...items].sort((a, b) => (a.famille || "").localeCompare(b.famille || ""));
-  $("catInfo").textContent = { formats: "Structure de la vidéo : comment le reel est construit.", sujets: "De quoi parle le reel. Un sujet ne va qu'avec les formats de même catégorie qui acceptent un de ses tags.", hooks: "Style des 2 premières secondes (décisives pour la rétention).", themes: "Couleurs, polices, style de sous-titres et musiques possibles.", ambiances: "Musique de fond synthétisée (aucun droit d'auteur). Chaque thème en propose quelques-unes. ▶ pour écouter.", voix: "Voix off Gemini. ▶ pour écouter.", trames: "Structures d'histoire du dessin animé, une par épisode (rotation).", decors: "Lieux où Léa, Karim et le recruteur jouent la scène." }[catKind]
+  $("catInfo").textContent = { formats: "Structure de la vidéo : comment le reel est construit.", sujets: "De quoi parle le reel. Un sujet ne va qu'avec les formats de même catégorie qui acceptent un de ses tags.", hooks: "Style des 2 premières secondes (décisives pour la rétention).", themes: "Couleurs, polices, style de sous-titres et musiques possibles.", ambiances: "Musique de fond synthétisée (aucun droit d'auteur). Chaque thème en propose quelques-unes. ▶ pour écouter.", voix: "Voix off Gemini. ▶ pour écouter.", trames: "Structures d'histoire du dessin animé, une par épisode (rotation).", decors: "Lieux où Léa, Karim et le recruteur jouent la scène.", niveaux: "Lieux du jeu vidéo rétro où Martin et Léa jouent la scène.", boss: "Les adversaires de Martin dans le jeu vidéo : le système de recrutement, jamais une personne." }[catKind]
     + ` ${items.length} élément(s).`;
   $("catalog").innerHTML = items.map(CARD[catKind]).join("") || `<p class="muted">Aucun résultat.</p>`;
   hydrate($("catalog"));
@@ -307,6 +307,8 @@ const CARD = {
       <p class="muted">Thèmes : ${esc(th.join(", ") || "aucun")}</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("ambiances", x.id)}</div></div>`; },
   trames: x => `<div class="item"><h4>${esc(x.nom)}</h4><p>${esc(x.consigne)}</p><span class="id">${esc(x.id)}</span><div class="foot">${useBtn("trames", x.id)}</div></div>`,
   decors: x => `<div class="item">${vignette(`decors/${x.id}.jpg`)}<h4>${esc(nice(x.id))}</h4><p>${esc(x.description)}</p><span class="id">${esc(x.id)}</span></div>`,
+  niveaux: x => `<div class="item">${vignette(`niveaux/${x.id}.jpg`)}<h4>${esc(x.nom)}</h4><p>${esc(x.description)}</p><span class="id">${esc(x.id)}</span></div>`,
+  boss: x => `<div class="item">${vignette(`boss/${x.id}.jpg`)}<h4>${esc(x.nom)}</h4><p>${esc(x.sens)}</p><span class="id">${esc(x.id)}</span></div>`,
   voix: x => `<div class="item"><h4>${esc(x.id)} <button onclick="ecouter('voix/${esc(x.id)}.mp3', this)" class="play" style="position:static;background:var(--acc)">▶</button></h4><p>${esc(x.description)}</p><div class="foot">${useBtn("voix", x.id)}</div></div>`,
 };
 function showSujetsFor(fid){ const f = byId(CAT.formats, fid); setCatKind("sujets"); $("catCat").value = f.categorie; $("catQ").value = "";
@@ -343,6 +345,7 @@ const FORMAT_CARTE = [[/meme|starter/, "meme"], [/mythe|vrai_ou_faux|red_green|a
   [/liste|checklist|tier|top_bottom/, "liste"], [/tableau|vu_par/, "schema"], [/dm_|question_recruteur|reaction/, "conversation"], [/scanner|decryptage/, "scan"], [/trouve/, "impact"]];
 function fmtImg(f){
   if (f.dessin) return img("decors/cafe.jpg", "🎬");
+  if (f.jeu) return img("boss/robot_trieur.jpg", "🎮");
   if (f.cartes === "aucune") return `<div class="ph">📱</div>`;
   const k = (FORMAT_CARTE.find(([re]) => re.test(f.id)) || [, "texte"])[1];
   return img(`cartes/${k}.jpg`, "🃏");

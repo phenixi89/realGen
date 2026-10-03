@@ -1,0 +1,29 @@
+{
+  "_doc": "Jeu video retro (format jeu_quete, assets/anim/jeu.html + assets/anim/jeu/). Martin, le heros, et Lea, sa guide, parlent a deux voix (comme le dessin animé) dans un RPG en pixel art : un niveau, un boss (le systeme de recrutement), une quete, des coeurs, de l'experience, des objets. personnages : id -> nom et voix Gemini TTS ; seuls martin et lea parlent. niveaux : ids du code (jeu/niveaux.js). boss : ids du code (jeu/persos.js, BOSS), 'sens' = ce que le boss represente. evenements : ce qu'une scene peut declencher (valeurs absolues calculees par 1_generate_script.py). catalog.py verifie la correspondance niveaux / boss avec le code. Ajouter un niveau ou un boss = un enregistrement dans le code ET une entree ici, puis python scripts/apercus.py.",
+  "personnages": {
+    "martin": { "nom": "Martin", "voix": "Fenrir", "description": "Martin, le héros : lunettes rondes, veste verte, un CV en parchemin à la main. Maladroit et de bonne foi." },
+    "lea": { "nom": "Léa", "voix": "Aoede", "description": "Léa, la guide : queue de cheval corail. Pince-sans-rire, elle donne les bons réflexes comme une amie, jamais un cours." }
+  },
+  "niveaux": [
+    { "id": "plaine", "nom": "La plaine des candidatures", "description": "Plaine ensoleillée, montagnes bleues : le début de la quête, l'envoi des candidatures." },
+    { "id": "foret", "nom": "La forêt du silence", "description": "Forêt au crépuscule, lucioles : l'attente, les réponses qui ne viennent pas." },
+    { "id": "donjon", "nom": "Le donjon des filtres", "description": "Murs de pierre, torches : là où les CV sont triés par des machines." },
+    { "id": "ville", "nom": "La ville des offres", "description": "Rue d'immeubles colorés : le marché de l'emploi, les offres à lire." },
+    { "id": "chateau", "nom": "Le château de l'entretien", "description": "Grande salle, tapis rouge et vitrail : l'entretien final, le dernier combat." }
+  ],
+  "boss": [
+    { "id": "robot_trieur", "nom": "Le Robot Trieur", "sens": "le logiciel qui trie les CV sans les lire vraiment (ATS) et tamponne REFUSÉ" },
+    { "id": "fantome", "nom": "Le Fantôme", "sens": "le recruteur qui ne répond plus après l'entretien (le ghosting)" },
+    { "id": "paperasse", "nom": "La Paperasse", "sens": "les formulaires, les pièces à fournir, les offres aux exigences absurdes" }
+  ],
+  "evenements": {
+    "apparition": "le boss entre en scène (il est invisible avant)",
+    "objet": "Martin obtient un objet : 'nom' = 3 mots au plus (par exemple « Phrase exacte »)",
+    "degats": "Martin attaque grâce à l'objet : le boss perd 'pv' points de vie (10 à 50)",
+    "blessure": "le boss frappe : Martin perd un cœur",
+    "xp": "la barre d'expérience monte de 'valeur' (10 à 40)",
+    "niveau": "Martin gagne un niveau (la barre repart de zéro)",
+    "victoire": "le boss est vaincu, Martin saute de joie"
+  },
+  "consigne": "JEU VIDEO RETRO : le reel est une partie de RPG en pixel art où Martin cherche un emploi. Le boss est le SYSTEME (le tri automatique, le silence, la paperasse), jamais le candidat ni le recruteur en tant que personne. Martin est le héros qui progresse : il se trompe (il perd un cœur), Léa lui donne UN réflexe avec la phrase exacte à dire ou à écrire (c'est un objet), il l'utilise (le boss perd de la vie), il gagne. Le conseil est un vrai conseil d'emploi, sérieux sous le jeu."
+}

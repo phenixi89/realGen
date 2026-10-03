@@ -201,7 +201,10 @@ def choose_sujet(client, fmt: dict, history: list[dict], rng: random.Random) -> 
     if client is None or len(fresh) == 1:
         return rng.choice(fresh)
     listing = "\n".join(f'- {s["id"]} : {s["texte"]}' for s in fresh)
-    if fmt.get("dessin"):
+    if fmt.get("jeu"):
+        cadre = ("Tu es scénariste de jeux vidéo rétro humoristiques, spécialisé dans les conseils emploi et recrutement.\n"
+                 "Le jeu donne un VRAI conseil de recherche d'emploi sous forme de quête ; le produit n'est pas son sujet.")
+    elif fmt.get("dessin"):
         cadre = ("Tu es scénariste de séries courtes et expert en marketing de contenu, spécialisé dans les conseils emploi et recrutement.\n"
                  "Le dessin animé donne un VRAI conseil de recherche d'emploi ou de carrière ; le produit n'est pas son sujet.")
     else:
@@ -252,7 +255,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
             fmt = forced_fmt
         elif forced_sujet:  # sujet impose : format tire parmi ceux qui l'acceptent
             ok = [f for f in catalog.formats() if forced_sujet in catalog.compatible_sujets(f)
-                  and (not sans_captures or catalog.sans_captures_ok(f)) and (sans_captures or not f.get("dessin"))]
+                  and (not sans_captures or catalog.sans_captures_ok(f)) and (sans_captures or not catalog.sans_capture_seul(f))]
             pool = [f for f in ok if registre in catalog.registres_of(f)] or ok
             fmt = catalog.weighted_pick(pool, [], rng) if pool else catalog.pick_format(working, rng, registre, sans_captures)
         else:
@@ -264,9 +267,9 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         else:
             sujet = choose_sujet(client, fmt, working, rng)
         hid, tid = ov.get("hook") or hook_id, ov.get("theme") or theme_id
-        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin")), sujet.get("tags"))
-        theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre)
-        voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng)
+        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin") or fmt.get("jeu")), sujet.get("tags"))
+        theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre, fmt)
+        voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng, fmt)
         cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
         ambiance = ov.get("ambiance") or catalog.pick_ambiance(theme, working, rng, fmt)
         plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice, "registre": registre,
@@ -471,8 +474,146 @@ rappelle ? », ou une question à l'autre personnage), jamais le titre recopié 
 """
 
 
+JEU_ECRITURE = """ÉCRITURE : UNE PARTIE DE JEU VIDÉO QUI DONNE UN VRAI CONSEIL D'EMPLOI :
+  - LE JEU : Martin (le héros) cherche un emploi comme on avance dans un RPG en pixel art ; Léa est sa guide. Le BOSS est le
+    SYSTÈME (le robot qui trie les CV, le silence du recruteur, la paperasse), jamais une personne : on ne se moque ni du
+    candidat ni du recruteur. Martin se trompe comme tout le monde, apprend, et gagne ;
+  - STRUCTURE EN NIVEAUX (une scène = un niveau, un lieu) : (niveau 1) le boss apparaît, Martin fait l'erreur courante et perd un cœur ;
+    le problème est clair en deux répliques ; (niveau 2) Léa lui donne UN réflexe avec la phrase exacte à dire ou à écrire
+    entre « guillemets français » : c'est un OBJET obtenu ; elle dit pourquoi ça marche en une phrase simple ; (niveau 3) Martin
+    utilise l'objet : le boss perd de la vie, il le vainc, gagne un niveau, puis une chute-réaction (jamais un slogan) ;
+  - LE VOCABULAIRE DU JEU reste naturel et léger (« boss », « niveau », « cœur », « objet ») : deux ou trois clins d'œil au plus,
+    les vrais mots du conseil passent avant. Les événements (cœur perdu, objet, dégâts, victoire) se VOIENT à l'écran : une réplique
+    peut y faire écho (« Aïe ! »), elle ne les annonce pas comme un commentateur ;
+  - LE BOSS NE PARLE PAS ; un seul boss dans tout le reel, le même d'un niveau à l'autre, choisi d'après ce qu'il représente ;
+  - CE QU'ON DIT = CE QU'ON VOIT : un nombre ou un objet cité correspond à ce qui est montré ;
+  - UN SEUL CONSEIL, bien compris, sans chiffre ni statistique inventés ; OpusCV n'est jamais cité avant l'appel à l'action final.
+"""
+
+
+# Exemple de STRUCTURE donne a l'IA (autre sujet que celui du reel) : il doit rester valide pour jeu_scenes.
+JEU_EXEMPLE = [
+    {"niveau": "foret", "boss": "fantome", "quete": "OBTENIR UNE RÉPONSE",
+     "repliques": [{"qui": "martin", "texte": "Le recruteur n'a jamais répondu !", "expr": "triste"},
+                   {"qui": "lea", "texte": "Celui de l'entretien d'hier ?", "expr": "doute"},
+                   {"qui": "martin", "texte": "Oui. Même pas un petit mail.", "expr": "triste"}],
+     "evenements": [{"apres": 0, "type": "apparition"}, {"apres": 3, "type": "blessure"}]},
+    {"niveau": "ville", "boss": "fantome", "quete": "OBTENIR UNE RÉPONSE",
+     "repliques": [{"qui": "lea", "texte": "Tu as relancé après l'entretien ?", "expr": "doute"},
+                   {"qui": "martin", "texte": "Non, je ne voulais pas déranger.", "expr": "triste"},
+                   {"qui": "lea", "texte": "Écris plutôt : « Merci pour l'échange, je reste disponible. »", "expr": "content"}],
+     "evenements": [{"apres": 3, "type": "objet", "nom": "Mail de relance"}]},
+    {"niveau": "chateau", "boss": "fantome", "quete": "OBTENIR UNE RÉPONSE",
+     "repliques": [{"qui": "martin", "texte": "Envoyé ! Et il répond déjà !", "expr": "choc"},
+                   {"qui": "lea", "texte": "Un mail court, ça se lit toujours.", "expr": "content"},
+                   {"qui": "martin", "texte": "Le fantôme est devenu un humain !", "expr": "rire"},
+                   {"qui": "lea", "texte": "Voilà. Maintenant, prépare l'entretien.", "expr": "content"}],
+     "evenements": [{"apres": 1, "type": "degats", "pv": 60}, {"apres": 1, "type": "victoire"}, {"apres": 1, "type": "niveau"}]},
+    {"cta": True, "qui": "lea", "texte": "Envoie ça à quelqu'un qui cherche un job, et teste ton CV gratuitement en bio."},
+]
+
+
+def jeu_rules() -> str:
+    """Consignes du format jeu : personnages, niveaux, boss, evenements et exemple de scene."""
+    cat = catalog.jeu()
+    exprs = ", ".join(catalog.dessins()["personnage"]["expressions"])
+    niveaux = "\n".join(f'  - "{n["id"]}" : {n["description"]}' for n in cat["niveaux"])
+    boss = "\n".join(f'  - "{b["id"]}" ({b["nom"]}) : {b["sens"]}' for b in cat["boss"])
+    evts = "\n".join(f'  - "{k}" : {v}' for k, v in cat["evenements"].items())
+    return f"""{cat["consigne"]}
+
+Personnages (seuls ces deux-là parlent) : "martin" (Martin, le héros) et "lea" (Léa, la guide). L'appel à l'action final est dit par l'un d'eux.
+
+Chaque scène (sauf la dernière) est un NIVEAU :
+{{"niveau": "plaine", "boss": "robot_trieur", "quete": "DÉCROCHER L'ENTRETIEN",
+ "repliques": [{{"qui": "martin", "texte": "J'ai listé vingt compétences !", "expr": "content"}},
+               {{"qui": "lea", "texte": "Le robot n'en lit que trois.", "expr": "doute"}}],
+ "evenements": [{{"apres": 0, "type": "apparition"}}, {{"apres": 2, "type": "blessure"}}]}}
+Niveaux ("niveau" : le lieu de la scène, deux scènes de suite n'ont pas le même) :
+{niveaux}
+Boss ("boss" : le même dans tout le reel, indiqué dans chaque niveau où il est présent) :
+{boss}
+"quete" : l'objectif affiché en haut, 25 caractères au plus, EN MAJUSCULES (« DÉCROCHER L'ENTRETIEN », « SURVIVRE AU TRI »).
+Répliques : 12 mots au plus, "expr" facultatif (la couleur de la voix) parmi : {exprs}.
+Événements ("apres" = numéro de la réplique APRÈS laquelle l'événement se produit, 0 = au début du niveau) :
+{evts}
+Obligatoire dans le reel : "apparition" (1er niveau), "blessure" (avant l'objet), "objet" avec "nom" = 3 mots au plus (« Phrase exacte »)
+juste après la réplique de Léa qui contient la phrase entre « guillemets », "degats" avec "pv" (10 à 50, après l'objet),
+"victoire" (dernier niveau, qui compte 4 répliques ou plus : "degats" et "victoire" se placent après la 1re réplique, la chute-réaction occupe les deux dernières), "niveau" (juste après la victoire). "xp" avec "valeur" (10 à 40) est facultatif.
+
+EXEMPLE DE STRUCTURE à suivre (un AUTRE sujet : ne recopie rien de son contenu, garde seulement l'enchaînement, le rythme et
+la façon de placer les événements) :
+""" + json.dumps(JEU_EXEMPLE, ensure_ascii=False)
+
+
+def build_prompt_jeu(plan: dict, duration: int, feedback: str | None, recent_hooks: list[str]) -> str:
+    """Prompt du jeu video retro (format jeu_quete)."""
+    fmt, hook = plan["format"], plan["hook"]
+    humour = plan.get("registre") == "humour"
+    target, lo_w, hi_w = word_budget(duration, catalog.tone_for(fmt, plan.get("registre")), True)
+    lo_s, hi_s = dessin_bounds(duration)
+    cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
+    cta_rule = (f"dernière scène = EXACTEMENT cette phrase, recopiée mot pour mot (elle est déjà enregistrée) : "
+                f"{{\"cta\": true, \"qui\": \"lea\", \"texte\": \"{cta}\"}}"
+                if cta_enregistre() else f"dernière scène = CTA court : {{\"cta\": true, \"qui\": \"lea\", \"texte\": \"...\"}}")
+    avoid_hooks = "\n".join(f"- {h}" for h in recent_hooks[-12:]) or "(aucune)"
+    banned = " ; ".join(f"« {b} »" for b in catalog.config().get("phrases_bannies", []))
+    insta_max = (catalog.config().get("instagram") or {}).get("hashtags_max", 5)
+    registre = (f"\nREGISTRE : HUMOUR. {catalog.config().get('consigne_humour', '')}\n" if humour else "")
+    dramaturgie = DRAMATURGIE.replace("Karim", "Martin")
+    prompt = f"""Tu es scénariste de séries courtes (comédie de situation) ET expert en contenu TikTok / Instagram Reels sur l'emploi, le recrutement et la
+carrière. Tu écris le SCÉNARIO d'un mini jeu vidéo rétro de {duration} secondes, en français : Martin et Léa vivent une VRAIE scène de recherche
+d'emploi comme une quête de RPG et le spectateur repart avec un réflexe à utiliser dès demain. Le produit (OpusCV) n'est pas le sujet :
+il n'apparaît que dans l'appel à l'action final.
+
+FORMAT : {fmt['nom']}.
+Structure attendue : {fmt['structure']}
+{registre}SUJET : {plan['sujet']['texte']}
+
+TITRE À L'ÉCRAN ("accroche_ecran") : il s'affiche SEUL, plein écran, UNE seconde avant le jeu. 6 mots au plus, accrocheur, une QUESTION que
+le spectateur se pose vraiment (2e personne). Inspiration de style, sans la recopier : « {hook['id']} » — {hook['consigne']} ; ex. « {hook['exemple']} ».
+La 1re réplique est une vraie phrase de la scène (8 mots au plus), jamais le titre recopié. Pas de nombre annoncé. Ne réutilise pas ces accroches :
+{avoid_hooks}
+
+{JEU_ECRITURE}
+{dramaturgie}
+{jeu_rules()}
+
+Contraintes :
+- entre {lo_s} et {hi_s} scènes (niveaux + la scène finale d'appel à l'action) ;
+- LONGUEUR : {lo_w} à {hi_w} mots EN TOUT, CTA compris (environ {target}), par exemple {max(6, round(target / 7))} à {max(7, round(target / 6))} répliques de 6 à 8 mots ;
+- {cta_rule} ;
+- deux répliques de suite au plus par le même personnage ; jamais de phrase adressée au public avant la scène finale ;
+- public : des CANDIDATS qui cherchent un emploi ;
+- français impeccable AVEC TOUS LES ACCENTS : le texte est lu à voix haute et affiché ;
+- pas d'emoji, pas de hashtag ; aucun conseil générique (interdit : {banned}) ;
+- RESTE SUR LE SUJET : traite CE sujet, avec ses exemples propres.
+
+Fournis aussi :
+- "mots_cles" : 3 à 6 mots-clés du texte dit ;
+- "legende" : la description TikTok (1 à 2 phrases + une question pour faire commenter) ;
+- "hashtags" : 4 à 6 hashtags pertinents pour TikTok ;
+- "legende_instagram" : la description Instagram (1re ligne accrocheuse, 2 à 4 phrases courtes, une question, une invitation à enregistrer) ;
+- "hashtags_instagram" : {insta_max} hashtags au plus ;
+- "carrousel" : {CARROUSEL_MIN} à {CARROUSEL_MAX} diapositives [{{"titre": "4 à 9 mots", "texte": "1 à 2 phrases, 30 mots max"}}] (la 1re = la couverture ; pas de diapositive d'appel à l'action) ;
+- "offre_emploi" : une offre d'emploi fictive courte plausible pour ce sujet ;
+- "theme_style" : 2 à 4 mots décrivant le style visuel de CV le plus adapté.
+"""
+    if feedback:
+        prompt += f"\nCORRECTION DEMANDÉE sur ta proposition précédente : {feedback}\n"
+    prompt += """
+Réponds UNIQUEMENT en JSON valide :
+{"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."],
+ "legende_instagram": "...", "hashtags_instagram": ["#..."], "carrousel": [{"titre": "...", "texte": "..."}], "offre_emploi": "...",
+ "theme_style": "...", "scenes": [{"niveau": "...", "boss": "...", "quete": "...", "repliques": [...], "evenements": [...]}, ..., {"cta": true, "qui": "lea", "texte": "..."}]}
+"""
+    return prompt
+
+
 def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback: str | None,
                  recent_hooks: list[str]) -> str:
+    if plan["format"].get("jeu"):
+        return build_prompt_jeu(plan, duration, feedback, recent_hooks)
     fmt, hook = plan["format"], plan["hook"]
     humour = plan.get("registre") == "humour"
     catalog_features = "\n".join(f'- "{fid}" : {f.description}' for fid, f in available_features().items())
@@ -823,6 +964,17 @@ def clean_card(raw) -> dict | None:
     }
 
 
+def _choix(valeur, valides, defaut: str, cutoff: float = 0.7) -> str:
+    """Valeur ecrite par l'IA -> la plus proche des valeurs valides (accents et casse ignores), sinon le defaut."""
+    import difflib
+    v = catalog._norm(str(valeur or ""))
+    ids = {catalog._norm(x): x for x in valides}
+    if v in ids:
+        return ids[v]
+    proche = difflib.get_close_matches(v, list(ids), n=1, cutoff=cutoff)
+    return ids[proche[0]] if proche else defaut
+
+
 def closest_icon(name: str) -> str:
     """Icone inventee par l'IA -> la plus proche du catalogue (par le nom), sinon "question"."""
     import difflib
@@ -849,13 +1001,19 @@ def banned_phrases(text: str) -> list[str]:
 
 def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: str = "aucune",
              recent_hooks: list[str] | None = None, proof: bool = False,
-             tone: str = "", sans_captures: bool = False, dessin: bool = False) -> tuple[list[dict], list[str]]:
+             tone: str = "", sans_captures: bool = False, dessin: bool = False,
+             jeu: bool = False) -> tuple[list[dict], list[str]]:
     """
     Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA).
     sans_captures : pas de feature (""), une carte sur chaque scene sauf la 1re (icone
     "illustration") et la derniere (CTA anime), ni preuve ni annotation.
     dessin : scenes dessinees (dessin_scenes), le texte = les repliques des personnages.
     """
+    if jeu:
+        scenes, problems = jeu_scenes(data)
+        problems = problems + dessin_texte_problems(scenes, data)
+        return scenes, problems + common_problems(scenes, data, duration, tone, recent_hooks, None,
+                                                  dessin_bounds(duration), dialogue=True)
     if dessin:
         scenes, problems = dessin_scenes(data)
         problems = problems + dessin_texte_problems(scenes, data)
@@ -1034,7 +1192,7 @@ def dessin_texte_problems(scenes: list[dict], data: dict) -> list[str]:
     """Texte du dessin animé : accroche-question, bulle distincte du titre, langage simple, pas de monologue."""
     problems = []
     accroche = str(data.get("accroche_ecran") or "").strip()
-    reps = [(r["qui"], r["texte"]) for s_ in scenes if "dessin" in s_ for r in s_["repliques"]]
+    reps = [(r["qui"], r["texte"]) for s_ in scenes if "dessin" in s_ or "jeu" in s_ for r in s_["repliques"]]
     if not reps:
         return problems
     premiere = reps[0][1]
@@ -1184,13 +1342,17 @@ def relecture_dessin(client, data: dict, scenes: list[dict]) -> list[str]:
     reps, dessin = [], []
     for sc in scenes:
         reps += [f"{r['qui']} : {r['texte']}" for r in sc.get("repliques", [])]
+        j = sc.get("jeu")
+        if j:
+            dessin.append(f"niveau de jeu vidéo « {j['niveau']} », boss « {j['boss']} » ; événements à l'écran : "
+                          + ", ".join(e["type"] + (f" ({e['nom']})" if e.get("nom") else "") for e in j["evenements"]))
         d = sc.get("dessin")
         if d:
             dessin.append(f"décor {d.get('fond', 'vide')} ; objets : {', '.join(o['type'] for o in d.get('objets', []))}")
             dessin += [f"texte barré / corrigé à l'écran : « {a.get('avant', '')} » devient « {a.get('apres', '')} »"
                        for a in d.get("actions", []) if a.get("action") == "corriger"]
-    prompt = f"""Tu relis le scénario d'un mini dessin animé de 25 secondes (conseil emploi / recrutement, deux personnages,
-Karim et Léa) AVANT tournage. Tu es un spectateur qui ne connaît QUE ce qui suit, rien d'autre.
+    prompt = f"""Tu relis le scénario d'un {"mini jeu vidéo rétro" if any("jeu" in s_ for s_ in scenes) else "mini dessin animé"} de 25 secondes (conseil emploi / recrutement, deux personnages,
+{"Martin et Léa" if any("jeu" in s_ for s_ in scenes) else "Karim et Léa"}) AVANT tournage. Tu es un spectateur qui ne connaît QUE ce qui suit, rien d'autre.
 
 TITRE affiché seul une seconde : « {data.get('accroche_ecran', '')} »
 RÉPLIQUES, dans l'ordre :
@@ -1216,6 +1378,167 @@ Réponds en JSON : {{"histoire": "...", "comprehensible": true|false, "problemes
         return ["relecture : " + " ; ".join(problemes or ["histoire pas comprise du premier coup"])
                 + " -- réécris l'histoire pour qu'elle se comprenne seule"]
     return []
+
+
+JEU_EVENEMENTS = ("apparition", "objet", "degats", "blessure", "xp", "niveau", "victoire")
+
+
+def jeu_scenes(data: dict) -> tuple[list[dict], list[str]]:
+    """
+    Format jeu video -> scenes du scenario :
+      {"feature": "", "texte": repliques mises bout a bout, "repliques": [{"qui", "texte", "expr"?}],
+       "jeu": {"niveau", "boss", "quete", "evenements": [{"apres", "type", ...}]}}
+    et en dernier la scene CTA (sans "jeu"). Les valeurs absolues des evenements (de / vers) et l'etat de depart sont
+    calcules ensuite par completer_jeu ; le minutage est pose au montage sur la voix.
+    """
+    cat = catalog.jeu()
+    persos = cat["personnages"]
+    niveaux, boss_ids = [n["id"] for n in cat["niveaux"]], [b["id"] for b in cat["boss"]]
+    exprs = catalog.dessins()["personnage"]["expressions"]
+    scenes, problems = [], []
+    for n, raw in enumerate(data.get("scenes") or [], 1):
+        if not isinstance(raw, dict):
+            continue
+        if raw.get("cta"):
+            texte = " ".join(str(raw.get("texte") or "").split())
+            parlent = [r["qui"] for sc_ in scenes for r in sc_["repliques"]]
+            qui = raw.get("qui") if raw.get("qui") in persos else (parlent or list(persos))[-1]
+            if texte:
+                scenes.append({"feature": "", "texte": texte, "repliques": [{"qui": qui, "texte": texte}]})
+            continue
+        repliques = []
+        for r in raw.get("repliques") or []:
+            if not isinstance(r, dict):
+                continue
+            texte = " ".join(str(r.get("texte") or "").split())
+            if not texte:
+                continue
+            if r.get("qui") not in persos:
+                problems.append(f"scène {n} : « {r.get('qui')} » ne parle pas (seuls {', '.join(persos)} parlent)")
+                continue
+            if nb_mots(texte) > REPLIQUE_MAX_WORDS:
+                problems.append(f"scène {n} : réplique trop longue ({nb_mots(texte)} mots, {REPLIQUE_MAX_WORDS} max) : « {texte[:40]}… »")
+            rep = {"qui": r["qui"], "texte": texte}
+            expr = _choix(r.get("expr"), exprs, "")
+            if expr:
+                rep["expr"] = expr
+            repliques.append(rep)
+        if not repliques:
+            problems.append(f"scène {n} : aucune réplique")
+            continue
+        niveau = _choix(raw.get("niveau"), niveaux, "")
+        if not niveau:
+            problems.append(f"scène {n} : niveau inconnu « {raw.get('niveau')} » (choix : {', '.join(niveaux)})")
+            niveau = "plaine"
+        boss = _choix(raw.get("boss"), boss_ids, "") if raw.get("boss") else ""
+        quete = " ".join(str(raw.get("quete") or "").split()).upper()[:25]
+        evts = []
+        for e in raw.get("evenements") or []:
+            if not isinstance(e, dict):
+                continue
+            typ = _choix(e.get("type"), JEU_EVENEMENTS, "")
+            if not typ:
+                continue
+            try:
+                apres = int(min(max(int(e.get("apres", len(repliques))), 0), len(repliques)))
+            except (TypeError, ValueError):
+                apres = len(repliques)
+            ev = {"apres": apres, "type": typ}
+            if typ == "objet":
+                ev["nom"] = " ".join(str(e.get("nom") or "Phrase exacte").split())[:19]
+            elif typ in ("degats", "xp"):
+                try:
+                    ev["pv" if typ == "degats" else "valeur"] = int(min(max(int(e.get("pv" if typ == "degats" else "valeur", 25)), 5), 60))
+                except (TypeError, ValueError):
+                    ev["pv" if typ == "degats" else "valeur"] = 25
+            evts.append(ev)
+        scenes.append({"feature": "", "texte": " ".join(r["texte"] for r in repliques), "repliques": repliques,
+                       "jeu": {"niveau": niveau, "boss": boss, "quete": quete, "evenements": evts}})
+    if any(re.search(r"opus\s?cv", r["texte"], re.I) for s_ in scenes if "jeu" in s_ for r in s_["repliques"]):
+        problems.append("« OpusCV » dans une réplique de l'histoire : le jeu donne un conseil emploi, le produit n'est cité que dans l'appel à l'action final")
+    if any(re.search(r"\bPOV\b", r["texte"]) for s_ in scenes for r in s_["repliques"]):
+        problems.append("« POV » dans une réplique : ça ne se dit pas, reformule")
+    jeux = [s_ for s_ in scenes if "jeu" in s_]
+    if scenes and "jeu" in scenes[-1]:
+        problems.append('la dernière scène doit être l\'appel à l\'action : {"cta": true, "qui": "...", "texte": "..."}')
+    if scenes and "jeu" not in scenes[0]:
+        problems.append("la scène 1 doit être un niveau de jeu (l'accroche dite par un personnage)")
+    # Un seul boss pour tout le reel, un niveau different d'une scene a la suivante.
+    boss_vus = {s_["jeu"]["boss"] for s_ in jeux if s_["jeu"]["boss"]}
+    if not boss_vus:
+        problems.append("aucun boss : indique le boss (« boss ») dans les niveaux où il est présent")
+    elif len(boss_vus) > 1:
+        problems.append(f"plusieurs boss ({', '.join(sorted(boss_vus))}) : un seul boss dans tout le reel")
+    else:
+        for s_ in jeux:
+            s_["jeu"]["boss"] = next(iter(boss_vus))
+    for a, b in zip(jeux, jeux[1:]):
+        if a["jeu"]["niveau"] == b["jeu"]["niveau"]:
+            problems.append("deux niveaux de suite identiques : change de lieu (un niveau = un lieu)")
+            break
+    # Enchainement attendu des evenements : apparition, blessure, objet, degats, victoire, niveau.
+    flux = [(i, e["apres"], e["type"]) for i, s_ in enumerate(jeux) for e in s_["jeu"]["evenements"]]
+    flux.sort(key=lambda f: (f[0], f[1]))
+    ordre = [t for _, _, t in flux]
+    manquants = [t for t in ("apparition", "blessure", "objet", "degats", "victoire", "niveau") if t not in ordre]
+    if manquants:
+        problems.append("événements manquants : " + ", ".join(manquants))
+    else:
+        i_obj, i_deg, i_vic = ordre.index("objet"), ordre.index("degats"), ordre.index("victoire")
+        if not ordre.index("apparition") < ordre.index("blessure") < i_obj < i_deg <= i_vic < ordre.index("niveau"):
+            problems.append("ordre des événements : apparition, puis blessure, puis objet, puis degats, puis victoire, puis niveau")
+        i_v = ordre.index("victoire")
+        if flux[i_v][0] != len(jeux) - 1:
+            problems.append("la victoire doit avoir lieu dans le dernier niveau")
+        elif flux[i_v][1] > len(jeux[-1]["repliques"]) - 2:
+            problems.append("la victoire est trop tard dans le dernier niveau : place-la avant les deux dernières répliques (la "
+                            "chute-réaction vient après, pendant que « VICTOIRE ! » et « NIVEAU » s'affichent) ; il faut donc 3 répliques ou plus dans le dernier niveau")
+        phrase_idx = [(i, k + 1) for i, s_ in enumerate(jeux) for k, r in enumerate(s_["repliques"]) if "«" in r["texte"] and "»" in r["texte"]]
+        if phrase_idx and not any((fi, fa) >= phrase_idx[0] and (fi, fa) <= (phrase_idx[0][0], phrase_idx[0][1] + 1)
+                                  for fi, fa, ft in flux if ft == "objet"):
+            problems.append("l'objet doit être obtenu juste après la réplique de Léa qui donne la phrase entre « guillemets »")
+    return scenes, problems
+
+
+def completer_jeu(scenes: list[dict], rng: random.Random | None = None) -> None:
+    """
+    Calcule l'etat du jeu (coeurs, experience, niveau, vie du boss) tout au long du reel : l'etat de depart de
+    chaque scene (jeu["etat"]) et les valeurs absolues de chaque evenement (de / vers), pour que le gabarit
+    assets/anim/jeu.html n'ait rien a deviner. Garantit une progression coherente : au moins un coeur, une barre
+    d'experience qui monte avant un changement de niveau, un boss vaincu a 0.
+    """
+    rng = rng or random.Random()
+    etat = {"coeurs": 3, "xp": rng.choice((10, 20, 30)), "niv": rng.choice((1, 2, 3)), "bossPv": 100}
+    for sc in (s_ for s_ in scenes if "jeu" in s_):
+        j = sc["jeu"]
+        j["etat"] = dict(etat)
+        evts = []
+        for e in sorted(j["evenements"], key=lambda e: e["apres"]):
+            t = e["type"]
+            if t == "blessure":
+                if etat["coeurs"] <= 1:
+                    continue
+                e["de"], e["vers"] = etat["coeurs"], etat["coeurs"] - 1
+                etat["coeurs"] -= 1
+            elif t == "degats":
+                e["de"] = etat["bossPv"]
+                etat["bossPv"] = max(etat["bossPv"] - e.pop("pv", 30), 5)
+                e["vers"] = etat["bossPv"]
+            elif t == "victoire":
+                if etat["bossPv"] > 0 and evts and evts[-1]["type"] == "degats":
+                    evts[-1]["vers"] = 0       # le dernier coup achève le boss
+                etat["bossPv"] = 0
+            elif t == "xp":
+                e["de"] = etat["xp"]
+                etat["xp"] = min(etat["xp"] + e.pop("valeur", 25), 99)
+                e["vers"] = etat["xp"]
+            elif t == "niveau":
+                e["xp_de"] = etat["xp"]        # la barre se remplit d'abord (gabarit jeu.html), puis repart de zero
+                etat["niv"] += 1
+                etat["xp"] = 0
+                e["vers"] = etat["niv"]
+            evts.append(e)
+        j["evenements"] = evts
 
 
 def fusionner_meme_lieu(scenes: list[dict]) -> list[dict]:
@@ -1257,8 +1580,9 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         sans_captures = bool(plan.get("sans_captures"))
         scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks,
                                     wants_proof(fmt) and not sans_captures and not fmt.get("dessin"),
-                                    catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")))
-        if scenes and not problems and fmt.get("dessin"):
+                                    catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")),
+                                    bool(fmt.get("jeu")))
+        if scenes and not problems and (fmt.get("dessin") or fmt.get("jeu")):
             problems = relecture_dessin(client, data, scenes)
         if scenes:
             # Garde la tentative la plus propre (pas forcement la derniere) si aucune n'est parfaite.
@@ -1271,7 +1595,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
 
     if not best:
         raise RuntimeError(f"Scénario inexploitable après {MAX_ATTEMPTS} tentatives (sujet : {plan['sujet']['texte']})")
-    if plan.get("sans_captures") and not fmt.get("dessin"):
+    if plan.get("sans_captures") and not catalog.sans_capture_seul(fmt):
         for scene in best[1:-1]:
             scene.setdefault("carte", fallback_card(scene["texte"]))
     if cta_enregistre() and not forced:
@@ -1283,6 +1607,11 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         parleurs = dict.fromkeys(r["qui"] for s in best for r in s.get("repliques", []))
         dessin_fields = {"dessin": True,
                          "voix_personnages": {q: catalog.personnages()[q]["voix"] for q in list(parleurs)[:2]}}
+    if fmt.get("jeu"):
+        completer_jeu(best)
+        persos = catalog.jeu()["personnages"]
+        parleurs = dict.fromkeys(r["qui"] for s in best for r in s.get("repliques", []))
+        dessin_fields = {"jeu": True, "voix_personnages": {q: persos[q]["voix"] for q in list(parleurs)[:2]}}
     hashtags = best_data.get("hashtags") or []
     return finalize({
         "angle": plan["sujet"]["texte"], "titre": best_data.get("titre", ""), "duree_cible_s": duration,
@@ -1348,6 +1677,7 @@ def plan_fields(plan: dict) -> dict:
             **({"serie_titre": (catalog.dessins().get("serie") or {}).get("titre")}
                if plan["format"].get("dessin") and plan.get("episode") else {}),
             **({"sans_captures": True} if plan.get("sans_captures") else {}),
+            **({"titre_seul": True} if catalog.sans_capture_seul(plan["format"]) else {}),
             **({"habillage": plan["format"]["habillage"], "habillage_params": plan["format"].get("habillage_params", {})}
                if plan["format"].get("habillage") else {})}
 

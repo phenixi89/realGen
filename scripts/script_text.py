@@ -20,7 +20,7 @@ def dialogue_lines(script: dict) -> list[tuple[str, str]]:
     personnage, texte)] -- lues a plusieurs voix par 2_generate_voice.py ; [] sinon.
     Le texte de chaque scene est la suite de ses repliques (1_generate_script.py).
     """
-    if not script.get("dessin"):
+    if not (script.get("dessin") or script.get("jeu")):
         return []
     return [(a["qui"], a["texte"].strip()) for s in script.get("scenes", []) for a in s.get("repliques", [])
             if a.get("texte", "").strip()]
@@ -32,10 +32,13 @@ def dialogue_expressions(script: dict) -> list[str | None]:
     l'action "parler" correspondante de la scene dessinee (None pour le CTA, sans dessin) --
     elle donne le ton de la replique au TTS (2_generate_voice.py).
     """
-    if not script.get("dessin"):
+    if not (script.get("dessin") or script.get("jeu")):
         return []
     exprs = []
     for s in script.get("scenes", []):
+        if script.get("jeu"):       # jeu video : l'expression est ecrite avec la replique
+            exprs += [r.get("expr") for r in s.get("repliques", []) if r.get("texte", "").strip()]
+            continue
         parler = [a for a in (s.get("dessin") or {}).get("actions", []) if a.get("action") == "parler"]
         repliques = [a for a in s.get("repliques", []) if a.get("texte", "").strip()]
         exprs += [(parler[k].get("expr") if k < len(parler) else None) for k in range(len(repliques))]

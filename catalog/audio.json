@@ -718,6 +718,95 @@
         "volume": 0.7,
         "tonalite": -3
       }
+    },
+    {
+      "id": "chiptune_quete",
+      "nom": "Chiptune : la quête (joyeux)",
+      "bpm": 132,
+      "instrument": "chip",
+      "arpege": "0.1.2.1.0.1.2.3.",
+      "basse_type": "pulse",
+      "accords": [
+        [
+          60,
+          64,
+          67,
+          72
+        ],
+        [
+          57,
+          60,
+          64,
+          69
+        ],
+        [
+          53,
+          57,
+          60,
+          65
+        ],
+        [
+          55,
+          59,
+          62,
+          67
+        ]
+      ],
+      "basse": 0.2,
+      "filtre_hz": 6500,
+      "batterie": {
+        "kick": "x...x...x...x...",
+        "hat": "..x...x...x...x."
+      },
+      "effets": {
+        "volume": 0.8,
+        "tonalite": 0
+      }
+    },
+    {
+      "id": "chiptune_boss",
+      "nom": "Chiptune : le boss (tendu)",
+      "bpm": 144,
+      "instrument": "chip",
+      "arpege": "0.1.2.1.0.2.1.2.",
+      "basse_type": "pulse",
+      "accords": [
+        [
+          57,
+          60,
+          64,
+          69
+        ],
+        [
+          55,
+          58,
+          62,
+          67
+        ],
+        [
+          53,
+          56,
+          60,
+          65
+        ],
+        [
+          52,
+          55,
+          59,
+          64
+        ]
+      ],
+      "basse": 0.24,
+      "filtre_hz": 6000,
+      "batterie": {
+        "kick": "x..x..x.x..x..x.",
+        "snare": "....x.......x...",
+        "hat": "x.x.x.x.x.x.x.x."
+      },
+      "effets": {
+        "volume": 0.8,
+        "tonalite": -2
+      }
     }
   ],
   "effets": {
@@ -758,7 +847,15 @@
       "tampon": 0.3,
       "notification": 0.18,
       "pages": 0.16,
-      "zoom": 0.12
+      "zoom": 0.12,
+      "blip": 0.12,
+      "coup": 0.22,
+      "degats": 0.28,
+      "blessure": 0.26,
+      "objet": 0.24,
+      "niveau": 0.26,
+      "victoire": 0.28,
+      "boss": 0.24
     },
     "transition": "",
     "_note": "Mix sobre : seuls les effets qui soulignent un moment cle restent (impact de l'accroche et de la revelation, pop des cartes, ding, scintillement du CTA, clic de souris, feutre des dessins et annotations). transition vide = aucun son aux changements de scene.",
@@ -777,7 +874,15 @@
       "tampon",
       "notification",
       "pages",
-      "zoom"
+      "zoom",
+      "blip",
+      "coup",
+      "degats",
+      "blessure",
+      "objet",
+      "niveau",
+      "victoire",
+      "boss"
     ],
     "bruitage_ecart_min_s": 0.12,
     "_note_bruitages": "bruitages : sons du dessin anime, emis par le moteur (assets/anim/dessin/) a l'instant exact de l'action (pas de marche, saut, chaise, objet pose, vibreur, clavier, ampoule, miaou, ronron, papier froisse et corbeille (jeter), tampon, notification (telephone, e-mail a l'ecran), pages (calendrier, carton d'ellipse), zoom (coupe seche de la camera)) ; hors regles ecart_min_s / max_par_10s (un meme bruitage est seulement espace de bruitage_ecart_min_s). miaou et ronron : enregistrements CC0 de assets/sfx/. Aucun son au changement de scene du dessin anime (le trace d'un nouveau decor est muet)."

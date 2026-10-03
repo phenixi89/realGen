@@ -45,6 +45,15 @@
     else el.append(w);
   });
   if (text.length > 42) el.style.fontSize = plein ? "104px" : "80px";
+  // Police tres large (pixel art, polices a chasse fixe) : un mot plus large que la ligne depasserait de l'ecran ->
+  // la taille est reduite jusqu'a ce que le plus long mot tienne (mesure sur la police chargee).
+  FONTS_READY.then(() => {
+    const cx = document.createElement("canvas").getContext("2d"), wrap = document.getElementById("wrap");
+    const size = parseFloat(getComputedStyle(el).fontSize), maxW = wrap.clientWidth - 2 * 26 - 12;
+    cx.font = `800 ${size}px TitleFont`;
+    const plusLarge = Math.max(...text.split(" ").map((w) => cx.measureText(w.replace(/\u00a0/g, " ")).width));
+    if (plusLarge > maxW) el.style.fontSize = Math.floor((size * maxW) / plusLarge) + "px";
+  });
   const DUR = Math.max(num("dur", 2.6), plein ? 0.6 : 1.2);
   const hotEl = document.querySelector(".hot");
   // Image 0 : deja lisible (echelle legerement superieure, qui se pose) --

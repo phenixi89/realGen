@@ -104,6 +104,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         assemble_args += ["--theme", script["theme"]]
 
     show_hook = bool(hook and script.get("accroche_ecran") and t_scenes)
+    titre_seul = show_hook and bool(script.get("titre_seul") or script.get("dessin") or script.get("jeu"))
     card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
     # dur = duree de la scene : cadence de la frappe au clavier (carte.html),
     # reprise telle quelle par sound_design pour caler les clics.
@@ -124,6 +125,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         for i, s in enumerate(scenes):
             if s.get("dessin"):
                 scene_anims[i] = dessin_spec(s, t_scenes[i], first=i == 0)
+            elif s.get("jeu"):
+                scene_anims[i] = jeu_spec(s, t_scenes[i], catalog.TITRE_DESSIN_S if i == 0 and show_hook else 0.0)
     if sans_captures:
         for i, t in enumerate(t_scenes):
             if i not in scene_anims:
@@ -176,7 +179,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         assemble_args += ["--ambiance", script["ambiance"]]
     if script.get("mots_cles"):
         assemble_args += ["--keywords", "|".join(script["mots_cles"])]
-    if show_hook and script.get("dessin"):
+    if titre_seul:
         # Dessin anime : le titre occupe seul l'ecran (voix et scene commencent apres, cf. 2_generate_voice.py).
         assemble_args += ["--hook-text", script["accroche_ecran"], "--hook-plein",
                           "--hook-duration", f"{catalog.TITRE_DESSIN_S:.2f}"]
@@ -228,6 +231,36 @@ def dessin_spec(scene: dict, timing: dict, first: bool = False) -> str:
     if first:
         sc["dessine"] = False  # 1re image du reel complete (c'est elle qui retient ou fait scroller)
     return "scene?" + urlencode({"scene": json.dumps(sc, ensure_ascii=False, separators=(",", ":"))})
+
+
+# Temps (s) que chaque evenement du jeu occupe a l'ecran avant le suivant (assets/anim/jeu/moteur.js).
+JEU_DUREE_EVT = {"apparition": 1.2, "blessure": 0.8, "objet": 1.8, "degats": 1.0, "xp": 0.8, "victoire": 1.4, "niveau": 1.8}
+
+
+def jeu_spec(scene: dict, timing: dict, delai: float = 0.0) -> str:
+    """
+    Niveau du jeu video -> "jeu?plan=<json>&dur=" (assets/anim/jeu.html) : les repliques sont placees a l'instant ou la
+    voix les dit (timeline "repliques"), les evenements juste apres la replique qu'ils suivent (puis a la file, voir
+    JEU_DUREE_EVT). delai : duree du titre plein ecran, avant laquelle rien ne se passe a l'ecran.
+    """
+    j = scene["jeu"]
+    start, duree = timing["start"], round(timing["end"] - timing["start"], 2)
+    reps = []
+    for r, t in zip(scene["repliques"], timing.get("repliques") or []):
+        reps.append({"qui": r["qui"], "texte": r["texte"], "t": round(max(t["start"] - start, 0.0), 2),
+                     "duree": round(max(t["end"] - t["start"], 0.6), 2)})
+    # Chaque evenement attend la fin du precedent (leurs fenetres ne se superposent pas) et jamais avant la
+    # replique qu'il suit ; l'ordre est celui du scenario.
+    evts, curseur = [], 0.0
+    for e in sorted(j["evenements"], key=lambda e: e["apres"]):
+        k = e["apres"]
+        ancre = (reps[k - 1]["t"] + reps[k - 1]["duree"] + 0.15) if 1 <= k <= len(reps) else delai + 0.1
+        t = min(max(ancre, curseur), max(duree - 0.8, 0.5))
+        curseur = t + JEU_DUREE_EVT.get(e["type"], 1.0)
+        evts.append({**{key: v for key, v in e.items() if key != "apres"}, "t": round(t, 2)})
+    plan = {"niveau": j["niveau"], "boss": j["boss"], "quete": j["quete"], "etat": j["etat"],
+            "duree": duree, "repliques": reps, "evenements": evts}
+    return "jeu?" + urlencode({"plan": json.dumps(plan, ensure_ascii=False, separators=(",", ":")), "dur": f"{duree:.2f}"})
 
 
 def fallback_title(texte: str, max_words: int = 9) -> str:
@@ -321,17 +354,17 @@ def main():
                               "instagram (legende .instagram.txt + couverture .jpg), carrousel (carrousel 4:5) ; "
                               "ou all (defaut)")
     args = parser.parse_args()
-    if args.format and catalog.get_format(args.format).get("dessin") and args.capture_mode != "aucune":
-        print(f"Format dessin anime '{args.format}' : --capture-mode aucune impose (aucune capture de l'app)")
+    if args.format and catalog.sans_capture_seul(catalog.get_format(args.format)) and args.capture_mode != "aucune":
+        print(f"Format dessine '{args.format}' (dessin anime, jeu video) : --capture-mode aucune impose (aucune capture de l'app)")
         args.capture_mode = "aucune"
     if args.plan and args.capture_mode != "aucune":  # un reel dessin anime dans le plan (console) : meme regle que --format
         try:
             dessin_plan = [it.get("format") for it in json.loads(args.plan)
-                           if isinstance(it, dict) and it.get("format") in {f["id"] for f in catalog.formats() if f.get("dessin")}]
+                           if isinstance(it, dict) and it.get("format") in {f["id"] for f in catalog.formats() if catalog.sans_capture_seul(f)}]
         except (ValueError, AttributeError):
             dessin_plan = []  # plan illisible : 1_generate_script.py le signalera
         if dessin_plan:
-            print(f"Format dessin anime '{dessin_plan[0]}' dans --plan : --capture-mode aucune impose (aucune capture de l'app)")
+            print(f"Format dessine '{dessin_plan[0]}' dans --plan : --capture-mode aucune impose (aucune capture de l'app)")
             args.capture_mode = "aucune"
     if args.capture_mode != "aucune" and not args.saas_url:
         parser.error("--saas-url est obligatoire, sauf avec --capture-mode aucune")
@@ -575,7 +608,7 @@ def main():
         #    (donc l'audio, cf. subs_force ci-dessus) ont change.
         final_path = out / "final" / f"reel_{i:02d}.mp4"
         # Dessin anime : le texte est deja dans les bulles -> pas de sous-titres incrustes.
-        if scripts[i - 1].get("dessin"):
+        if scripts[i - 1].get("dessin") or scripts[i - 1].get("jeu"):
             anim_assemble_args.append("--no-captions")
         run([sys.executable, str(ROOT / "5_assemble.py"),
              "--video", str(video_path), "--audio", str(audio_path),

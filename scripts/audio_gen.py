@@ -254,6 +254,8 @@ def sfx(name: str, seed: int = 0, **kw) -> np.ndarray:
         return _norm(y)
     if name == "zoom":  # coupe seche de la camera : souffle tres court
         return sfx("whoosh", seed, duration=0.22)
+    if name in JEU_SFX:  # sons 8 bits du jeu video (assets/anim/jeu/) : ondes carrees
+        return _norm(_sfx_jeu(name, seed))
     if name in SAMPLES:  # enregistrements CC0 (assets/sfx/LICENCES.md)
         x = _sample(SAMPLES[name])
         d = kw.get("duration")
@@ -263,6 +265,44 @@ def sfx(name: str, seed: int = 0, **kw) -> np.ndarray:
             x[-fade:] *= np.linspace(1, 0, fade)
         return _norm(x)
     raise ValueError(f"effet inconnu : {name}")
+
+
+JEU_SFX = ("blip", "coup", "degats", "blessure", "objet", "niveau", "victoire", "boss")
+
+
+def _carre(freq: float, duree: float, duty: float = 0.5, attaque: float = 0.002, relache: float = 0.03) -> np.ndarray:
+    """Note a onde carree (rapport cyclique `duty`) : le son d'une console 8 bits."""
+    t = _t(duree)
+    ph = (freq * t) % 1.0
+    return np.where(ph < duty, 1.0, -1.0) * env(len(t), attaque, relache)
+
+
+def _suite(notes: list[tuple[float, float]], duty: float = 0.5, relache: float = 0.04) -> np.ndarray:
+    """Notes (hauteur MIDI, duree) jouees l'une apres l'autre."""
+    return np.concatenate([_carre(midi_hz(n), d, duty, relache=relache) for n, d in notes])
+
+
+def _sfx_jeu(name: str, seed: int) -> np.ndarray:
+    if name == "blip":       # une replique s'affiche : petit bip, hauteur variable
+        return _carre(midi_hz(76 + (seed % 3) * 2), 0.05, 0.25, relache=0.02)
+    if name == "coup":       # coup d'epee : souffle + glissando vers le grave
+        t = _t(0.18)
+        glisse = np.sign(np.sin(2 * np.pi * np.cumsum(np.linspace(1200, 300, len(t))) / SR))
+        return (0.6 * glisse + 0.6 * _lowpass_fast(_noise(len(t), seed), 5000)) * env(len(t), 0.001, 0.08)
+    if name == "degats":     # le boss encaisse : choc grave et crepitement
+        t = _t(0.3)
+        grave = np.sign(np.sin(2 * np.pi * np.cumsum(np.linspace(260, 70, len(t))) / SR))
+        return (0.7 * grave + 0.8 * _noise(len(t), seed)) * env(len(t), 0.001, 0.15)
+    if name == "blessure":   # Martin perd un coeur : deux notes qui descendent
+        return _suite([(69, 0.11), (62, 0.2)], duty=0.5, relache=0.08)
+    if name == "objet":      # objet obtenu : arpege qui monte
+        return _suite([(72, 0.07), (76, 0.07), (79, 0.07), (84, 0.22)], duty=0.25, relache=0.1)
+    if name == "niveau":     # niveau gagne : petite fanfare
+        return _suite([(67, 0.1), (72, 0.1), (76, 0.1), (79, 0.1), (84, 0.1), (79, 0.07), (84, 0.38)], duty=0.25, relache=0.12)
+    if name == "victoire":   # victoire : fanfare plus longue
+        return _suite([(72, 0.14), (72, 0.14), (72, 0.14), (72, 0.3), (68, 0.3), (70, 0.3), (72, 0.14), (70, 0.1), (72, 0.5)], duty=0.5, relache=0.1)
+    # boss : alarme grave a deux tons
+    return np.concatenate([_carre(f, 0.16, 0.5, relache=0.02) for f in (196, 147, 196, 147, 196)])
 
 
 SFX_DIR = ROOT / "assets" / "sfx"
@@ -392,8 +432,8 @@ def _voice_chord(chord: list[int], t_bar: np.ndarray, bar: float, step: float, a
     kind = ambiance.get("instrument", "nappe")
     n = len(t_bar)
     seg = np.zeros(n)
-    if kind in ("piano", "pluck"):
-        arp = ambiance.get("arpege", "0123" if kind == "pluck" else "0.1.2.1.")
+    if kind in ("piano", "pluck", "chip"):
+        arp = ambiance.get("arpege", "0123" if kind in ("pluck", "chip") else "0.1.2.1.")
         hits = [(i, int(c)) for i, c in enumerate((arp * 16)[:16]) if c.isdigit()]
         for i, k in hits:
             note = chord[k % len(chord)] + (12 if k >= len(chord) else 0)
@@ -402,7 +442,9 @@ def _voice_chord(chord: list[int], t_bar: np.ndarray, bar: float, step: float, a
             if s >= n:
                 continue
             tt = t_bar[: n - s]
-            if kind == "piano":
+            if kind == "chip":     # console 8 bits : onde carree etroite, attaque nette
+                tone = np.where((f * tt) % 1.0 < 0.25, 1.0, -1.0) * 0.45 * env(len(tt), 0.001, 0.16)
+            elif kind == "piano":
                 tone = (np.sin(2 * np.pi * f * tt) + 0.5 * np.sin(4 * np.pi * f * tt) * np.exp(-tt * 6)
                         + 0.2 * np.sin(6 * np.pi * f * tt) * np.exp(-tt * 9)) * env(len(tt), 0.004, 0.9)
             else:

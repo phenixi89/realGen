@@ -6,6 +6,8 @@ chaque choix, pour choisir en voyant plutot qu'en lisant des identifiants.
   cartes/<type>.jpg     chaque carte animee (gabarit de assets/anim/, texte d'exemple)
   decors/<id>.jpg       chaque decor du dessin anime, avec Lea et Karim (bas de l'image, 3:4)
   personnages/<id>.jpg  chaque personnage du dessin anime (3:4)
+  niveaux/<id>.jpg      chaque niveau du jeu video (Martin et Lea, une replique d'exemple)
+  boss/<id>.jpg         chaque boss du jeu video, dans la plaine
   voix/<id>.mp3         une phrase dite par chaque voix (enregistrements de CTA, assets/voix_cta/)
   ambiances/<id>.mp3    8 s de chaque musique (synthese de audio_gen.py, ou morceau depose)
 
@@ -28,7 +30,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "apercus"
 TAILLE = (270, 480)   # vignette 9:16 (le rendu se fait en 1080x1920 puis reduit)
 TITRE_THEME = "Ton CV passe-t-il les filtres ?"
-SORTES = ("themes", "cartes", "decors", "personnages", "voix", "ambiances")
+SORTES = ("themes", "cartes", "decors", "personnages", "niveaux", "boss", "voix", "ambiances")
 
 
 def _reduire(png: Path, jpg: Path):
@@ -91,6 +93,22 @@ def personnages_jobs() -> list:
             for p in catalog.personnages()]
 
 
+def _jeu(niveau: str, boss: str, replique: str) -> dict:
+    """Scene du jeu video a l'etat final (assets/anim/jeu.html) : une replique de Lea affichee en entier."""
+    plan = {"niveau": niveau, "boss": boss, "quete": "DÉCROCHER L'ENTRETIEN", "duree": 6,
+            "etat": {"coeurs": 3, "xp": 40, "niv": 2, "bossPv": 100},
+            "repliques": [{"qui": "lea", "texte": replique, "t": 0.1, "duree": 1.0}], "evenements": []}
+    return {"plan": json.dumps(plan, ensure_ascii=False), "dur": "6"}
+
+
+def niveaux_jobs() -> list:
+    return [("jeu", _jeu(n["id"], "", "Bienvenue dans la quête, Martin !"), OUT / "niveaux" / f"{n['id']}.jpg") for n in catalog.jeu()["niveaux"]]
+
+
+def boss_jobs() -> list:
+    return [("jeu", _jeu("plaine", b["id"], f"Attention : {b['nom']} !"), OUT / "boss" / f"{b['id']}.jpg") for b in catalog.jeu()["boss"]]
+
+
 def voix(force: bool):
     """Un enregistrement de CTA par voix (le premier par ordre de nom), en MP3 (lisible partout, Safari compris)."""
     for v in dict.fromkeys([x["id"] for x in catalog.voices()] + [p["voix"] for p in catalog.personnages().values()]):
@@ -131,7 +149,7 @@ def main():
     for s in voulues:
         if s not in SORTES:
             ap.error(f"sorte inconnue : {s}")
-        if s in ("themes", "cartes", "decors", "personnages"):
+        if s in ("themes", "cartes", "decors", "personnages", "niveaux", "boss"):
             jobs += globals()[f"{s}_jobs"]()
     _images(jobs, args.force)
     if "voix" in voulues:

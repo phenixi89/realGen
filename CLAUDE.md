@@ -59,6 +59,12 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
     seulement (`ambiances` du format dans `formats.json`) ;
   - rien ne cache la scène : les bulles passent au-dessus des têtes, les gros plans (inserts) sous la
     zone des bulles, le nuage de pensée du côté libre ; aucun son au changement de scène.
+- Jeu vidéo rétro (`assets/anim/jeu.html`, `assets/anim/jeu/`, `catalog/jeu.json`) : format `jeu_quete`, Martin et Léa
+  (héros et guide) contre un boss qui est le SYSTÈME (jamais une personne) ; mêmes règles d'écriture que le dessin animé
+  (dialogue à deux voix, titre plein écran 1 s, relecture) plus les événements du jeu (apparition → blessure → objet →
+  dégâts → victoire → niveau). Un niveau ou un boss = un enregistrement dans `assets/anim/jeu/` **et** une entrée dans
+  `catalog/jeu.json` (`catalog.py` vérifie), puis `python scripts/apercus.py`. Texte du jeu en 8 px (grille de la police
+  Press Start 2P), jamais d'autre taille que 8 ou 16.
 - Sons enregistrés (`assets/sfx/`) : licence CC0 uniquement, source notée dans `assets/sfx/LICENCES.md`.
 - Polices : uniquement sous licence libre (OFL), licence copiée dans `assets/fonts/`.
 - Après un run du workflow `generate-reels.yml`, l'analyse se fait sur l'artefact `output`

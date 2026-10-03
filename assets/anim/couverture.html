@@ -20,7 +20,7 @@
   #kicker{display:inline-block;margin-bottom:46px;padding:14px 34px;border-radius:99px;background:var(--c1);color:var(--c1fg);font-weight:800;font-size:42px;letter-spacing:.06em;text-transform:uppercase}
   #titre{font-family:TitleFont,"DejaVu Sans",sans-serif;font-weight:800;font-size:128px;line-height:1.05;text-transform:uppercase;
     text-shadow:0 10px 40px rgba(0,0,0,.55)}
-  #titre .hot{color:var(--c1fg);background:var(--c1);padding:0 .12em;border-radius:.1em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  #titre .hot{white-space:nowrap;color:var(--c1fg);background:var(--c1);padding:0 .12em;border-radius:.1em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
   #brand{margin-top:60px;font-weight:800;font-size:40px;opacity:.85;letter-spacing:.04em}
 </style></head><body>
 <div id="bg"></div><div id="grad"></div>
@@ -46,6 +46,11 @@
   });
   FONTS_READY.then(() => {
     const zone = document.getElementById("zone");
+    // Police tres large (pixel art, chasse fixe) : le plus long mot doit tenir dans la largeur (mesure sur la police chargee).
+    const cx = document.createElement("canvas").getContext("2d"), taille = parseFloat(getComputedStyle(el).fontSize);
+    cx.font = `800 ${taille}px TitleFont`;
+    const plusLarge = Math.max(...titre.split(/ +/).map((w) => cx.measureText(w.replace(/\u00a0/g, " ").toUpperCase()).width)) + 0.3 * taille, maxW = zone.clientWidth - 20;   // + marge du surlignage (.hot)
+    if (plusLarge > maxW) el.style.fontSize = Math.floor((taille * maxW) / plusLarge) + "px";
     for (let k = 0; k < 30 && zone.scrollHeight > zone.clientHeight; k++)
       el.style.fontSize = `${Math.max(parseFloat(getComputedStyle(el).fontSize) - 6, 64)}px`;
     expose(gsap.timeline({ paused: true }).from("#zone", { scale: 0.96, duration: 0.3 }, 0), bgReady);

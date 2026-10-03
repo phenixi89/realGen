@@ -604,6 +604,37 @@
         "comique_sautillant"
       ],
       "ton_humour": "pince-sans-rire et complice, avec un sourire dans la voix, débit vif et naturel, répliques enchaînées sans pause entre les personnages, une très courte pause seulement avant la chute"
+    },
+    {
+      "id": "jeu_quete",
+      "nom": "Jeu vidéo : la quête de Martin",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "jeu": true,
+      "registres": [
+        "humour",
+        "serieux"
+      ],
+      "sujets": [
+        "cv",
+        "candidature",
+        "entretien",
+        "lettre",
+        "linkedin",
+        "emploi"
+      ],
+      "structure": "Mini-partie de RPG en pixel art : Martin (le héros) et Léa (sa guide) vivent une VRAIE situation de recherche d'emploi comme une quête de jeu vidéo, en 3 niveaux (scènes) + l'appel à l'action. Le boss est le SYSTÈME de recrutement (le robot qui trie les CV, le silence du recruteur, la paperasse), jamais une personne. (1) Le boss apparaît et Martin se trompe : il perd un cœur ; le problème est posé en deux répliques simples. (2) Léa lui donne UN réflexe avec la phrase exacte à dire ou à écrire entre « guillemets » (c'est un OBJET obtenu) et dit pourquoi ça marche. (3) Martin l'utilise : le boss perd de la vie, victoire, niveau gagné, puis une chute-réaction. Le sujet est le CONSEIL emploi / recrutement, jamais le produit : OpusCV n'apparaît que dans l'appel à l'action final, dit par un personnage.",
+      "ton": "dialogue vif et naturel entre deux amis qui jouent, débit assez vif, répliques courtes qui s'enchaînent, une très courte pause avant la chute",
+      "ton_humour": "dialogue vif entre deux amis qui jouent, pince-sans-rire et complice, répliques enchaînées sans temps mort, une très courte pause avant la chute",
+      "themes": [
+        "jeu_arcade",
+        "jeu_donjon"
+      ],
+      "ambiances": [
+        "chiptune_quete",
+        "chiptune_boss"
+      ]
     }
   ]
 }

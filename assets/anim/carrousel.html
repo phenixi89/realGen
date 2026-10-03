@@ -69,7 +69,7 @@
   FONTS_READY.then(() => {
     // Reduit titre puis texte tant que la zone deborde.
     const zone = document.getElementById("zone"), texte = document.getElementById("texte");
-    for (let k = 0; k < 40 && zone.scrollHeight > zone.clientHeight; k++) {
+    for (let k = 0; k < 40 && (zone.scrollHeight > zone.clientHeight || titleEl.scrollWidth > zone.clientWidth || texte.scrollWidth > zone.clientWidth); k++) {
       const ts = parseFloat(getComputedStyle(titleEl).fontSize), xs = parseFloat(getComputedStyle(texte).fontSize);
       if (ts > 60) titleEl.style.fontSize = `${ts - 6}px`;
       if (xs > 34 && (ts <= 60 || k % 2)) texte.style.fontSize = `${xs - 3}px`;

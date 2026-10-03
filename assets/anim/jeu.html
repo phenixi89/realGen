@@ -1,0 +1,43 @@
+<!doctype html>
+<!--
+  Jeu video retro (format "jeu_quete") : une scene de RPG en pixel art -- niveau, Martin et Lea, un boss, interface
+  (coeurs, experience, quete), boite de dialogue, objets, niveaux gagnes. Calcule a partir du temps seul (rendu image par
+  image reproductible). Parametres : plan = JSON d'une scene (format dans jeu/moteur.js, catalogue dans catalog/jeu.json),
+  dur = duree (s). Sans plan : scene de demonstration.
+  Rendu : python scripts/render_js_anim.py --spec "jeu?plan=%7B...%7D&dur=6" --out /tmp/jeu.mp4
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  @font-face{font-family:PS;src:url(../fonts/PressStart2P-Regular.ttf)}
+  html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}
+  canvas{width:1080px;height:1920px;image-rendering:pixelated;display:block}
+  #erreur{position:absolute;left:20px;right:20px;top:20px;color:#ff6b6b;font:28px monospace;white-space:pre-wrap}
+</style></head><body>
+<canvas id="ecran" width="270" height="480"></canvas><div id="erreur"></div>
+<script src="common.js"></script>
+<script src="jeu/pixel.js"></script>
+<script src="jeu/persos.js"></script>
+<script src="jeu/niveaux.js"></script>
+<script src="jeu/moteur.js"></script>
+<script>
+  const DEMO = { niveau: "plaine", boss: "robot_trieur", quete: "DÉCROCHER L'ENTRETIEN", duree: 9, etat: { coeurs: 3, xp: 20, niv: 1, bossPv: 100 },
+    repliques: [{ qui: "martin", texte: "J'ai écrit rigoureux et Pack Office !", t: 0.5, duree: 2.4 },
+                { qui: "lea", texte: "Écris : « Tableaux croisés et automatisation de reporting ».", t: 3.2, duree: 3 }],
+    evenements: [{ t: 0.3, type: "apparition" }, { t: 2.9, type: "blessure", de: 3, vers: 2 }, { t: 6.3, type: "objet", nom: "Phrase exacte" },
+                 { t: 7.6, type: "degats", de: 100, vers: 55 }] };
+  let plan;
+  try { plan = JSON.parse(param("plan", "") || "null") || DEMO; } catch (e) { document.getElementById("erreur").textContent = "Plan invalide : " + e.message; }
+  if (plan) {
+    plan.duree = num("dur", plan.duree || 6);
+    Promise.all([document.fonts.load("8px PS"), document.fonts.load("10px PS")]).then(() => {
+      try {
+        const { rendre, duree, sons } = Jeu.monter(plan);
+        window.DURATION = duree; window.SONS = sons;
+        window.seek = (t) => rendre(Math.min(Math.max(t, 0), duree));
+        window.seek(0);
+        window.READY = true;
+        if (!P.render) { const t0 = performance.now(); const boucle = (n) => { window.seek(((n - t0) / 1000) % (duree + 0.8)); requestAnimationFrame(boucle); }; requestAnimationFrame(boucle); }
+      } catch (e) { document.getElementById("erreur").textContent = "Scène : " + e.message; console.error(e); }
+    });
+  }
+</script></body></html>

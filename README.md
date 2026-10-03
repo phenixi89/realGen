@@ -90,7 +90,7 @@ Aucune connexion à l'app ni compte de démo : le reel est fait uniquement de pl
   produit sans image du produit ne montrerait rien ; `--format` d'un autre format est refusé. Le format
   **dessin animé** (`dessin_anime`, voir « Dessin animé ») n'existe que dans ce mode : demandé avec
   `--format dessin_anime` ou par un reel de `--plan` (console « Je compose mes reels »), il y bascule tout seul
-  pour tout le run (les autres reels du plan sont alors des conseils à cartes) ; il n'est jamais tiré au sort avec captures.
+  pour tout le run (les autres reels du plan sont alors des conseils à cartes) ; il n'est jamais tiré au sort avec captures. Même règle pour le **jeu vidéo** (`jeu_quete`, voir « Format `jeu_quete` »).
 - **Scénario** : Gemini écrit une carte animée pour chaque scène sauf la 1re et la dernière. Il n'y a pas de
   champ `feature`. La 1re scène porte `"illustration": "<id d'icône>"` : une icône dessinée à la main
   (`assets/anim/illustration.html`) sous l'accroche. La dernière scène est le CTA animé.
@@ -478,6 +478,43 @@ assis) :
 python scripts/run_pipeline.py --n 1 --format dessin_anime --duration 25
 ```
 
+### Format `jeu_quete` : un jeu vidéo rétro (`jeu`, `assets/anim/jeu/`)
+
+Une partie de RPG en pixel art qui donne un vrai conseil d'emploi. **Martin** (le héros, voix Fenrir) et **Léa** (sa guide,
+voix Aoede) parlent à deux voix comme dans le dessin animé ; le **boss est le système** (le robot qui trie les CV, le
+fantôme du ghosting, la paperasse), jamais une personne. Déroulé : titre plein écran 1 s (comme le dessin animé), puis
+3 niveaux + l'appel à l'action. (1) le boss apparaît, Martin se trompe et perd un cœur ; (2) Léa lui donne UN réflexe avec
+la phrase exacte entre « guillemets » : c'est un **objet obtenu** ; (3) Martin l'utilise, le boss perd de la vie, victoire,
+**niveau gagné**, chute-réaction.
+
+- **Rendu** (`assets/anim/jeu.html`) : un écran de 270 × 480 « pixels de jeu » dessiné sur un canvas puis agrandi ×4 sans
+  lissage, calculé à partir du temps seul (rendu image par image reproductible). Interface : portrait, cœurs, barre
+  d'expérience, bandeau de quête, barre de vie du boss, boîte de dialogue qui s'écrit avec la voix, fenêtres « OBJET OBTENU »,
+  « NIVEAU n », « VICTOIRE », secousse d'écran aux coups, lignes de balayage. Police **Press Start 2P** (OFL,
+  `assets/fonts/`). Le titre plein écran réduit sa taille pour que le mot le plus long tienne (polices très larges).
+- **Catalogue** `catalog/jeu.json` : personnages (`martin`, `lea`), 5 niveaux (`plaine`, `foret`, `donjon`, `ville`, `chateau`),
+  3 boss (`robot_trieur`, `fantome`, `paperasse`) et les événements d'une scène ; `catalog.py` vérifie que les ids
+  correspondent au code (`niveaux.js`, `persos.js`). Ajouter un niveau ou un boss = un enregistrement dans le code **et** une
+  entrée dans `jeu.json`, puis `python scripts/apercus.py` (aperçus `niveaux/` et `boss/`).
+- **Scénario** : chaque scène (sauf la dernière, l'appel à l'action) est un niveau `{niveau, boss, quete, repliques,
+  evenements}`. Événements : `apparition`, `blessure`, `objet`, `degats`, `xp`, `niveau`, `victoire`, rattachés à une réplique
+  (`apres`). `completer_jeu` calcule l'état (cœurs, expérience, niveau, vie du boss) et les valeurs absolues de chaque
+  événement ; au montage (`jeu_spec`, `run_pipeline.py`) les répliques sont calées sur la voix et chaque événement tombe juste
+  après sa réplique. Les mêmes contrôles que le dessin animé s'appliquent (`dessin_texte_problems` : titre de 6 mots,
+  ouverture de 8 mots, phrase exacte, pas de teaser, rien adressé au public) plus ceux du jeu (`jeu_scenes` : un seul boss,
+  niveaux différents, enchaînement apparition → blessure → objet → dégâts → victoire → niveau, objet juste après la phrase
+  exacte) et la **relecture** du scénario par un second appel (`relecture_dessin`).
+- **Son** : bruitages 8 bits synthétisés par `audio_gen.py` (`blip` à chaque réplique, `coup`, `degats`, `blessure`, `objet`,
+  `niveau`, `victoire`, `boss`), publiés par la page (`window.SONS`) à l'instant exact ; musiques **chiptune**
+  (`chiptune_quete`, `chiptune_boss`, instrument `chip` : ondes carrées étroites). Thèmes `jeu_arcade` et `jeu_donjon`
+  (réservés à ce format : `"formats"` dans `themes.json`, `"themes"` dans `formats.json`), sans sous-titres incrustés (le
+  texte est dans la boîte de dialogue).
+- Réservé à `--capture-mode aucune` (imposé automatiquement).
+
+```bash
+python scripts/run_pipeline.py --n 1 --format jeu_quete --duration 25
+```
+
 ### Gabarit `dialogue` : deux personnages qui se parlent
 
 Raccourci pour un dialogue simple : `repliques` = `g:texte {expr,geste}|d:texte|…` (`g` = gauche, `d` =
@@ -534,6 +571,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 | conseil | Je t'explique au tableau (`tableau_blanc`) | le mécanisme dessiné à la main (cartes schéma), puis la phrase à retenir (carte impact) |
 | conseil | Le message du recruteur (`dm_recruteur`) | un échange de messages fictif (carte conversation), puis le décryptage |
 | conseil | Dessin animé : Karim cherche un job (`dessin_anime`) | série en mini dessin animé : Léa, Karim (et le recruteur) jouent une situation d'emploi et en tirent un conseil, chacun avec sa voix, sur une trame tirée en rotation ; le produit n'apparaît que dans le CTA ; capture `aucune` uniquement |
+| conseil | Jeu vidéo : la quête de Martin (`jeu_quete`) | partie de RPG en pixel art : Martin (héros) et Léa (guide) affrontent un boss qui est le système de recrutement (robot trieur, fantôme, paperasse), gagnent un objet (la phrase exacte), des points de vie, un niveau ; chacun sa voix, musique chiptune ; le produit n'apparaît que dans le CTA ; capture `aucune` uniquement |
 | produit | Démo produit (`demo_produit`) | une fonctionnalité réelle par scène |
 | produit | Témoignage (`temoignage_produit`) | récit fictif à la 1re personne |
 | produit | Avant / Après avec OpusCV (`split_avant_apres`) | comparaison puis le chemin dans l'outil |
@@ -897,7 +935,7 @@ permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en
   `--seulement themes,decors`, `--force` pour tout refaire) : `python scripts/catalog.py` signale les
   aperçus manquants (sans bloquer : la console montre alors une vignette neutre).
 - **Catalogue** : fiches par type (formats, sujets, accroches, thèmes, ambiances, voix, trames et décors
-  du dessin animé) avec recherche et filtres catégorie / registre ; formats : structure, visuel, sujets
+  du dessin animé, niveaux et boss du jeu vidéo) avec recherche et filtres catégorie / registre ; formats : structure, visuel, sujets
   compatibles (« Voir ses sujets ») ; thèmes : vignette, nuancier, polices, musiques ; voix et ambiances :
   ▶ pour écouter ; décors : vignette. « ➕ Composer » ajoute l'élément au compositeur
   (dernier reel si ce champ y est libre, sinon nouveau reel).

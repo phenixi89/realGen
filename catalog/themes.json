@@ -573,6 +573,85 @@
         "boite_a_musique"
       ],
       "dessin": "papier"
+    },
+    {
+      "id": "jeu_arcade",
+      "nom": "Jeu : arcade",
+      "poids": 1,
+      "formats": [
+        "jeu_quete"
+      ],
+      "couleurs": {
+        "primaire": "#ffd84d",
+        "secondaire": "#ff4d6d",
+        "fond": "#16123a",
+        "texte": "#ffffff",
+        "surligne": "#7fe3d6",
+        "contour": "#0b0820",
+        "pastille": "#241848",
+        "mot_cle": "#7fe3d6"
+      },
+      "police_titre": "PressStart2P-Regular.ttf",
+      "police_texte": "PressStart2P-Regular.ttf",
+      "sous_titres": {
+        "taille": 40,
+        "majuscules": false,
+        "contour": 5,
+        "style": "mot"
+      },
+      "ambiance": "chiptune_quete",
+      "ambiances": [
+        "chiptune_quete"
+      ],
+      "transitions": [
+        "pixelize",
+        "fade"
+      ],
+      "dessin": "neon",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
+    },
+    {
+      "id": "jeu_donjon",
+      "nom": "Jeu : donjon",
+      "poids": 1,
+      "formats": [
+        "jeu_quete"
+      ],
+      "couleurs": {
+        "primaire": "#7fe3d6",
+        "secondaire": "#5b6bff",
+        "fond": "#120a22",
+        "texte": "#ffffff",
+        "surligne": "#ffd84d",
+        "contour": "#0b0820",
+        "pastille": "#241848",
+        "mot_cle": "#ffd84d"
+      },
+      "police_titre": "PressStart2P-Regular.ttf",
+      "police_texte": "PressStart2P-Regular.ttf",
+      "sous_titres": {
+        "taille": 40,
+        "majuscules": false,
+        "contour": 5,
+        "style": "mot"
+      },
+      "ambiance": "chiptune_boss",
+      "ambiances": [
+        "chiptune_boss",
+        "chiptune_quete"
+      ],
+      "transitions": [
+        "pixelize",
+        "fadeblack"
+      ],
+      "dessin": "neon",
+      "registres": [
+        "serieux",
+        "humour"
+      ]
     }
   ]
 }
