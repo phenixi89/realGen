@@ -487,6 +487,8 @@ JEU_ECRITURE = """ÉCRITURE : UNE PARTIE DE JEU VIDÉO QUI DONNE UN VRAI CONSEIL
     peut y faire écho (« Aïe ! »), elle ne les annonce pas comme un commentateur ;
   - LE BOSS NE PARLE PAS ; un seul boss dans tout le reel, le même d'un niveau à l'autre, choisi d'après ce qu'il représente ;
   - CE QU'ON DIT = CE QU'ON VOIT : un nombre ou un objet cité correspond à ce qui est montré ;
+  - LA PHRASE EXACTE n'invente AUCUN chiffre précis (pas « 36 à 40 k », pas « 200 k€ ») : elle se dit telle quelle pour n'importe
+    quel candidat (« Je vise une fourchette selon les avantages ») ; idem pour les répliques de Martin ;
   - UN SEUL CONSEIL, bien compris, sans chiffre ni statistique inventés ; OpusCV n'est jamais cité avant l'appel à l'action final.
 """
 
@@ -537,7 +539,7 @@ Boss ("boss" : le même dans tout le reel, indiqué dans chaque niveau où il es
 Répliques : 12 mots au plus, "expr" facultatif (la couleur de la voix) parmi : {exprs}.
 Événements ("apres" = numéro de la réplique APRÈS laquelle l'événement se produit, 0 = au début du niveau) :
 {evts}
-Obligatoire dans le reel : "apparition" (1er niveau), "blessure" (avant l'objet), "objet" avec "nom" = 3 mots au plus (« Phrase exacte »)
+Obligatoire dans le reel : "apparition" (1er niveau), "blessure" (avant l'objet), "objet" avec "nom" = 20 caractères au plus (« Phrase exacte », « Mail de relance »)
 juste après la réplique de Léa qui contient la phrase entre « guillemets », "degats" avec "pv" (10 à 50, après l'objet),
 "victoire" (dernier niveau, qui compte 4 répliques ou plus : "degats" et "victoire" se placent après la 1re réplique, la chute-réaction occupe les deux dernières), "niveau" (juste après la victoire). "xp" avec "valeur" (10 à 40) est facultatif.
 
@@ -1380,6 +1382,7 @@ Réponds en JSON : {{"histoire": "...", "comprehensible": true|false, "problemes
     return []
 
 
+JEU_NOM_OBJET_MAX = 20
 JEU_EVENEMENTS = ("apparition", "objet", "degats", "blessure", "xp", "niveau", "victoire")
 
 
@@ -1445,7 +1448,10 @@ def jeu_scenes(data: dict) -> tuple[list[dict], list[str]]:
                 apres = len(repliques)
             ev = {"apres": apres, "type": typ}
             if typ == "objet":
-                ev["nom"] = " ".join(str(e.get("nom") or "Phrase exacte").split())[:19]
+                ev["nom"] = " ".join(str(e.get("nom") or "Phrase exacte").split())
+                if len(ev["nom"]) > JEU_NOM_OBJET_MAX:    # la fenetre « OBJET OBTENU » n'a de place que pour ~20 lettres
+                    problems.append(f"scène {n} : nom d'objet trop long (« {ev['nom']} », {JEU_NOM_OBJET_MAX} caractères au plus)")
+                    ev["nom"] = ev["nom"][:JEU_NOM_OBJET_MAX].rsplit(" ", 1)[0]
             elif typ in ("degats", "xp"):
                 try:
                     ev["pv" if typ == "degats" else "valeur"] = int(min(max(int(e.get("pv" if typ == "degats" else "valeur", 25)), 5), 60))

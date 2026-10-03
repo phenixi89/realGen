@@ -503,7 +503,8 @@ la phrase exacte entre « guillemets » : c'est un **objet obtenu** ; (3) Martin
   après sa réplique. Les mêmes contrôles que le dessin animé s'appliquent (`dessin_texte_problems` : titre de 6 mots,
   ouverture de 8 mots, phrase exacte, pas de teaser, rien adressé au public) plus ceux du jeu (`jeu_scenes` : un seul boss,
   niveaux différents, enchaînement apparition → blessure → objet → dégâts → victoire → niveau, objet juste après la phrase
-  exacte) et la **relecture** du scénario par un second appel (`relecture_dessin`).
+  exacte, nom d'objet de 20 caractères au plus, victoire avant les deux dernières répliques du dernier niveau) ; la phrase exacte
+  n'invente aucun chiffre précis et la **relecture** du scénario par un second appel (`relecture_dessin`).
 - **Son** : bruitages 8 bits synthétisés par `audio_gen.py` (`blip` à chaque réplique, `coup`, `degats`, `blessure`, `objet`,
   `niveau`, `victoire`, `boss`), publiés par la page (`window.SONS`) à l'instant exact ; musiques **chiptune**
   (`chiptune_quete`, `chiptune_boss`, instrument `chip` : ondes carrées étroites). Thèmes `jeu_arcade` et `jeu_donjon`
