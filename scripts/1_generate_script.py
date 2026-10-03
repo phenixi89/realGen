@@ -326,7 +326,10 @@ DRAMATURGIE = """ÉCRITURE : UN PROBLÈME, UNE SOLUTION, EN MOTS SIMPLES (un min
   - Jamais de phrase adressée au public dans l'histoire (« reste pour la formule », « attends la suite ») ;
   - OUVERTURE : la 1re réplique fait 8 mots au plus, dit de qui ou de quoi on parle (pas de « lui », « ça », « elle » sans
     qu'on sache), et ne reprend pas les mots du titre ;
-  - RÉSULTAT (à la fin) : on VOIT que ça marche (gros plan, mail reçu, tampon), puis une chute courte ;
+  - RÉSULTAT (à la fin) : on VOIT que ça marche (gros plan, mail reçu, tampon), puis une chute courte : une RÉACTION ou
+    un retournement de situation drôle, jamais un slogan ni une morale (« Fini les CV qui endorment tout le monde ! ») ;
+  - PAS DE SUSPENSE ARTIFICIEL : on ne fait pas patienter (« attends la formule exacte », « tu vas voir ») ; Léa dit la
+    phrase tout de suite, c'est la phrase qui compte ;
   - Karim vit le problème et agit ; Léa l'aide en 1 ou 2 répliques à la fois, comme une amie, jamais en donnant un cours :
     jamais plus de 2 répliques de suite par le même personnage ;
   - MONTRE, NE FAIS PAS LA LEÇON : le conseil passe par un essai raté puis réussi, pas par un discours ;
@@ -1017,6 +1020,16 @@ def _mots_cles(texte: str) -> set[str]:
 NOMBRE_ANNONCE = re.compile(r"\b\d+\s*(questions?|conseils?|erreurs?|astuces?|phrases?|raisons?|r[èe]gles?|[ée]tapes?|signes?|secrets?)\b", re.I)
 
 
+def nb_mots(texte: str) -> int:
+    """Mots d'un texte : la ponctuation isolee (« ? », « ! », « : » apres un espace) n'en est pas un (run 69 : un titre
+    de 6 mots comptait 7 avec son « ? » et epuisait les 3 tentatives)."""
+    return len(re.findall(r"[\w'’-]+", texte))
+
+
+TEASER_RE = re.compile(r"\battends[, ]+(la|le|les|l')\s*(formule|phrase|suite|secret|astuce|r[eè]gle|m[eé]thode|solution|r[eé]ponse)"
+                       r"|\b(la )?formule (exacte|magique)|\b[ée]coute (bien )?(la suite|ça)|\btu vas voir\b", re.I)
+
+
 def dessin_texte_problems(scenes: list[dict], data: dict) -> list[str]:
     """Texte du dessin animé : accroche-question, bulle distincte du titre, langage simple, pas de monologue."""
     problems = []
@@ -1025,13 +1038,13 @@ def dessin_texte_problems(scenes: list[dict], data: dict) -> list[str]:
     if not reps:
         return problems
     premiere = reps[0][1]
-    if len(premiere.split()) > 8:
-        problems.append(f"la 1re réplique fait {len(premiere.split())} mots : 8 au plus, l'ouverture doit être immédiate")
+    if nb_mots(premiere) > 8:
+        problems.append(f"la 1re réplique fait {nb_mots(premiere)} mots : 8 au plus, l'ouverture doit être immédiate")
     if re.search(r"\b(lui|leur|leurs|elle|elles|ils|ça|cela|celui|celle)\b|\bil (?!y a|faut)", premiere.lower()):
         problems.append("la 1re réplique parle de « lui / elle / ça » sans qu'on sache de qui ou de quoi : nomme la personne "
                         "ou la chose (le recruteur, mon CV, cette offre)")
-    if len(accroche.split()) > 6:
-        problems.append(f"le titre fait {len(accroche.split())} mots : il s'affiche seul une seconde, 6 mots au plus, accrocheur")
+    if nb_mots(accroche) > 6:
+        problems.append(f"le titre fait {nb_mots(accroche)} mots : il s'affiche seul une seconde, 6 mots au plus, accrocheur")
     commun = _mots_cles(premiere) & _mots_cles(accroche)
     if len(commun) >= 2:
         problems.append(f"la 1re réplique et le titre à l'écran disent la même chose (mots communs : {', '.join(sorted(commun))}) : "
@@ -1039,6 +1052,9 @@ def dessin_texte_problems(scenes: list[dict], data: dict) -> list[str]:
     if any(re.search(r"reste pour|rester jusqu|attends la suite|[ée]coute (bien )?la suite|jusqu'à la fin|dans cette vid[ée]o|abonne|like|commente", t, re.I) for _, t in reps):
         problems.append("une réplique s'adresse au public (« reste pour… », « attends la suite », « abonne-toi ») : "
                         "les personnages parlent entre eux, l'appel à l'action est réservé à la dernière scène")
+    if any(TEASER_RE.search(t) for _, t in reps):
+        problems.append("une réplique ANNONCE ce qu'elle va dire (« attends la formule exacte », « tu vas voir ») au lieu de le dire : "
+                        "le personnage qui sait donne la phrase exacte tout de suite")
     if not any("«" in t and "»" in t for _, t in reps):
         problems.append("aucune phrase exacte entre « guillemets français » : un personnage dit à l'autre quoi dire ou écrire, mot pour mot")
     if not (accroche.endswith("?") or "?" in premiere):

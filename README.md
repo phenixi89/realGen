@@ -371,7 +371,10 @@ assis) :
   réplique fait 8 mots au plus, nomme de qui ou de quoi on parle (pas de « lui », « elle », « ça » sans antécédent) et
   ne partage pas 2 mots clés avec le titre ; aucune réplique ne s'adresse au public (« reste pour… », « abonne-toi »,
   réservés à la dernière scène) ; au moins une phrase exacte entre « guillemets français » est dite, enseignée par le
-  personnage qui sait (« Écris plutôt : « … » ») sur un exemple précis et réaliste, puis essayée par l'autre. Le titre
+  personnage qui sait (« Écris plutôt : « … » ») sur un exemple précis et réaliste, puis essayée par l'autre. Pas de
+  suspense artificiel : une réplique qui annonce ce qu'elle va dire (« attends la formule exacte », « tu vas voir ») est
+  refusée, la phrase est donnée tout de suite ; la chute est une réaction ou un retournement, pas un slogan.
+  Les mots sont comptés sans la ponctuation isolée (`nb_mots` : « … ? » ne compte pas pour un mot). Le titre
   à l'écran garde son « ? » collé au dernier mot (espace insécable, `hook.html`).
 - **Trame d'histoire** (`trames` de `dessins.json`, une par reel, la moins récemment utilisée ;
   imposable par `--plan` : `"trame"`) : 17 trames : avant / après, ce que pense le recruteur, quiproquo,
