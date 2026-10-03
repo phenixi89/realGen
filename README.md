@@ -358,7 +358,9 @@ assis) :
   (fond uni aux couleurs du thème, texte centré très gros, `hook.html` paramètre `plein`, `5_assemble.py --hook-plein`)
   pendant `catalog.TITRE_DESSIN_S` = 1 s, puis la scène de Karim et Léa prend la suite à la coupe. La voix attend : 
   `2_generate_voice.py` ajoute ce silence en tête de l'audio (mesure de vitesse de voix corrigée d'autant), si bien que
-  la timeline, les bulles et les bruitages restent calés sur la voix. 6 mots au plus (`dessin_texte_problems`).
+  la timeline, les bulles et les bruitages restent calés sur la voix. Une pause de 1,1 s (au lieu de 0,3 s) sépare aussi
+  la dernière réplique de l'appel à l'action (`CTA_PAUSE_DESSIN_S`) : la réaction de la chute (gros plan, mains sur la
+  tête) reste à l'écran avant que l'écran de fin ne la remplace. 6 mots au plus (`dessin_texte_problems`).
 - **Relecture du scénario** : une fois les contrôles de forme passés, un second appel Gemini (`relecture_dessin`) lit le
   titre, les répliques et ce qui est dessiné comme un spectateur qui ne sait rien : il raconte l'histoire en deux phrases
   et signale ce qui ne se comprend pas (rôles flous ou inversés sans explication, réplique qui ne répond pas à la

@@ -30,6 +30,7 @@ from script_text import dialogue_expressions, dialogue_lines, script_to_text
 
 CTA_DIR = Path(__file__).resolve().parent.parent / "assets" / "voix_cta"
 CTA_PAUSE_S = 0.3   # silence entre le corps du texte et la phrase de CTA enregistree
+CTA_PAUSE_DESSIN_S = 1.1   # dessin anime : le temps de voir la reaction de la chute avant l'appel a l'action
 SR_TTS = 24000
 
 # Voix disponibles cote Gemini TTS (exemples courants a adapter selon la doc a jour)
@@ -243,7 +244,7 @@ def _pcm(path: Path):
     return np.frombuffer(raw, dtype=np.int16).astype(np.float64)
 
 
-def append_cta(body_wav: Path, clip: Path, out_wav: Path):
+def append_cta(body_wav: Path, clip: Path, out_wav: Path, pause_s: float = CTA_PAUSE_S):
     """Corps + courte pause + CTA enregistre, le CTA ramene au volume de la voix du reel (RMS des passages parles)."""
     import numpy as np
     body, cta = _pcm(body_wav), _pcm(clip)
@@ -255,7 +256,7 @@ def append_cta(body_wav: Path, clip: Path, out_wav: Path):
         return float(np.sqrt((voiced ** 2).mean())) if len(voiced) else 1.0
 
     cta = cta * (level(body) / level(cta))
-    out = np.concatenate([body, np.zeros(int(CTA_PAUSE_S * SR_TTS)), cta])
+    out = np.concatenate([body, np.zeros(int(pause_s * SR_TTS)), cta])
     with wave.open(str(out_wav), "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
@@ -363,7 +364,7 @@ def main():
         fingerprint = f"[silence]\n{text}" if args.silent else f"[{voice} | {tone} | {TTS_MODEL_NAME}]\n{text_key}"
 
         if script.get("dessin") and script.get("accroche_ecran") and not args.silent:
-            fingerprint += f"\n[titre seul {catalog.TITRE_DESSIN_S} s]"
+            fingerprint += f"\n[titre seul {catalog.TITRE_DESSIN_S} s, pause chute {CTA_PAUSE_DESSIN_S} s]"
         wav_path = out_dir / f"reel_{i:02d}.wav"
         mp3_path = out_dir / f"reel_{i:02d}.mp3"
         # Sidecar avec le texte exact ayant produit ce mp3 : 1_generate_script.py
@@ -404,7 +405,7 @@ def main():
                 if cta_voice:
                     clip = cta_clip(client, cta_voice, last["texte"].strip(), out_dir.parent / "voix_cta")
                     print(f"    CTA enregistre reutilise : {clip.name}")
-                    append_cta(wav_path, clip, wav_path)
+                    append_cta(wav_path, clip, wav_path, CTA_PAUSE_DESSIN_S if lines else CTA_PAUSE_S)
                 if script.get("dessin") and script.get("accroche_ecran"):
                     silence_en_tete(wav_path, catalog.TITRE_DESSIN_S)
                 convert_to_mp3(wav_path, mp3_path)
