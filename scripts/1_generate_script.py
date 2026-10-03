@@ -104,6 +104,7 @@ WORDS_PER_SECOND = 2.6
 FAST_WORDS_PER_SECOND = 3.4
 # Dessin anime (dialogue TTS a deux voix, repliques courtes) : ~2,9 mots/s mesures sur les
 # premiers reels ; un peu en dessous pour garder de l'air entre les repliques.
+DOC_WORDS_PER_SECOND = 2.1   # voix off de documentaire : posée, avec de longues pauses (mesurée au 1er run, puis output/vitesse_voix.json)
 DIALOGUE_WORDS_PER_SECOND = 2.3   # mesure au run 64 : 78 mots = 33,7 s (voix posees, pauses avant les chutes)
 MAX_ATTEMPTS = 3
 ACCROCHE_MAX_WORDS = 8
@@ -135,14 +136,17 @@ def words_per_second(tone: str = "") -> float:
     return FAST_WORDS_PER_SECOND if re.search(r"rapide|haletant", tone or "", re.I) else WORDS_PER_SECOND
 
 
+VITESSE_DOC: list[float] = []     # idem pour la voix off des documentaires
 VITESSE_VOIX: list[float] = []   # mots/s mesures sur les derniers dessins animes (output/vitesse_voix.json, ecrit par 2_generate_voice.py)
 
 
 def charger_vitesse(chemin: Path) -> None:
     """Vitesse reelle de la voix des derniers dialogues (mots dits / duree de l'audio, CTA compris)."""
     VITESSE_VOIX.clear()
+    VITESSE_DOC.clear()
     try:
         mesures = json.loads(chemin.read_text(encoding="utf-8"))
+        VITESSE_DOC.extend(float(m["mots"]) / float(m["duree"]) for m in mesures[-6:] if m.get("documentaire") and m.get("duree"))
         VITESSE_VOIX.extend(float(m["mots"]) / float(m["duree"]) for m in mesures[-6:] if m.get("dessin") and m.get("duree"))
     except (OSError, ValueError, KeyError, TypeError):
         pass
@@ -156,8 +160,16 @@ def dialogue_wps() -> float:
     return min(2.9, max(1.8, mesures[len(mesures) // 2]))
 
 
-def word_budget(duration: int, tone: str = "", dialogue: bool = False) -> tuple[int, int, int]:
-    target = round(duration * (dialogue_wps() if dialogue else words_per_second(tone)))
+def doc_wps() -> float:
+    """Mots par seconde de la voix off du documentaire : mediane des mesures recentes (1,6 a 2,6), sinon la valeur par defaut."""
+    if not VITESSE_DOC:
+        return DOC_WORDS_PER_SECOND
+    mesures = sorted(VITESSE_DOC)
+    return min(2.6, max(1.6, mesures[len(mesures) // 2]))
+
+
+def word_budget(duration: int, tone: str = "", dialogue: bool = False, documentaire: bool = False) -> tuple[int, int, int]:
+    target = round(duration * (doc_wps() if documentaire else dialogue_wps() if dialogue else words_per_second(tone)))
     return target, round(target * 0.85), round(target * 1.12)
 
 
@@ -201,7 +213,10 @@ def choose_sujet(client, fmt: dict, history: list[dict], rng: random.Random) -> 
     if client is None or len(fresh) == 1:
         return rng.choice(fresh)
     listing = "\n".join(f'- {s["id"]} : {s["texte"]}' for s in fresh)
-    if fmt.get("dessin"):
+    if fmt.get("documentaire"):
+        cadre = ("Tu es scénariste de faux documentaires animaliers humoristiques, spécialisé dans les conseils emploi et recrutement.\n"
+                 "Le documentaire donne un VRAI conseil de recherche d'emploi en observant le candidat comme un animal ; le produit n'est pas son sujet.")
+    elif fmt.get("dessin"):
         cadre = ("Tu es scénariste de séries courtes et expert en marketing de contenu, spécialisé dans les conseils emploi et recrutement.\n"
                  "Le dessin animé donne un VRAI conseil de recherche d'emploi ou de carrière ; le produit n'est pas son sujet.")
     else:
@@ -252,7 +267,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
             fmt = forced_fmt
         elif forced_sujet:  # sujet impose : format tire parmi ceux qui l'acceptent
             ok = [f for f in catalog.formats() if forced_sujet in catalog.compatible_sujets(f)
-                  and (not sans_captures or catalog.sans_captures_ok(f)) and (sans_captures or not f.get("dessin"))]
+                  and (not sans_captures or catalog.sans_captures_ok(f)) and (sans_captures or not catalog.sans_capture_seul(f))]
             pool = [f for f in ok if registre in catalog.registres_of(f)] or ok
             fmt = catalog.weighted_pick(pool, [], rng) if pool else catalog.pick_format(working, rng, registre, sans_captures)
         else:
@@ -265,8 +280,8 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
             sujet = choose_sujet(client, fmt, working, rng)
         hid, tid = ov.get("hook") or hook_id, ov.get("theme") or theme_id
         hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin")), sujet.get("tags"))
-        theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre)
-        voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng)
+        theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre, fmt)
+        voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng, fmt)
         cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
         ambiance = ov.get("ambiance") or catalog.pick_ambiance(theme, working, rng, fmt)
         plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice, "registre": registre,
@@ -310,6 +325,11 @@ def fixer_cta(scenes: list[dict], cta: str) -> None:
 def dessin_bounds(duration: int) -> tuple[int, int]:
     """Dessin anime : 1 a ~4 lieux / moments (un decor dure plusieurs repliques) + la scene CTA."""
     return 2, max(4, math.ceil(duration / 6))
+
+
+def documentaire_bounds(duration: int) -> tuple[int, int]:
+    """Documentaire : 3 plans au moins (probleme, comportement, conseil) + la scene d'appel a l'action."""
+    return 4, max(5, math.ceil(duration / 5))
 
 
 DRAMATURGIE = """ÉCRITURE : UN PROBLÈME, UNE SOLUTION, EN MOTS SIMPLES (un mini-scénario, pas une fiche pratique lue à deux voix) :
@@ -471,8 +491,130 @@ rappelle ? », ou une question à l'autre personnage), jamais le titre recopié 
 """
 
 
+DOC_ECRITURE = """ÉCRITURE : VOIX OFF DE DOCUMENTAIRE ANIMALIER SUR UN VRAI CONSEIL D'EMPLOI :
+  - TON : voix off solennelle et posée, humour pince-sans-rire par le décalage (on parle d'un CV comme d'un rituel de la
+    savane). Présent de narration, phrases courtes (18 mots au plus), mots de tous les jours, aucun jargon ni « règle du … »
+    inventé. Jamais de blague annoncée, jamais de suspense artificiel (« attends la suite », « tu vas voir ») ;
+  - CONTEXTE : le plan 1 dit de QUI on parle (le candidat, le recruteur, le CV, le robot qui trie les candidatures) et OÙ
+    (« Ici, dans la savane des offres d'emploi… ») ; en deux phrases, le spectateur sait quel est le problème, dans une
+    situation qu'il a vraiment vécue (candidature sans réponse, entretien raté, CV ignoré…) ;
+  - PROBLÈME → CONSEIL → RÉSULTAT : (plan 1) l'espèce et son problème précis ; (plan 2) le comportement qui coince et ce qu'il
+    coûte ; (plan 3) le tournant : UNE chose à faire, avec la phrase exacte à dire ou à écrire entre « guillemets français »
+    sur un exemple précis et réaliste, et POURQUOI ça marche en une phrase simple ; puis le résultat et une chute-réaction
+    (jamais un slogan ni une morale) ;
+  - LES ANIMAUX JOUENT LA PHRASE : chaque plan montre ce que dit la voix. Elle parle d'ignorer le problème ? l'autruche enfouit
+    sa tête. D'un CV trop chargé ? le paon déploie sa queue. Du recruteur qui tarde ? le lion dort. De la concurrence ? des gnous
+    traversent l'horizon. De candidatures envoyées en masse ? des oiseaux s'envolent. Choisis l'animal d'après ce qu'il
+    représente (champ « sens » de la liste) ;
+  - FAUX NOM LATIN : la légende du plan 1 donne un nom latin inventé et drôle (« Candidatus ignoratus », « Curriculum floridus »),
+    lisible, 3 mots au plus ; les autres plans n'ont une légende que si un nouvel animal apparaît ;
+  - CE QU'ON DIT = CE QU'ON VOIT : un nombre ou un animal cité correspond à ce qui est montré ;
+  - VARIE LES PLANS : deux plans de suite ne se ressemblent pas (autre habitat, autre moment de la journée ou autre cadre) ;
+  - UN SEUL CONSEIL, bien compris. Aucun chiffre ni statistique inventé ; OpusCV n'est jamais cité avant l'appel à l'action final.
+"""
+
+
+def documentaire_rules() -> str:
+    """Consignes du format documentaire : catalogue des habitats, moments, animaux et prises de vue + exemple de plan."""
+    doc = catalog.documentaire()
+    habitats = "\n".join(f'  - "{h["id"]}" : {h["description"]}' for h in doc["habitats"])
+    moments = "\n".join(f'  - "{m["id"]}" : {m["description"]}' for m in doc["moments"])
+    especes = "\n".join(f'  - "{e["id"]}" ({e["nom"]}) : {e["sens"]}. {e["description"]}'
+                        + (f' Actions : {", ".join(e["actions"])}.' if e["actions"] else "") for e in doc["especes"])
+    cadres = "\n".join(f'  - "{k}" : {v}' for k, v in doc["cadres"].items())
+    mouvements = "\n".join(f'  - "{k}" : {v}' for k, v in doc["mouvements"].items())
+    return f"""{doc["consigne"]}
+
+Chaque scène (sauf la dernière) est un PLAN de documentaire, dans le champ "carte" :
+{{"type": "documentaire", "habitat": "savane", "moment": "crepuscule", "cadre": "moyen", "mouvement": "avant",
+ "sujets": [{{"espece": "autruche", "x": "centre", "regard": "droite", "action": "enfouir"}},
+            {{"espece": "gnou", "x": "gauche", "nombre": 4, "action": "marcher", "vers": "droite"}}],
+ "legende": {{"titre": "Le chercheur d'emploi", "latin": "Candidatus ignoratus", "detail": "Habitat : sa boîte mail"}}}}
+Habitats ("habitat") :
+{habitats}
+Moments de la lumière ("moment") :
+{moments}
+Animaux ("espece" ; 1 à 3 par plan, "x" = gauche | centre | droite, "regard" = gauche | droite, "echelle" 0.5 à 1.6,
+"profondeur" 0 (devant) à 1 (au loin), "action" = une de ses actions ou "marcher" avec "vers" ; "nombre" pour les
+oiseaux et pour un troupeau de gnous) :
+{especes}
+Cadre ("cadre") :
+{cadres}
+Mouvement de caméra ("mouvement") :
+{mouvements}
+"legende" : "titre" (le nom de l'espèce observée, 5 mots au plus), "latin" (faux nom latin drôle), "detail" (une
+observation, 9 mots au plus : « Habitat : sa boîte mail. Régime : les offres d'emploi »).
+Le texte de la carte ne recopie pas la voix : la voix raconte, l'image montre."""
+
+
+def build_prompt_documentaire(plan: dict, duration: int, feedback: str | None, recent_hooks: list[str]) -> str:
+    """Prompt du faux documentaire animalier (format documentaire_nature)."""
+    fmt, hook = plan["format"], plan["hook"]
+    humour = plan.get("registre") == "humour"
+    target, lo_w, hi_w = word_budget(duration, catalog.tone_for(fmt, plan.get("registre")), documentaire=True)
+    lo_s, hi_s = documentaire_bounds(duration)
+    cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
+    cta_rule = (f"dernière scène = EXACTEMENT cette phrase, recopiée mot pour mot (elle est déjà enregistrée), sans plan : « {cta} »"
+                if cta_enregistre() else f"dernière scène = CTA court, sans plan, dans l'esprit : « {cta} »")
+    avoid_hooks = "\n".join(f"- {h}" for h in recent_hooks[-12:]) or "(aucune)"
+    banned = " ; ".join(f"« {b} »" for b in catalog.config().get("phrases_bannies", []))
+    insta_max = (catalog.config().get("instagram") or {}).get("hashtags_max", 5)
+    registre = (f"\nREGISTRE : HUMOUR. {catalog.config().get('consigne_humour', '')}\n" if humour else "")
+    prompt = f"""Tu es scénariste de documentaires animaliers humoristiques ET expert en contenu TikTok / Instagram Reels sur l'emploi, le
+recrutement et la carrière. Tu écris le SCÉNARIO d'un faux documentaire vertical de {duration} secondes, en français : une voix off
+calme observe le candidat comme un animal dans son habitat et donne un VRAI conseil de recruteur. Le spectateur repart avec une
+phrase ou un réflexe à utiliser dès demain. Le produit (OpusCV) n'est pas le sujet : il n'apparaît que dans l'appel à l'action final.
+
+FORMAT : {fmt['nom']}.
+Structure attendue : {fmt['structure']}
+{registre}SUJET : {plan['sujet']['texte']}
+
+TITRE À L'ÉCRAN ("accroche_ecran") : il s'affiche SEUL, plein écran, UNE seconde avant le documentaire. 6 mots au plus,
+accrocheur, lisible d'un coup d'œil, qui donne envie de rester (une question que le spectateur se pose vraiment, ou une
+affirmation qui intrigue). Inspiration de style, sans la recopier : « {hook['id']} » — {hook['consigne']} ; ex. « {hook['exemple']} ».
+La voix off ne répète pas le titre. Pas de nombre annoncé (« 3 conseils »). Ne réutilise pas ces accroches déjà publiées :
+{avoid_hooks}
+
+{DOC_ECRITURE}
+{documentaire_rules()}
+
+Contraintes :
+- entre {lo_s} et {hi_s} scènes (plans + la scène finale d'appel à l'action) ;
+- texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s (voix lente) ;
+- {cta_rule} ;
+- public : des CANDIDATS qui cherchent un emploi ; le CTA parle de leur recherche (décrocher un entretien) ;
+- français impeccable AVEC TOUS LES ACCENTS et la ponctuation : le texte est affiché tel quel en sous-titres ;
+- pas d'emoji, pas de hashtag, pas d'indication de mise en scène dans les textes ;
+- aucun conseil générique ou évident (interdit : {banned}) ;
+- RESTE SUR LE SUJET : traite CE sujet, avec ses exemples propres.
+
+Fournis aussi :
+- "mots_cles" : 3 à 6 mots-clés du texte dit (mots isolés, tels qu'écrits dans les scènes), mis en couleur dans les sous-titres ;
+- "legende" : la description TikTok (1 à 2 phrases + une question pour faire commenter) ;
+- "hashtags" : 4 à 6 hashtags pertinents pour TikTok ;
+- "legende_instagram" : la description Instagram (1re ligne accrocheuse, 2 à 4 phrases courtes, une question, une invitation à
+  enregistrer ; sauts de ligne autorisés, pas d'emoji) ;
+- "hashtags_instagram" : {insta_max} hashtags au plus, précis et en français ;
+- "carrousel" : {CARROUSEL_MIN} à {CARROUSEL_MAX} diapositives [{{"titre": "4 à 9 mots", "texte": "1 à 2 phrases, 30 mots max"}}] (la 1re
+  = la couverture ; une idée concrète par diapositive ; pas de diapositive d'appel à l'action) ;
+- "offre_emploi" : une offre d'emploi fictive courte (2 à 4 phrases) plausible pour ce sujet ;
+- "theme_style" : 2 à 4 mots décrivant le style visuel de CV le plus adapté.
+"""
+    if feedback:
+        prompt += f"\nCORRECTION DEMANDÉE sur ta proposition précédente : {feedback}\n"
+    prompt += """
+Réponds UNIQUEMENT en JSON valide :
+{"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."],
+ "legende_instagram": "...", "hashtags_instagram": ["#..."], "carrousel": [{"titre": "...", "texte": "..."}], "offre_emploi": "...",
+ "theme_style": "...", "scenes": [{"texte": "voix off du plan 1", "carte": {"type": "documentaire", ...}}, ..., {"texte": "..."}]}
+"""
+    return prompt
+
+
 def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback: str | None,
                  recent_hooks: list[str]) -> str:
+    if plan["format"].get("documentaire"):
+        return build_prompt_documentaire(plan, duration, feedback, recent_hooks)
     fmt, hook = plan["format"], plan["hook"]
     humour = plan.get("registre") == "humour"
     catalog_features = "\n".join(f'- "{fid}" : {f.description}' for fid, f in available_features().items())
@@ -804,6 +946,8 @@ def clean_card(raw) -> dict | None:
         if not txt("texte"):
             return None
         return {"type": "impact", "texte": txt("texte"), "mot": txt("mot")}
+    if kind == "documentaire":
+        return clean_card_documentaire(raw)
     if kind == "meme":
         if not txt("haut") or not txt("bas"):
             return None
@@ -821,6 +965,92 @@ def clean_card(raw) -> dict | None:
         "texte": txt("texte"),
         "style": style if style in catalog.CARD_STYLES else "normal",
     }
+
+
+def _choix(valeur, valides, defaut: str, cutoff: float = 0.7) -> str:
+    """Valeur ecrite par l'IA -> la plus proche des valeurs valides (accents et casse ignores), sinon le defaut."""
+    import difflib
+    v = catalog._norm(str(valeur or ""))
+    ids = {catalog._norm(x): x for x in valides}
+    if v in ids:
+        return ids[v]
+    proche = difflib.get_close_matches(v, list(ids), n=1, cutoff=cutoff)
+    return ids[proche[0]] if proche else defaut
+
+
+def clean_card_documentaire(raw: dict) -> dict | None:
+    """
+    Plan de documentaire normalise (assets/anim/documentaire.html, catalog/documentaire.json) :
+      habitat, moment, cadre, mouvement, sujets[1-4] {espece, x ("gauche|centre|droite" ou pixels), regard,
+      echelle, profondeur, nombre, action, vers}, legende {titre, latin, detail}.
+    Une espece, un habitat ou un moment inconnu est remplace par le plus proche ; sans aucun animal valide -> None.
+    Le resultat est directement le plan joue par le gabarit ("sujets" avec ids, "actions" chronologiques).
+    """
+    doc = catalog.documentaire()
+    especes = {e["id"]: e for e in doc["especes"]}
+    positions = doc["positions"]
+    txt = lambda d, k: " ".join(str(d.get(k) or "").split())
+    habitat = _choix(raw.get("habitat"), [h["id"] for h in doc["habitats"]], "savane")
+    moment = _choix(raw.get("moment"), [m["id"] for m in doc["moments"]], "jour")
+    cadre = _choix(raw.get("cadre"), doc["cadres"], "moyen")
+    mouvement = _choix(raw.get("mouvement"), doc["mouvements"], "fixe")
+    sujets, actions = [], []
+    brut = [x for x in raw.get("sujets") or [] if isinstance(x, dict)]
+    for k, x in enumerate(brut[:4]):
+        eid = _choix(x.get("espece"), list(especes), "", cutoff=0.85)
+        if not eid:
+            continue
+        esp = especes[eid]
+        if sum(1 for q in sujets if q["espece"] == eid) >= esp.get("max", 2):
+            continue
+        pos = x.get("x")
+        if isinstance(pos, (int, float)):
+            px = int(min(max(pos, 100), 980))
+        else:
+            px = positions[_choix(pos, positions, ["centre", "gauche", "droite", "centre"][k % 4] if len(brut) > 1 else "centre")]
+        sid = f"s{len(sujets) + 1}"
+        sujet = {"id": sid, "espece": eid, "x": px}
+        regard = _choix(x.get("regard"), doc["regards"], "droite")
+        if regard == "gauche":
+            sujet["regard"] = "gauche"
+        for cle, lo, hi in (("echelle", 0.5, 1.6), ("profondeur", 0, 1)):
+            try:
+                sujet[cle] = round(min(max(float(x.get(cle)), lo), hi), 2)
+            except (TypeError, ValueError):
+                pass
+        if esp.get("ciel"):
+            try:
+                sujet["nombre"] = int(min(max(int(x.get("nombre") or 7), 3), 10))
+            except (TypeError, ValueError):
+                sujet["nombre"] = 7
+        action = _choix(x.get("action"), esp.get("actions", []) + ["marcher"], "")
+        if action:
+            act = {"qui": sid, "action": action, "t": round(0.9 + 0.5 * len(actions), 2)}
+            if action == "marcher":
+                vers = x.get("vers")
+                act["vers"] = int(min(max(vers, 100), 980)) if isinstance(vers, (int, float)) else \
+                    positions[_choix(vers, positions, "droite" if px < 540 else "gauche")]
+            actions.append(act)
+        sujets.append(sujet)
+        if eid == "gnou" and isinstance(x.get("nombre"), (int, float)) and int(x["nombre"]) > 1:
+            # Troupeau : le meme gnou repete le long de l'horizon, tous en marche.
+            for j in range(1, min(int(x["nombre"]), esp.get("max", 8))):
+                gid = f"s{len(sujets) + 1}"
+                gx = int(min(max(px + 90 * j, 100), 980))
+                sujets.append({"id": gid, "espece": "gnou", "x": gx, "profondeur": round(min(0.3 + 0.1 * (j % 4), 0.7), 2),
+                               **({"regard": "gauche"} if regard == "gauche" else {})})
+                actions.append({"qui": gid, "action": "marcher", "t": round(0.6 + 0.05 * j, 2),
+                                "vers": int(min(max(gx + (-260 if regard == "gauche" else 260), 100), 980))})
+    if not sujets:
+        return None
+    # Les ids doivent rester uniques et dans l'ordre ou ils sont poses.
+    leg = raw.get("legende") if isinstance(raw.get("legende"), dict) else {}
+    legende = {k: txt(leg, k)[:n] for k, n in (("titre", 42), ("latin", 40), ("detail", 80))}
+    plan = {"type": "documentaire", "habitat": habitat, "moment": moment, "cadre": cadre, "mouvement": mouvement,
+            "sujets": sujets, "actions": actions}
+    if legende["titre"]:
+        plan["legende"] = {k: v for k, v in legende.items() if v}
+    return plan
 
 
 def closest_icon(name: str) -> str:
@@ -849,13 +1079,19 @@ def banned_phrases(text: str) -> list[str]:
 
 def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: str = "aucune",
              recent_hooks: list[str] | None = None, proof: bool = False,
-             tone: str = "", sans_captures: bool = False, dessin: bool = False) -> tuple[list[dict], list[str]]:
+             tone: str = "", sans_captures: bool = False, dessin: bool = False,
+             documentaire: bool = False) -> tuple[list[dict], list[str]]:
     """
     Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA).
     sans_captures : pas de feature (""), une carte sur chaque scene sauf la 1re (icone
     "illustration") et la derniere (CTA anime), ni preuve ni annotation.
     dessin : scenes dessinees (dessin_scenes), le texte = les repliques des personnages.
     """
+    if documentaire:
+        scenes, problems = documentaire_scenes(data)
+        problems = problems + documentaire_texte_problems(scenes, data)
+        return scenes, problems + common_problems(scenes, data, duration, tone, recent_hooks, None,
+                                                  documentaire_bounds(duration), documentaire=True)
     if dessin:
         scenes, problems = dessin_scenes(data)
         problems = problems + dessin_texte_problems(scenes, data)
@@ -953,7 +1189,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
 
 def common_problems(scenes: list[dict], data: dict, duration: int, tone: str, recent_hooks: list[str] | None,
                     forced: list[dict] | None, bounds: tuple[int, int] | None = None,
-                    dialogue: bool = False) -> list[str]:
+                    dialogue: bool = False, documentaire: bool = False) -> list[str]:
     """Controles communs a tous les formats : phrases bannies, volume de texte, accents, accroche."""
     problems = []
     banned = banned_phrases(" ".join(s["texte"] for s in scenes))
@@ -961,7 +1197,7 @@ def common_problems(scenes: list[dict], data: dict, duration: int, tone: str, re
         problems.append("formulations trop génériques à remplacer par du concret : " + ", ".join(banned))
 
     words = sum(len(s["texte"].split()) for s in scenes)
-    _, lo_w, hi_w = word_budget(duration, tone, dialogue)
+    _, lo_w, hi_w = word_budget(duration, tone, dialogue, documentaire)
     lo_s, hi_s = bounds or scene_bounds(duration)
     if not scenes:
         problems.append("aucune scène exploitable")
@@ -1218,6 +1454,102 @@ Réponds en JSON : {{"histoire": "...", "comprehensible": true|false, "problemes
     return []
 
 
+def documentaire_scenes(data: dict) -> tuple[list[dict], list[str]]:
+    """Scenes du documentaire : chacune (sauf la derniere, CTA) porte un plan "carte" de type documentaire."""
+    problems, scenes = [], []
+    brut = [r for r in data.get("scenes") or [] if isinstance(r, dict) and str(r.get("texte") or "").strip()]
+    for i, raw in enumerate(brut):
+        scene = {"feature": "", "texte": " ".join(str(raw["texte"]).split())}
+        if i < len(brut) - 1:
+            card = clean_card_documentaire(raw["carte"]) if isinstance(raw.get("carte"), dict) else None
+            if card:
+                scene["carte"] = card
+            else:
+                problems.append(f"scène {i + 1} : plan de documentaire manquant ou sans animal valide (carte de type documentaire)")
+        scenes.append(scene)
+    return scenes, problems
+
+
+def documentaire_texte_problems(scenes: list[dict], data: dict) -> list[str]:
+    """Texte et plans du documentaire : titre court, conseil avec phrase exacte, voix off sobre, plans varies."""
+    problems = []
+    if not scenes:
+        return problems
+    accroche = str(data.get("accroche_ecran") or "").strip()
+    if nb_mots(accroche) > 6:
+        problems.append(f"le titre fait {nb_mots(accroche)} mots : il s'affiche seul une seconde, 6 mots au plus, accrocheur")
+    if NOMBRE_ANNONCE.search(accroche):
+        problems.append(f"nombre annoncé dans le titre (« {accroche} ») : dis ce qu'on va apprendre, sans compter")
+    corps = scenes[:-1]
+    texte = " ".join(sc["texte"] for sc in corps)
+    if not any("«" in sc["texte"] and "»" in sc["texte"] for sc in corps):
+        problems.append("aucune phrase exacte entre « guillemets français » : la voix off donne mot pour mot ce qu'il faut dire ou écrire")
+    if TEASER_RE.search(texte):
+        problems.append("la voix off ANNONCE ce qu'elle va dire (« attends la suite », « tu vas voir ») au lieu de le dire : donne le conseil tout de suite")
+    if re.search(r"abonne|\blike\b|commente|dans cette vid[ée]o|lien en bio", texte, re.I):
+        problems.append("le texte s'adresse au public (« abonne-toi », « lien en bio ») : réservé à la scène finale")
+    if re.search(r"opus\s?cv", texte, re.I):
+        problems.append("OpusCV est cité avant l'appel à l'action : le documentaire donne un conseil, le produit n'apparaît qu'à la fin")
+    if re.search(r"\br[èe]gle (du|des|de la|de l')\b", texte, re.I):
+        problems.append("une « règle du … » inventée n'est pas comprise : dis simplement quoi faire, avec la phrase exacte")
+    long = [ph for ph in re.split(r"(?<=[.!?…])\s+", texte) if nb_mots(ph) > 24]
+    if long:
+        problems.append(f"phrase de voix off trop longue ({nb_mots(long[0])} mots) : 18 mots au plus, une idée par phrase")
+    plans = [sc["carte"] for sc in corps if sc.get("carte")]
+    if plans and not plans[0].get("legende"):
+        problems.append("le plan 1 n'a pas de légende (titre + faux nom latin + détail) : elle présente l'espèce observée")
+    for a, b in zip(plans, plans[1:]):
+        if (a["habitat"], a["moment"], a["cadre"]) == (b["habitat"], b["moment"], b["cadre"]):
+            problems.append("deux plans de suite identiques (même habitat, même moment, même cadre) : varie au moins un des trois")
+            break
+    if len({p_["habitat"] for p_ in plans}) < 2 and len(plans) >= 3:
+        problems.append("tous les plans ont le même habitat : change de lieu au moins une fois")
+    if len({s_["espece"] for p_ in plans for s_ in p_["sujets"]}) < 2 and len(plans) >= 3:
+        problems.append("un seul animal dans tout le reel : en montrer au moins deux (le candidat et ce qui l'entoure)")
+    return problems
+
+
+def relecture_documentaire(client, data: dict, scenes: list[dict]) -> list[str]:
+    """
+    Relecture du documentaire par un second appel : un spectateur qui ne connait QUE le titre, la voix off et
+    ce qui est montre raconte l'histoire puis dit ce qui ne se comprend pas. Echec de l'appel : aucun probleme.
+    """
+    lignes = []
+    for i, sc in enumerate(scenes, 1):
+        plan = sc.get("carte")
+        if plan:
+            vus = ", ".join(f"{x['espece']}" + (f" x{x['nombre']}" if x.get("nombre") else "") for x in plan["sujets"])
+            leg = plan.get("legende") or {}
+            lignes.append(f"PLAN {i} ({plan['habitat']}, {plan['moment']}) montre : {vus}"
+                          + (f" ; légende : {leg.get('titre', '')} / {leg.get('latin', '')} / {leg.get('detail', '')}" if leg else ""))
+        lignes.append(f"VOIX OFF {i} : {sc['texte']}")
+    prompt = f"""Tu relis le scénario d'un faux documentaire animalier de 25 secondes (conseil emploi / recrutement) AVANT tournage. Tu es
+un spectateur qui ne connaît QUE ce qui suit, rien d'autre.
+
+TITRE affiché seul une seconde : « {data.get('accroche_ecran', '')} »
+{chr(10).join(lignes)}
+
+Travail :
+1. Raconte le documentaire en deux phrases, comme si tu le découvrais (qui est observé, quel est le problème, quel est le conseil).
+2. Cherche tout ce qui ne se comprend pas du premier coup : on ne sait pas de qui ou de quoi on parle, la métaphore animale est
+   arbitraire (l'animal montré n'a aucun rapport avec la phrase), un plan qui ne correspond pas à la voix off, un conseil flou ou faux,
+   une phrase exacte absente ou inutilisable, une chute qui est un slogan, un enchaînement qui saute une étape.
+3. Verdict sévère : "comprehensible" est false si l'un de ces défauts gêne un spectateur pressé.
+
+Réponds en JSON : {{"histoire": "...", "comprehensible": true|false, "problemes": ["défaut précis et comment le corriger", ...]}}"""
+    try:
+        verdict = _gemini_json(client, prompt, 0.2)
+    except Exception as e:  # noqa: BLE001 -- facultatif : jamais bloquant
+        print(f"    relecture ignorée ({e})")
+        return []
+    problemes = [str(x).strip() for x in verdict.get("problemes") or [] if str(x).strip()]
+    if verdict.get("comprehensible") is False or problemes:
+        print(f"    relecture : {verdict.get('histoire', '')}")
+        return ["relecture : " + " ; ".join(problemes or ["documentaire pas compris du premier coup"])
+                + " -- réécris pour qu'il se comprenne seul"]
+    return []
+
+
 def fusionner_meme_lieu(scenes: list[dict]) -> list[dict]:
     """
     Deux scenes dessinees de suite dans le meme decor, sans ellipse (meme lieu, meme moment) : une seule
@@ -1257,9 +1589,12 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         sans_captures = bool(plan.get("sans_captures"))
         scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks,
                                     wants_proof(fmt) and not sans_captures and not fmt.get("dessin"),
-                                    catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")))
+                                    catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")),
+                                    bool(fmt.get("documentaire")))
         if scenes and not problems and fmt.get("dessin"):
             problems = relecture_dessin(client, data, scenes)
+        elif scenes and not problems and fmt.get("documentaire"):
+            problems = relecture_documentaire(client, data, scenes)
         if scenes:
             # Garde la tentative la plus propre (pas forcement la derniere) si aucune n'est parfaite.
             if best_problems is None or len(problems) <= len(best_problems):
@@ -1271,7 +1606,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
 
     if not best:
         raise RuntimeError(f"Scénario inexploitable après {MAX_ATTEMPTS} tentatives (sujet : {plan['sujet']['texte']})")
-    if plan.get("sans_captures") and not fmt.get("dessin"):
+    if plan.get("sans_captures") and not catalog.sans_capture_seul(fmt):
         for scene in best[1:-1]:
             scene.setdefault("carte", fallback_card(scene["texte"]))
     if cta_enregistre() and not forced:
@@ -1348,6 +1683,8 @@ def plan_fields(plan: dict) -> dict:
             **({"serie_titre": (catalog.dessins().get("serie") or {}).get("titre")}
                if plan["format"].get("dessin") and plan.get("episode") else {}),
             **({"sans_captures": True} if plan.get("sans_captures") else {}),
+            **({"documentaire": True} if plan["format"].get("documentaire") else {}),
+            **({"titre_seul": True} if catalog.sans_capture_seul(plan["format"]) else {}),
             **({"habillage": plan["format"]["habillage"], "habillage_params": plan["format"].get("habillage_params", {})}
                if plan["format"].get("habillage") else {})}
 

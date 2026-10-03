@@ -107,7 +107,10 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
     # dur = duree de la scene : cadence de la frappe au clavier (carte.html),
     # reprise telle quelle par sound_design pour caler les clics.
-    scene_anims = {i: card_spec(scenes[i]["carte"], t_scenes[i]["end"] - t_scenes[i]["start"])
+    # Documentaire : le titre occupe seul l'ecran au debut (voix et 1er plan commencent apres).
+    titre_seul = show_hook and bool(script.get("titre_seul") or script.get("dessin"))
+    scene_anims = {i: card_spec(scenes[i]["carte"], t_scenes[i]["end"] - t_scenes[i]["start"],
+                                catalog.TITRE_DESSIN_S if i == 0 and titre_seul else 0.0)
                    for i in card_scenes}
     last = len(t_scenes) - 1
     chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
@@ -176,8 +179,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         assemble_args += ["--ambiance", script["ambiance"]]
     if script.get("mots_cles"):
         assemble_args += ["--keywords", "|".join(script["mots_cles"])]
-    if show_hook and script.get("dessin"):
-        # Dessin anime : le titre occupe seul l'ecran (voix et scene commencent apres, cf. 2_generate_voice.py).
+    if titre_seul:
+        # Dessin anime, documentaire : le titre occupe seul l'ecran (voix et scene commencent apres, cf. 2_generate_voice.py).
         assemble_args += ["--hook-text", script["accroche_ecran"], "--hook-plein",
                           "--hook-duration", f"{catalog.TITRE_DESSIN_S:.2f}"]
     elif show_hook:
@@ -235,12 +238,17 @@ def fallback_title(texte: str, max_words: int = 9) -> str:
     return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
 
 
-def card_spec(card: dict, duration: float) -> str:
+def card_spec(card: dict, duration: float, delai: float = 0.0) -> str:
     """
     Carte du scenario -> "gabarit?params" (type -> gabarit, listes en a|b|c ;
     etapes d'un schema en "icone:legende", messages en "r:texte" / "m:texte").
     """
     template = catalog.CARD_TYPES.get(card.get("type", "texte"), "carte")
+    if template == "documentaire":   # plan de documentaire : tout le plan en un JSON (assets/anim/documentaire.html)
+        plan = {k: v for k, v in card.items() if k != "type"}
+        if delai:
+            plan["delai"] = delai
+        return "documentaire?" + urlencode({"plan": json.dumps(plan, ensure_ascii=False, separators=(",", ":")), "dur": f"{duration:.2f}"})
     params = {}
     for key, value in card.items():
         if key == "type":
@@ -321,17 +329,17 @@ def main():
                               "instagram (legende .instagram.txt + couverture .jpg), carrousel (carrousel 4:5) ; "
                               "ou all (defaut)")
     args = parser.parse_args()
-    if args.format and catalog.get_format(args.format).get("dessin") and args.capture_mode != "aucune":
-        print(f"Format dessin anime '{args.format}' : --capture-mode aucune impose (aucune capture de l'app)")
+    if args.format and catalog.sans_capture_seul(catalog.get_format(args.format)) and args.capture_mode != "aucune":
+        print(f"Format dessine '{args.format}' (dessin anime, documentaire) : --capture-mode aucune impose (aucune capture de l'app)")
         args.capture_mode = "aucune"
     if args.plan and args.capture_mode != "aucune":  # un reel dessin anime dans le plan (console) : meme regle que --format
         try:
             dessin_plan = [it.get("format") for it in json.loads(args.plan)
-                           if isinstance(it, dict) and it.get("format") in {f["id"] for f in catalog.formats() if f.get("dessin")}]
+                           if isinstance(it, dict) and it.get("format") in {f["id"] for f in catalog.formats() if catalog.sans_capture_seul(f)}]
         except (ValueError, AttributeError):
             dessin_plan = []  # plan illisible : 1_generate_script.py le signalera
         if dessin_plan:
-            print(f"Format dessin anime '{dessin_plan[0]}' dans --plan : --capture-mode aucune impose (aucune capture de l'app)")
+            print(f"Format dessine '{dessin_plan[0]}' dans --plan : --capture-mode aucune impose (aucune capture de l'app)")
             args.capture_mode = "aucune"
     if args.capture_mode != "aucune" and not args.saas_url:
         parser.error("--saas-url est obligatoire, sauf avec --capture-mode aucune")

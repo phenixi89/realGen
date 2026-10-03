@@ -499,6 +499,22 @@ droite, `{expr,geste}` optionnel, 6 répliques au plus), `gauche` / `droite` (pe
 python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&repliques=g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}" --duration 9 --out /tmp/dialogue.mp4
 ```
 
+
+### Format `documentaire_nature` (en cours : non testé de bout en bout)
+
+Faux documentaire animalier : une voix off posée (Charon) observe le candidat comme un animal dans son habitat et donne un
+vrai conseil d'emploi. Titre plein écran 1 s (comme le dessin animé : `titre_seul`, silence de 1 s en tête de la voix), puis
+3 plans + l'appel à l'action. Un plan = une carte `documentaire` (`assets/anim/documentaire.html`, code dans
+`assets/anim/documentaire/`) : un paysage en silhouettes (`habitat` : savane, forêt, désert, montagne, mare ; `moment` : aube,
+jour, crépuscule, nuit), des animaux animés (suricate, lion, girafe, éléphant, tortue, autruche, paon, gnou, oiseaux), une
+caméra (`cadre` large/moyen/serre, `mouvement` fixe/avant/arrière/droite/gauche) et une légende (nom, faux nom latin, détail),
+sous grain de pellicule et viseur de caméra. Le catalogue est `catalog/documentaire.json` (ids vérifiés contre le code par
+`catalog.py`). Réservé à `--capture-mode aucune` ; thèmes `doc_savane` et `doc_nuit` (réservés à ce format, `formats` dans
+`themes.json`), musiques `documentaire_savane` et `documentaire_nuit`, voix limitée par `voix` du format. Écriture :
+`DOC_ECRITURE` (`1_generate_script.py`), contrôles `documentaire_texte_problems` (titre de 6 mots, phrase exacte entre
+« guillemets », pas de teaser, plans variés, OpusCV seulement dans l'appel à l'action) et relecture `relecture_documentaire`.
+À faire : aperçus de la console (`python scripts/apercus.py`), premier run du workflow, réglage du débit de voix.
+
 ## Ligne éditoriale : le catalogue (`catalog/`)
 
 Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre** (sérieux ou humour) et

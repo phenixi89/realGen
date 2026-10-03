@@ -38,9 +38,10 @@ CARD_MODES = ("aucune", "autorisees", "majoritaires")
 CARD_STYLES = ("normal", "mythe", "realite", "avant", "apres")
 CARD_EFFECTS = ("standard", "frappe", "suspense")
 # Type de carte -> gabarit assets/anim/<gabarit>.html
+DOC_JS = ROOT / "assets" / "anim" / "documentaire"
 CARD_TYPES = {"texte": "carte", "chiffre": "chiffre", "comparaison": "comparaison", "liste": "liste",
               "schema": "schema", "conversation": "conversation", "scan": "scan", "impact": "impact",
-              "meme": "meme"}
+              "meme": "meme", "documentaire": "documentaire"}
 # Marque dessinee sur la derniere etape d'une carte schema (assets/anim/schema.html).
 SCHEMA_MARKS = ("entoure", "barre", "coche")
 ICONS_JS = ROOT / "assets" / "anim" / "icones.js"
@@ -103,6 +104,27 @@ def _types_dessin_js() -> dict[str, set[str]]:
     return {"fonds": set(re.findall(r'\breg\("([a-z_]+)"', fonds_js)),
             "objets": set(re.findall(r'^\s+([a-z_]+): \{ nom:', modeles, re.M))
             | set(re.findall(r'(?:\breg|Dessin\.enregistrer)\("([a-z_]+)"', autres))}
+
+
+def documentaire() -> dict:
+    """Documentaire animalier (catalog/documentaire.json) : habitats, moments, especes, cadres, mouvements."""
+    return _load("documentaire")
+
+
+def _types_documentaire_js() -> dict[str, set[str]]:
+    """Ids enregistres dans le code du documentaire : habitats (fonds.js), moments (MOMENTS), especes (especes.js)."""
+    fonds_js = (DOC_JS / "fonds.js").read_text(encoding="utf-8")
+    esp_js = (DOC_JS / "especes.js").read_text(encoding="utf-8")
+    moments = fonds_js[fonds_js.index("Doc.MOMENTS = {"):fonds_js.index("};", fonds_js.index("Doc.MOMENTS = {"))]
+    habitats = fonds_js[fonds_js.index("const HAB = {"):fonds_js.index("// Monte le decor")]
+    return {"habitats": set(re.findall(r'^    ([a-z_]+)\(L, M, rand\) \{', habitats, re.M)),
+            "moments": set(re.findall(r'^    ([a-z_]+): *\{ ciel:', moments, re.M)),
+            "especes": set(re.findall(r'\breg\("([a-z_]+)"', esp_js))}
+
+
+def sans_capture_seul(fmt: dict) -> bool:
+    """Format dont tous les plans sont dessines (dessin anime, documentaire) : --capture-mode aucune seulement."""
+    return bool(fmt.get("dessin") or fmt.get("documentaire"))
 
 
 def personnages() -> dict[str, dict]:
@@ -367,8 +389,10 @@ def default_tone() -> str:
     return _load("voix")["ton_par_defaut"]
 
 
-def pick_voice(history: list[dict], rng: random.Random) -> dict:
-    return weighted_pick(voices(), _recent(history, "voix", config().get("historique_voix", 2)), rng)
+def pick_voice(history: list[dict], rng: random.Random, fmt: dict | None = None) -> dict:
+    """Voix tiree en rotation ; un format a "voix" (documentaire : voix posee) n'utilise que celles-la."""
+    pool = [v for v in voices() if not (fmt and fmt.get("voix")) or v["id"] in fmt["voix"]] or voices()
+    return weighted_pick(pool, _recent(history, "voix", config().get("historique_voix", 2)), rng)
 
 
 def get_voice(vid: str) -> dict:
@@ -501,7 +525,7 @@ def pick_format(history: list[dict], rng: random.Random, registre: str | None = 
     if sans_captures:
         pool = [f for f in pool if sans_captures_ok(f)] or [f for f in formats() if sans_captures_ok(f)]
     else:  # dessin anime : plans dessines, aucune capture -> --capture-mode aucune seulement
-        pool = [f for f in pool if not f.get("dessin")] or [f for f in formats() if not f.get("dessin")]
+        pool = [f for f in pool if not sans_capture_seul(f)] or [f for f in formats() if not sans_capture_seul(f)]
     available = {f["categorie"] for f in pool}
     targets = {cat: share for cat, share in config()["mix"].items() if cat in available} or {pool[0]["categorie"]: 1.0}
     # Mix mesure au sein du registre : sinon les reels humour absorberaient le retard de toute une categorie.
@@ -536,8 +560,11 @@ def pick_hook(history: list[dict], rng: random.Random, registre: str | None = No
     return weighted_pick(pool, _recent(history, "hook", config()["historique_hooks"]), rng)
 
 
-def pick_theme(history: list[dict], rng: random.Random, registre: str | None = None) -> dict:
-    pool = [t for t in themes() if registre is None or registre in registres_of(t, REGISTRES)] or themes()
+def pick_theme(history: list[dict], rng: random.Random, registre: str | None = None, fmt: dict | None = None) -> dict:
+    """Theme tire (registre, format) : un theme a "formats" est reserve a ces formats, et un format a "themes" n'utilise que ceux-la."""
+    ok = [t for t in themes() if (not t.get("formats") or (fmt and fmt["id"] in t["formats"]))
+          and (not (fmt and fmt.get("themes")) or t["id"] in fmt["themes"])] or themes()
+    pool = [t for t in ok if registre is None or registre in registres_of(t, REGISTRES)] or ok
     return weighted_pick(pool, _recent(history, "theme", config()["historique_themes"]), rng)
 
 
@@ -580,8 +607,8 @@ def validate_plan(plan: list, sans_captures: bool = False) -> list[str]:
         if item.get("format") and item["format"] in {f["id"] for f in formats()}:
             if sans_captures and not sans_captures_ok(get_format(item["format"])):
                 errors.append(f"reel {i} : format '{item['format']}' impossible sans captures")
-            if not sans_captures and get_format(item["format"]).get("dessin"):
-                errors.append(f"reel {i} : format dessin anime '{item['format']}' : capture 'aucune' uniquement")
+            if not sans_captures and sans_capture_seul(get_format(item["format"])):
+                errors.append(f"reel {i} : format dessine '{item['format']}' (dessin anime, documentaire) : capture 'aucune' uniquement")
             if get_format(item["format"]).get("dessin") and item.get("hook") in {x["id"] for x in hooks()} \
                     and not hook_ok_dessin(get_hook(item["hook"])):
                 errors.append(f"reel {i} : accroche '{item['hook']}' impossible en dessin anime (dite par un personnage)")
@@ -769,6 +796,35 @@ def validate_catalog() -> list[str]:
             errors.append("dessins.json : le format dessin anime demande au moins 2 personnages")
     except (ValueError, OSError, KeyError) as e:
         errors.append(f"dessins.json ou assets/anim/dessin/ illisible : {e}")
+    try:
+        doc, js = documentaire(), _types_documentaire_js()
+        for kind, cle in (("habitats", "habitats"), ("moments", "moments"), ("especes", "especes")):
+            declares = {x["id"] for x in doc[cle]}
+            for missing in sorted(declares - js[kind]):
+                errors.append(f"documentaire.json : {kind} '{missing}' absent du code assets/anim/documentaire/")
+            for extra in sorted(js[kind] - declares):
+                errors.append(f"documentaire.json : {kind} '{extra}' existe dans le code mais n'est pas declare")
+        for h in doc["habitats"]:
+            if not set(h.get("moments") or []) <= {m["id"] for m in doc["moments"]}:
+                errors.append(f"documentaire.json : habitat {h['id']} : moment inconnu")
+        for e in doc["especes"]:
+            if not (e.get("nom") and e.get("sens")):
+                errors.append(f"documentaire.json : espece {e['id']} : nom et sens obligatoires")
+        for f in formats():
+            if f.get("documentaire") and (f.get("dessin") or f.get("cartes") == "aucune"):
+                errors.append(f"format {f['id']} : documentaire incompatible avec dessin et cartes 'aucune'")
+            for vid in f.get("voix") or []:
+                if vid not in {v["id"] for v in voices()}:
+                    errors.append(f"format {f['id']} : voix '{vid}' absente de voix.json")
+            for tid in f.get("themes") or []:
+                if tid not in {t["id"] for t in themes()}:
+                    errors.append(f"format {f['id']} : theme '{tid}' absent de themes.json")
+        for t in themes():
+            for fid in t.get("formats") or []:
+                if fid not in {f["id"] for f in formats()}:
+                    errors.append(f"theme {t['id']} : format '{fid}' absent de formats.json")
+    except (ValueError, OSError, KeyError) as e:
+        errors.append(f"documentaire.json ou assets/anim/documentaire/ illisible : {e}")
     if not (FONTS_DIR / HAND_FONT).exists():
         errors.append(f"police manuscrite {HAND_FONT} absente de assets/fonts/")
     if set(config()["mix"]) - {f["categorie"] for f in formats()}:
@@ -781,6 +837,8 @@ def apercus_manquants() -> list[str]:
     base = ROOT / "docs" / "apercus"
     attendus = ([f"themes/{t['id']}.jpg" for t in themes()] + [f"cartes/{k}.jpg" for k in CARD_TYPES]
                 + [f"decors/{f['id']}.jpg" for f in dessins()["fonds"]] + [f"personnages/{p}.jpg" for p in personnages()]
+                + [f"habitats/{h['id']}.jpg" for h in documentaire()["habitats"]]
+                + [f"animaux/{e['id']}.jpg" for e in documentaire()["especes"]]
                 + [f"voix/{v}.mp3" for v in dict.fromkeys([v["id"] for v in voices()] + [p["voix"] for p in personnages().values()])]
                 + [f"ambiances/{a['id']}.mp3" for a in ambiances()])
     return [a for a in attendus if not (base / a).exists()]
