@@ -354,6 +354,12 @@ assis) :
   scène, qui ne répète pas le titre. Pas de nombre annoncé dans le titre (« 3 conseils », « 2 questions »). Contrôlé par
   `dessin_texte_problems` (nouvelle tentative sinon) ; les accroches `chiffre` et `liste_numerotee` sont exclues du
   dessin animé.
+- **Ouverture et solution enseignée** (contrôlés par `dessin_texte_problems`, nouvelle tentative sinon) : la 1re
+  réplique fait 8 mots au plus, nomme de qui ou de quoi on parle (pas de « lui », « elle », « ça » sans antécédent) et
+  ne partage pas 2 mots clés avec le titre ; aucune réplique ne s'adresse au public (« reste pour… », « abonne-toi »,
+  réservés à la dernière scène) ; au moins une phrase exacte entre « guillemets français » est dite, enseignée par le
+  personnage qui sait (« Écris plutôt : « … » ») sur un exemple précis et réaliste, puis essayée par l'autre. Le titre
+  à l'écran garde son « ? » collé au dernier mot (espace insécable, `hook.html`).
 - **Trame d'histoire** (`trames` de `dessins.json`, une par reel, la moins récemment utilisée ;
   imposable par `--plan` : `"trame"`) : 17 trames : avant / après, ce que pense le recruteur, quiproquo,
   l'erreur en direct, vrai ou faux, le chat juge (running gag), ça aurait pu être pire, la phrase à retenir,
@@ -434,9 +440,12 @@ assis) :
   rendu libre (`DESSIN_CADRAGE`) pour qu'une bulle de 3 lignes reste sous le titre de scène. Une bulle
   s'efface au plus tard quand la suivante s'ouvre. La 1re scène est complète dès la 1re image
   (`"dessine": false`) : c'est l'image qui retient ou fait scroller ; les suivantes se dessinent.
-- **Durée** : le dialogue à deux voix se dit à ~2,3 mots/s (mesuré au run 64 : 78 mots = 33,7 s, voix posées et
-  pauses avant les chutes) ; budget de mots calculé à 2,3 mots/s (`DIALOGUE_WORDS_PER_SECOND` : 25 s ≈ 58 mots, de
-  49 à 64), rappelé à Gemini en nombre de répliques de 6 à 8 mots.
+- **Durée** : la vitesse de la voix varie d'un run à l'autre (2,0 mots/s au run 66, 2,8 au run 65 : tout le texte, CTA
+  compris). `2_generate_voice.py` mesure donc mots dits / durée de l'audio de chaque dessin animé
+  (`output/vitesse_voix.json`, gardé par le cache du workflow) et `1_generate_script.py` cale son budget de mots sur la
+  médiane des 6 dernières mesures (bornée à 1,8–2,9 mots/s ; `DIALOGUE_WORDS_PER_SECOND` = 2,3 tant qu'il n'y a pas de
+  mesure : 25 s ≈ 58 mots, de 49 à 64), rappelé à Gemini en nombre de répliques de 6 à 8 mots. Le ton de la voix du
+  format est vif (répliques enchaînées sans temps mort, une très courte pause avant la chute seulement).
 - **Variété** : un **lieu possible** est proposé à chaque épisode (`pick_lieu` : le décor le moins récemment utilisé,
   mémorisé dans `fonds` de l'historique), à n'utiliser que s'il colle à l'histoire ; **au moins un plan original** par
   reel est exigé (cadre `dessous` ou `epaule`, `"lent": true`, ou split-screen `diptyque.comparer`), sinon nouvelle

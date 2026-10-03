@@ -589,7 +589,7 @@
         "emploi"
       ],
       "structure": "Mini-série dessinée : Léa et Karim (personnages au trait) vivent une VRAIE scène de recherche d'emploi ou de vie professionnelle en 1 à 4 scènes dessinées, une par lieu ou moment (salle d'attente, café, salon, métro, bureau du recruteur, visio...). Le reel est un mini-scénario en 3 actes : (1) l'accroche, dite par un personnage, pose une envie et un obstacle ; (2) Karim tente, ça coince, un retournement apporte UN principe de conseil concret et retenable (une phrase à dire ou à écrire, une règle nommée) ; (3) Karim l'applique et ça marche, puis une chute qui redit le conseil de façon mémorable. Le sujet est le CONSEIL emploi/recrutement, jamais le produit : OpusCV n'apparaît que dans l'appel à l'action final, dit par un personnage pendant que l'écran d'appel à l'action s'affiche. Épisode d'une série : Karim cherche un job, d'épisode en épisode ; l'histoire suit la trame imposée.",
-      "ton": "dialogue vivant et naturel entre deux amis, répliques bien distinctes, petite pause avant chaque chute",
+      "ton": "dialogue vivant et naturel entre deux amis, débit assez vif, les répliques s'enchaînent sans temps mort, une très courte pause seulement avant la chute",
       "serie": true,
       "ambiances": [
         "jazz_cafe",
@@ -602,7 +602,8 @@
         "piano_minimal",
         "lofi_chill",
         "comique_sautillant"
-      ]
+      ],
+      "ton_humour": "pince-sans-rire et complice, avec un sourire dans la voix, débit vif et naturel, répliques enchaînées sans pause entre les personnages, une très courte pause seulement avant la chute"
     }
   ]
 }

@@ -135,8 +135,29 @@ def words_per_second(tone: str = "") -> float:
     return FAST_WORDS_PER_SECOND if re.search(r"rapide|haletant", tone or "", re.I) else WORDS_PER_SECOND
 
 
+VITESSE_VOIX: list[float] = []   # mots/s mesures sur les derniers dessins animes (output/vitesse_voix.json, ecrit par 2_generate_voice.py)
+
+
+def charger_vitesse(chemin: Path) -> None:
+    """Vitesse reelle de la voix des derniers dialogues (mots dits / duree de l'audio, CTA compris)."""
+    VITESSE_VOIX.clear()
+    try:
+        mesures = json.loads(chemin.read_text(encoding="utf-8"))
+        VITESSE_VOIX.extend(float(m["mots"]) / float(m["duree"]) for m in mesures[-6:] if m.get("dessin") and m.get("duree"))
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+
+
+def dialogue_wps() -> float:
+    """Mots par seconde du dialogue : mediane des mesures recentes (bornee 1,8 a 2,9), sinon la valeur par defaut."""
+    if not VITESSE_VOIX:
+        return DIALOGUE_WORDS_PER_SECOND
+    mesures = sorted(VITESSE_VOIX)
+    return min(2.9, max(1.8, mesures[len(mesures) // 2]))
+
+
 def word_budget(duration: int, tone: str = "", dialogue: bool = False) -> tuple[int, int, int]:
-    target = round(duration * (DIALOGUE_WORDS_PER_SECOND if dialogue else words_per_second(tone)))
+    target = round(duration * (dialogue_wps() if dialogue else words_per_second(tone)))
     return target, round(target * 0.85), round(target * 1.12)
 
 
@@ -298,8 +319,13 @@ DRAMATURGIE = """ÉCRITURE : UN PROBLÈME, UNE SOLUTION, EN MOTS SIMPLES (un min
   - CONTEXTE : dans les 2 premières répliques, le spectateur sait QUI a un problème, DANS QUELLE SITUATION (un entretien
     jeudi, un CV envoyé sans réponse, une offre bizarre) et QUEL EST le problème. Jamais de phrase abstraite sans situation ;
   - PROBLÈME (au début) : un problème précis que le spectateur a vécu, montré dans une situation réelle (pas une idée) ;
-  - SOLUTION (au milieu) : UNE seule chose à faire, concrète, avec les mots exacts à dire ou à écrire entre « guillemets
-    français » (la phrase qu'on peut copier), et POURQUOI ça marche en une courte phrase simple ;
+  - SOLUTION ENSEIGNÉE (au milieu) : le personnage qui sait (Léa, le recruteur) dit à l'autre QUOI faire, avec les mots
+    exacts à dire ou à écrire entre « guillemets français » (« Dis plutôt : « … » »), sur un exemple PRÉCIS et réaliste
+    (une entreprise, un poste, un détail inventés), jamais une phrase générique (« J'adore votre projet ») ; l'autre
+    l'essaie ensuite. Une seule chose à faire, et POURQUOI ça marche en une courte phrase simple ;
+  - Jamais de phrase adressée au public dans l'histoire (« reste pour la formule », « attends la suite ») ;
+  - OUVERTURE : la 1re réplique fait 8 mots au plus, dit de qui ou de quoi on parle (pas de « lui », « ça », « elle » sans
+    qu'on sache), et ne reprend pas les mots du titre ;
   - RÉSULTAT (à la fin) : on VOIT que ça marche (gros plan, mail reçu, tampon), puis une chute courte ;
   - Karim vit le problème et agit ; Léa l'aide en 1 ou 2 répliques à la fois, comme une amie, jamais en donnant un cours :
     jamais plus de 2 répliques de suite par le même personnage ;
@@ -970,6 +996,15 @@ def completer_mise_en_scene(scenes: list[dict]) -> None:
         d["actions"].insert(parler[0] + 1, {"qui": ecoute, "action": posture, "avec": True})
 
 
+MOTS_VIDES = {"comment", "pourquoi", "quand", "avec", "sans", "pour", "dans", "votre", "vous", "tout", "cette", "faire",
+              "plus", "mais", "donc", "alors", "sont", "fait", "quel", "quelle", "quoi", "est-ce"}
+
+
+def _mots_cles(texte: str) -> set[str]:
+    """Mots porteurs de sens d'une phrase (5 lettres et plus, hors mots vides), sans accents ni majuscules."""
+    return {m for m in catalog._norm(texte).split() if len(m) >= 5 and m not in MOTS_VIDES}
+
+
 NOMBRE_ANNONCE = re.compile(r"\b\d+\s*(questions?|conseils?|erreurs?|astuces?|phrases?|raisons?|r[èe]gles?|[ée]tapes?|signes?|secrets?)\b", re.I)
 
 
@@ -981,6 +1016,20 @@ def dessin_texte_problems(scenes: list[dict], data: dict) -> list[str]:
     if not reps:
         return problems
     premiere = reps[0][1]
+    if len(premiere.split()) > 8:
+        problems.append(f"la 1re réplique fait {len(premiere.split())} mots : 8 au plus, l'ouverture doit être immédiate")
+    if re.search(r"\b(lui|leur|leurs|elle|elles|ils|ça|cela|celui|celle)\b|\bil (?!y a|faut)", premiere.lower()):
+        problems.append("la 1re réplique parle de « lui / elle / ça » sans qu'on sache de qui ou de quoi : nomme la personne "
+                        "ou la chose (le recruteur, mon CV, cette offre)")
+    commun = _mots_cles(premiere) & _mots_cles(accroche)
+    if len(commun) >= 2:
+        problems.append(f"la 1re réplique et le titre à l'écran disent la même chose (mots communs : {', '.join(sorted(commun))}) : "
+                        "la bulle fait avancer la scène, le titre pose la question")
+    if any(re.search(r"reste pour|rester jusqu|attends la suite|jusqu'à la fin|dans cette vid[ée]o|abonne|like|commente", t, re.I) for _, t in reps):
+        problems.append("une réplique s'adresse au public (« reste pour… », « attends la suite », « abonne-toi ») : "
+                        "les personnages parlent entre eux, l'appel à l'action est réservé à la dernière scène")
+    if not any("«" in t and "»" in t for _, t in reps):
+        problems.append("aucune phrase exacte entre « guillemets français » : un personnage dit à l'autre quoi dire ou écrire, mot pour mot")
     if not (accroche.endswith("?") or "?" in premiere):
         problems.append("l'accroche doit être une QUESTION : soit le titre à l'écran (accroche_ecran), soit la 1re réplique "
                         "posée par un personnage dans la situation")
@@ -1364,6 +1413,7 @@ def main():
             print(f"REPRISE: {out_path} existe deja avec {len(existing)} scenario(s), on saute (--force pour regenerer)")
             return
 
+    charger_vitesse(out_path.parent / "vitesse_voix.json")
     history_path = out_path.parent / "content_history.json"
     history = catalog.load_history(history_path)
     rng = random.Random(args.seed)

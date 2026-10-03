@@ -97,6 +97,20 @@ DEFAULT_TONE = "chaleureux, dynamique, rythme rapide pour réseaux sociaux"
 SILENT_WPS = 3.0
 
 
+def noter_vitesse(chemin: Path, script: dict, mp3_path: Path) -> None:
+    """Mots dits / duree de l'audio d'un dessin anime : 1_generate_script.py cale son budget de mots dessus."""
+    try:
+        duree = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(mp3_path)],
+                                     capture_output=True, text=True, check=True).stdout.strip())
+        mots = sum(len(s.get("texte", "").split()) for s in script.get("scenes", []))
+        mesures = json.loads(chemin.read_text(encoding="utf-8")) if chemin.exists() else []
+        mesures.append({"dessin": True, "mots": mots, "duree": round(duree, 2), "registre": script.get("registre")})
+        chemin.write_text(json.dumps(mesures[-20:], ensure_ascii=False), encoding="utf-8")
+        print(f"    vitesse : {mots} mots en {duree:.1f} s = {mots / duree:.2f} mots/s (budget des prochains dessins animes)")
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass  # mesure facultative : jamais bloquante
+
+
 def synthesize(client, text: str, voice: str, pcm_path: Path, tone: str = DEFAULT_TONE):
     """Une voix : appelle Gemini TTS et ecrit le wav."""
     from google.genai import types
@@ -378,6 +392,8 @@ def main():
                 convert_to_mp3(wav_path, mp3_path)
             text_path.write_text(fingerprint, encoding="utf-8")
             print(f"    -> {mp3_path}")
+            if not args.silent and script.get("dessin"):
+                noter_vitesse(out_dir.parent / "vitesse_voix.json", script, mp3_path)
         except Exception as e:
             print(f"    ERREUR sur le script {i}: {e}", file=sys.stderr)
 
