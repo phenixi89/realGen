@@ -1,0 +1,202 @@
+<!doctype html>
+<!--
+  Plan "leçon" (format éducatif) : une page de carnet de cours — papier à
+  carreaux, marge rouge, onglet « LEÇON n/N » et barre de progression. La
+  phrase s'écrit mot à mot (cadence calée sur la durée de la scène), les mots
+  entre *étoiles* passent au surligneur puis se soulignent au feutre rouge ;
+  une icône dessinée à la main illustre l'idée, un post-it porte la note.
+  Parametres : texte (mots clés entre *...*), n, total, icone (icones.js),
+  note (post-it, optionnel), dur. Palette propre au gabarit (ne suit pas le thème).
+  mode (la « planche ») : lecon (defaut) | retenir (encadré « À RETENIR » qui se
+  tamponne ; param retenir) | liste (texte = titre, points a|b|c cochés un à un)
+  | avant_apres (avant, apres : l'erreur se barre, la correction apparaît)
+  | chiffre (grand = le chiffre, entouré au feutre ; legende) | quiz (texte =
+  question, points = 3 réponses, bonne = 1..3) | etapes (texte = titre, points =
+  3 étapes numérotées).
+  Instants partages avec scripts/sound_design.py : FIRST_AT, wordGap(n).
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  @font-face{font-family:LFTitle;src:url("../fonts/Poppins-ExtraBold.ttf")}
+  @font-face{font-family:LFHand;src:url("../fonts/Kalam-Bold.ttf")}
+  :root{--papier:#f5f0e3;--encre:#16213e;--marqueur:#ffd84a;--rouge:#e63946;--bleu:#2f5bd8}
+  html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--papier);color:var(--encre)}
+  #page{position:absolute;inset:0;transform-origin:50% 55%;
+    background:
+      linear-gradient(90deg,transparent 150px,var(--rouge) 150px,var(--rouge) 154px,transparent 154px),
+      repeating-linear-gradient(0deg,transparent 0,transparent 71px,rgba(47,91,216,.22) 71px,rgba(47,91,216,.22) 73px),
+      radial-gradient(ellipse at 50% 40%,#fbf8ef,#ece4d0);
+    box-shadow:inset 0 0 160px rgba(120,90,40,.22)}
+  .trou{position:absolute;left:46px;width:44px;height:44px;border-radius:50%;background:#2a2a35;box-shadow:inset 0 5px 10px #000a,0 2px 0 #fff8}
+  #onglet{position:absolute;left:190px;top:150px;display:flex;align-items:center;gap:26px;font-family:LFTitle,sans-serif}
+  #onglet b{background:var(--encre);color:#fff;font-size:44px;letter-spacing:.08em;padding:16px 34px;border-radius:14px;transform:rotate(-2deg);box-shadow:6px 8px 0 var(--marqueur)}
+  #prog{display:flex;gap:12px}
+  #prog i{display:block;width:70px;height:16px;border-radius:9px;background:rgba(22,33,62,.18)}
+  #prog i.on{background:var(--bleu)}
+  #texte{position:absolute;left:190px;right:90px;top:430px;font-family:LFTitle,sans-serif;font-size:112px;line-height:1.3;letter-spacing:-.01em}
+  #texte .m{display:inline-block;position:relative;margin:0 .18em 0 0;white-space:nowrap}
+  #texte .m span{position:relative;z-index:1}
+  #texte .m.cle::before{content:"";position:absolute;left:-.12em;right:-.1em;top:.22em;bottom:.04em;background:var(--marqueur);
+    transform:scaleX(var(--hl,0));transform-origin:0 50%;border-radius:.1em;z-index:0}
+  #texte .m.cle::after{content:"";position:absolute;left:-.05em;right:-.05em;bottom:-.1em;height:.11em;background:var(--rouge);
+    transform:scaleX(var(--ul,0));transform-origin:0 50%;border-radius:.1em;z-index:2}
+  svg{position:absolute;left:0;top:0;overflow:visible}
+  #extra{position:absolute;inset:0}
+  #extra .abs{position:absolute;left:190px;right:90px;font-family:LFTitle,sans-serif}
+  mark{background:linear-gradient(var(--marqueur),var(--marqueur)) 0 85%/calc(var(--hl,1) * 100%) 62% no-repeat;color:inherit;padding:0 .08em;margin:0 -.08em}
+  .rw{display:flex;align-items:center;gap:40px;font-size:80px;line-height:1.15;margin-bottom:96px}
+  .box{flex:none;width:104px;height:104px;border:7px solid var(--encre);border-radius:16px;background:#fffdf6;display:flex;align-items:center;justify-content:center;
+    font-family:LFHand,cursive;font-size:104px;color:var(--rouge);line-height:1}
+  .box i{font-style:normal;display:block;margin-top:-10px}
+  .carte{position:absolute;left:190px;width:760px;padding:70px 50px 50px;background:#fffdf6;box-shadow:0 20px 40px rgba(0,0,0,.25);font-family:LFTitle,sans-serif;font-size:84px;line-height:1.2}
+  .carte .tab{position:absolute;left:34px;top:-30px;color:#fff;font-size:40px;letter-spacing:.1em;padding:8px 28px;border-radius:10px}
+  .carte .bar{position:absolute;left:30px;right:30px;top:58%;height:12px;background:var(--rouge);transform-origin:0 50%;border-radius:6px}
+  .lettre{flex:none;width:110px;height:110px;border-radius:50%;background:var(--encre);color:#fff;display:flex;align-items:center;justify-content:center;font-size:66px}
+  .opt{display:flex;align-items:center;gap:34px;font-size:70px;line-height:1.15;padding:30px 36px;margin-bottom:56px;background:#fffdf6;border:6px solid var(--encre);border-radius:22px;box-shadow:8px 10px 0 rgba(22,33,62,.25)}
+  .fl{font-family:LFHand,cursive;font-size:110px;color:var(--rouge);text-align:center;line-height:1}
+  #note{position:absolute;right:80px;top:1500px;width:440px;padding:36px 34px 40px;background:#fff27a;transform:rotate(3.5deg);
+    font-family:LFHand,cursive;font-size:50px;line-height:1.2;box-shadow:0 22px 40px rgba(0,0,0,.28);color:#2a2a35}
+  #note::before{content:"";position:absolute;left:50%;top:-22px;width:150px;height:44px;margin-left:-75px;background:rgba(255,255,255,.55);transform:rotate(-3deg);border:1px solid #0001}
+  #retenir{position:absolute;left:190px;right:90px;top:1180px;padding:70px 60px 60px;background:var(--encre);color:#fff;border-radius:30px;
+    font-family:LFTitle,sans-serif;font-size:62px;line-height:1.25;box-shadow:14px 18px 0 var(--marqueur);display:none}
+  #retenir small{position:absolute;left:50px;top:-34px;background:var(--rouge);color:#fff;font-size:42px;letter-spacing:.1em;padding:10px 30px;border-radius:10px;transform:rotate(-3deg)}
+  #tampon{position:absolute;right:70px;top:1010px;font-family:LFTitle,sans-serif;font-size:76px;color:var(--rouge);border:10px solid var(--rouge);
+    border-radius:20px;padding:6px 30px;transform:rotate(-12deg);opacity:0;letter-spacing:.06em;display:none}
+</style></head><body>
+<div id="page">
+  <div class="trou" style="top:330px"></div><div class="trou" style="top:930px"></div><div class="trou" style="top:1530px"></div>
+  <div id="onglet"><b id="lab"></b><div id="prog"></div></div>
+  <div id="texte"></div>
+  <div id="extra"></div>
+  <svg id="svg" width="1080" height="1920"></svg>
+  <div id="note"></div>
+  <div id="retenir"><small>À RETENIR</small><span id="rtxt"></span></div>
+  <div id="tampon">À SAVOIR</div>
+</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script src="icones.js"></script>
+<script src="sketch.js"></script>
+<script>
+  const DUR = num("dur", 4);
+  // Constantes partagees avec scripts/sound_design.py (lecon).
+  const FIRST_AT = 0.35;
+  const wordGap = (n) => Math.min(0.32, Math.max(0.14, (DUR * 0.62 - FIRST_AT) / Math.max(n, 1)));
+  const mode = param("mode", "lecon"), EXTRA = ["liste", "avant_apres", "chiffre", "quiz", "etapes"].includes(mode), N = Math.round(num("n", 1)), TOTAL = Math.max(Math.round(num("total", 3)), N);
+  const texte = frTypo(param("texte", "Un *CV* lisible bat un CV joli")), icone = param("icone", ""), note = param("note", "");
+  document.getElementById("lab").textContent = mode === "retenir" ? "EN RÉSUMÉ" : `LEÇON ${N}/${TOTAL}`;
+  const prog = document.getElementById("prog");
+  for (let i = 1; i <= TOTAL; i++) { const d = document.createElement("i"); if (i <= N) d.className = "on"; prog.appendChild(d); }
+
+  // Mots : « *cle* » passe au surligneur ; un mot clé peut contenir des espaces (tout le groupe reste lié).
+  const zone = document.getElementById("texte"), mots = [];
+  (EXTRA ? [] : (texte.match(/\*[^*]+\*[^\s*]*|[^\s*]+/g) || [])).forEach((tok) => {
+    const cle = tok.startsWith("*"), s = document.createElement("span"), m = document.createElement("span");
+    m.className = "m" + (cle ? " cle" : ""); s.textContent = cle ? tok.replace(/\*/g, "") : tok; m.appendChild(s); zone.appendChild(m); mots.push(m);
+  });
+  if (mots.length > 12) zone.style.fontSize = "88px";
+  if (mode === "retenir") { zone.style.fontSize = "84px"; zone.style.top = "380px"; }
+  const noteEl = document.getElementById("note");
+  if (note && mode !== "retenir" && !EXTRA) noteEl.textContent = note; else noteEl.style.display = "none";
+  if (mode === "retenir") { document.getElementById("retenir").style.display = "block"; document.getElementById("tampon").style.display = "block";
+    document.getElementById("rtxt").textContent = param("retenir", "Une page, un message, un chiffre."); }
+
+  // Planches « extra » : construit le DOM dans #extra, planifie l'animation sur tl, renvoie l'instant de fin.
+  function buildExtra(tl) {
+    const ex = document.getElementById("extra");
+    const esc = (v) => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    const hl = (v) => esc(frTypo(v)).replace(/\*([^*]+)\*/g, "<mark>$1</mark>");
+    const add = (cls, html, css) => { const d = document.createElement("div"); d.className = cls; d.innerHTML = html; Object.assign(d.style, css || {}); ex.appendChild(d); return d; };
+    const points = param("points", "Premier point|Deuxième point|Troisième point").split("|").filter(Boolean).slice(0, 5);
+    const marks = (el, t) => el.querySelectorAll("mark").forEach((m, i) => tl.fromTo(m, { "--hl": 0 }, { "--hl": 1, duration: 0.3, ease: "power2.out", immediateRender: false }, t + 0.1 + i * 0.15));
+    const gapOf = (n) => Math.min(0.8, Math.max(0.3, (DUR * 0.72 - FIRST_AT) / Math.max(n, 1)));
+    let end = FIRST_AT;
+    const titre = (top, size) => { const h = add("abs", hl(texte), { top: top + "px", fontSize: (size || 96) + "px", lineHeight: 1.2 });
+      tl.from(h, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT); marks(h, FIRST_AT + 0.1); return h; };
+    if (mode === "liste") {
+      titre(400, 108);
+      const g = gapOf(points.length), box = add("abs", "", { top: "900px" });
+      points.forEach((pt, i) => { const t = FIRST_AT + 0.5 + i * g;
+        const row = document.createElement("div"); row.className = "rw"; row.innerHTML = `<span class="box"><i>✓</i></span><span>${hl(pt)}</span>`; box.appendChild(row);
+        tl.from(row, { x: -90, opacity: 0, duration: 0.3, ease: "power3.out" }, t)
+          .fromTo(row.querySelector("i"), { scale: 0, rotation: -40 }, { scale: 1, rotation: 0, duration: 0.25, ease: "back.out(3)", immediateRender: false }, t + 0.2);
+        marks(row, t + 0.2); end = t + 0.6; });
+    } else if (mode === "avant_apres") {
+      const c1 = add("carte", `<span class="tab" style="background:var(--rouge)">AVANT</span>${hl(param("avant", "Je postule partout avec le même CV"))}<span class="bar"></span>`, { top: "480px", transform: "rotate(-2deg)" });
+      const c2 = add("carte", `<span class="tab" style="background:#1f9d55">APRÈS</span>${hl(param("apres", "J'adapte mon CV à chaque offre"))}`, { top: "1130px", transform: "rotate(1.5deg)" });
+      const fl = add("fl", "↓", { position: "absolute", left: 0, right: 0, top: "960px" });
+      tl.from(c1, { y: 120, opacity: 0, rotation: -8, duration: 0.4, ease: "back.out(1.8)" }, FIRST_AT)
+        .fromTo(c1.querySelector(".bar"), { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "power2.inOut", immediateRender: false }, FIRST_AT + 1.0)
+        .to(c1, { opacity: 0.55, duration: 0.2 }, FIRST_AT + 1.3)
+        .from(fl, { y: -40, opacity: 0, duration: 0.25 }, FIRST_AT + 1.4)
+        .from(c2, { y: 160, opacity: 0, rotation: 8, scale: 0.85, duration: 0.45, ease: "back.out(2)" }, FIRST_AT + 1.55);
+      marks(c2, FIRST_AT + 2.0); end = FIRST_AT + 2.4;
+    } else if (mode === "chiffre") {
+      const g = add("abs", esc(param("grand", "75%")), { top: "560px", fontSize: "400px", lineHeight: 1, textAlign: "center", left: "90px" });
+      const lg = add("abs", hl(param("legende", texte)), { top: "1090px", fontSize: "88px", lineHeight: 1.2, textAlign: "center" });
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("width", 1080); svg.setAttribute("height", 1920);
+      svg.innerHTML = '<ellipse cx="540" cy="770" rx="470" ry="260" fill="none" stroke="#e63946" stroke-width="16" stroke-linecap="round" stroke-dasharray="2400" stroke-dashoffset="2400" transform="rotate(-3 540 770)"/>';
+      ex.appendChild(svg);
+      tl.from(g, { scale: 2.2, opacity: 0, duration: 0.35, ease: "power4.in" }, FIRST_AT)
+        .to(svg.firstChild, { attr: { "stroke-dashoffset": 0 }, duration: 0.55, ease: "power2.inOut" }, FIRST_AT + 0.5)
+        .from(lg, { y: 50, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT + 0.9);
+      marks(lg, FIRST_AT + 1.2); end = FIRST_AT + 1.8;
+    } else if (mode === "quiz") {
+      const q = add("abs", hl(texte), { top: "400px", fontSize: "100px", lineHeight: 1.2 });
+      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
+      const bonne = Math.min(Math.max(Math.round(num("bonne", 1)), 1), points.length), g = gapOf(points.length + 2), box = add("abs", "", { top: "960px" }), opts = [];
+      points.forEach((pt, i) => { const o = document.createElement("div"); o.className = "opt";
+        o.innerHTML = `<span class="lettre">${"ABCDE"[i]}</span><span>${hl(pt)}</span>`; box.appendChild(o); opts.push(o);
+        tl.from(o, { x: 120, opacity: 0, duration: 0.3, ease: "power3.out" }, FIRST_AT + 0.5 + i * g * 0.7); });
+      const rev = FIRST_AT + 0.5 + points.length * g * 0.7 + 0.6;
+      opts.forEach((o, i) => { if (i === bonne - 1)
+        tl.to(o, { backgroundColor: "#b9f0c8", borderColor: "#1f9d55", scale: 1.05, duration: 0.25, ease: "back.out(3)" }, rev);
+        else tl.to(o, { opacity: 0.3, duration: 0.25 }, rev); });
+      end = rev + 0.6;
+    } else if (mode === "etapes") {
+      titre(400, 100);
+      const g = gapOf(3), steps = points.slice(0, 3);
+      steps.forEach((pt, i) => { const t = FIRST_AT + 0.5 + i * g;
+        const r = add("abs rw", `<span class="lettre" style="box-shadow:6px 8px 0 var(--marqueur)">${i + 1}</span><span>${hl(pt)}</span>`, { top: (900 + i * 330) + "px", marginBottom: 0 });
+        tl.from(r, { x: -100, opacity: 0, duration: 0.3, ease: "power3.out" }, t); marks(r, t + 0.2);
+        if (i < steps.length - 1) { const a = add("fl", "↓", { position: "absolute", left: "190px", width: "110px", top: (1020 + i * 330) + "px", fontSize: "90px" }); tl.from(a, { y: -30, opacity: 0, duration: 0.2 }, t + 0.35); }
+        end = t + 0.6; });
+    }
+    return end;
+  }
+
+  Promise.all([FONTS_READY, HAND_READY, document.fonts.load("100px LFTitle"), document.fonts.load("50px LFHand")]).then(() => {
+    const tl = gsap.timeline({ paused: true })
+      .from("#page", { y: 90, rotation: 1.5, opacity: 0, duration: 0.32, ease: "power3.out" }, 0)
+      .from("#onglet", { x: -120, opacity: 0, duration: 0.35, ease: "back.out(2)" }, 0.08);
+    const gap = wordGap(mots.length);
+    mots.forEach((m, i) => {
+      const t = FIRST_AT + i * gap;
+      tl.from(m, { y: 34, opacity: 0, scale: 0.8, duration: 0.22, ease: "back.out(2.4)" }, t);
+      if (m.classList.contains("cle")) {
+        tl.fromTo(m, { "--hl": 0 }, { "--hl": 1, duration: 0.28, ease: "power2.out", immediateRender: false }, t + 0.12)
+          .fromTo(m, { "--ul": 0 }, { "--ul": 1, duration: 0.22, ease: "power2.out", immediateRender: false }, t + 0.36);
+      }
+    });
+    let fin = FIRST_AT + mots.length * gap;
+    if (EXTRA) fin = buildExtra(tl);
+    let draw = null, sk = null;
+    if (icone && ICONES[icone] && mode !== "retenir" && !EXTRA) {
+      sk = new Sketch(document.getElementById("svg"), { seed: icone.length * 5 + texte.length });
+      sk.icon(icone, 330, 1330, 460, { width: 11, color: "#16213e" });
+      draw = sk.draw; draw.timeScale(Math.max(1, draw.duration() / Math.max(DUR * 0.55, 0.8)));
+      tl.add(draw, Math.min(fin + 0.1, DUR * 0.4));
+    }
+    if (note && mode !== "retenir" && !EXTRA) tl.from("#note", { y: 120, rotation: -8, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2)" }, fin + 0.15);
+    if (mode === "retenir") {
+      tl.from("#retenir", { y: 140, opacity: 0, duration: 0.4, ease: "power3.out" }, fin + 0.1)
+        .fromTo("#tampon", { opacity: 0, scale: 2.6 }, { opacity: 1, scale: 1, duration: 0.22, ease: "power4.in", immediateRender: false }, fin + 0.7);
+    }
+    tl.to("#page", { scale: 1.025, duration: Math.max(DUR, 3), ease: "sine.inOut" }, 0.3);
+    expose(tl);
+    const baseSeek = window.seek;
+    if (sk) window.seek = (t) => { baseSeek(t); sk.updatePen((t - Math.min(fin + 0.1, DUR * 0.4)) * draw.timeScale()); };
+    window.DURATION = Math.max(DUR, fin + 1.0);
+    window.seek(0);
+  });
+</script></body></html>

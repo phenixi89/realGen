@@ -1,0 +1,186 @@
+<!doctype html>
+<!--
+  Plan "pop" (format éducatif, 2e look) : planche de comics pop-art — rayons
+  tournants, trame de points, cases à bords épais. Les mots de la phrase
+  claquent un à un (contour noir + ombre décalée) ; les mots entre *étoiles*
+  prennent une explosion colorée. Un bandeau « FAIT n » en haut, une bulle de
+  BD pour la note, une icône dessinée en bas. mode=choc : un seul gros chiffre
+  ou mot plein cadre (param grand), avec onomatopée.
+  Parametres : texte (mots clés entre *...*), n, icone (icones.js), note
+  (bulle, optionnel), onomatopee (ex : BAM), dur.
+  mode (la « planche ») : fait (defaut) | choc (grand = chiffre plein cadre)
+  | versus (titre_g/gauche contre titre_d/droite) | top (texte = titre, points
+  a|b|c numérotés) | quiz (texte = question, points = 3 réponses, bonne = 1..3)
+  | bande (texte = titre du bandeau, points = 3 cases de BD).
+  Palette propre au gabarit. Instants partages avec scripts/sound_design.py :
+  FIRST_AT, wordGap(n).
+-->
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  @font-face{font-family:PPTitle;src:url("../fonts/Bangers-Regular.ttf")}
+  @font-face{font-family:PPText;src:url("../fonts/Poppins-ExtraBold.ttf")}
+  :root{--encre:#111;--rose:#ff2e93;--cyan:#19d3ff;--jaune:#ffe135;--violet:#5b2bff}
+  html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--violet)}
+  #fond{position:absolute;inset:-600px;background:repeating-conic-gradient(from 0deg at 50% 50%,#6a3dff 0 7.5deg,#4b1fe0 7.5deg 15deg)}
+  #trame{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.22) 5px,transparent 5.5px);background-size:44px 44px;
+    -webkit-mask-image:linear-gradient(180deg,#000,transparent 60%,#000);mask-image:linear-gradient(180deg,#000,transparent 60%,#000)}
+  #case{position:absolute;left:60px;right:60px;top:300px;bottom:300px;border:16px solid var(--encre);border-radius:18px;
+    background:#fff9d6;box-shadow:22px 22px 0 var(--encre);transform:rotate(-1.2deg)}
+  #case::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,46,147,.28) 6px,transparent 6.5px);background-size:36px 36px;
+    -webkit-mask-image:linear-gradient(135deg,#000,transparent 55%);mask-image:linear-gradient(135deg,#000,transparent 55%)}
+  #bandeau{position:absolute;left:30px;top:-56px;background:var(--jaune);border:12px solid var(--encre);padding:0 40px;font-family:PPTitle,sans-serif;
+    font-size:84px;line-height:1.25;letter-spacing:.04em;transform:rotate(-3deg);box-shadow:10px 10px 0 var(--encre)}
+  #texte{position:absolute;left:60px;right:60px;top:110px;font-family:PPTitle,sans-serif;font-size:152px;line-height:1.12;color:var(--encre);letter-spacing:.015em}
+  #texte .m{display:inline-block;position:relative;margin:0 .2em 0 0;white-space:nowrap}
+  #texte .m span{position:relative;z-index:1}
+  #texte .m.cle span{color:#fff;-webkit-text-stroke:.07em var(--encre);paint-order:stroke fill;text-shadow:.06em .06em 0 var(--encre)}
+  #texte .m.cle::before{content:"";position:absolute;left:-.3em;right:-.3em;top:-.12em;bottom:-.06em;background:var(--rose);z-index:0;
+    clip-path:polygon(0 50%,6% 14%,16% 30%,26% 0,38% 24%,50% 2%,62% 24%,74% 0,84% 30%,94% 14%,100% 50%,94% 86%,84% 70%,74% 100%,62% 76%,50% 98%,38% 76%,26% 100%,16% 70%,6% 86%);
+    transform:scale(var(--b,0)) rotate(var(--r,0deg))}
+  svg{position:absolute;left:0;top:0;overflow:visible}
+  #extra{position:absolute;inset:0;font-family:PPText,sans-serif}
+  .bord{border:12px solid var(--encre);box-shadow:10px 10px 0 var(--encre)}
+  .pv{position:absolute;left:34px;right:34px;height:470px;padding:34px 40px;box-sizing:border-box}
+  .pv h3{margin:0 0 14px;font-family:PPTitle,sans-serif;font-size:96px;font-weight:400;line-height:1;letter-spacing:.03em;color:#fff;-webkit-text-stroke:8px var(--encre);paint-order:stroke fill}
+  .pv p{margin:0;font-size:66px;line-height:1.2;font-weight:800;color:var(--encre)}
+  #vs{position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;background:var(--jaune);display:flex;align-items:center;justify-content:center;
+    font-family:PPTitle,sans-serif;font-size:150px;color:var(--encre);z-index:3;
+    clip-path:polygon(50% 0,60% 18%,80% 6%,78% 28%,100% 30%,86% 48%,100% 66%,78% 70%,80% 94%,60% 82%,50% 100%,40% 82%,20% 94%,22% 70%,0 66%,14% 48%,0 30%,22% 28%,20% 6%,40% 18%)}
+  .rang{position:absolute;left:34px;right:34px;display:flex;align-items:center;gap:30px}
+  .rang .num{flex:none;width:190px;height:190px;background:var(--jaune);display:flex;align-items:center;justify-content:center;font-family:PPTitle,sans-serif;font-size:150px;line-height:1;
+    color:var(--encre);border:12px solid var(--encre);border-radius:50%;box-shadow:8px 8px 0 var(--encre)}
+  .rang .tx{flex:1;padding:26px 34px;background:#fff;font-size:62px;line-height:1.2;font-weight:800}
+  .bt{position:absolute;left:34px;right:34px;display:flex;align-items:center;gap:30px;padding:0 36px;font-size:62px;line-height:1.15;font-weight:800}
+  .bt b{flex:none;width:100px;height:100px;border-radius:50%;background:var(--encre);color:#fff;display:flex;align-items:center;justify-content:center;font-family:PPTitle,sans-serif;font-size:76px;font-weight:400}
+  .qm{position:absolute;right:20px;top:-40px;font-family:PPTitle,sans-serif;font-size:520px;line-height:1;color:var(--rose);-webkit-text-stroke:16px var(--encre);paint-order:stroke fill;text-shadow:14px 14px 0 var(--encre)}
+  .qq{position:absolute;left:44px;right:44px;font-size:68px;line-height:1.2;font-weight:800}
+  .cs{position:absolute;left:34px;right:34px;height:270px;background:#fff;display:flex;align-items:center;gap:30px;padding:0 36px;box-sizing:border-box}
+  .cs .big{flex:none;font-family:PPTitle,sans-serif;font-size:230px;line-height:1;color:var(--rose);-webkit-text-stroke:10px var(--encre);paint-order:stroke fill;text-shadow:8px 8px 0 var(--encre);width:150px;text-align:center}
+  .cs .cap{flex:1;font-size:62px;line-height:1.2;font-weight:800}
+  #bulle{position:absolute;right:30px;bottom:40px;width:500px;padding:30px 36px;background:#fff;border:10px solid var(--encre);border-radius:36px;
+    font-family:PPText,sans-serif;font-size:46px;line-height:1.2;transform:rotate(2.5deg);box-shadow:10px 10px 0 var(--encre)}
+  #bulle::after{content:"";position:absolute;left:50px;top:-52px;width:50px;height:60px;background:#fff;border-left:10px solid var(--encre);
+    transform:skewX(-28deg);clip-path:polygon(0 0,100% 100%,0 100%)}
+  #ono{position:absolute;left:-10px;bottom:60px;font-family:PPTitle,sans-serif;font-size:150px;color:var(--cyan);-webkit-text-stroke:10px var(--encre);
+    paint-order:stroke fill;transform:rotate(-10deg);text-shadow:10px 10px 0 var(--encre);opacity:0;z-index:5}
+  #grand{position:absolute;left:0;right:0;top:300px;text-align:center;font-family:PPTitle,sans-serif;font-size:420px;line-height:1;color:var(--jaune);
+    -webkit-text-stroke:22px var(--encre);paint-order:stroke fill;text-shadow:22px 22px 0 var(--encre);display:none}
+  #pied{position:absolute;left:0;right:0;bottom:70px;text-align:center;font-family:PPTitle,sans-serif;font-size:62px;letter-spacing:.08em;color:#fff;
+    -webkit-text-stroke:8px var(--encre);paint-order:stroke fill}
+</style></head><body>
+<div id="fond"></div><div id="trame"></div>
+<div id="case">
+  <div id="bandeau"></div>
+  <div id="texte"></div>
+  <div id="extra"></div>
+  <div id="grand"></div>
+  <svg id="svg" width="960" height="1320"></svg>
+  <div id="bulle"></div>
+  <div id="ono"></div>
+</div>
+<div id="pied">OPUSCV · CV QUI PASSE LES FILTRES</div>
+<script src="vendor/gsap.min.js"></script>
+<script src="common.js"></script>
+<script src="icones.js"></script>
+<script src="sketch.js"></script>
+<script>
+  const DUR = num("dur", 4);
+  // Constantes partagees avec scripts/sound_design.py (pop).
+  const FIRST_AT = 0.3;
+  const wordGap = (n) => Math.min(0.3, Math.max(0.13, (DUR * 0.6 - FIRST_AT) / Math.max(n, 1)));
+  const mode = param("mode", "fait"), EXTRA = ["versus", "top", "quiz", "bande"].includes(mode), N = Math.round(num("n", 1));
+  const texte = frTypo(param("texte", "Ton CV est *invisible* pour les robots")), icone = param("icone", ""), note = param("note", "");
+  const ono = param("onomatopee", mode === "choc" ? "BAM !" : "");
+  document.getElementById("bandeau").textContent = { choc: "ALERTE !", versus: "DUEL !", top: "LE TOP", quiz: "QUIZ !", bande: "EN 3 CASES" }[mode] || `FAIT N°${N}`;
+  const zone = document.getElementById("texte"), mots = [];
+  (EXTRA ? [] : (texte.match(/\*[^*]+\*[^\s*]*|[^\s*]+/g) || [])).forEach((tok) => {
+    const cle = tok.startsWith("*"), s = document.createElement("span"), m = document.createElement("span");
+    m.className = "m" + (cle ? " cle" : ""); s.textContent = cle ? tok.replace(/\*/g, "") : tok; m.appendChild(s); zone.appendChild(m); mots.push(m);
+  });
+  if (mots.length > 8) zone.style.fontSize = "124px";
+  const noteEl = document.getElementById("bulle");
+  if (note && !EXTRA) noteEl.textContent = note; else noteEl.style.display = "none";
+  const onoEl = document.getElementById("ono"); onoEl.textContent = ono;
+  const grand = document.getElementById("grand");
+  if (mode === "choc") { grand.style.display = "block"; grand.textContent = param("grand", "75%"); zone.style.top = "760px"; zone.style.fontSize = "112px"; }
+
+  // Planches « extra » : DOM dans #extra, animation sur tl, renvoie l'instant de fin.
+  function buildExtra(tl) {
+    const ex = document.getElementById("extra");
+    const esc = (v) => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    const txt = (v) => esc(frTypo(v)).replace(/\*([^*]+)\*/g, '<span style="background:var(--jaune);padding:0 .12em">$1</span>');
+    const add = (cls, html, css) => { const d = document.createElement("div"); d.className = cls; d.innerHTML = html; Object.assign(d.style, css || {}); ex.appendChild(d); return d; };
+    const points = param("points", "Premier point|Deuxième point|Troisième point").split("|").filter(Boolean).slice(0, 3);
+    const pop = (el, t, rot) => tl.from(el, { scale: 0.2, opacity: 0, rotation: rot || -10, duration: 0.32, ease: "back.out(2.6)" }, t);
+    const gapOf = (n) => Math.min(0.8, Math.max(0.3, (DUR * 0.7 - FIRST_AT) / Math.max(n, 1)));
+    let end = FIRST_AT;
+    const head = (top, size) => { const h = add("", txt(texte), { position: "absolute", left: "44px", right: "44px", top: top + "px", fontFamily: "PPTitle,sans-serif",
+      fontSize: (size || 130) + "px", lineHeight: 1.1, color: "#111" }); tl.from(h, { y: -50, opacity: 0, duration: 0.3, ease: "power3.out" }, FIRST_AT); return h; };
+    if (mode === "versus") {
+      const a = add("pv bord", `<h3>${txt(param("titre_g", "AVANT"))}</h3><p>${txt(param("gauche", "Un CV pour toutes les offres"))}</p>`, { top: "80px", background: "#ff9bcb", transform: "rotate(-2deg)" });
+      const b = add("pv bord", `<h3>${txt(param("titre_d", "APRÈS"))}</h3><p>${txt(param("droite", "Un CV adapté à chaque offre"))}</p>`, { top: "720px", background: "#9ae9ff", transform: "rotate(2deg)" });
+      const vs = add("", "VS"); vs.id = "vs";
+      tl.from(a, { x: -700, rotation: -12, duration: 0.4, ease: "power3.out" }, FIRST_AT).from(b, { x: 700, rotation: 12, duration: 0.4, ease: "power3.out" }, FIRST_AT + 0.35);
+      tl.fromTo(vs, { scale: 3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.25, ease: "power4.in", immediateRender: false }, FIRST_AT + 0.9);
+      tl.to(vs, { rotation: 8, duration: 0.5, yoyo: true, repeat: 3, ease: "sine.inOut" }, FIRST_AT + 1.2);
+      end = FIRST_AT + 1.5;
+    } else if (mode === "top") {
+      head(70, 120);
+      const g = gapOf(points.length);
+      points.forEach((pt, i) => { const t = FIRST_AT + 0.4 + i * g;
+        const r = add("rang", `<span class="num">${i + 1}</span><span class="tx bord">${txt(pt)}</span>`, { top: (400 + i * 290) + "px" });
+        tl.from(r, { x: 800, rotation: 6, opacity: 0, duration: 0.35, ease: "back.out(1.6)" }, t); end = t + 0.5; });
+    } else if (mode === "quiz") {
+      const qm = add("qm", "?"); tl.from(qm, { scale: 3, rotation: 20, opacity: 0, duration: 0.35, ease: "power4.in" }, FIRST_AT);
+      const q = add("qq", txt(texte), { top: "420px" }); tl.from(q, { y: 50, opacity: 0, duration: 0.3 }, FIRST_AT + 0.25);
+      const bonne = Math.min(Math.max(Math.round(num("bonne", 1)), 1), points.length), g = gapOf(points.length + 2), opts = [], cols = ["#ff9bcb", "#9ae9ff", "#fff27a"];
+      points.forEach((pt, i) => { const o = add("bt bord", `<b>${"ABC"[i]}</b><span>${txt(pt)}</span>`, { top: (660 + i * 175) + "px", background: cols[i], height: "140px", padding: "0 36px" });
+        opts.push(o); pop(o, FIRST_AT + 0.6 + i * g * 0.6, i % 2 ? 6 : -6); });
+      const rev = FIRST_AT + 0.6 + points.length * g * 0.6 + 0.6;
+      opts.forEach((o, i) => { if (i === bonne - 1) tl.to(o, { backgroundColor: "#7dff9a", scale: 1.06, duration: 0.25, ease: "back.out(3)" }, rev); else tl.to(o, { opacity: 0.3, duration: 0.2 }, rev); });
+      const ok = add("", "BRAVO !", { position: "absolute", left: "30px", bottom: "20px", fontFamily: "PPTitle,sans-serif", fontSize: "120px", color: "#7dff9a", WebkitTextStroke: "10px #111", paintOrder: "stroke fill", textShadow: "10px 10px 0 #111", transform: "rotate(-8deg)" });
+      tl.fromTo(ok, { opacity: 0, scale: 3 }, { opacity: 1, scale: 1, duration: 0.22, ease: "power4.in", immediateRender: false }, rev + 0.15);
+      end = rev + 0.8;
+    } else if (mode === "bande") {
+      head(100, 100);
+      const g = gapOf(points.length);
+      points.forEach((pt, i) => { const t = FIRST_AT + 0.4 + i * g;
+        const c = add("cs bord", `<span class="big">${i + 1}</span><span class="cap">${txt(pt)}</span>`, { top: (330 + i * 300) + "px", transform: `rotate(${i % 2 ? 1.5 : -1.5}deg)`, background: ["#fff9d6", "#e4f8ff", "#ffe3f1"][i] });
+        tl.from(c, { scale: 0.3, opacity: 0, rotation: i % 2 ? 12 : -12, duration: 0.35, ease: "back.out(2.4)" }, t); end = t + 0.5; });
+    }
+    return end;
+  }
+
+  Promise.all([FONTS_READY, HAND_READY, document.fonts.load("100px PPTitle"), document.fonts.load("50px PPText")]).then(() => {
+    const tl = gsap.timeline({ paused: true })
+      .to("#fond", { rotation: 40, duration: 14, ease: "none" }, 0)
+      .from("#case", { scale: 0.6, rotation: -8, opacity: 0, duration: 0.32, ease: "back.out(2.2)" }, 0)
+      .from("#bandeau", { x: -200, opacity: 0, duration: 0.3, ease: "back.out(2)" }, 0.12)
+      .from("#pied", { y: 100, opacity: 0, duration: 0.3 }, 0.2);
+    if (mode === "choc") tl.from("#grand", { scale: 2.8, opacity: 0, rotation: 8, duration: 0.3, ease: "power4.in" }, 0.25);
+    const gap = wordGap(mots.length), t0 = mode === "choc" ? 0.7 : FIRST_AT;
+    mots.forEach((m, i) => {
+      const t = t0 + i * gap;
+      tl.from(m, { scale: 2.4, opacity: 0, y: -40, rotation: (i % 2 ? 5 : -5), duration: 0.18, ease: "power4.in" }, t);
+      if (m.classList.contains("cle"))
+        tl.fromTo(m, { "--b": 0, "--r": "-12deg" }, { "--b": 1, "--r": "0deg", duration: 0.3, ease: "back.out(3)", immediateRender: false }, t + 0.1);
+    });
+    let fin = t0 + mots.length * gap;
+    if (EXTRA) fin = buildExtra(tl);
+    let draw = null, sk = null;
+    if (icone && ICONES[icone] && mode !== "choc" && !EXTRA) {
+      sk = new Sketch(document.getElementById("svg"), { seed: icone.length * 3 + texte.length });
+      sk.icon(icone, 290, 840, 540, { width: 13, color: "#111111" });
+      draw = sk.draw; draw.timeScale(Math.max(1, draw.duration() / Math.max(DUR * 0.5, 0.8)));
+      tl.add(draw, Math.min(fin + 0.05, DUR * 0.4));
+    }
+    if (note && !EXTRA) tl.from("#bulle", { scale: 0, rotation: -15, opacity: 0, duration: 0.35, ease: "back.out(2.6)", transformOrigin: "10% 0%" }, fin + 0.15);
+    if (ono) tl.fromTo("#ono", { opacity: 0, scale: 3 }, { opacity: 1, scale: 1, duration: 0.2, ease: "power4.in", immediateRender: false }, mode === "choc" ? 0.55 : fin + 0.5);
+    tl.to("#case", { y: -14, duration: Math.max(DUR, 3), ease: "sine.inOut" }, 0.4);
+    expose(tl);
+    const baseSeek = window.seek;
+    if (sk) window.seek = (t) => { baseSeek(t); sk.updatePen((t - Math.min(fin + 0.05, DUR * 0.4)) * draw.timeScale()); };
+    window.DURATION = Math.max(DUR, fin + 1.0);
+    window.seek(0);
+  });
+</script></body></html>

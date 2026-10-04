@@ -516,6 +516,19 @@ la phrase exacte entre « guillemets » : c'est un **objet obtenu** ; (3) Martin
 python scripts/run_pipeline.py --n 1 --format jeu_quete --duration 25
 ```
 
+### Gabarits éducatifs `lecon` et `pop` (en cours, pas encore branchés au pipeline)
+
+Deux looks de vidéo éducative (texte mot à mot, mots clés entre `*étoiles*`), chacun avec plusieurs
+« planches » choisies par le paramètre `mode`. Ils se testent seuls avec `render_js_anim.py` ; ils ne sont pas
+encore référencés par un format du catalogue, ni par `sound_design.py` (les instants `FIRST_AT` / `wordGap`
+sont déjà isolés dans chaque fichier pour ça). Palette propre à chaque gabarit (ils ne suivent pas le thème).
+
+- `lecon.html` — « carnet de cours » (papier à carreaux, surligneur, post-it) : `lecon` (défaut), `retenir`,
+  `liste`, `avant_apres`, `chiffre`, `quiz`, `etapes`.
+- `pop.html` — « comics pop-art » (rayons, trame, bulles) : `fait` (défaut), `choc`, `versus`, `top`, `quiz`, `bande`.
+- Paramètres communs : `texte`, `n`, `icone` (id de `icones.js`), `note`, `dur` ; selon la planche : `points` (a|b|c),
+  `bonne` (1..3), `grand`, `legende`, `avant`/`apres`, `gauche`/`droite`, `titre_g`/`titre_d`, `retenir`, `onomatopee`.
+
 ### Gabarit `dialogue` : deux personnages qui se parlent
 
 Raccourci pour un dialogue simple : `repliques` = `g:texte {expr,geste}|d:texte|…` (`g` = gauche, `d` =
