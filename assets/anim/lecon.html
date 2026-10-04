@@ -5,7 +5,7 @@
   phrase s'écrit mot à mot (cadence calée sur la durée de la scène), les mots
   entre *étoiles* passent au surligneur puis se soulignent au feutre rouge ;
   une icône dessinée à la main illustre l'idée, un post-it porte la note.
-  Parametres : texte (mots clés entre *...*), n, total, icone (icones.js),
+  Parametres : texte (mots clés entre *...*), n, total, resume (étiquette « EN RÉSUMÉ » au lieu de « LEÇON n/N »), icone (icones.js),
   note (post-it, optionnel), dur. Palette propre au gabarit (ne suit pas le thème).
   mode (la « planche ») : lecon (defaut) | retenir (encadré « À RETENIR » qui se
   tamponne ; param retenir) | liste (texte = titre, points a|b|c cochés un à un)
@@ -43,7 +43,7 @@
   svg{position:absolute;left:0;top:0;overflow:visible}
   #extra{position:absolute;inset:0}
   #extra .abs{position:absolute;left:190px;right:90px;font-family:LFTitle,sans-serif}
-  mark{background:linear-gradient(var(--marqueur),var(--marqueur)) 0 85%/calc(var(--hl,1) * 100%) 62% no-repeat;color:inherit;padding:0 .08em;margin:0 -.08em}
+  mark{background:linear-gradient(var(--marqueur),var(--marqueur)) 0 85%/calc(var(--hl,0) * 100%) 62% no-repeat;color:inherit;padding:0 .08em;margin:0 -.08em}
   .rw{display:flex;align-items:center;gap:40px;font-size:80px;line-height:1.15;margin-bottom:96px}
   .box{flex:none;width:104px;height:104px;border:7px solid var(--encre);border-radius:16px;background:#fffdf6;display:flex;align-items:center;justify-content:center;
     font-family:LFHand,cursive;font-size:104px;color:var(--rouge);line-height:1}
@@ -84,9 +84,10 @@
   const wordGap = (n) => Math.min(0.32, Math.max(0.14, (DUR * 0.62 - FIRST_AT) / Math.max(n, 1)));
   const mode = param("mode", "lecon"), EXTRA = ["liste", "avant_apres", "chiffre", "quiz", "etapes"].includes(mode), N = Math.round(num("n", 1)), TOTAL = Math.max(Math.round(num("total", 3)), N);
   const texte = frTypo(param("texte", "Un *CV* lisible bat un CV joli")), icone = param("icone", ""), note = param("note", "");
-  document.getElementById("lab").textContent = mode === "retenir" ? "EN RÉSUMÉ" : `LEÇON ${N}/${TOTAL}`;
+  const RESUME = mode === "retenir" || param("resume", "") !== "";
+  document.getElementById("lab").textContent = RESUME ? "EN RÉSUMÉ" : `LEÇON ${N}/${TOTAL}`;
   const prog = document.getElementById("prog");
-  for (let i = 1; i <= TOTAL; i++) { const d = document.createElement("i"); if (i <= N) d.className = "on"; prog.appendChild(d); }
+  for (let i = 1; i <= TOTAL; i++) { const d = document.createElement("i"); if (RESUME || i <= N) d.className = "on"; prog.appendChild(d); }
 
   // Mots : « *cle* » passe au surligneur ; un mot clé peut contenir des espaces (tout le groupe reste lié).
   const zone = document.getElementById("texte"), mots = [];

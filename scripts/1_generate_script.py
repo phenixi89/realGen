@@ -644,6 +644,10 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
     en bas la chute en grosses lettres ; 1 à 3 par reel) :
     "carte": {"type": "meme", "haut": "la situation, 12 mots max (ex : Quand l'offre demande 5 ans d'expérience pour un stage)",
               "icone": "<id d'icône>", "bas": "la chute, 7 mots max (ex : Moi, né l'an dernier)"}""" if humour else ""
+    quiz_card = """
+  - carte quiz (une question à choix, 3 réponses courtes de 1 à 4 mots dont UNE seule juste ; la bonne réponse
+    se révèle à la fin ; 1 par reel au plus, jamais une réponse piège inventée sur OpusCV) :
+    "carte": {{"type": "quiz", "question": "4 à 9 mots", "reponses": ["...", "...", "..."], "bonne": 1 à 3}}""" if fmt.get("quiz") else ""
     sans_captures = bool(plan.get("sans_captures"))
     if fmt["cartes"] == "aucune" and not sans_captures:
         cards_rule = "Aucune scène n'a de carte : chaque scène montre uniquement la fonctionnalité."
@@ -679,7 +683,7 @@ capture, qui résume visuellement ce que dit la voix :
     total, repris de "offre_emploi") :
     "carte": {{"type": "scan", "surtitre": "...", "titre": "...", "trouves": ["..."], "manquants": ["..."]}}
   - carte impact (LA phrase à retenir, qui claque mot par mot en très grand ; UNE SEULE par reel, pour le
-    message clé) : "carte": {{"type": "impact", "texte": "4 à 9 mots", "mot": "le mot fort de la phrase"}}{meme_card}
+    message clé) : "carte": {{"type": "impact", "texte": "4 à 9 mots", "mot": "le mot fort de la phrase"}}{meme_card}{quiz_card}
 Varie les types de cartes dans un même reel quand le contenu s'y prête.
 Effets d'apparition du titre (cartes texte) : "frappe" (tapé au clavier, idéal pour une citation, une formulation
 de CV ou une phrase d'offre), "suspense" (titre caché puis révélé avec un impact : UNE SEULE fois
@@ -893,6 +897,7 @@ def clean_card(raw) -> dict | None:
       conversation: surtitre, contact, messages[2-4] {de: recruteur|moi, texte}   (conversation.html)
       scan        : surtitre, titre, trouves, manquants (6 mots-cles max)  (scan.html)
       impact      : texte, mot                              (impact.html)
+      quiz        : question, reponses[2-3], bonne (1..3)   (lecon.html / pop.html ; liste.html sinon)
       meme        : haut, bas, icone                        (meme.html)
     Champs obligatoires absents -> None (scene sans carte).
     """
@@ -947,6 +952,15 @@ def clean_card(raw) -> dict | None:
         if not txt("texte"):
             return None
         return {"type": "impact", "texte": txt("texte"), "mot": txt("mot")}
+    if kind == "quiz":
+        reponses = [str(r).strip() for r in raw.get("reponses") or [] if str(r).strip()][:3]
+        if not txt("question") or len(reponses) < 2:
+            return None
+        try:
+            bonne = int(raw.get("bonne"))
+        except (TypeError, ValueError):
+            bonne = 1
+        return {"type": "quiz", "question": txt("question"), "reponses": reponses, "bonne": min(max(bonne, 1), len(reponses))}
     if kind == "meme":
         if not txt("haut") or not txt("bas"):
             return None

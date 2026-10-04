@@ -65,6 +65,11 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   dégâts → victoire → niveau). Un niveau ou un boss = un enregistrement dans `assets/anim/jeu/` **et** une entrée dans
   `catalog/jeu.json` (`catalog.py` vérifie), puis `python scripts/apercus.py`. Texte du jeu en 8 px (grille de la police
   Press Start 2P), jamais d'autre taille que 8 ou 16.
+- Vidéo éducative (`cours_eclair`, thèmes `carnet_cours` et `pop_art`, gabarits `assets/anim/lecon.html` et `pop.html`) : un
+  thème à `cartes_gabarit` dessine toutes les cartes avec sa planche (`catalog.gabarit_carte`, paramètre `mode`) ; ajouter une
+  planche = le `mode` dans le gabarit **et** son entrée dans `gabarit_carte` **et** ses instants dans `sound_design.educatif_cues`
+  (identiques des deux côtés) ; mêmes règles d'écriture que les autres formats à cartes (phrases courtes, pas de suspense, pas de
+  chiffre inventé sur OpusCV).
 - Sons enregistrés (`assets/sfx/`) : licence CC0 uniquement, source notée dans `assets/sfx/LICENCES.md`.
 - Polices : uniquement sous licence libre (OFL), licence copiée dans `assets/fonts/`.
 - Après un run du workflow `generate-reels.yml`, l'analyse se fait sur l'artefact `output`

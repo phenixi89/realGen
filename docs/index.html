@@ -346,6 +346,7 @@ const FORMAT_CARTE = [[/meme|starter/, "meme"], [/mythe|vrai_ou_faux|red_green|a
 function fmtImg(f){
   if (f.dessin) return img("decors/cafe.jpg", "🎬");
   if (f.jeu) return img("boss/robot_trieur.jpg", "🎮");
+  if (f.id === "cours_eclair") return img("themes/carnet_cours.jpg", "🎓");
   if (f.cartes === "aucune") return `<div class="ph">📱</div>`;
   const k = (FORMAT_CARTE.find(([re]) => re.test(f.id)) || [, "texte"])[1];
   return img(`cartes/${k}.jpg`, "🃏");

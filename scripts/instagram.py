@@ -88,6 +88,10 @@ def slide_from_card(card: dict) -> dict | None:
         return {"titre": card.get("texte", ""), "texte": ""}
     if kind == "meme":
         return {"titre": card.get("haut", ""), "texte": card.get("bas", "")}
+    if kind == "quiz":
+        reponses = card.get("reponses") or []
+        bonne = min(max(int(card.get("bonne") or 1), 1), max(len(reponses), 1)) - 1
+        return {"titre": card.get("question", ""), "texte": f"Réponse : {reponses[bonne]}" if reponses else ""}
     return None
 
 

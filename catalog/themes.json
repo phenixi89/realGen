@@ -1,5 +1,5 @@
 {
-  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'. dessin : support des cartes dessinees a la main et des annotations (assets/anim/sketch.js) -- 'papier' (feutre sur feuille), 'craie' (tableau), 'neon' (traits lumineux). registres : registres d'ecriture ou le theme peut etre tire ('serieux' et/ou 'humour', absent = les deux).",
+  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'. dessin : support des cartes dessinees a la main et des annotations (assets/anim/sketch.js) -- 'papier' (feutre sur feuille), 'craie' (tableau), 'neon' (traits lumineux). registres : registres d'ecriture ou le theme peut etre tire ('serieux' et/ou 'humour', absent = les deux). cartes_gabarit : 'lecon' (carnet de cours, assets/anim/lecon.html) ou 'pop' (comics pop-art, assets/anim/pop.html) -- les cartes du scenario y sont dessinees avec la planche qui correspond a leur type (catalog.gabarit_carte) ; palette des gabarits propre a eux, les couleurs du theme servent aux sous-titres, a la couverture et au CTA.",
   "themes": [
     {
       "id": "violet_nuit",
@@ -651,6 +651,93 @@
       "registres": [
         "serieux",
         "humour"
+      ]
+    },
+    {
+      "id": "carnet_cours",
+      "nom": "Carnet de cours",
+      "poids": 2,
+      "formats": [
+        "cours_eclair"
+      ],
+      "cartes_gabarit": "lecon",
+      "couleurs": {
+        "primaire": "#2f5bd8",
+        "secondaire": "#e63946",
+        "fond": "#f5f0e3",
+        "texte": "#16213e",
+        "surligne": "#ffd84a",
+        "contour": "#16213e",
+        "pastille": "#16213e",
+        "mot_cle": "#e63946"
+      },
+      "police_titre": "Poppins-ExtraBold.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {
+        "taille": 60,
+        "majuscules": false,
+        "contour": 6,
+        "style": "boite"
+      },
+      "ambiance": "piano_minimal",
+      "ambiances": [
+        "piano_minimal",
+        "acoustique",
+        "lofi_chill",
+        "ambient_matin"
+      ],
+      "transitions": [
+        "slideleft",
+        "smoothleft",
+        "fade"
+      ],
+      "dessin": "papier",
+      "registres": [
+        "serieux"
+      ]
+    },
+    {
+      "id": "pop_art",
+      "nom": "Comics pop-art",
+      "poids": 2,
+      "formats": [
+        "cours_eclair"
+      ],
+      "cartes_gabarit": "pop",
+      "couleurs": {
+        "primaire": "#ff2e93",
+        "secondaire": "#19d3ff",
+        "fond": "#4b1fe0",
+        "texte": "#ffffff",
+        "surligne": "#ffe135",
+        "contour": "#111111",
+        "pastille": "#111111",
+        "mot_cle": "#ffe135"
+      },
+      "police_titre": "Bangers-Regular.ttf",
+      "police_texte": "Poppins-ExtraBold.ttf",
+      "sous_titres": {
+        "taille": 68,
+        "majuscules": true,
+        "contour": 8,
+        "style": "karaoke"
+      },
+      "ambiance": "pop_energie",
+      "ambiances": [
+        "pop_energie",
+        "house_douce",
+        "comique_sautillant",
+        "minimal_pulse"
+      ],
+      "transitions": [
+        "circleopen",
+        "slideleft",
+        "smoothup",
+        "diagtl"
+      ],
+      "dessin": "papier",
+      "registres": [
+        "serieux"
       ]
     }
   ]

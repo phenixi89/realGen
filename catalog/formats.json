@@ -635,6 +635,31 @@
         "chiptune_quete",
         "chiptune_boss"
       ]
+    },
+    {
+      "id": "cours_eclair",
+      "nom": "Mini-cours éclair",
+      "categorie": "conseil",
+      "poids": 3,
+      "cartes": "majoritaires",
+      "quiz": true,
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "cv",
+        "ats",
+        "lettre",
+        "candidature",
+        "linkedin",
+        "entretien"
+      ],
+      "themes": [
+        "carnet_cours",
+        "pop_art"
+      ],
+      "structure": "Mini-cours éducatif de 30 à 35 secondes, une seule idée. Scène 1 (accroche, sans carte) : le titre-promesse, par exemple « 3 choses qui rendent ton CV invisible ». Puis 3 LEÇONS courtes, chacune une scène-carte d'UNE phrase de 10 mots au plus (mots simples, une idée par phrase) : varie les cartes (texte, chiffre plausible, comparaison avant/après, schéma, liste ; un quiz possible à la place d'une leçon, sa réponse donnée par la voix) ; la voix dit la leçon, la carte la résume en mots clés. Avant-dernière scène (carte impact ou texte) : le PIVOT, une phrase clé qui explique pourquoi on gagne à passer à un outil qui adapte le CV à chaque offre, sans chiffre inventé sur OpusCV. Dernière scène : CTA. Les leçons sont données d'un trait, sans suspense, la phrase exacte à retenir est dite tout de suite.",
+      "ton": "pédagogue, clair et dynamique, comme un prof de lycée sympa qui va droit au but ; débit posé, courtes pauses entre les leçons"
     }
   ]
 }

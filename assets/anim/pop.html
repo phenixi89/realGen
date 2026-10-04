@@ -33,6 +33,7 @@
   #texte{position:absolute;left:60px;right:60px;top:110px;font-family:PPTitle,sans-serif;font-size:152px;line-height:1.12;color:var(--encre);letter-spacing:.015em}
   #texte .m{display:inline-block;position:relative;margin:0 .2em 0 0;white-space:nowrap}
   #texte .m span{position:relative;z-index:1}
+  #texte .m.cle{margin-left:.28em}
   #texte .m.cle span{color:#fff;-webkit-text-stroke:.07em var(--encre);paint-order:stroke fill;text-shadow:.06em .06em 0 var(--encre)}
   #texte .m.cle::before{content:"";position:absolute;left:-.3em;right:-.3em;top:-.12em;bottom:-.06em;background:var(--rose);z-index:0;
     clip-path:polygon(0 50%,6% 14%,16% 30%,26% 0,38% 24%,50% 2%,62% 24%,74% 0,84% 30%,94% 14%,100% 50%,94% 86%,84% 70%,74% 100%,62% 76%,50% 98%,38% 76%,26% 100%,16% 70%,6% 86%);
@@ -119,7 +120,7 @@
     if (mode === "versus") {
       const a = add("pv bord", `<h3>${txt(param("titre_g", "AVANT"))}</h3><p>${txt(param("gauche", "Un CV pour toutes les offres"))}</p>`, { top: "80px", background: "#ff9bcb", transform: "rotate(-2deg)" });
       const b = add("pv bord", `<h3>${txt(param("titre_d", "APRÈS"))}</h3><p>${txt(param("droite", "Un CV adapté à chaque offre"))}</p>`, { top: "720px", background: "#9ae9ff", transform: "rotate(2deg)" });
-      const vs = add("", "VS"); vs.id = "vs";
+      const vs = add("", "VS"); vs.id = "vs"; vs.style.opacity = 0;
       tl.from(a, { x: -700, rotation: -12, duration: 0.4, ease: "power3.out" }, FIRST_AT).from(b, { x: 700, rotation: 12, duration: 0.4, ease: "power3.out" }, FIRST_AT + 0.35);
       tl.fromTo(vs, { scale: 3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.25, ease: "power4.in", immediateRender: false }, FIRST_AT + 0.9);
       tl.to(vs, { rotation: 8, duration: 0.5, yoyo: true, repeat: 3, ease: "sine.inOut" }, FIRST_AT + 1.2);
@@ -138,7 +139,7 @@
         opts.push(o); pop(o, FIRST_AT + 0.6 + i * g * 0.6, i % 2 ? 6 : -6); });
       const rev = FIRST_AT + 0.6 + points.length * g * 0.6 + 0.6;
       opts.forEach((o, i) => { if (i === bonne - 1) tl.to(o, { backgroundColor: "#7dff9a", scale: 1.06, duration: 0.25, ease: "back.out(3)" }, rev); else tl.to(o, { opacity: 0.3, duration: 0.2 }, rev); });
-      const ok = add("", "BRAVO !", { position: "absolute", left: "30px", bottom: "20px", fontFamily: "PPTitle,sans-serif", fontSize: "120px", color: "#7dff9a", WebkitTextStroke: "10px #111", paintOrder: "stroke fill", textShadow: "10px 10px 0 #111", transform: "rotate(-8deg)" });
+      const ok = add("", "BRAVO !", { position: "absolute", left: "30px", bottom: "20px", fontFamily: "PPTitle,sans-serif", fontSize: "120px", color: "#7dff9a", WebkitTextStroke: "10px #111", paintOrder: "stroke fill", textShadow: "10px 10px 0 #111", transform: "rotate(-8deg)", opacity: 0 });
       tl.fromTo(ok, { opacity: 0, scale: 3 }, { opacity: 1, scale: 1, duration: 0.22, ease: "power4.in", immediateRender: false }, rev + 0.15);
       end = rev + 0.8;
     } else if (mode === "bande") {

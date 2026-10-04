@@ -24,6 +24,7 @@ typeInterval) et cta.html :
     carte scan               -> pop, puis ding (score >= 80 %) ou buzz au score (scan.html RESULT_AT)
     carte impact             -> impact doux au premier mot
     carte meme               -> pop, feutre pendant le dessin, impact a la chute (meme.html PUNCH_AT)
+    carte lecon / pop        -> clic par mot ecrit, pop/ding/buzz/impact selon la planche (educatif_cues)
     plan illustration        -> feutre pendant le dessin (illustration.html DRAW_START)
     curseur anime            -> clic de souris (ajoute par run_pipeline.py)
     annotation au feutre     -> feutre (ajoute par run_pipeline.py, instants connus apres 3b)
@@ -37,12 +38,73 @@ CTA_BUTTON_AT = 1.45
 WHOOSH_LEAD = 0.12
 ILLUSTRATION_DRAW_START = 0.25  # illustration.html DRAW_START
 QUOTES = ' «»"“”'
+# lecon.html / pop.html : FIRST_AT (1er mot) et cadence des mots (wordGap), a garder identiques des deux cotes.
+EDU_FIRST_AT = {"lecon": 0.35, "pop": 0.3}
 
 
 def transition_sound() -> str:
     """Effet des changements de scene (catalog/audio.json "effets.transition")."""
     import audio_gen
     return audio_gen.audio_config()["effets"].get("transition", "")
+
+
+def _edu_gap(n: int, d: float, k: float = 0.72, first: float = 0.35) -> float:
+    """gapOf(n) des planches « extra » de lecon.html / pop.html."""
+    return min(0.8, max(0.3, (d * k - first) / max(n, 1)))
+
+
+def educatif_cues(name: str, params: dict, start: float, dur: float) -> list[dict]:
+    """
+    Gabarits lecon (carnet de cours) et pop (comics) : instants repris de leurs timelines,
+    selon la planche (parametre mode). Memes formules que assets/anim/lecon.html et pop.html.
+    """
+    d = float(params.get("dur", dur))
+    mode = params.get("mode") or ("lecon" if name == "lecon" else "fait")
+    first = EDU_FIRST_AT[name]
+    points = [p for p in params.get("points", "").split("|") if p]
+    cues: list[dict] = []
+    if mode in ("lecon", "retenir", "fait", "choc"):
+        import re
+        words = re.findall(r"\*[^*]+\*[^\s*]*|[^\s*]+", params.get("texte", ""))
+        n = len(words)
+        if name == "lecon":
+            gap, t0 = min(0.32, max(0.14, (d * 0.62 - first) / max(n, 1))), first
+        else:
+            gap, t0 = min(0.3, max(0.13, (d * 0.6 - first) / max(n, 1))), 0.7 if mode == "choc" else first
+        cues += [{"t": start + t0 + i * gap, "name": "click", "gain": 0.45} for i in range(n)]
+        fin = t0 + n * gap
+        if mode == "choc":
+            cues.append({"t": start + 0.5, "name": "impact", "gain": 0.7})
+        elif mode == "retenir":
+            cues.append({"t": start + fin + 0.8, "name": "impact", "gain": 0.6})
+        elif params.get("note"):
+            cues.append({"t": start + fin + 0.3, "name": "pop"})
+        return cues
+    n = max(len(points), 1)
+    if mode == "liste":
+        g = _edu_gap(n, d)
+        cues += [{"t": start + first + 0.5 + i * g + 0.2, "name": "pop"} for i in range(n)]
+    elif mode == "etapes":
+        g = _edu_gap(3, d)
+        cues += [{"t": start + first + 0.5 + i * g, "name": "pop"} for i in range(min(n, 3))]
+    elif mode == "avant_apres":
+        cues += [{"t": start + first + 1.0, "name": "buzz", "gain": 0.6}, {"t": start + first + 2.1, "name": "ding"}]
+    elif mode == "chiffre":
+        cues += [{"t": start + first + 0.3, "name": "impact", "gain": 0.6},
+                 {"t": start + first + 0.5, "name": "feutre", "duration": 0.55}]
+    elif mode == "quiz":
+        g = _edu_gap(n + 2, d) if name == "lecon" else _edu_gap(n + 2, d, 0.7, first)
+        step = g * 0.7 if name == "lecon" else g * 0.6
+        t_opt = first + (0.5 if name == "lecon" else 0.6)
+        cues += [{"t": start + t_opt + i * step, "name": "pop"} for i in range(n)]
+        cues.append({"t": start + t_opt + n * step + 0.6, "name": "ding"})
+    elif mode == "top" or mode == "bande":
+        g = _edu_gap(n, d, 0.7, first)
+        cues += [{"t": start + first + 0.4 + i * g, "name": "pop"} for i in range(min(n, 3))]
+    elif mode == "versus":
+        cues += [{"t": start + first, "name": "pop"}, {"t": start + first + 0.35, "name": "pop"},
+                 {"t": start + first + 0.9, "name": "impact", "gain": 0.7}]
+    return cues
 
 
 def type_interval(n_chars: int, dur: float) -> float:
@@ -143,6 +205,8 @@ def plan_cues(timeline: dict, scene_anims: dict[int, str], hook: bool) -> list[d
             d = float(params.get("dur", dur))
             gap = min(0.7, max(0.3, (d - 0.6 - 0.8) / n))
             cues += [{"t": start + 0.6 + k * gap + 0.2, "name": "pop"} for k in range(n)]
+        elif name in ("lecon", "pop"):
+            cues += educatif_cues(name, params, start, dur)
         elif name == "cta":
             cues.append({"t": start + CTA_BUTTON_AT, "name": "sparkle"})
         elif name == "illustration":

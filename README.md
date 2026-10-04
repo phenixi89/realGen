@@ -516,18 +516,36 @@ la phrase exacte entre « guillemets » : c'est un **objet obtenu** ; (3) Martin
 python scripts/run_pipeline.py --n 1 --format jeu_quete --duration 25
 ```
 
-### Gabarits éducatifs `lecon` et `pop` (en cours, pas encore branchés au pipeline)
+### Format `cours_eclair` : mini-cours éducatif (thèmes `carnet_cours` et `pop_art`)
 
-Deux looks de vidéo éducative (texte mot à mot, mots clés entre `*étoiles*`), chacun avec plusieurs
-« planches » choisies par le paramètre `mode`. Ils se testent seuls avec `render_js_anim.py` ; ils ne sont pas
-encore référencés par un format du catalogue, ni par `sound_design.py` (les instants `FIRST_AT` / `wordGap`
-sont déjà isolés dans chaque fichier pour ça). Palette propre à chaque gabarit (ils ne suivent pas le thème).
+Une vidéo éducative de 30 à 35 s, une seule idée : accroche (« 3 choses qui rendent ton CV invisible »), 3
+**leçons** d'une phrase de 10 mots au plus (une carte chacune), un **pivot** (pourquoi passer à un outil qui adapte
+le CV à chaque offre, sans chiffre inventé sur OpusCV), puis le CTA. Format `cours_eclair` (`formats.json`, drapeau
+`quiz: true` = l'IA peut écrire une carte `quiz`), réservé aux deux thèmes ci-dessous (thèmes à `formats` : jamais
+tirés ailleurs). Le thème porte `cartes_gabarit` : toutes les cartes du scénario sont dessinées par son gabarit,
+avec la **planche** qui correspond à leur type (`catalog.gabarit_carte`) ; `conversation`, `scan` et `meme` gardent
+leur gabarit habituel. Texte mot à mot, mots clés entre `*étoiles*` (le mot le plus long de la carte, ou le mot fort
+d'une carte `impact`, est mis en valeur automatiquement).
 
-- `lecon.html` — « carnet de cours » (papier à carreaux, surligneur, post-it) : `lecon` (défaut), `retenir`,
-  `liste`, `avant_apres`, `chiffre`, `quiz`, `etapes`.
-- `pop.html` — « comics pop-art » (rayons, trame, bulles) : `fait` (défaut), `choc`, `versus`, `top`, `quiz`, `bande`.
-- Paramètres communs : `texte`, `n`, `icone` (id de `icones.js`), `note`, `dur` ; selon la planche : `points` (a|b|c),
-  `bonne` (1..3), `grand`, `legende`, `avant`/`apres`, `gauche`/`droite`, `titre_g`/`titre_d`, `retenir`, `onomatopee`.
+| Type de carte | `carnet_cours` (`lecon.html`, papier à carreaux, surligneur, post-it) | `pop_art` (`pop.html`, comics, rayons, bulles) |
+|---|---|---|
+| `texte` | `lecon` : phrase écrite, icône, post-it (la phrase de la carte) | `fait` : « FAIT N°n », mots qui claquent, bulle de BD |
+| `chiffre` | `chiffre` : gros chiffre entouré au feutre | `choc` : chiffre plein cadre, « BAM ! » |
+| `comparaison` | `avant_apres` : l'erreur se barre, la correction arrive | `versus` : deux cases face à face, explosion « VS » |
+| `liste` | `liste` : points cochés un à un | `top` : rangs numérotés (3 au plus) |
+| `schema` | `etapes` : 3 étapes numérotées reliées | `bande` : 3 cases de BD |
+| `quiz` | `quiz` : question, 3 réponses, la bonne passe en vert | `quiz` : grand « ? », 3 réponses, « BRAVO ! » |
+| `impact` (pivot) | `lecon` avec l'étiquette « EN RÉSUMÉ » (`resume=1`) | `fait` |
+
+- Carte `quiz` : `question` (4 à 9 mots), `reponses` (2 à 3), `bonne` (1..3) ; sans thème éducatif elle devient une
+  carte `liste`. Aperçu : `docs/apercus/cartes/quiz.jpg`.
+- Étiquette « LEÇON n/N » : les cartes `impact` ne comptent pas parmi les leçons ; la barre de progression est celle du carnet.
+- Sons : `sound_design.educatif_cues` (un clic par mot, pop par point, ding à la bonne réponse, impact sur le chiffre /
+  le « VS » / le tampon) ; les instants (`FIRST_AT`, `wordGap`, `gapOf`) sont identiques dans `lecon.html`, `pop.html` et
+  `sound_design.py`.
+- Palette propre à chaque gabarit ; les couleurs du thème servent aux sous-titres, à la couverture Instagram et au CTA.
+- Un gabarit se teste seul : `render_js_anim.py` avec `?mode=quiz&texte=…&points=a|b|c&bonne=2`.
+- Lancer : `python scripts/run_pipeline.py --n 1 --format cours_eclair --capture-mode aucune --duration 35`.
 
 ### Gabarit `dialogue` : deux personnages qui se parlent
 
@@ -557,7 +575,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 
 | Fichier | Contenu | Exemples |
 |---|---|---|
-| `catalog/formats.json` | **Structure** de la vidéo (34 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
+| `catalog/formats.json` | **Structure** de la vidéo (37 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
 | `catalog/sujets.json` | **De quoi** parle la vidéo (165 sujets, 14 familles), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, carrière et emploi (négocier, démissionner, choisir une offre, premier jour…), métiers (CV de commercial, de développeur, de soignant…), familles produit (dont les nouveautés : 6 mises en page, conversion de langue, chiffres sans invention, sections libres, lettre en PDF…) |
 | `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` et, pour celles centrées sur le CV (`erreur_visible`, `comparaison_inattendue`), des `tags` : elles ne sont tirées que pour un sujet de ce tag (pas pour « démissionner proprement ») | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
 | `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`), `registres` (absent = tous) | violet nuit, corail, vert, bleu corporate, bande dessinée pop, sitcom pastel… |
@@ -586,6 +604,7 @@ Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre**
 | conseil | Le message du recruteur (`dm_recruteur`) | un échange de messages fictif (carte conversation), puis le décryptage |
 | conseil | Dessin animé : Karim cherche un job (`dessin_anime`) | série en mini dessin animé : Léa, Karim (et le recruteur) jouent une situation d'emploi et en tirent un conseil, chacun avec sa voix, sur une trame tirée en rotation ; le produit n'apparaît que dans le CTA ; capture `aucune` uniquement |
 | conseil | Jeu vidéo : la quête de Martin (`jeu_quete`) | partie de RPG en pixel art : Martin (héros) et Léa (guide) affrontent un boss qui est le système de recrutement (robot trieur, fantôme, paperasse), gagnent un objet (la phrase exacte), des points de vie, un niveau ; chacun sa voix, musique chiptune ; le produit n'apparaît que dans le CTA ; capture `aucune` uniquement |
+| conseil | Mini-cours éclair (`cours_eclair`) | vidéo éducative : accroche, 3 leçons d'une phrase (cartes carnet de cours ou comics pop-art, quiz possible), pivot vers l'outil, CTA ; thèmes `carnet_cours` et `pop_art` seulement |
 | produit | Démo produit (`demo_produit`) | une fonctionnalité réelle par scène |
 | produit | Témoignage (`temoignage_produit`) | récit fictif à la 1re personne |
 | produit | Avant / Après avec OpusCV (`split_avant_apres`) | comparaison puis le chemin dans l'outil |
@@ -685,6 +704,7 @@ Les formats à cartes affichent des **cartes animées** à la place des captures
 | `scan` | `scan.html` | CV passé sous un rayon laser : mots-clés de l'offre trouvés (vert) / manquants (rouge), score final |
 | `impact` | `impact.html` | typographie cinétique : la phrase-clé claque mot par mot en très grand, mot fort surligné (une par reel) |
 | `meme` | `meme.html` | format mème (registre humour) : la situation en haut, une icône dessinée à la main, la chute qui claque en bas (`haut`, `icone`, `bas`) |
+| `quiz` | `lecon.html` / `pop.html` (`liste.html` sinon) | format `cours_eclair` : une question, 3 réponses, la bonne se révèle (`question`, `reponses`, `bonne`) |
 
 Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--hook pov`, `--registre humour`
 (aussi dans le workflow ; un format imposé sans registre prend un des registres qu'il accepte). Vérifier le catalogue après modification : `python scripts/catalog.py`.
@@ -819,8 +839,8 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
   régénère tout (scénarios, voix, captures), même en reprise.
 - **Surimpression points à corriger** (`--anims overlay`) : jamais sur l'accroche, une carte, le CTA, la scène
   preuve, ni dans un reel à habillage (chrono), pour ne rien masquer.
-- **15 thèmes**, dont verre givré, éditorial magazine, néon nuit, tableau à la craie, affiche
-  impact, bande dessinée pop et sitcom pastel (polices libres Playfair Display, Space Grotesk, DM Sans,
+- **19 thèmes**, dont verre givré, éditorial magazine, néon nuit, tableau à la craie, affiche
+  impact, bande dessinée pop, sitcom pastel, carnet de cours et comics pop-art (polices libres Playfair Display, Space Grotesk, DM Sans,
   Kalam, Bebas Neue, Bangers).
 - **Barre de progression** fine en haut de l'écran, aux couleurs du thème (`--no-progress-bar` dans
   `5_assemble.py` pour la retirer).

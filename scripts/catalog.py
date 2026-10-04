@@ -41,7 +41,68 @@ CARD_EFFECTS = ("standard", "frappe", "suspense")
 JEU_JS = ROOT / "assets" / "anim" / "jeu"
 CARD_TYPES = {"texte": "carte", "chiffre": "chiffre", "comparaison": "comparaison", "liste": "liste",
               "schema": "schema", "conversation": "conversation", "scan": "scan", "impact": "impact",
-              "meme": "meme"}
+              "meme": "meme", "quiz": "liste"}  # quiz : gabarit de repli ; les themes cartes_gabarit ont le leur
+
+def _marque(texte: str) -> str:
+    """Met entre *etoiles* (mot surligne) le mot le plus long d'un texte qui n'en a pas deja un."""
+    texte = str(texte or "").strip()
+    if "*" in texte or not texte:
+        return texte
+    mots = texte.split()
+    i = max(range(len(mots)), key=lambda k: len(re.sub(r"\W", "", mots[k])))
+    if len(re.sub(r"\W", "", mots[i])) < 4:
+        return texte
+    mots[i] = "*" + mots[i].rstrip(".,;:!?") + "*" + mots[i][len(mots[i].rstrip(".,;:!?")):]
+    return " ".join(mots)
+
+
+def gabarit_carte(theme: dict | None, card: dict, n: int = 1, total: int = 1) -> tuple[str, dict] | None:
+    """
+    Theme educatif (themes.json "cartes_gabarit" : "lecon" = carnet de cours, "pop" = comics pop-art) :
+    carte du scenario -> (gabarit, parametres) ; None si le type de carte garde son gabarit habituel
+    (conversation, scan, meme). n / total : rang de la carte parmi les cartes du reel (« LEÇON 2/3 »).
+    Planches des gabarits : assets/anim/lecon.html et pop.html (parametre mode).
+    """
+    famille = (theme or {}).get("cartes_gabarit")
+    if famille not in ("lecon", "pop"):
+        return None
+    lecon = famille == "lecon"
+    kind = card.get("type", "texte")
+    g = lambda k: str(card.get(k) or "").strip()
+    rang = {"n": min(n, 6), "total": min(max(total, n), 6)} if lecon else {"n": n}
+    if kind == "texte":
+        phrase = g("texte")
+        params = {"texte": _marque(g("titre")), "note": phrase if len(phrase) <= 60 else ""}
+        return famille, {**rang, "mode": "lecon" if lecon else "fait", **params}
+    if kind == "impact":
+        texte = g("texte")
+        mot = g("mot")
+        if mot and mot.lower() in texte.lower():
+            i = texte.lower().index(mot.lower())
+            texte = f"{texte[:i]}*{texte[i:i + len(mot)]}*{texte[i + len(mot):]}"
+        return famille, {**rang, "mode": "lecon" if lecon else "fait", "texte": _marque(texte), **({"resume": 1} if lecon else {})}
+    if kind == "chiffre":
+        grand = g("valeur") + g("unite")
+        if lecon:
+            return famille, {**rang, "mode": "chiffre", "grand": grand, "legende": _marque(g("titre"))}
+        return famille, {**rang, "mode": "choc", "grand": grand, "texte": _marque(g("titre"))}
+    if kind == "comparaison":
+        if lecon:
+            return famille, {**rang, "mode": "avant_apres", "avant": g("avant"), "apres": _marque(g("apres"))}
+        return famille, {**rang, "mode": "versus", "gauche": g("avant"), "droite": g("apres")}
+    if kind == "liste":
+        points = "|".join(str(x) for x in card.get("points") or [])
+        titre = _marque(g("titre") or g("surtitre"))
+        return famille, {**rang, "mode": "liste" if lecon else "top", "texte": titre, "points": points}
+    if kind == "schema":
+        points = "|".join(e.get("label", "") for e in card.get("etapes") or [])
+        return famille, {**rang, "mode": "etapes" if lecon else "bande", "texte": _marque(g("titre")), "points": points}
+    if kind == "quiz":
+        return famille, {**rang, "mode": "quiz", "texte": _marque(g("question")),
+                         "points": "|".join(str(x) for x in card.get("reponses") or []), "bonne": card.get("bonne", 1)}
+    return None
+
+
 # Marque dessinee sur la derniere etape d'une carte schema (assets/anim/schema.html).
 SCHEMA_MARKS = ("entoure", "barre", "coche")
 ICONS_JS = ROOT / "assets" / "anim" / "icones.js"

@@ -108,7 +108,12 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
     # dur = duree de la scene : cadence de la frappe au clavier (carte.html),
     # reprise telle quelle par sound_design pour caler les clics.
-    scene_anims = {i: card_spec(scenes[i]["carte"], t_scenes[i]["end"] - t_scenes[i]["start"])
+    theme = catalog.get_theme(script.get("theme")) if script.get("theme") else None
+    # Rang des cartes « lecon » (LEÇON 2/3) : la carte impact (pivot, « EN RÉSUMÉ ») n'est pas une leçon.
+    lecons = [i for i in sorted(card_scenes) if scenes[i]["carte"].get("type") != "impact"]
+    rang = {i: (lecons.index(i) + 1 if i in lecons else len(lecons)) for i in card_scenes}
+    scene_anims = {i: card_spec(scenes[i]["carte"], t_scenes[i]["end"] - t_scenes[i]["start"],
+                                theme, (rang[i], len(lecons)))
                    for i in card_scenes}
     last = len(t_scenes) - 1
     chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
@@ -268,11 +273,18 @@ def fallback_title(texte: str, max_words: int = 9) -> str:
     return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
 
 
-def card_spec(card: dict, duration: float) -> str:
+def card_spec(card: dict, duration: float, theme: dict | None = None, rang: tuple[int, int] = (1, 1)) -> str:
     """
     Carte du scenario -> "gabarit?params" (type -> gabarit, listes en a|b|c ;
     etapes d'un schema en "icone:legende", messages en "r:texte" / "m:texte").
+    Theme educatif (cartes_gabarit) : gabarit lecon / pop et sa planche (catalog.gabarit_carte) ;
+    rang = (numero de la carte, nombre de cartes du reel).
     """
+    mapped = catalog.gabarit_carte(theme, card, *rang)
+    if mapped:
+        return f"{mapped[0]}?" + urlencode({**mapped[1], "dur": f"{duration:.2f}"})
+    if card.get("type") == "quiz":  # sans theme educatif : une liste (question + reponses)
+        card = {"type": "liste", "titre": card.get("question", ""), "points": card.get("reponses") or []}
     template = catalog.CARD_TYPES.get(card.get("type", "texte"), "carte")
     params = {}
     for key, value in card.items():

@@ -74,6 +74,7 @@ EXEMPLES_CARTES = {
     "schema": {}, "conversation": {}, "scan": {},
     "impact": {"texte": "Personne ne lit ton CV en entier", "mot": "personne"},
     "meme": {},
+    "quiz": {"titre": "Quelle longueur idéale pour un CV ?", "points": "Trois pages|Une page|Cinq pages"},
 }
 
 
