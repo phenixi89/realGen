@@ -35,7 +35,7 @@ input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);b
 button{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
 button:hover{border-color:var(--muted)}button:disabled{opacity:.5;cursor:default}
 button.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
-button.ghost,button.link{border:0;background:none;color:var(--muted);padding:6px 8px}button.ghost:hover{color:var(--fg)}
+button.ghost,button.link{border:0;background:none;color:var(--muted);padding:6px 8px;white-space:nowrap}button.ghost:hover{color:var(--fg)}
 button.link{color:var(--acc);padding:6px 0;font-weight:500}
 .hidden{display:none!important}
 .row{display:flex;gap:8px;flex-wrap:wrap}
@@ -53,7 +53,7 @@ details.adv{margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
 /* Un reel = une fiche de lignes calmes ; chaque ligne ouvre un selecteur (dialog). */
 .rc{border:1px solid var(--line);border-radius:10px;margin:10px 0;background:var(--card);overflow:hidden}
 .rc.closed{cursor:pointer}.rc.closed:hover{border-color:var(--muted)}
-.rc-head{display:flex;align-items:center;gap:6px;padding:10px 14px}
+.rc-head{display:flex;align-items:center;gap:2px;padding:10px 10px 10px 14px;flex-wrap:wrap}
 .rc-head b{flex:none}.rc-sum{flex:1;color:var(--muted);font-size:13px;margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rc-tone{display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px solid var(--line)}.rc-tone span{width:110px;flex:none;color:var(--muted);font-size:13px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
@@ -67,7 +67,7 @@ details.adv{margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
 .rc .warn{padding:0 14px 10px}
 dialog{border:0;border-radius:14px;padding:0;width:min(580px,94vw);max-height:84vh;background:var(--card);color:var(--fg);box-shadow:0 20px 60px rgba(0,0,0,.35)}
 dialog[open]{display:flex;flex-direction:column}dialog::backdrop{background:rgba(0,0,0,.4)}
-@media (max-width:560px){dialog{margin:auto 0 0;width:100%;max-width:100%;border-radius:14px 14px 0 0;max-height:88vh}.rl .lab,.rc-tone span{width:84px}}
+@media (max-width:560px){.rc-head .ghost{padding:6px 6px;font-size:13px}dialog{margin:auto 0 0;width:100%;max-width:100%;border-radius:14px 14px 0 0;max-height:88vh}.rl .lab,.rc-tone span{width:84px}}
 .pk-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}.pk-head b{font-size:15px}
 .pk-tools{padding:10px 16px 0}.pk-tools .seg{margin-bottom:4px}
 .pk-body{overflow:auto;padding:8px 8px 14px}
@@ -108,6 +108,7 @@ dialog[open]{display:flex;flex-direction:column}dialog::backdrop{background:rgba
 .swatches{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}.swatches span{flex:1}
 .tag{display:inline-block;padding:0 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:12px;margin:0 3px 3px 0;color:var(--muted)}
 .tag.ok{color:var(--ok)}.tag.hum{color:var(--acc)}
+@media (max-width:560px){.filters select{flex:1 1 100%}}
 #msg{position:fixed;left:16px;right:16px;bottom:84px;max-width:560px;margin:auto;padding:12px 14px;border-radius:10px;background:var(--fg);color:var(--bg);display:none;z-index:50}
 </style></head><body>
 <header><h1>realGen</h1><p>Reels OpusCV</p><button class="ghost quiet" id="themeBtn" onclick="cycleTheme()" title="Apparence de la console"></button></header>
@@ -209,7 +210,7 @@ dialog[open]{display:flex;flex-direction:column}dialog::backdrop{background:rgba
 window.addEventListener("error", e => { const m = document.getElementById("msg"); if (m) { m.textContent = `Erreur de la console : ${e.message}`; m.style.display = "block"; } });
 const WF = "generate-reels.yml";
 // Apparence : Auto (suit l'appareil), Clair ou Sombre ; le choix est mémorisé dans le navigateur.
-const THEMES = [["auto", "Apparence : auto"], ["light", "Apparence : clair"], ["dark", "Apparence : sombre"]];
+const THEMES = [["auto", "◐ Auto"], ["light", "☀ Clair"], ["dark", "☾ Sombre"]];
 function applyTheme(){
   const t = (THEMES.find(x => x[0] === store.get("rg_theme")) || THEMES[0]);
   if (t[0] === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.dataset.theme = t[0];
