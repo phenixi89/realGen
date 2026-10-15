@@ -894,18 +894,34 @@ python scripts/features.py
 Liste les fonctionnalités qu'un scénario peut montrer — c'est ce catalogue que Gemini reçoit pour écrire
 le scénario. Il suit l'interface actuelle d'OpusCV (septembre 2026) :
 
-- **Le CV** : `checklist` (points à corriger, sans note), `identite`, `experiences` (tiroir des missions),
+- **Le CV** : `checklist` (points à corriger, sans note ; un point déplié dit pourquoi et comment), `reperes_cv` (les points posés
+  sur le CV, dans la marge de l'aperçu, et la carte d'un point), `avant_envoyer` (la fenêtre « Avant d'envoyer » quand un point
+  bloque encore le CV), `identite`, `aide_redaction` (conseil de rédaction en bulle près du champ), `ecrire_sur_page` (le champ
+  posé directement sur le CV : le nom, puis une phrase tapée dans le profil), `experiences` (tiroir des missions),
   `formation`, `competences`, `langues`.
 - **Structure** : `structure` (ordre des blocs, langue et format du CV, pied de page), `sections_perso`
   (section libre : certifications…).
 - **IA** : `relecture`, `fonctions_ia` (adapter à une offre), `lettre_motivation`, `entretien`.
 - **Diffusion** : `convertir` (variante en anglais, allemand, espagnol ou au format Letter), `partage`.
-- **Mise en page** : `apercu_pdf` (l'aperçu de l'éditeur est le PDF exact), `design` (41 thèmes en
+- **Mise en page** : `apercu_pdf` (l'aperçu et ses trois modes Rapide / Auto / PDF ; en mode PDF, le PDF exact), `design` (41 thèmes en
   pastilles), `mises_en_page` (6 structures, le CV en frise, classique puis minimal),
   `personnalisation` (détails et réglages fins).
 - **Affichage** : `mode_sombre`, `apercu_cv`.
 
-Aucune capture ne déclenche d'appel IA, sauf `entretien` (`ALLOW_AI_QUOTA_FEATURES=1`). Le contexte
+Aucune capture ne déclenche d'appel IA, sauf `entretien` (`ALLOW_AI_QUOTA_FEATURES=1`). Les captures qui modifient le CV
+(`aide_redaction`, `ecrire_sur_page`) remettent le texte d'origine et enregistrent (rien ne change) ; `avant_envoyer` passe par
+« Partager » (sans point bloquant, il ouvre simplement le partage : pas d'export lancé).
+
+**CV de démonstration des captures** (`scripts/demo_compte.py`, `assets/cv_demo.json`) : avant de filmer, `3_record_demo.py`
+(modes `screenshots` et `video_desktop`) crée par l'API de l'app un CV neuf « Camille Duval - Conseillère de vente » sur le compte de
+démo (`DEMO_EMAIL`, `DEMO_PASSWORD`), le filme (la ligne du tableau de bord est choisie par son titre), puis le supprime ; un reste
+d'un run interrompu (même titre) est supprimé avant la création. Le contenu est le profil de démonstration de l'app **sans
+téléphone** : l'app signale alors un point bloquant (« téléphone manquant »), d'où les points à corriger, les repères et « Avant
+d'envoyer ». Il remplace l'ancien CV du compte (coquilles « Growthds », « Globalds » vues dans le reel du run 79) et contourne le
+changement de l'app du 06/10 (plus de profil de démonstration proposé à un compte connecté). Échec de la création (compte au
+plafond de 3 CV en plan gratuit, réseau) : alerte, et les captures retombent sur le premier CV du compte. Un compte **Pro** est
+préférable (CV illimités, quota IA pour `entretien`). Si le profil de l'app change (`client/src/utils/demoCv.js`), mettre à jour
+`assets/cv_demo.json`. Le contexte
 produit donné à Gemini (`PRODUCT_CONTEXT` dans `1_generate_script.py`) décrit les mêmes fonctions.
 Il dit aussi ce que l'outil ne fait pas : pas de score, jamais de chiffre inventé.
 

@@ -160,7 +160,7 @@ async def _click_dock(ctx: DemoContext, label: str) -> bool:
 # Bouton "d'action" d'une capture : c'est la que le curseur anime clique et
 # que la camera zoome (3b_build_video_from_screenshots.py).
 ACTION_RE = re.compile(r"corriger|appliquer|adapter|g[ée]n[ée]rer|analyser|comparer|valider|relancer|"
-                       r"t[ée]l[ée]charger|enregistrer|ajouter|reformuler|modifier|essayer", re.I)
+                       r"t[ée]l[ée]charger|enregistrer|ajouter|reformuler|modifier|essayer|y aller|remplacer|^termin[ée]", re.I)
 
 
 async def _focus_point(element, rect: tuple[int, int, int, int]) -> list[int] | None:
@@ -438,6 +438,12 @@ async def _capture_checklist(ctx: DemoContext):
     await panel.wait_for(state="visible", timeout=6000)
     await ctx.page.wait_for_timeout(500)
     await ctx.shoot("checklist", panel)
+    # Un point deplie (CartePoint.jsx) : pourquoi ca compte pour un recruteur, comment le corriger, bouton « Y aller ».
+    point = panel.locator("button[aria-expanded='false']").first
+    if await point.count():
+        await point.click()
+        await ctx.page.wait_for_timeout(500)
+        await ctx.shoot("checklist_carte", panel)
     await close_checklist_if_open(ctx.page)
 
 
@@ -494,18 +500,208 @@ async def _capture_partage(ctx: DemoContext):
 
 async def _capture_apercu_pdf(ctx: DemoContext):
     """
-    L'apercu de l'editeur EST le PDF (ApercuExact.jsx : rendu serveur dessine
-    par pdf.js, badge "PDF exact" dans la barre d'outils) : on capture la
-    colonne d'apercu entiere, barre comprise. L'ancienne fenetre "Apercu
-    fidele" n'existe plus.
+    Apercu de l'editeur et ses trois modes (LivePreview.jsx : Rapide = le navigateur dessine a chaque frappe, Auto = rapide
+    puis le PDF a la pause, PDF = toujours le PDF). Le plan gratuit ouvre en « Rapide » : on passe en « PDF » le temps de la
+    capture (badge « PDF exact », ApercuExact.jsx : rendu serveur dessine par pdf.js), puis on remet le mode d'origine.
     """
-    page_el = ctx.page.locator(".apercu-exact > div").first
+    page = ctx.page
+    precedent = None
+    groupe = page.locator("[role='group'][aria-label=\"Mode d'aperçu\"]").first
+    if await groupe.count():
+        boutons = groupe.locator("button")
+        for k in range(await boutons.count()):
+            if await boutons.nth(k).get_attribute("aria-pressed") == "true":
+                precedent = boutons.nth(k)
+        pdf = boutons.filter(has_text=re.compile(r"^\s*PDF\s*$")).first
+        if await pdf.count() and await pdf.get_attribute("aria-pressed") != "true":
+            await pdf.click()
+        else:
+            precedent = None
+    page_el = page.locator(".apercu-exact > div").first
     try:
         await page_el.wait_for(state="visible", timeout=30000)
     except Exception:
         print("ATTENTION: apercu exact non affiche, capture de l'apercu HTML", file=sys.stderr)
-    await ctx.page.wait_for_timeout(800)
-    await ctx.shoot("apercu_pdf", ctx.page.locator("main").first)
+    await page.wait_for_timeout(800)
+    await ctx.shoot("apercu_pdf", page.locator("main").first)
+    if precedent is not None:
+        await precedent.click()
+        await page.wait_for_timeout(600)
+
+
+async def _capture_reperes_cv(ctx: DemoContext):
+    """
+    Les points a corriger poses sur le CV, dans la marge de l'apercu (pastille rose = bloquant, ambre, indigo = idee), puis
+    la carte d'un point ouverte par un clic (CartePoint.jsx). Le bouton « N points sur le CV » les affiche ou les masque.
+    """
+    page = ctx.page
+    await close_checklist_if_open(page)
+    bascule = page.locator("button[aria-pressed][aria-label*='sur le CV']").first
+    if await bascule.count() == 0:
+        print("ATTENTION: bouton des reperes introuvable", file=sys.stderr)
+        return
+    if await bascule.get_attribute("aria-pressed") != "true":
+        await bascule.click()
+        await page.wait_for_timeout(800)
+    await _preview_page(page)
+    await page.wait_for_timeout(600)
+    repere = page.locator("button.rounded-full.bg-rose-500[aria-label]:visible").first
+    if await repere.count() == 0:
+        repere = page.locator("button.rounded-full[aria-expanded][aria-label]:visible").first
+    if await repere.count() == 0:
+        print("ATTENTION: aucun repere sur le CV (aucun point a corriger ?)", file=sys.stderr)
+        return
+    await ctx.shoot("reperes_cv", page.locator("main").first)
+    await repere.click()
+    await page.wait_for_timeout(800)
+    await ctx.shoot("reperes_carte", page.locator("main").first)
+    await page.keyboard.press("Escape")
+    await page.wait_for_timeout(400)
+
+
+async def _capture_avant_envoyer(ctx: DemoContext):
+    """
+    « Avant d'envoyer » (AvantEnvoi.jsx) : au clic sur Partager ou Telecharger, s'il reste un point BLOQUANT, une fenetre le
+    montre (pourquoi, comment) et laisse le choix. On passe par Partager : sans point bloquant il ouvre simplement le
+    partage, alors que Telecharger lancerait un vrai export.
+    """
+    page = ctx.page
+    button = await _top_button(page, "Partager", "share-2")
+    if button is None:
+        print("ATTENTION: bouton 'Partager' introuvable", file=sys.stderr)
+        return
+    await button.click()
+    dialog = page.locator("div[role='dialog']:visible").filter(has_text=re.compile(r"avant d.envoyer", re.I)).last
+    try:
+        await dialog.wait_for(state="visible", timeout=4000)
+    except Exception:
+        print("ATTENTION: aucun point bloquant, « Avant d'envoyer » ne s'affiche pas", file=sys.stderr)
+        await reset_state(page)
+        return
+    await page.wait_for_timeout(500)
+    panel = await _dialog_panel(dialog)
+    await ctx.shoot("avant_envoyer", panel)
+    ligne = panel.locator("button[aria-expanded='false']").first
+    if await ligne.count():
+        await ligne.click()
+        await page.wait_for_timeout(500)
+        await ctx.shoot("avant_envoyer_point", panel)
+    corriger = panel.locator("button").filter(has_text=re.compile(r"corriger d.abord", re.I)).first
+    if await corriger.count():
+        await corriger.click()
+        await page.wait_for_timeout(400)
+    await reset_state(page)
+
+
+async def _remonter(element):
+    """Remet en haut tout ce qui defile autour de l'element : la capture suivante part du haut de la page, pas d'une edition."""
+    await element.evaluate("e => { for (let p = e; p; p = p.parentElement) if (p.scrollTop) p.scrollTop = 0; }")
+
+
+# Texte tape dans « Ville / region » pour declencher un conseil : une adresse complete (le conseil dit que la ville suffit).
+ADRESSE_COMPLETE = "12 rue des Lilas, 69003 Lyon"
+
+
+async def _capture_aide_redaction(ctx: DemoContext):
+    """
+    Aide a la redaction (ConseilChamp.jsx) : un conseil discret, en bulle pres du champ ou l'on ecrit, sans IA ni quota.
+    Une adresse trop complete dans « Ville / region » le declenche (« La ville suffit », avec l'avant / apres a remplacer en
+    un clic). Le champ est remis comme avant et le CV enregistre (valeur d'origine : rien ne change).
+    """
+    page = ctx.page
+    if not await _click_dock(ctx, "Identité"):
+        return
+    champ = ctx.form_panel.get_by_label(re.compile(r"^\s*Ville", re.I)).first
+    if await champ.count() == 0:
+        print("ATTENTION: champ 'Ville / région' introuvable", file=sys.stderr)
+        return
+    ancien = await champ.input_value()
+    await champ.scroll_into_view_if_needed()
+    await champ.click()
+    await champ.fill("")
+    await champ.press_sequentially(ADRESSE_COMPLETE, delay=45)
+    try:
+        await page.locator("[data-conseil-ouvert]").first.wait_for(state="attached", timeout=5000)
+        await page.wait_for_timeout(500)
+        await ctx.shoot("aide_redaction", ctx.form_panel)
+    except Exception:
+        print("ATTENTION: aucun conseil de rédaction affiché, capture ignorée", file=sys.stderr)
+    await champ.fill(ancien)
+    await page.keyboard.press("Escape")
+    await page.wait_for_timeout(300)
+    await page.keyboard.press("Control+s")
+    await page.wait_for_timeout(1500)
+    await _remonter(champ)
+
+
+# Phrase tapee dans le profil, directement sur le CV : vraie pour le profil de demonstration (aucun chiffre invente) et
+# reprise de mots-cles que l'app propose pour ce CV (« fidelisation », « ventes additionnelles »).
+PHRASE_PROFIL = " Sensible à la fidélisation et aux ventes additionnelles."
+
+
+async def _capture_ecrire_page(ctx: DemoContext):
+    """
+    Ecrire sur la page (EditionSurPlace.jsx) : sur ordinateur, un clic sur le nom, le titre, le profil ou un poste dans l'apercu
+    pose le champ sur la ligne meme, avec les boutons « Reecrire » (IA) et « Termine ». Deux plans : le champ du nom qui
+    s'ouvre, puis une phrase TAPEE directement dans le profil du CV (l'apercu et le formulaire suivent). Le texte d'origine est
+    remis ensuite. On passe en mode « Auto » : l'apercu est alors le PDF exact (canvas), cliquable aux coordonnees des blocs
+    (page du Split de demonstration : nom en haut a droite, profil juste dessous).
+    """
+    page = ctx.page
+    await close_checklist_if_open(page)
+    precedent = None
+    groupe = page.locator("[role='group'][aria-label=\"Mode d'aperçu\"]").first
+    if await groupe.count():
+        boutons = groupe.locator("button")
+        for k in range(await boutons.count()):
+            if await boutons.nth(k).get_attribute("aria-pressed") == "true":
+                precedent = boutons.nth(k)
+        auto = boutons.filter(has_text=re.compile(r"^\s*Auto\s*$")).first
+        if await auto.count() and await auto.get_attribute("aria-pressed") != "true":
+            await auto.click()
+        else:
+            precedent = None
+    exact = page.locator(".apercu-exact > div").first
+    try:
+        await exact.wait_for(state="visible", timeout=30000)
+        await page.wait_for_timeout(800)
+        box = await exact.bounding_box()
+    except Exception:
+        box = None
+    if not box:
+        print("ATTENTION: apercu exact non affiche, ecriture sur la page non capturee", file=sys.stderr)
+    else:
+        async def ouvrir(fx: float, fy: float):
+            await page.mouse.click(box["x"] + box["width"] * fx, box["y"] + box["height"] * fy)
+            await page.wait_for_timeout(900)
+            return page.locator("input:focus, textarea:focus, [contenteditable='true']:focus").first
+
+        champ = await ouvrir(0.42, 0.095)                      # le nom
+        if await champ.count():
+            await ctx.shoot("ecrire_sur_page", page.locator("main").first)
+            await page.keyboard.press("Escape")                # annule : le nom reste celui du CV
+            await page.wait_for_timeout(500)
+        else:
+            print("ATTENTION: le champ du nom ne s'est pas ouvert sur la page", file=sys.stderr)
+        champ = await ouvrir(0.55, 0.16)                       # le profil
+        if await champ.count():
+            ancien = await champ.evaluate("e => e.value ?? e.innerText")
+            await page.keyboard.press("Control+End")
+            await page.keyboard.type(PHRASE_PROFIL, delay=35)
+            await page.wait_for_timeout(2500)                  # la pause : l'apercu redessine le PDF
+            await ctx.shoot("ecrire_sur_page_texte", page.locator("main").first)
+            await champ.fill(ancien)                           # texte d'origine remis, puis enregistre (rien ne change)
+            await page.wait_for_timeout(500)
+            await page.keyboard.press("Escape")
+            await page.wait_for_timeout(400)
+            await page.keyboard.press("Control+s")
+            await page.wait_for_timeout(1500)
+        else:
+            print("ATTENTION: le champ du profil ne s'est pas ouvert sur la page", file=sys.stderr)
+    await _remonter(exact)
+    if precedent is not None:
+        await precedent.click()
+        await page.wait_for_timeout(600)
 
 
 async def _capture_mode_sombre(ctx: DemoContext):
@@ -586,7 +782,11 @@ class Feature:
 # (3_record_demo.py), avant l'ouverture de l'editeur.
 FEATURES: dict[str, Feature] = {f.id: f for f in [
     Feature("dashboard", "Mes CVs", "le tableau de bord avec la liste des CV sauvegardes et leurs actions (renommer, dupliquer)", None),
-    Feature("checklist", "Points a corriger", "la liste des points a corriger detectes sur le CV (defauts, puis idees), chacun explique en une phrase -- pas de note globale", _capture_checklist),
+    Feature("checklist", "Points a corriger", "la liste des points a corriger detectes sur le CV (le bloquant d'abord, puis les defauts, puis les idees), chacun explique en une phrase ; un point deplie dit pourquoi il compte pour un recruteur et comment le corriger, avec un bouton « Y aller » -- pas de note globale", _capture_checklist),
+    Feature("reperes_cv", "Points sur le CV", "les points a corriger poses sur le CV lui-meme, dans la marge de l'apercu (pastille rose pour un point bloquant, ambre pour un defaut, indigo pour une idee) ; un clic sur une pastille ouvre la carte du point : pourquoi, comment, bouton « Y aller »", _capture_reperes_cv),
+    Feature("avant_envoyer", "Avant d'envoyer", "la fenetre « Avant d'envoyer », qui s'ouvre au clic sur Partager ou Telecharger quand un point bloque encore le CV : le point est explique (pourquoi, comment), puis le choix entre « Corriger d'abord » et envoyer quand meme ; l'outil propose aussi de faire relire le CV par l'IA avec l'oeil d'un recruteur (elle juge, elle n'ecrit rien) -- rien n'est interdit, le CV reste a la personne", _capture_avant_envoyer),
+    Feature("aide_redaction", "Aide a la redaction", "un conseil de redaction discret, en bulle pres du champ ou l'on ecrit (ici une adresse trop complete : « la ville suffit »), avec l'avant / apres a remplacer en un clic ; un interrupteur « Aide a la redaction » en haut du panneau ; des conseils calcules dans le navigateur, sans IA et sans quota, qui n'apparaissent jamais pendant la frappe", _capture_aide_redaction),
+    Feature("ecrire_sur_page", "Ecrire sur la page", "on ecrit directement sur le CV : un clic sur le nom (ou le titre, le profil, un poste) dans l'apercu pose le champ sur la ligne meme, avec les boutons « Reecrire » (IA) et « Termine » ; ici une phrase est tapee dans le profil, et l'apercu comme le formulaire se mettent a jour pendant la frappe, sans repasser par le formulaire (sur ordinateur)", _capture_ecrire_page),
     Feature("identite", "Identite / profil", "le formulaire identite : photo, poste vise, nom, email, telephone, ville, LinkedIn, site, permis, resume", _make_section_capture("Identité", "identite")),
     Feature("experiences", "Experiences + missions", "la liste des experiences, une experience depliee, puis le panneau d'edition de ses missions", _capture_experiences),
     Feature("formation", "Formation", "la section formation : diplomes, ecoles, dates", _make_section_capture("Formation", "formation")),
@@ -599,7 +799,7 @@ FEATURES: dict[str, Feature] = {f.id: f for f in [
     Feature("lettre_motivation", "Lettre de motivation (IA)", "la fenetre de lettre de motivation : on colle l'offre, l'IA ecrit une lettre calee sur l'offre et le CV, a telecharger en PDF aux couleurs du CV", _make_offer_modal_capture("Lettre de motivation", "mail", "lettre")),
     Feature("convertir", "Convertir (langue, format)", "la fenetre 'Convertir le CV' : une variante en anglais, allemand ou espagnol, ou au format Letter (Etats-Unis, Canada)", _capture_convertir),
     Feature("partage", "Partage par lien", "le partage du CV par un lien public, consultable sans compte ni piece jointe", _capture_partage),
-    Feature("apercu_pdf", "Apercu = PDF exact", "l'apercu de l'editeur, qui est le PDF exact tel qu'il sera telecharge, au pixel pres", _capture_apercu_pdf),
+    Feature("apercu_pdf", "Apercu : trois modes, PDF exact", "l'apercu de l'editeur et ses trois modes (Rapide : le navigateur dessine a chaque frappe ; Auto : rapide puis le vrai PDF a la pause ; PDF : toujours le PDF) ; en mode PDF, le badge « PDF exact » : ce qu'on voit est, au pixel pres, ce qui sera telecharge", _capture_apercu_pdf),
     Feature("design", "Themes (41) en direct", "le panneau Design puis le CV qui change de theme en un clic (41 themes)", _capture_design_themes),
     Feature("mises_en_page", "6 mises en page", "les six mises en page (colonne, classique, minimal, bandeau, ATS, frise), puis le meme CV en bandeau, en frise et en minimal", _capture_mises_en_page),
     Feature("personnalisation", "Reglages fins", "les reglages de detail : forme de la photo, langues en points, icones des titres, taille du texte, interligne, marges", _capture_personnalisation),
@@ -615,9 +815,9 @@ FEATURES: dict[str, Feature] = {f.id: f for f in [
 # l'entretien juste avant la fin
 # (sa confirmation de fermeture est la plus susceptible de bloquer la suite).
 DEFAULT_FEATURE_ORDER = [
-    "dashboard", "checklist", "identite", "experiences", "formation", "competences", "langues",
-    "structure", "sections_perso", "relecture", "fonctions_ia", "lettre_motivation", "convertir", "partage",
-    "apercu_pdf", "personnalisation", "design", "mises_en_page", "mode_sombre", "entretien", "apercu_cv",
+    "dashboard", "checklist", "reperes_cv", "identite", "aide_redaction", "ecrire_sur_page", "experiences", "formation",
+    "competences", "langues", "structure", "sections_perso", "relecture", "fonctions_ia", "lettre_motivation", "convertir",
+    "partage", "avant_envoyer", "apercu_pdf", "personnalisation", "design", "mises_en_page", "mode_sombre", "entretien", "apercu_cv",
 ]
 
 # Anciens ids (scripts.json generes avant le catalogue actuel).

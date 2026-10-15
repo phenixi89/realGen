@@ -1,0 +1,91 @@
+{
+  "infos": {
+    "nom": "Camille Duval",
+    "titre": "Conseillère de vente",
+    "adresse": "Lyon, France",
+    "email": "camille.duval@exemple.fr"
+  },
+  "profil": "Conseillère de vente depuis six ans en prêt-à-porter. Attentive à chaque client, à l'aise en caisse comme en réserve, avec le goût des vitrines soignées et du travail en équipe.",
+  "profil_suggestion": "Conseillère de vente en prêt-à-porter depuis six ans, attachée à la qualité du conseil et à la fidélisation de la clientèle. Polyvalente, de l'accueil à la caisse et à la mise en valeur des collections, avec le goût du travail en équipe.",
+  "skills": [
+    {
+      "id": "demo_s1",
+      "categorie": "Vente",
+      "liste": [
+        "Accueil et conseil",
+        "Encaissement",
+        "Fidélisation"
+      ],
+      "suggestion": [
+        "Gestion des retours",
+        "Ventes additionnelles",
+        "Suivi des objectifs"
+      ]
+    },
+    {
+      "id": "demo_s2",
+      "categorie": "Magasin",
+      "liste": [
+        "Merchandising",
+        "Réception des livraisons"
+      ],
+      "suggestion": [
+        "Inventaire",
+        "Tenue de la réserve"
+      ]
+    }
+  ],
+  "experiences": [
+    {
+      "id": "demo_exp1",
+      "poste": "Conseillère de vente",
+      "entreprise": "Maison Arlette",
+      "dates": "Mar 2021 - Présent",
+      "taches_html": "<ul><li>Accueil et conseil des clients</li><li>Encaissement</li><li>Mise en rayon et vitrines</li></ul>",
+      "taches_suggestion": [
+        "Accueilli et conseillé la clientèle, de la découverte du besoin jusqu'à la vente.",
+        "Tenu la caisse et traité les retours et échanges.",
+        "Conçu les vitrines saisonnières et entretenu la mise en rayon.",
+        "Formé les nouveaux arrivants aux gestes de la boutique."
+      ]
+    },
+    {
+      "id": "demo_exp2",
+      "poste": "Vendeuse",
+      "entreprise": "Boutique Lumière",
+      "dates": "Sep 2019 - Fév 2021",
+      "taches_html": "<ul><li>Vente en magasin</li><li>Réception des livraisons</li></ul>",
+      "taches_suggestion": [
+        "Conseillé et accompagné les clients en magasin.",
+        "Réceptionné et contrôlé les livraisons avant leur mise en rayon."
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "id": "demo_f1",
+      "diplome": "BTS Management commercial opérationnel",
+      "ecole": "Lycée Ampère, Lyon",
+      "annee": "2019"
+    }
+  ],
+  "langues": [
+    "Français - Natif",
+    "Anglais - Courant"
+  ],
+  "audit": {
+    "mots_cles_manquants": [
+      "Fidélisation",
+      "Objectifs de vente",
+      "Ventes additionnelles"
+    ],
+    "fautes_trouvees": []
+  },
+  "sectionOrder": [
+    "profil",
+    "experiences",
+    "formation",
+    "skills",
+    "langues"
+  ]
+}

@@ -75,6 +75,11 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   planche = le `mode` dans le gabarit **et** son entrée dans `gabarit_carte` **et** ses instants dans `sound_design.educatif_cues`
   (identiques des deux côtés) ; mêmes règles d'écriture que les autres formats à cartes (phrases courtes, pas de suspense, pas de
   chiffre inventé sur OpusCV).
+- Captures de l'app (`scripts/features.py`) : une fonctionnalité = une fonction Playwright **et** une `Feature` (description de ce
+  qu'on VOIT, vraie d'après l'app) **et** `DEFAULT_FEATURE_ORDER` **et** le contexte produit `PRODUCT_CONTEXT` de
+  `1_generate_script.py` si l'app a gagné une fonction. Une capture qui modifie le CV remet l'état d'origine. Le CV filmé est
+  celui de `scripts/demo_compte.py` (`assets/cv_demo.json`, créé puis supprimé à chaque run). Tester contre une copie locale de
+  l'app (`dev`, SQLite) avant de pousser.
 - Sons enregistrés (`assets/sfx/`) : licence CC0 uniquement, source notée dans `assets/sfx/LICENCES.md`.
 - Polices : uniquement sous licence libre (OFL), licence copiée dans `assets/fonts/`.
 - Après un run du workflow `generate-reels.yml`, l'analyse se fait sur l'artefact `output`

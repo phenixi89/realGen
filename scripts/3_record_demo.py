@@ -18,7 +18,11 @@ from pathlib import Path
 
 from playwright.async_api import async_playwright
 
+import demo_compte
 import features as features_module
+
+# Titre du CV de démonstration créé par demo_compte.preparer() pour ce run (None : on filme le 1er CV du compte).
+CV_DEMO_TITRE: str | None = None
 
 # Taille CSS de la page (garde le point de rupture mobile de l'app -- c'est
 # ce qui determine quelle version de l'UI (responsive) s'affiche).
@@ -161,7 +165,8 @@ async def walk_features(page, shoot, feature_ids: list[str] | None = None,
     # Une fois connecte, App.jsx affiche directement Dashboard.jsx : on
     # attend la premiere ligne de CV (fetch /api/cvs asynchrone, precede
     # d'un skeleton de chargement).
-    first_row = page.locator("li:visible", has=page.locator("button[title]")).first
+    rows = page.locator("li:visible", has=page.locator("button[title]"))
+    first_row = (rows.filter(has_text=CV_DEMO_TITRE) if CV_DEMO_TITRE else rows).first
     empty_state = page.locator("button:visible").filter(has_text=re.compile("créer de zéro", re.I)).first
     await first_row.or_(empty_state).first.wait_for(state="visible", timeout=30000)
     await page.wait_for_timeout(800)
@@ -307,8 +312,15 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
         await dismiss_cookie_banner(page)
 
         segments = None
+        global CV_DEMO_TITRE
+        cv_demo = None
         try:
             if email and password:
+                # CV de démonstration propre (le compte garde sinon un vieux CV, coquilles comprises) : créé par l'API
+                # avant la connexion pour figurer au tableau de bord, supprimé à la fin. Modes avec l'éditeur desktop.
+                if mode in ("screenshots", "video_desktop"):
+                    cv_demo = await asyncio.to_thread(demo_compte.preparer, url, email, password)
+                    CV_DEMO_TITRE = cv_demo.titre if cv_demo else None
                 await login(page, email, password)
                 await dismiss_cookie_banner(page)
             else:
@@ -335,6 +347,9 @@ async def record(url: str, out_dir: Path, email: str | None, password: str | Non
             raise
         finally:
             await context.close()  # necessaire pour flush la video sur disque
+            if cv_demo:
+                await asyncio.to_thread(cv_demo.supprimer)
+                CV_DEMO_TITRE = None
 
         if mode == "video_desktop" and segments:
             # page.video n'est resolu qu'une fois le context ferme (video

@@ -78,13 +78,21 @@ corrigé, mis en page et décliné par offre d'emploi.
 - Entrer : importer un CV existant (PDF ou Word) analysé par l'IA, partir d'un CV vierge, ou laisser l'IA
   écrire un premier brouillon à partir de quelques phrases.
 - Corriger : une liste de « points à corriger » (profil trop court, mission sans résultat, coordonnée
-  manquante...), chacun expliqué en une phrase et relié au champ à réparer. PAS de note ni de score global.
+  manquante...), chacun expliqué : ce qui est constaté, pourquoi cela compte pour un recruteur, comment le corriger, et
+  relié au champ à réparer. Les points sont aussi posés sur le CV lui-même, dans la marge de l'aperçu. Quand un point
+  BLOQUANT reste (coordonnée ou intitulé manquant, section vide), la fenêtre « Avant d'envoyer » le montre au moment de
+  télécharger ou de partager, et laisse le choix : rien n'est interdit. Une relecture « recruteur » par l'IA repère les
+  puces vagues, le profil générique, le jargon : elle juge, elle n'écrit rien. PAS de note ni de score global.
 - Écrire : réécriture d'une section, relecture orthographique et grammaticale ; pour chiffrer une mission,
   l'outil POSE DES QUESTIONS au candidat puis écrit la phrase avec SES réponses : il n'invente jamais un chiffre
-  ni un fait. Toute modification proposée passe par un avant/après à valider.
+  ni un fait. Toute modification proposée passe par un avant/après à valider. Une aide à la rédaction affiche un conseil
+  discret près du champ où l'on écrit (calculé dans le navigateur : sans IA, sans quota, jamais pendant la frappe). Sur
+  ordinateur, on peut aussi écrire directement sur le CV : un clic sur le nom, le profil ou une mission dans l'aperçu
+  ouvre le champ sur la ligne même.
 - Mettre en page : 41 thèmes sur 6 mises en page (colonne, classique, minimal, bandeau, ATS sobre lisible
   par les robots, frise chronologique), couleurs, polices, densité et réglages fins ; sections libres
-  (certifications, projets, bénévolat...) ; l'aperçu de l'éditeur est le PDF exact, au pixel près.
+  (certifications, projets, bénévolat...) ; l'aperçu de l'éditeur a trois modes (Rapide, Auto, PDF) ;
+  en mode PDF, c'est le PDF exact, au pixel près. Le plan gratuit ouvre en Rapide, sans filigrane (le PDF téléchargé en garde un).
 - Sortir : PDF, Word (plan Pro), lien de partage public avec expiration et décompte des consultations.
 - Candidater : adapter le CV à une offre (enregistré en variante), lettre de motivation (téléchargeable en PDF
   aux couleurs du CV), six questions d'entretien probables avec pistes de réponse.
