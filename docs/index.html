@@ -12,207 +12,184 @@
 <title>Console realGen</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-:root{--bg:#f6f5fb;--card:#fff;--fg:#1b1733;--muted:#6b6785;--line:#e3e0f0;--acc:#6c47ff;--acc2:#b547ff;--ok:#16a34a;--ko:#dc2626;--run:#d97706}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#110d24;--card:#1b1636;--fg:#f1efff;--muted:#a09bc0;--line:#2e2852;--acc:#8b6cff;--acc2:#c77dff}}
+:root{--bg:#f7f7f8;--card:#fff;--fg:#18181b;--muted:#71717a;--line:#e4e4e7;--acc:#4f46e5;--acc-bg:#eef0ff;--ok:#15803d;--ko:#dc2626;--run:#b45309}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111113;--card:#19191c;--fg:#f4f4f5;--muted:#a1a1aa;--line:#2b2b30;--acc:#818cf8;--acc-bg:#23244a}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
-header{padding:18px 16px;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff}
-header h1{margin:0;font-size:20px}header p{margin:2px 0 0;opacity:.85;font-size:13px}
-main{max-width:980px;margin:0 auto;padding:16px}
-nav{display:flex;gap:6px;margin:0 0 12px;padding:8px 0;flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--bg)}
-nav button{flex:1;min-width:90px}
-#runDot{color:var(--run)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
-h2{font-size:16px;margin:0 0 12px}
-label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
-small,.muted{color:var(--muted);font-size:12px;font-weight:400}
-input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);font:inherit}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 16px}
-.chk{display:flex;align-items:center;gap:8px;font-weight:500}.chk input{width:auto}
-button{padding:9px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
-button.primary,nav button.on{background:var(--acc);border-color:var(--acc);color:#fff}
-button:disabled{opacity:.5;cursor:default}
-.run{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
-.run:first-child{border-top:0}
-.dot{width:10px;height:10px;border-radius:50%;flex:none}
-.run .info{flex:1;min-width:180px}
-.steps{font-size:12px;color:var(--muted);margin-top:3px}
-.detail{flex-basis:100%;background:var(--bg);border-radius:10px;padding:10px 12px;font-size:13px}
-.step{display:flex;gap:8px;padding:2px 0}.step .d{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
-.log{white-space:pre-wrap;word-break:break-word;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--line);padding:8px;border-radius:8px;max-height:420px;overflow:auto;margin:8px 0 0}
-.log .err{color:var(--ko);font-weight:600}
-.warn{color:var(--ko)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{max-width:760px;margin:0 auto;padding:20px 16px 4px;display:flex;align-items:baseline;gap:10px}
+header h1{margin:0;font-size:18px;font-weight:650}header p{margin:0;color:var(--muted);font-size:13px}
+main{max-width:760px;margin:0 auto;padding:0 16px 24px}
+nav{display:flex;gap:22px;align-items:center;margin:0 0 16px;position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+nav button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:12px 0;color:var(--muted);font-weight:500}
+nav button.on{color:var(--fg);border-bottom-color:var(--acc)}
+nav .sp{flex:1}nav .quiet{font-size:13px;font-weight:400}#runDot{color:var(--run)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:14px}
+h2{font-size:17px;margin:0 0 14px;font-weight:650}h2 small{font-weight:400}
 h3{font-size:14px;margin:16px 0 8px}
-details>summary{cursor:pointer;padding:6px 0}
-.subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.subnav button{padding:6px 11px;font-size:13px}
-.subnav button.on{background:var(--fg);border-color:var(--fg);color:var(--bg)}
-.filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:12px}
-@media (max-width:560px){.filters{grid-template-columns:1fr}}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
-.item{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--card)}
-.item h4{margin:0;font-size:15px}.item p{margin:0;font-size:13px;line-height:1.45}
-.item .quote{font-style:italic;color:var(--muted)}
-.item .foot{margin-top:auto;display:flex;gap:6px;flex-wrap:wrap;padding-top:4px}.item .foot button{padding:5px 10px;font-size:12px}
-.item .id{font:11px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
-.swatches{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}.swatches span{flex:1}
-.tag.ok{border-color:var(--ok);color:var(--ok)}.tag.hum{border-color:var(--acc2);color:var(--acc2)}
-.reelplan{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--bg)}
-.reelplan .head{display:flex;align-items:center;gap:6px}.reelplan .head b{flex:1}
-.reelplan .head button{padding:4px 9px;font-size:12px}
-.reelplan .grid label{margin-top:6px}
-.preview{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}.preview b{color:var(--fg);font-weight:600}
-.preview .warn{font-weight:600}
-.reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.reel video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}
-.reel img{width:100%;border-radius:10px;display:block}
-.reel .strip{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory}
-.reel .strip img{flex:0 0 85%;aspect-ratio:4/5;object-fit:cover;scroll-snap-align:start}
-.reel pre{white-space:pre-wrap;font:12px/1.4 inherit;background:var(--bg);padding:8px;border-radius:8px;max-height:160px;overflow:auto}
+label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin:0 0 4px}
+small,.muted{color:var(--muted);font-size:12px;font-weight:400}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit}
+button{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
+button:hover{border-color:var(--muted)}button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+button.ghost,button.link{border:0;background:none;color:var(--muted);padding:6px 8px}button.ghost:hover{color:var(--fg)}
+button.link{color:var(--acc);padding:6px 0;font-weight:500}
+.hidden{display:none!important}
 .row{display:flex;gap:8px;flex-wrap:wrap}
-.hidden{display:none}
-#msg{position:fixed;left:16px;right:16px;bottom:16px;max-width:560px;margin:auto;padding:12px 14px;border-radius:10px;background:var(--fg);color:var(--bg);display:none}
-/* Lancer : deux modes, puis un reel = des etapes repliables avec apercus (docs/apercus/). */
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
-@media (max-width:560px){.modes{grid-template-columns:1fr}}
-.modes button{text-align:left;padding:14px;border-radius:12px;border-width:2px}
-.modes button b{display:block;font-size:15px}.modes button small{display:block;margin-top:2px}
-.modes button.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--card))}
-.lot{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;align-items:stretch}
-.chipreel{flex:0 0 auto;display:flex;gap:8px;align-items:center;padding:6px 10px 6px 6px;border:2px solid var(--line);border-radius:12px;background:var(--bg);text-align:left;max-width:230px}
-.chipreel.on{border-color:var(--acc)}
-.chipreel img,.chipreel .mini{width:34px;height:46px;object-fit:cover;border-radius:6px;flex:none;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;font-size:18px}
-.chipreel span{font-size:12px;line-height:1.3;overflow:hidden}
-.chipreel.add{justify-content:center;min-width:90px;border-style:dashed}
-.etape{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--card)}
-.etape>button.tete{width:100%;display:flex;gap:10px;align-items:center;border:0;background:none;text-align:left;padding:12px 14px;border-radius:12px}
-.etape>button.tete .num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line);font-size:13px;font-weight:700;flex:none}
-.etape.fait>button.tete .num{background:var(--acc);border-color:var(--acc);color:#fff}
-.etape>button.tete .choix{margin-left:auto;color:var(--muted);font-size:13px;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.etape .corps{padding:0 14px 14px}
-.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.picks.txt{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
-@media (max-width:560px){.picks{grid-template-columns:repeat(2,1fr)}.picks.txt{grid-template-columns:1fr}}
-.pick{position:relative;border:2px solid var(--line);border-radius:12px;padding:0;overflow:hidden;background:var(--bg);text-align:left;display:flex;flex-direction:column;cursor:pointer;color:var(--fg)}
-.pick.on{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 28%,transparent)}
-.pick.on::after{content:"✓";position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px}
-.pick img,.pick .ph{width:100%;aspect-ratio:3/4;object-fit:cover;background:#000;display:block}
-.pick .ph{display:grid;place-items:center;font-size:38px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff}
-.pick .tx{padding:8px 10px;font-size:12px;line-height:1.4;color:var(--muted)}.pick .tx b{display:block;font-size:14px;color:var(--fg);margin-bottom:2px}
-.pick .tx i{display:block;margin-top:4px}
-.pick .play{position:absolute;top:6px;right:6px;width:34px;height:34px;padding:0;border-radius:50%;font-size:14px;background:rgba(0,0,0,.6);color:#fff;border:0}
-.pick.son{flex-direction:row;align-items:center;gap:10px;padding:10px 46px 10px 12px}.pick.son .play{top:50%;transform:translateY(-50%)}
-.pick.son .tx{padding:0}
-.pills{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}.pills button{padding:5px 12px;border-radius:99px;font-size:13px}.pills button.on{background:var(--fg);border-color:var(--fg);color:var(--bg)}
-.galerie{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.galerie figure{margin:0;flex:0 0 120px}.galerie img{width:120px;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#000}.galerie figcaption{font-size:11px;color:var(--muted);text-align:center}
-.recap{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;margin-top:10px}
-.tag{display:inline-block;padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:12px;margin:2px}
-/* Lisibilite : textes tronques (detail au survol / au clic), sections repliables, barre d'action fixe. */
-.clamp2,.clamp3{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
-.clamp2{-webkit-line-clamp:2}.clamp3{-webkit-line-clamp:3}
-.cards .item p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
-.cards .item{cursor:pointer}.cards .item.open p{display:block;-webkit-line-clamp:unset}
-.cards{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
-.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input{flex:2;min-width:180px}.filters select{flex:1;min-width:140px;width:auto}
-details.sous{border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:0 12px;background:var(--bg)}
-details.sous>summary{display:flex;gap:8px;align-items:center;padding:10px 0;font-size:14px}
-details.sous>summary .choix{margin-left:auto;color:var(--muted);font-size:12px;font-weight:400;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-details.sous[open]>summary{border-bottom:1px solid var(--line);margin-bottom:10px}
-details.sous .picks{padding-bottom:12px}
-.toolbar{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;margin:0 0 10px}.toolbar .pills{margin:0}.toolbar>small{font-weight:600}
-.etape .actions{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}.actions button{padding:5px 10px;font-size:12px}
-.grp{margin:16px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:4px}
-.bar{position:sticky;bottom:0;z-index:15;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 16px;margin:16px -16px -16px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 14px 14px;box-shadow:0 -6px 16px rgba(0,0,0,.07)}
-.bar .info{font-size:13px;min-width:0}.bar .info b{display:block}
-.bar button.primary{padding:11px 22px;font-weight:600}
-.reel details{margin-top:8px}.reel details summary{font-weight:600;font-size:13px}
-@media (max-width:560px){nav{flex-wrap:nowrap;overflow-x:auto}nav button{flex:0 0 auto;min-width:0;padding:8px 10px}}
-.step-hint{font-size:13px;color:var(--muted);margin:0 0 8px}
+.warn{color:var(--ko);font-size:13px}
+.chk{display:flex;align-items:center;gap:8px;font-weight:400;color:var(--fg)}.chk input{width:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 16px}
+.params{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 16px}
+.hint{color:var(--muted);font-size:13px;margin:14px 0 4px}
+details>summary{cursor:pointer;padding:6px 0;font-weight:500}
+details.adv{margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
+.grp{margin:18px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.bar{position:sticky;bottom:0;z-index:15;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 -4px 14px rgba(0,0,0,.06)}
+.bar .info{font-size:14px;min-width:0}.bar .info b{display:block;font-weight:600}
+.bar button.primary{padding:10px 24px}
+/* Un reel = une fiche de lignes calmes ; chaque ligne ouvre un selecteur (dialog). */
+.rc{border:1px solid var(--line);border-radius:10px;margin:10px 0;background:var(--card);overflow:hidden}
+.rc.closed{cursor:pointer}.rc.closed:hover{border-color:var(--muted)}
+.rc-head{display:flex;align-items:center;gap:6px;padding:10px 14px}
+.rc-head b{flex:none}.rc-sum{flex:1;color:var(--muted);font-size:13px;margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-tone{display:flex;align-items:center;gap:12px;padding:8px 14px;border-top:1px solid var(--line)}.rc-tone span{width:110px;flex:none;color:var(--muted);font-size:13px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:5px 12px;font-size:13px;background:none;color:var(--muted)}
+.seg button.on{background:var(--acc-bg);color:var(--acc);font-weight:600}
+.rl{display:flex;align-items:center;gap:12px;width:100%;border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 14px;background:none;text-align:left}
+.rl:hover{background:var(--bg)}
+.rl .lab{width:110px;color:var(--muted);font-size:13px;flex:none}
+.rl .val{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rl .val.auto{color:var(--muted)}
+.rl .chev{color:var(--muted)}
+.rc .warn{padding:0 14px 10px}
+dialog{border:0;border-radius:14px;padding:0;width:min(580px,94vw);max-height:84vh;background:var(--card);color:var(--fg);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog[open]{display:flex;flex-direction:column}dialog::backdrop{background:rgba(0,0,0,.4)}
+@media (max-width:560px){dialog{margin:auto 0 0;width:100%;max-width:100%;border-radius:14px 14px 0 0;max-height:88vh}.rl .lab,.rc-tone span{width:84px}}
+.pk-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}.pk-head b{font-size:15px}
+.pk-tools{padding:10px 16px 0}.pk-tools .seg{margin-bottom:4px}
+.pk-body{overflow:auto;padding:8px 8px 14px}
+.opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer}
+.opt:hover{background:var(--bg)}.opt.on{background:var(--acc-bg)}.opt.on .o-main b::after{content:" ✓";color:var(--acc)}
+.opt.plain .o-main b{font-weight:400}.o-main{flex:1;min-width:0}.o-main b{display:block;font-weight:600;font-size:14px}
+.o-sub{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.o-tag{font-size:12px;color:var(--muted);white-space:nowrap}
+.pk-sec{margin:12px 12px 2px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;padding:8px}
+.tcard{border:2px solid transparent;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--bg);font-size:12px;text-align:center}.tcard.on{border-color:var(--acc)}
+.tcard img,.tcard .ph{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#222}.tcard .ph{display:grid;color:#bbb}.tcard span{display:block;padding:6px 4px}
+.ph{display:grid;place-items:center;color:var(--muted)}
+.play{width:30px;height:30px;padding:0;border-radius:50%;flex:none;font-size:11px}
+/* Resultats : runs puis reels */
+.run{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}.run:first-child{border-top:0}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.run .info{flex:1;min-width:180px}.steps{font-size:12px;color:var(--muted);margin-top:3px}
+.run button{padding:5px 10px;font-size:13px}
+.detail{flex-basis:100%;background:var(--bg);border-radius:8px;padding:10px 12px;font-size:13px}
+.step{display:flex;gap:8px;padding:2px 0}.step .d{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+.log{white-space:pre-wrap;word-break:break-word;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--card);border:1px solid var(--line);padding:8px;border-radius:8px;max-height:420px;overflow:auto;margin:8px 0 0}.log .err{color:var(--ko);font-weight:600}
+.reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.reel video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}.reel img{width:100%;border-radius:10px;display:block}
+.reel .strip{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory}.reel .strip img{flex:0 0 85%;aspect-ratio:4/5;object-fit:cover;scroll-snap-align:start}
+.reel pre{white-space:pre-wrap;font:12px/1.4 inherit;background:var(--bg);padding:8px;border-radius:8px;max-height:160px;overflow:auto}
+.reel details{margin-top:8px}.reel details summary{font-size:13px}
+/* Catalogue : reference, fiches calmes */
+.subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.subnav button{padding:5px 11px;font-size:13px;color:var(--muted)}
+.subnav button.on{background:var(--acc-bg);border-color:var(--acc-bg);color:var(--acc);font-weight:600}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.filters input{flex:2;min-width:180px}.filters select{flex:1;min-width:140px;width:auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.item{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--card);cursor:pointer}
+.item h4{margin:0;font-size:15px}.item p{margin:0;font-size:13px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.item.open p{display:block;-webkit-line-clamp:unset}.item .quote{font-style:italic;color:var(--muted)}
+.item .foot{margin-top:auto;display:flex;gap:6px;flex-wrap:wrap;padding-top:4px}.item .foot button{padding:4px 10px;font-size:12px}
+.item .id{font:11px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+.swatches{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}.swatches span{flex:1}
+.tag{display:inline-block;padding:0 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:12px;margin:0 3px 3px 0;color:var(--muted)}
+.tag.ok{color:var(--ok)}.tag.hum{color:var(--acc)}
+#msg{position:fixed;left:16px;right:16px;bottom:84px;max-width:560px;margin:auto;padding:12px 14px;border-radius:10px;background:var(--fg);color:var(--bg);display:none;z-index:50}
 </style></head><body>
-<header><h1>Console realGen</h1><p>Reels OpusCV : lancer, suivre, récupérer</p></header>
+<header><h1>realGen</h1><p>Reels OpusCV</p></header>
 <main>
 <section id="login" class="card hidden">
   <h2>Connexion GitHub</h2>
   <p class="muted">Crée un token <b>fine-grained</b> (GitHub → Settings → Developer settings → Fine-grained tokens), limité au dépôt <b>realGen</b>, permissions <b>Actions : Read and write</b> et <b>Contents : Read-only</b>. Il reste dans ce navigateur uniquement.</p>
   <label>Dépôt</label><input id="repo" value="phenixi89/realGen">
-  <label>Token</label><input id="token" type="password" placeholder="github_pat_...">
+  <label style="margin-top:10px">Token</label><input id="token" type="password" placeholder="github_pat_...">
   <div class="row" style="margin-top:12px"><button class="primary" onclick="saveLogin()">Se connecter</button></div>
 </section>
 
 <div id="app" class="hidden">
-<nav><button data-tab="launch" class="on">🚀 Lancer</button><button data-tab="runs">⏱ Runs<span id="runDot"></span></button><button data-tab="reels">🎬 Reels</button><button data-tab="catalog">📚 Catalogue</button><button onclick="logout()">Déconnexion</button></nav>
+<nav><button data-tab="launch" class="on">Lancer</button><button data-tab="runs">Résultats<span id="runDot"></span></button><button data-tab="catalog">Catalogue</button><span class="sp"></span><button class="ghost quiet" onclick="logout()">Déconnexion</button></nav>
 
-<section id="tab-launch" class="card">
-  <h2>Nouveau lot de reels</h2>
-  <div class="modes">
-    <button id="m_auto" onclick="setCompose(false)"><b>⚡ Laisse-moi faire</b><small>Le générateur varie tout : tu donnes juste le nombre de reels.</small></button>
-    <button id="m_compose" onclick="setCompose(true)"><b>🎨 Je compose</b><small>Tu choisis format, sujet, style et accroche, reel par reel.</small></button>
+<section id="tab-launch">
+  <div class="card">
+    <h2>Nouveau lot de reels</h2>
+    <div class="params">
+      <div class="g-only"><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
+      <div><label>Durée</label><select id="f_duration"><option value="15">15 s</option><option value="25" selected>25 s</option><option value="30">30 s</option><option value="45">45 s</option><option value="60">60 s</option></select></div>
+      <div><label>Publier sur</label><select id="f_plateformes">
+        <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
+        <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
+    </div>
+    <p class="hint" id="autoHint">Format, sujet, style et accroche sont choisis et variés automatiquement.</p>
+    <button class="link" id="toggleCompose" onclick="setCompose(!$('f_compose').checked)">Choisir moi-même les reels →</button>
+    <input id="f_compose" type="checkbox" class="hidden">
+    <div id="composer" class="hidden">
+      <div id="plan"></div>
+      <button class="link" onclick="addReel()">+ Ajouter un reel</button>
+    </div>
+    <p id="capWarn" class="warn hidden"></p>
+    <details class="adv"><summary>Options avancées</summary>
+      <h4 class="grp">Contenu imposé <small>(si tu laisses faire le générateur)</small></h4>
+      <div class="grid">
+        <div class="g-only"><label>Accroche</label><select id="f_hook"><option value="">Rotation automatique</option></select></div>
+        <div class="g-only"><label>Format</label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
+        <div class="g-only"><label>Thème visuel</label><select id="f_theme"><option value="">Rotation automatique</option></select></div>
+        <div class="g-only"><label>Registre</label><select id="f_registre"><option value="">Automatique (mix sérieux / humour)</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
+        <div class="g-only"><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
+      </div>
+      <div class="g-only" style="margin-top:12px"><label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS"></div>
+      <label style="margin-top:12px">Scénario manuel <small>optionnel, chemin dans le dépôt</small></label><input id="f_scenario" placeholder="scenarios/exemple.json">
+      <h4 class="grp">Image</h4>
+      <div class="grid">
+        <div><label>Capture</label><select id="f_capture_mode">
+          <option value="screenshots" selected>Captures desktop + zoom (recommandé : cartes et animations complètes)</option><option value="video">Vidéo mobile (sans cartes animées)</option><option value="video_desktop">Vidéo desktop recadrée (sans cartes animées)</option><option value="aucune">Sans capture (conseils en cartes animées, dessin animé)</option></select></div>
+        <div><label>Animations <small>scene/highlight : mode captures</small></label><select id="f_anims">
+          <option value="none">Aucune</option><option value="all">Toutes</option><option>overlay</option><option>scene</option><option>highlight</option><option>cursor</option>
+          <option>overlay,scene</option><option>overlay,highlight</option><option>scene,highlight</option><option>overlay,cursor</option><option>scene,cursor</option></select></div>
+      </div>
+      <h4 class="grp">Son</h4>
+      <div class="grid">
+        <label class="chk"><input id="f_musique" type="checkbox" checked> Musique de fond</label>
+        <label class="chk"><input id="f_sfx" type="checkbox" checked> Effets sonores</label>
+        <label class="chk"><input id="f_sans_voix" type="checkbox"> Sans voix off</label>
+      </div>
+      <h4 class="grp">Reprise et cache</h4>
+      <div class="grid">
+        <div><label>Reprendre à partir de</label><select id="f_from_step">
+          <option value="">Reprise normale (cache)</option>
+          <option value="script">script : tout nouveau (texte + voix Gemini)</option>
+          <option value="voice">voice : même texte, nouvelle voix</option>
+          <option value="video">video : même texte et voix, captures refaites</option>
+          <option value="subs">subs : sous-titres + montage</option>
+          <option value="assemble">assemble : montage final seul</option></select></div>
+        <label class="chk"><input id="f_force" type="checkbox"> Tout regénérer (ignorer le cache)</label>
+        <label class="chk"><input id="f_allow_ai_quota" type="checkbox"> Autoriser quota IA (entretien)</label>
+      </div>
+    </details>
   </div>
-  <input id="f_compose" type="checkbox" class="hidden">
-  <div class="grid">
-    <div class="g-only"><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
-    <div class="g-only"><label>Accroche <small>« Pourquoi… » = les plus performantes</small></label><select id="f_hook"><option value="">Rotation automatique</option></select></div>
-    <div><label>Durée</label><select id="f_duration"><option>15</option><option selected>25</option><option>30</option><option>45</option><option>60</option></select></div>
-    <div><label>Plateformes</label><select id="f_plateformes">
-      <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
-      <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
-  </div>
-  <div id="composer" class="hidden">
-    <h3>Tes reels <small>(clique pour modifier ; une étape en « Auto » est choisie par le générateur)</small></h3>
-    <div class="lot" id="lot"></div>
-    <div class="actions"><button onclick="roll(CUR)">🎲 Au hasard</button><button onclick="dupReel(CUR)">⧉ Dupliquer</button><button onclick="resetReel(CUR)">↺ Tout en auto</button><button onclick="delReel(CUR)">🗑 Retirer</button></div>
-    <div id="plan"></div>
-  </div>
-  <p id="capWarn" class="warn hidden"></p>
-  <details style="margin-top:14px"><summary><b>Options avancées</b> <small>(contenu imposé, capture, son, reprise)</small></summary>
-  <h4 class="grp">Contenu imposé <small>(mode « Laisse-moi faire » seulement)</small></h4>
-  <div class="grid">
-    <div class="g-only"><label>Format <small>vide = auto</small></label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
-    <div class="g-only"><label>Thème visuel <small>vide = rotation</small></label><select id="f_theme"><option value="">Rotation automatique</option></select></div>
-    <div class="g-only"><label>Registre</label><select id="f_registre"><option value="">Automatique (mix sérieux / humour)</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
-    <div class="g-only"><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
-  </div>
-  <div class="g-only"><label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS"></div>
-  <label>Scénario manuel <small>optionnel, chemin dans le dépôt</small></label><input id="f_scenario" placeholder="scenarios/exemple.json">
-  <h4 class="grp">Image</h4>
-  <div class="grid">
-    <div><label>Capture</label><select id="f_capture_mode">
-      <option value="screenshots" selected>Captures desktop + zoom (recommandé : cartes et animations complètes)</option><option value="video">Vidéo mobile (sans cartes animées)</option><option value="video_desktop">Vidéo desktop recadrée (sans cartes animées)</option><option value="aucune">Sans capture (conseils en cartes animées, dessin animé)</option></select></div>
-    <div><label>Animations <small>scene/highlight : mode captures</small></label><select id="f_anims">
-      <option value="none">Aucune</option><option value="all">Toutes</option><option>overlay</option><option>scene</option><option>highlight</option><option>cursor</option>
-      <option>overlay,scene</option><option>overlay,highlight</option><option>scene,highlight</option><option>overlay,cursor</option><option>scene,cursor</option></select></div>
-  </div>
-  <h4 class="grp">Son</h4>
-  <div class="grid">
-    <label class="chk"><input id="f_musique" type="checkbox" checked> Musique de fond</label>
-    <label class="chk"><input id="f_sfx" type="checkbox" checked> Effets sonores</label>
-    <label class="chk"><input id="f_sans_voix" type="checkbox"> Sans voix off</label>
-  </div>
-  <h4 class="grp">Reprise et cache</h4>
-  <div class="grid">
-    <div><label>Reprendre à partir de</label><select id="f_from_step">
-      <option value="">Reprise normale (cache)</option>
-      <option value="script">script : tout nouveau (texte + voix Gemini)</option>
-      <option value="voice">voice : même texte, nouvelle voix</option>
-      <option value="video">video : même texte et voix, captures refaites</option>
-      <option value="subs">subs : sous-titres + montage</option>
-      <option value="assemble">assemble : montage final seul</option></select></div>
-    <label class="chk"><input id="f_force" type="checkbox"> Tout regénérer (ignorer le cache)</label>
-    <label class="chk"><input id="f_allow_ai_quota" type="checkbox"> Autoriser quota IA (entretien)</label>
-  </div>
-  </details>
-  <div class="bar"><div class="info"><b id="goInfo"></b><span class="muted" id="goSub"></span></div><button class="primary" id="go" onclick="launch()">🚀 Lancer le workflow</button></div>
+  <div class="bar"><div class="info"><b id="goInfo"></b><span class="muted" id="goSub"></span></div><button class="primary" id="go" onclick="launch()">Lancer</button></div>
 </section>
 
-<section id="tab-runs" class="card hidden"><h2>Derniers runs <small id="refresh"></small></h2><div id="runs">Chargement…</div></section>
+<div id="tab-runs" class="hidden">
+  <section class="card"><h2>Derniers runs <small id="refresh"></small></h2><div id="runs">Chargement…</div></section>
+  <section id="tab-reels" class="card hidden">
+    <h2>Reels <small id="reelsState"></small></h2>
+    <select id="runPick" class="hidden" onchange="loadReels()"></select>
+    <div id="reels" class="reels"></div>
+  </section>
+</div>
 
-<section id="tab-reels" class="card hidden">
-  <h2>Reels <small>(le dernier run réussi s'ouvre tout seul)</small></h2>
-  <div class="row"><select id="runPick" style="flex:1" onchange="loadReels()"></select></div>
-  <p id="reelsState" class="muted"></p>
-  <div id="reels" class="reels"></div>
-</section>
-
-<section id="tab-catalog" class="card hidden"><h2>Catalogue</h2>
+<section id="tab-catalog" class="card hidden"><h2>Catalogue <small>(référence : formats, sujets, thèmes…)</small></h2>
   <div id="catErr"></div>
   <div class="subnav" id="catNav"></div>
   <div class="filters"><input id="catQ" type="search" placeholder="Rechercher (mot, id…)" oninput="renderCatalog()">
@@ -222,6 +199,7 @@ details.sous .picks{padding-bottom:12px}
   <div id="catalog" class="cards">Chargement…</div></section>
 </div>
 </main>
+<dialog id="picker" onclick="if(event.target===this)closePicker()"><div class="pk-head"><b id="pkTitle"></b><button class="ghost" onclick="closePicker()">Fermer</button></div><div class="pk-tools" id="pkTools"></div><div class="pk-body" id="pkBody"></div></dialog>
 <div id="msg"></div>
 <script>
 // Erreur inattendue : message visible plutot qu'une page figee.
@@ -247,12 +225,13 @@ function saveLogin(){ TOKEN = $("token").value.trim(); REPO = $("repo").value.tr
 function logout(){ store.del("rg_token"); TOKEN = null; clearInterval(timer); $("app").classList.add("hidden"); $("login").classList.remove("hidden"); }
 
 document.querySelectorAll("nav button[data-tab]").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+const TABS = ["launch", "runs", "catalog"];
 function showTab(t){
+  if (!TABS.includes(t)) t = t === "reels" ? "runs" : "launch";   // ancien onglet « Reels » : fusionne dans Résultats
   document.querySelectorAll("nav button[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
-  ["launch","runs","reels","catalog"].forEach(x => $("tab-" + x).classList.toggle("hidden", x !== t));
+  TABS.forEach(x => $("tab-" + x).classList.toggle("hidden", x !== t));
   store.set("rg_tab", t);
   if (t === "runs") loadRuns();
-  if (t === "reels") (async () => { if (!$("runPick").options.length) await loadRuns(); if ($("runPick").value && REELS_FOR !== $("runPick").value) loadReels(); })();
 }
 let REELS_FOR = null;
 
@@ -318,7 +297,7 @@ function renderCatalog(){
   $("catalog").innerHTML = items.map(CARD[catKind]).join("") || `<p class="muted">Aucun résultat.</p>`;
   hydrate($("catalog"));
 }
-const useBtn = (kind, id) => PLAN_FIELD[kind] ? `<button onclick="useInPlan('${PLAN_FIELD[kind]}','${esc(id)}')">➕ Composer</button>` : "";
+const useBtn = (kind, id) => PLAN_FIELD[kind] ? `<button onclick="useInPlan('${PLAN_FIELD[kind]}','${esc(id)}')">Ajouter au lot</button>` : "";
 PLAN_FIELD.trames = "trame";
 const vignette = chemin => `<img data-apercu="${esc(chemin)}" alt="" loading="lazy" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#000">`;
 const regTags = r => r.map(x => `<span class="tag${x === "humour" ? " hum" : ""}">${REG_LABEL[x] || x}</span>`).join("");
@@ -375,29 +354,18 @@ async function ecouter(chemin, btn){
 }
 const img = (chemin, ph = "🖼") => `<img data-apercu="${esc(chemin)}" data-ph="${ph}" alt="" loading="lazy">`;
 const playBtn = chemin => `<button class="play" title="Écouter" onclick="ecouter('${esc(chemin)}', this)">▶</button>`;
-// Image representative d'un format : dessin anime -> un decor ; cartes -> la carte la plus proche ; captures -> l'app.
-const FORMAT_CARTE = [[/meme|starter/, "meme"], [/mythe|vrai_ou_faux|red_green|attentes/, "texte"], [/avant_apres|split|traducteur|trois_niveaux/, "comparaison"],
-  [/liste|checklist|tier|top_bottom/, "liste"], [/tableau|vu_par/, "schema"], [/dm_|question_recruteur|reaction/, "conversation"], [/scanner|decryptage/, "scan"], [/trouve/, "impact"]];
-function fmtImg(f){
-  if (f.dessin) return img("decors/cafe.jpg", "🎬");
-  if (f.jeu) return img("boss/robot_trieur.jpg", "🎮");
-  if (f.id === "cours_eclair") return img("themes/carnet_cours.jpg", "🎓");
-  if (f.cartes === "aucune") return `<div class="ph">📱</div>`;
-  const k = (FORMAT_CARTE.find(([re]) => re.test(f.id)) || [, "texte"])[1];
-  return img(`cartes/${k}.jpg`, "🃏");
-}
 const premiere = t => { const m = String(t || "").match(/^.*?[.!?](\s|$)/); return (m ? m[0] : String(t || "")).slice(0, 140); };
 
 // --- Compositeur : une combinaison par reel (input "plan" du workflow), editee etape par etape ---
 const FIELDS = ["registre", "format", "sujet", "angle", "trame", "hook", "theme", "ambiance", "voix"];
 const blank = () => ({ ...Object.fromEntries(FIELDS.map(k => [k, ""])), libre: false });
 let PLAN = (() => { try { const p = JSON.parse(store.get("rg_plan")); return Array.isArray(p) && p.length ? p.map(r => ({ ...blank(), ...r })) : [blank()]; } catch { return [blank()]; } })();
-let CUR = 0, ETAPE = "format", FILTRE_FMT = "", RECH_SUJET = "";
+let CUR = 0, FILTRE_FMT = "";
 const savePlan = () => store.set("rg_plan", JSON.stringify(PLAN));
 function setCompose(on){
   $("f_compose").checked = on; store.set("rg_compose", on ? "1" : "");
-  $("composer").classList.toggle("hidden", !on);
-  $("m_auto").classList.toggle("on", !on); $("m_compose").classList.toggle("on", on);
+  $("composer").classList.toggle("hidden", !on); $("autoHint").classList.toggle("hidden", on);
+  $("toggleCompose").textContent = on ? "← Tout laisser en automatique" : "Choisir moi-même les reels →";
   document.querySelectorAll("#tab-launch .g-only").forEach(e => e.classList.toggle("hidden", on));
   renderPlan(); checkCapture();
 }
@@ -421,91 +389,88 @@ function options(r, k){
 const OPT_LABEL = { format: x => x.nom, hook: x => nice(x.id), theme: x => x.nom, ambiance: x => x.nom || nice(x.id), voix: x => x.id, trame: x => x.nom };
 const nomDe = (k, id) => { const x = byId(k === "hook" ? CAT.hooks : CAT[k === "theme" ? "themes" : k === "format" ? "formats" : k === "ambiance" ? "ambiances" : k === "voix" ? "voix" : k === "trame" ? "trames" : "sujets"], id); return x ? (k === "sujet" ? x.texte : OPT_LABEL[k](x)) : id; };
 const dessinDe = r => { const f = byId(CAT.formats, r.format); return !!(f && f.dessin); };
-// Etapes d'un reel : titre, resume du choix, contenu.
-const ETAPES = [
-  { k: "format", titre: "Le format", resume: r => [r.registre ? REG_LABEL[r.registre] : "", r.format ? nomDe("format", r.format) : "Auto"].filter(Boolean).join(" · ") },
-  { k: "sujet", titre: "Le sujet", resume: r => r.libre ? (r.angle ? `✎ ${r.angle}` : "✎ à écrire") : r.sujet ? nomDe("sujet", r.sujet) : "Auto" },
-  { k: "histoire", titre: "L'histoire (dessin animé)", si: dessinDe, resume: r => r.trame ? nomDe("trame", r.trame) : "Auto (trame en rotation)" },
-  { k: "style", titre: "Le style : thème, musique, voix", resume: r => [r.theme ? nomDe("theme", r.theme) : "Thème auto", r.ambiance ? nomDe("ambiance", r.ambiance) : "", !dessinDe(r) && r.voix ? r.voix : ""].filter(Boolean).join(" · ") },
-  { k: "accroche", titre: "L'accroche (2 premières secondes)", resume: r => r.hook ? nomDe("hook", r.hook) : "Auto" },
+// --- Compositeur : un reel = une fiche de lignes calmes ; chaque ligne ouvre un selecteur a la demande ---
+const LIGNES = [
+  { k: "format", titre: "Format", val: r => r.format ? nomDe("format", r.format) : "" },
+  { k: "sujet", titre: "Sujet", val: r => r.libre ? (r.angle ? `✎ ${r.angle}` : "✎ à écrire") : r.sujet ? nomDe("sujet", r.sujet) : "" },
+  { k: "trame", titre: "Histoire", si: dessinDe, val: r => r.trame ? nomDe("trame", r.trame) : "" },
+  { k: "hook", titre: "Accroche", val: r => r.hook ? nomDe("hook", r.hook) : "" },
+  { k: "theme", titre: "Thème", val: r => r.theme ? nomDe("theme", r.theme) : "" },
+  { k: "son", titre: "Musique et voix", val: r => [r.ambiance ? ambName(r.ambiance) : "", !dessinDe(r) && r.voix ? r.voix : ""].filter(Boolean).join(" · ") },
 ];
-const tuile = (on, onclick, visuel, titre, texte = "", extra = "") => `<div class="pick${on ? " on" : ""}" role="button" tabindex="0" onclick="${onclick}" onkeydown="if(event.key==='Enter')this.click()">${visuel}<div class="tx"><b>${esc(titre)}</b>${texte}</div>${extra}</div>`;
-// Tuile « Auto » : grande dans les grilles d'images, compacte dans les listes de texte (compact = true).
-const AUTO = (k, on, txt = "Le générateur choisit (rotation anti-répétition)", compact = false) =>
-  tuile(on, `setField(CUR,'${k}','')`, compact ? "" : `<div class="ph">🎲</div>`, compact ? "🎲 Auto" : "Auto", esc(txt));
-// Section repliable : l'etat ouvert/ferme survit aux rendus (OUVERT).
-const OUVERT = {};
-const sous = (key, titre, choix, corps, ouvert = false) => `<details class="sous"${(OUVERT[key] ?? ouvert) ? " open" : ""} ontoggle="OUVERT['${esc(key)}']=this.open"><summary><b>${titre}</b><span class="choix">${esc(choix)}</span></summary>${corps}</details>`;
-const court = (txt, plein, n = 2) => `<span class="clamp${n}" title="${esc(plein || txt)}">${esc(txt)}</span>`;
-function corpsEtape(k, r){
+const lignesDe = r => LIGNES.filter(l => !l.si || l.si(r));
+function renderEditeur(){
+  $("plan").innerHTML = PLAN.map((r, i) => {
+    const lignes = lignesDe(r);
+    if (i !== CUR) {
+      const resume = lignes.map(l => l.val(r)).filter(Boolean).join(" · ") || "Tout en automatique";
+      return `<div class="rc closed" onclick="CUR=${i};renderPlan()"><div class="rc-head"><b>Reel ${i + 1}</b><span class="rc-sum">${esc(resume)}</span></div></div>`;
+    }
+    return `<div class="rc"><div class="rc-head"><b>Reel ${i + 1}</b><span style="flex:1"></span>
+        <button class="ghost" onclick="roll(${i})">Au hasard</button>${PLAN.length < 10 ? `<button class="ghost" onclick="dupReel(${i})">Dupliquer</button>` : ""}<button class="ghost" onclick="delReel(${i})">Retirer</button></div>
+      <div class="rc-tone"><span>Ton</span><div class="seg">${["", "serieux", "humour"].map(v => `<button class="${r.registre === v ? "on" : ""}" onclick="setField(${i},'registre','${v}')">${v ? REG_LABEL[v] : "Auto"}</button>`).join("")}</div></div>
+      ${lignes.map(l => { const v = l.val(r); return `<button class="rl" onclick="openPicker('${l.k}')"><span class="lab">${l.titre}</span><span class="val${v ? "" : " auto"}">${esc(v || "Auto")}</span><span class="chev">›</span></button>`; }).join("")}
+      ${cartesPerdues(byId(CAT.formats, r.format)) ? `<p class="warn" style="margin:8px 14px">${CARTES_WARN}</p>` : ""}</div>`;
+  }).join("");
+}
+
+// Selecteur (dialog) : s'ouvre sur une ligne, se ferme au choix (sauf « Musique et voix », qui en demande deux).
+let PK = null, PK_Q = "";
+const PK_TITRE = { format: "Format", sujet: "Sujet", trame: "Histoire", hook: "Accroche", theme: "Thème", son: "Musique et voix" };
+const resumeFormat = f => { const ph = String(f.structure || "").split(/(?<=[.!?])\s+/); return (ph.find(x => x.length >= 28 && !/^accroche\b/i.test(x)) || ph.find(x => x.length >= 28) || ph[0] || "").slice(0, 140); };
+const opt = (on, click, titre, sous = "", droite = "", cls = "") => `<div class="opt${on ? " on" : ""}${cls ? " " + cls : ""}" role="button" tabindex="0" onclick="${click}" onkeydown="if(event.key==='Enter')this.click()"><div class="o-main"><b>${esc(titre)}</b>${sous ? `<span class="o-sub">${esc(sous)}</span>` : ""}</div>${droite}</div>`;
+const sec = t => `<div class="pk-sec">${esc(t)}</div>`;
+const ETIQ_VISUEL = f => f.dessin ? "Dessin animé" : f.jeu ? "Jeu vidéo" : f.cartes === "aucune" ? "App" : f.cartes === "majoritaires" ? "Cartes" : "App + cartes";
+function openPicker(k){ PK = k; PK_Q = ""; $("pkTitle").textContent = `Reel ${CUR + 1} · ${PK_TITRE[k]}`; renderPicker(); const d = $("picker"); if (!d.open) d.showModal(); $("pkBody").scrollTop = 0; }
+function closePicker(){ PK = null; if ($("picker").open) $("picker").close(); }
+$("picker").addEventListener("close", () => { PK = null; });
+function pickSet(k, v){ closePicker(); setField(CUR, k, v); }
+function renderPicker(garderOutils){
+  if (!PK) return;
+  const r = PLAN[CUR], k = PK, dessin = dessinDe(r), body = $("pkBody"), haut = body.scrollTop;
+  let tools = "", html = "";
   if (k === "format") {
-    const tous = options({ ...r, format: "" }, "format");
-    const filtres = { "": "Tous", conseil: "Conseil", produit: "Produit", humour: "Humour", dessin: "Dessin animé" };
-    const liste = tous.filter(f => !FILTRE_FMT || (FILTRE_FMT === "dessin" ? f.dessin : FILTRE_FMT === "humour" ? regs(f).includes("humour") : f.categorie === FILTRE_FMT));
-    return `<div class="toolbar"><small>Registre</small><div class="pills">${["", "serieux", "humour"].map(v => `<button class="${r.registre === v ? "on" : ""}" onclick="setField(CUR,'registre','${v}')">${v ? REG_LABEL[v] : "Auto"}</button>`).join("")}</div>
-      <small>Type</small><div class="pills">${Object.entries(filtres).map(([v, l]) => `<button class="${FILTRE_FMT === v ? "on" : ""}" onclick="FILTRE_FMT='${v}';renderPlan()">${l}</button>`).join("")}</div></div>
-      ${sansCap() ? `<p class="muted">Lot « Sans capture » : les formats qui filment l'app sont masqués (Options avancées → Capture pour les retrouver).</p>` : ""}
-      <div class="picks">${AUTO("format", !r.format, "Mix conseil / produit")}${liste.map(f => tuile(r.format === f.id, `setField(CUR,'format','${esc(f.id)}')`, fmtImg(f), f.nom,
-        `${court(premiere(f.structure), f.structure)}<i>${f.dessin ? "🎬 dessin animé" : f.cartes === "aucune" ? "📱 captures de l'app" : "🃏 " + esc(CARTES[f.cartes] || "")}${regs(f).includes("humour") ? " · 😄 humour" : ""}</i>`)).join("")}</div>`;
-  }
-  if (k === "sujet") {
-    const q = RECH_SUJET.toLowerCase(), liste = options(r, "sujet").filter(x => !q || x.texte.toLowerCase().includes(q));
+    const filtres = { "": "Tous", conseil: "Conseil", produit: "Produit", dessin: "Dessinés" };
+    tools = `<div class="seg">${Object.entries(filtres).map(([v, l]) => `<button class="${FILTRE_FMT === v ? "on" : ""}" onclick="FILTRE_FMT='${v}';renderPicker()">${l}</button>`).join("")}</div>`;
+    const liste = options({ ...r, format: "" }, "format").filter(f => !FILTRE_FMT || (FILTRE_FMT === "dessin" ? f.dessin || f.jeu : f.categorie === FILTRE_FMT));
+    html = opt(!r.format, "pickSet('format','')", "Auto", "Mix conseil / produit choisi par le générateur")
+      + liste.map(f => opt(r.format === f.id, `pickSet('format','${esc(f.id)}')`, f.nom, resumeFormat(f), `<span class="o-tag">${ETIQ_VISUEL(f)}</span>`)).join("");
+  } else if (k === "sujet") {
+    const q = PK_Q.toLowerCase(), liste = options(r, "sujet").filter(x => !q || x.texte.toLowerCase().includes(q));
     const fam = {}; for (const x of liste) (fam[x.famille || "divers"] ||= []).push(x);
-    // Une famille s'ouvre d'elle-meme si elle porte le sujet choisi ou si une recherche est en cours.
-    return `<input type="search" placeholder="Chercher un sujet (ex : entretien, LinkedIn, reconversion)" value="${esc(RECH_SUJET)}" oninput="RECH_SUJET=this.value;renderEditeur(true)">
-      <div class="picks txt" style="margin:10px 0">${AUTO("sujet", !r.sujet && !r.libre, "Le générateur choisit le sujet le plus prometteur", true)}
-        ${tuile(r.libre, `setField(CUR,'sujet','__angle')`, "", "✎ Mon propre sujet", "Écris l'angle toi-même")}</div>
-      ${r.libre ? `<label>Ton sujet</label><input value="${esc(r.angle)}" placeholder="ex : les jeunes diplômés face aux ATS" onchange="setField(CUR,'angle',this.value)">` : ""}
-      ${Object.keys(fam).sort().map(f => sous("sujet_" + f, esc(nice(f)) + ` <small>(${fam[f].length})</small>`, fam[f].some(x => x.id === r.sujet) ? "✓ " + (byId(CAT.sujets, r.sujet) || {}).texte : "",
-        `<div class="picks txt">${fam[f].map(x => tuile(r.sujet === x.id, `setField(CUR,'sujet','${esc(x.id)}')`, "", court(x.texte, x.texte, 3).replace(/^<span/, "<span style='font-weight:400;font-size:13px'"))).join("")}</div>`,
-        !!q || fam[f].some(x => x.id === r.sujet))).join("") || `<p class="muted">Aucun sujet ne correspond.</p>`}`;
+    tools = `<input type="search" placeholder="Chercher un sujet (entretien, LinkedIn, reconversion…)" value="${esc(PK_Q)}" oninput="PK_Q=this.value;renderPicker(true)">`;
+    html = (q ? "" : opt(!r.sujet && !r.libre, "pickSet('sujet','')", "Auto", "Le générateur choisit le sujet le plus prometteur") + opt(r.libre, "setField(CUR,'sujet','__angle')", "Mon propre sujet", "Écris l'angle toi-même"))
+      + (r.libre ? `<div style="padding:4px 12px 8px"><input value="${esc(r.angle)}" placeholder="ex : les jeunes diplômés face aux ATS" onchange="setField(CUR,'angle',this.value)"></div>` : "")
+      + (Object.keys(fam).sort().map(f => sec(nice(f)) + fam[f].map(x => opt(r.sujet === x.id, `pickSet('sujet','${esc(x.id)}')`, x.texte, "", "plain")).join("")).join("") || `<p class="muted" style="margin:12px">Aucun sujet ne correspond.</p>`);
+  } else if (k === "trame") {
+    html = opt(!r.trame, "pickSet('trame','')", "Auto", "La trame la moins récemment utilisée")
+      + (CAT.trames || []).map(t => opt(r.trame === t.id, `pickSet('trame','${esc(t.id)}')`, t.nom, t.consigne)).join("")
+      + `<p class="muted" style="margin:12px">Personnages et décors : onglet Catalogue.</p>`;
+  } else if (k === "hook") {
+    html = opt(!r.hook, "pickSet('hook','')", "Auto", "Rotation anti-répétition")
+      + options(r, "hook").map(h => opt(r.hook === h.id, `pickSet('hook','${esc(h.id)}')`, nice(h.id), h.exemple ? `« ${h.exemple} »` : h.consigne)).join("");
+  } else if (k === "theme") {
+    html = `<div class="tgrid"><div class="tcard${!r.theme ? " on" : ""}" role="button" onclick="pickSet('theme','')"><div class="ph">Auto</div><span>Rotation</span></div>`
+      + options(r, "theme").map(t => `<div class="tcard${r.theme === t.id ? " on" : ""}" role="button" onclick="pickSet('theme','${esc(t.id)}')">${img(`themes/${t.id}.jpg`, "")}<span>${esc(t.nom)}</span></div>`).join("") + `</div>`;
+  } else if (k === "son") {
+    html = sec("Musique") + opt(!r.ambiance, "setField(CUR,'ambiance','')", "Auto", r.theme ? "Une des musiques du thème" : "Selon le thème")
+      + opt(r.ambiance === "aucune", "setField(CUR,'ambiance','aucune')", "Sans musique", "Voix et effets seulement")
+      + options(r, "ambiance").map(a => opt(r.ambiance === a.id, `setField(CUR,'ambiance','${esc(a.id)}')`, a.nom || nice(a.id), [a.bpm ? `${a.bpm} BPM` : "", a.instrument || ""].filter(Boolean).join(" · "), playBtn(`ambiances/${a.id}.mp3`))).join("")
+      + (dessin ? `<p class="muted" style="margin:12px">Dessin animé : chaque personnage a sa propre voix.</p>`
+        : sec("Voix off") + opt(!r.voix, "setField(CUR,'voix','')", "Auto", "Rotation des voix")
+          + CAT.voix.map(v => opt(r.voix === v.id, `setField(CUR,'voix','${esc(v.id)}')`, v.id, v.description, playBtn(`voix/${v.id}.mp3`))).join(""))
+      + `<div class="row" style="justify-content:flex-end;padding:12px"><button class="primary" onclick="closePicker()">Terminé</button></div>`;
   }
-  if (k === "histoire") {
-    const D = CAT.dessins || {}, perso = (D.objets || []).filter(o => o.categorie === "personnage");
-    return `<p class="step-hint">${esc((D.serie || {}).titre ? `Série « ${D.serie.titre} » : chaque reel est un épisode. ` : "")}La trame donne la structure ; Gemini écrit le reste.</p>
-      <div class="picks txt">${AUTO("trame", !r.trame, "La trame la moins récemment utilisée", true)}${(CAT.trames || []).map(t => tuile(r.trame === t.id, `setField(CUR,'trame','${esc(t.id)}')`, "", t.nom, court(t.consigne, t.consigne, 3))).join("")}</div>
-      ${sous("perso", "Les personnages", "voix à écouter", `<div class="picks">${perso.map(p => `<div class="pick">${img(`personnages/${p.id}.jpg`, "🙂")}${playBtn(`voix/${p.voix}.mp3`)}<div class="tx"><b>${esc(p.nom)}</b>${court(p.description.split(":").pop(), "", 2)}<i>voix ${esc(p.voix)}</i></div></div>`).join("")}</div>`)}
-      ${sous("decors", "Les décors", "choisis par Gemini selon l'histoire", `<div class="galerie">${(D.fonds || []).map(f => `<figure>${img(`decors/${f.id}.jpg`, "🏠")}<figcaption>${esc(nice(f.id))}</figcaption></figure>`).join("")}</div>`)}`;
-  }
-  if (k === "style") {
-    const dessin = dessinDe(r), son = e => e.replace('class="pick', 'class="pick son');
-    return `${sous("theme", "Thème", r.theme ? nomDe("theme", r.theme) : "Auto", `<p class="step-hint">Couleurs, polices, sous-titres${dessin ? ". Le dessin animé garde son trait blanc : le thème habille l'accroche et la fin" : ""}.</p>
-        <div class="picks">${AUTO("theme", !r.theme)}${options(r, "theme").map(t => tuile(r.theme === t.id, `setField(CUR,'theme','${esc(t.id)}')`, img(`themes/${t.id}.jpg`, "🎨"), t.nom)).join("")}</div>`, true)}
-      ${sous("musique", "Musique", r.ambiance ? ambName(r.ambiance) : "Auto", `${r.theme ? `<p class="step-hint">Celles du thème choisi.</p>` : ""}
-        <div class="picks txt">${AUTO("ambiance", !r.ambiance, "Une des musiques du thème", true)}${son(tuile(r.ambiance === "aucune", "setField(CUR,'ambiance','aucune')", "", "Sans musique", "voix et effets seulement"))}${options(r, "ambiance").map(a => son(tuile(r.ambiance === a.id, `setField(CUR,'ambiance','${esc(a.id)}')`, "", a.nom || nice(a.id), a.bpm ? `${a.bpm} BPM${a.instrument ? " · " + esc(a.instrument) : ""}` : "", playBtn(`ambiances/${a.id}.mp3`)))).join("")}</div>`)}
-      ${dessin ? `<p class="muted">Voix : en dessin animé, chaque personnage a la sienne (étape « L'histoire »).</p>` : sous("voix", "Voix off", r.voix || "Auto", `<div class="picks txt">${AUTO("voix", !r.voix, "Rotation des voix", true)}${CAT.voix.map(v => son(tuile(r.voix === v.id, `setField(CUR,'voix','${esc(v.id)}')`, "", v.id, court(v.description, v.description, 2), playBtn(`voix/${v.id}.mp3`)))).join("")}</div>`)}`;
-  }
-  if (k === "accroche") return `<div class="picks txt">${AUTO("hook", !r.hook, undefined, true)}${options(r, "hook").map(h => tuile(r.hook === h.id, `setField(CUR,'hook','${esc(h.id)}')`, "", nice(h.id), court(h.exemple ? `« ${h.exemple} »` : h.consigne, h.consigne + (h.exemple ? `\n« ${h.exemple} »` : ""), 2))).join("")}</div>`;
-  return "";
+  if (!garderOutils) $("pkTools").innerHTML = tools;
+  $("pkTools").classList.toggle("hidden", !tools);
+  body.innerHTML = html; body.scrollTop = haut; hydrate(body);
 }
-function renderLot(){
-  $("lot").innerHTML = PLAN.map((r, i) => {
-    const vis = r.theme ? img(`themes/${r.theme}.jpg`, "🎬") : `<div class="mini">${dessinDe(r) ? "🎬" : "🎲"}</div>`;
-    const quoi = [r.format ? nomDe("format", r.format) : "Format auto", r.libre ? r.angle : r.sujet ? nomDe("sujet", r.sujet) : ""].filter(Boolean).join(" · ");
-    return `<button class="chipreel${i === CUR ? " on" : ""}" onclick="CUR=${i};renderPlan()">${vis}<span><b>Reel ${i + 1}</b><br>${esc(quoi.length > 60 ? quoi.slice(0, 58) + "…" : quoi)}</span></button>`;
-  }).join("") + `<button class="chipreel add" onclick="addReel()">➕ Reel</button>`;
-  hydrate($("lot"));
-}
-function renderEditeur(garderFocus){
-  const r = PLAN[CUR], etapes = ETAPES.filter(e => !e.si || e.si(r));
-  if (!etapes.some(e => e.k === ETAPE)) ETAPE = "format";
-  const focus = garderFocus && document.activeElement && document.activeElement.type === "search";
-  $("plan").innerHTML = etapes.map((e, n) => {
-    const fait = e.k === "histoire" ? !!r.trame : e.k === "style" ? !!(r.theme || r.ambiance || r.voix) : e.k === "sujet" ? !!(r.sujet || r.libre) : !!r[e.k === "accroche" ? "hook" : e.k];
-    const ouvert = ETAPE === e.k;
-    return `<div class="etape${fait ? " fait" : ""}"><button class="tete" onclick="ETAPE=ETAPE==='${e.k}'?'':'${e.k}';renderEditeur()"><span class="num">${fait ? "✓" : n + 1}</span><b>${esc(e.titre)}</b><span class="choix">${esc(e.resume(r))}</span><span>${ouvert ? "▲" : "▼"}</span></button>
-      ${ouvert ? `<div class="corps">${n < etapes.length - 1 ? `<div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="primary" onclick="ouvrirEtape('${etapes[n + 1].k}')">Étape suivante →</button></div>` : ""}${corpsEtape(e.k, r)}</div>` : ""}</div>`;
-  }).join("") + (cartesPerdues(byId(CAT.formats, r.format)) ? `<p class="warn">${CARTES_WARN}</p>` : "");
-  hydrate($("plan"));
-  if (focus) { const s = $("plan").querySelector("input[type=search]"); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }
-}
-function ouvrirEtape(k){ ETAPE = k; renderEditeur(); const e = [...$("plan").querySelectorAll(".etape")].find(x => x.querySelector(".corps")); if (e) e.scrollIntoView({ behavior: "smooth", block: "start" }); }
 function renderPlan(){
   if (!$("f_compose").checked) return updateGoInfo();
   // Un choix devenu incompatible (registre, mode sans capture...) repasse en auto.
   for (const r of PLAN) for (const k of ["format", "sujet", "trame", "hook", "theme", "ambiance"]) if (r[k] && CAT.formats.length && !(k === "ambiance" && r[k] === "aucune") && !options(r, k).some(x => x.id === r[k])) r[k] = "";
   CUR = Math.min(CUR, PLAN.length - 1);
-  savePlan(); renderLot(); renderEditeur(); updateGoInfo();
+  savePlan(); renderEditeur(); renderPicker(); updateGoInfo();
 }
 function updateGoInfo(){
   const compose = $("f_compose").checked, n = compose ? PLAN.length : Number($("f_n").value || 3);
@@ -534,7 +499,7 @@ function roll(i){
   PLAN[i] = r; renderPlan();
 }
 function rollAll(){ PLAN.forEach((_, i) => roll(i)); }
-function addReel(){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.push(blank()); CUR = PLAN.length - 1; ETAPE = "format"; renderPlan(); }
+function addReel(){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.push(blank()); CUR = PLAN.length - 1; renderPlan(); }
 function dupReel(i){ if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.splice(i + 1, 0, { ...PLAN[i] }); CUR = i + 1; renderPlan(); }
 function delReel(i){ if (PLAN.length === 1) { PLAN = [blank()]; } else PLAN.splice(i, 1); CUR = Math.max(0, Math.min(CUR, PLAN.length - 1)); renderPlan(); }
 function resetReel(i){ PLAN[i] = blank(); renderPlan(); }
@@ -545,7 +510,7 @@ function useInPlan(k, id){
   if (PLAN[i][k]) { if (PLAN.length >= 10) return toast("10 reels maximum par lot"); PLAN.push(blank()); i++; }
   PLAN[i][k] = id; if (k === "sujet") Object.assign(PLAN[i], { angle: "", libre: false });
   CUR = i; renderPlan();
-  toast(PLAN[i][k] === id ? `Ajouté au reel ${i + 1} (onglet 🚀 Lancer)` : `Incompatible avec les choix du reel ${i + 1} : laissé en automatique`);
+  toast(PLAN[i][k] === id ? `Ajouté au reel ${i + 1} (onglet Lancer)` : `Incompatible avec les choix du reel ${i + 1} : laissé en automatique`);
 }
 function planInput(){
   return JSON.stringify(PLAN.map(r => Object.fromEntries(FIELDS.map(k => [k, String(r[k] || "").trim()]).filter(([, v]) => v))));
@@ -577,6 +542,7 @@ async function loadRuns(){
   try {
     const { workflow_runs: runs } = await ghJson(`/actions/workflows/${WF}/runs?per_page=10`);
     fillRunPick(runs);
+    if (REELS_FOR === null && $("runPick").value && !$("tab-runs").classList.contains("hidden")) loadReels();   // le dernier run réussi s'ouvre seul
     const html = await Promise.all(runs.map(async r => {
       let steps = "";
       if (r.status !== "completed" && r.id !== openRun) {
@@ -590,8 +556,8 @@ async function loadRuns(){
       return `<div class="run"><span class="dot" style="background:${COLOR(r)}"></span>
         <div class="info"><b>#${r.run_number}</b> · ${LABEL(r)} · ${mins} min <span class="muted">· ${new Date(r.created_at).toLocaleString("fr-FR")} · ${esc(r.event)}</span>
         <div class="steps">${steps}</div></div>
-        <button onclick="toggleRun(${r.id})">${r.id === openRun ? "▲ Masquer" : "📋 Étapes / logs"}</button>
-        ${r.conclusion === "success" ? `<button onclick="openReels(${r.id})">🎬 Reels</button>` : ""}
+        <button onclick="toggleRun(${r.id})">${r.id === openRun ? "Masquer" : "Logs"}</button>
+        ${r.conclusion === "success" ? `<button onclick="openReels(${r.id})">Reels</button>` : ""}
         ${r.status !== "completed" ? `<button onclick="cancelRun(${r.id})">Annuler</button>` : ""}
         <a href="${r.html_url}" target="_blank" rel="noopener"><button>GitHub ↗</button></a>
         ${r.id === openRun ? `<div class="detail">${await runDetail(r)}</div>` : ""}</div>`;
@@ -616,7 +582,7 @@ async function runDetail(r){
     return jobs.map(j => {
       const st = (j.steps || []).map(s => `<div class="step"><span>${ICON(s)}</span><span>${esc(s.name)}</span><span class="d">${dur(s.started_at, s.completed_at)}</span></div>`).join("");
       const logBtn = j.status === "completed"
-        ? `<div class="row" style="margin-top:8px"><button onclick="loadLog(${j.id}, ${r.id})">📄 ${LOGS[j.id] ? "Recharger" : "Afficher"} le log</button></div>${LOGS[j.id] ? logHtml(LOGS[j.id], j.conclusion !== "success") : ""}`
+        ? `<div class="row" style="margin-top:8px"><button onclick="loadLog(${j.id}, ${r.id})">${LOGS[j.id] ? "Recharger" : "Afficher"} le log</button></div>${LOGS[j.id] ? logHtml(LOGS[j.id], j.conclusion !== "success") : ""}`
         : `<p class="muted" style="margin:8px 0 0">Log disponible à la fin du job ; en direct : bouton GitHub ↗.</p>`;
       return `<b>${esc(j.name)}</b> <span class="muted">· ${dur(j.started_at, j.completed_at)}</span>${st}${logBtn}`;
     }).join("<hr>");
@@ -643,10 +609,11 @@ function fillRunPick(runs){
     .map(r => `<option value="${r.id}">#${r.run_number} · ${new Date(r.created_at).toLocaleString("fr-FR")}</option>`).join("");
   if (cur) $("runPick").value = cur;
 }
-function openReels(id){ showTab("reels"); $("runPick").value = id; loadReels(); }
+function openReels(id){ $("runPick").value = id; loadReels(); $("tab-reels").scrollIntoView({ behavior: "smooth", block: "start" }); }
 
 async function loadReels(){
   const id = $("runPick").value; if (!id) return;
+  $("tab-reels").classList.remove("hidden");
   blobUrls.forEach(URL.revokeObjectURL); blobUrls = [];
   $("reels").innerHTML = ""; const st = $("reelsState"); REELS_FOR = id;
   try {
@@ -658,7 +625,7 @@ async function loadReels(){
     st.textContent = `Téléchargement (${(art.size_in_bytes / 1e6).toFixed(0)} Mo)…`;
     const zip = await JSZip.loadAsync(await (await gh(`/actions/artifacts/${art.id}/zip`)).blob());
     const vids = Object.keys(zip.files).filter(p => /final\/reel_\d+\.mp4$/.test(p)).sort();
-    st.textContent = `${vids.length} reel(s)`;
+    st.textContent = `· ${(($("runPick").selectedOptions[0] || {}).textContent || "").split(" · ")[0]} · ${vids.length} reel(s)`;
     const imgUrl = async p => { const u = URL.createObjectURL(new Blob([await zip.file(p).async("arraybuffer")], { type: p.endsWith(".png") ? "image/png" : "image/jpeg" })); blobUrls.push(u); return u; };
     const copyBtn = (label, text) => { const b = document.createElement("button"); b.textContent = label; b.onclick = () => navigator.clipboard.writeText(text).then(() => toast("Légende copiée")); return b; };
     for (const p of vids) {
@@ -667,7 +634,7 @@ async function loadReels(){
       const name = p.split("/").pop(), div = document.createElement("div");
       div.className = "reel card";
       div.innerHTML = `<b>${esc(name)}</b><video src="${url}" controls playsinline preload="metadata"></video>
-        <div class="row" style="margin-top:8px"><button class="primary copy">📋 Copier la légende</button><a href="${url}" download="${esc(name)}"><button>⬇ Vidéo</button></a></div>
+        <div class="row" style="margin-top:8px"><button class="primary copy">Copier la légende</button><a href="${url}" download="${esc(name)}"><button>Vidéo</button></a></div>
         <details><summary>Légende</summary><pre>${esc(txt) || "<i>pas de légende</i>"}</pre></details>`;
       div.querySelector(".copy").onclick = () => navigator.clipboard.writeText(txt).then(() => toast("Légende copiée"));
       // Declinaisons Instagram (scripts/instagram.py) : legende, couverture, carrousel 4:5.
@@ -679,8 +646,8 @@ async function loadReels(){
           (slides.length ? `<p class="muted">Carrousel (${slides.length} diapositives, glisse)</p><div class="strip">${(await Promise.all(slides.map(imgUrl))).map(u => `<img src="${u}" alt="Diapositive">`).join("")}</div>` : "") +
           (igTxt ? `<pre>${esc(igTxt)}</pre>` : "") + `</details>`;
         const row = document.createElement("div"); row.className = "row";
-        if (igTxt) row.appendChild(copyBtn("📋 Copier la légende Instagram", igTxt));
-        const dl = document.createElement("button"); dl.textContent = "⬇ Images Instagram";
+        if (igTxt) row.appendChild(copyBtn("Copier la légende Instagram", igTxt));
+        const dl = document.createElement("button"); dl.textContent = "Images Instagram";
         dl.onclick = async () => { for (const k of [coverF && coverF.name, ...slides].filter(Boolean)) { const a = document.createElement("a"); a.href = await imgUrl(k); a.download = k.split("/").slice(-2).join("_"); a.click(); } };
         row.appendChild(dl); ig.querySelector("details").appendChild(row); div.appendChild(ig);
       }

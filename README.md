@@ -938,7 +938,7 @@ si le premier chargement dépasse le délai habituel.
 
 Interface pour lancer le workflow (dont le registre et les plateformes), composer les
 combinaisons, parcourir le catalogue, suivre les runs
-(bouton « 📋 Étapes / logs » : étapes du job avec état et durée, rafraîchies toutes les 15 s ;
+(bouton « Logs » : étapes du job avec état et durée, rafraîchies toutes les 15 s ;
 log du job une fois celui-ci terminé, limité aux 200 dernières lignes pour un échec, erreurs
 en rouge — l'API GitHub ne donne pas le log en direct, pour cela le bouton « GitHub ↗ ») et
 regarder/télécharger les reels avec leur légende, et pour chacun ses déclinaisons Instagram
@@ -950,28 +950,25 @@ ouvrir la page dans Chrome, Firefox ou Edge. Si l'onglet Catalogue (et les liste
 Thème, Voix) reste vide, la console affiche l'erreur : le plus souvent, le token n'a pas la
 permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en bas de l'écran.
 
-- **Onglet 🚀 Lancer** : deux modes en haut, puis les réglages communs (durée, plateformes). **⚡ Laisse-moi faire** :
-  nombre de reels et accroche imposée (facultative), le générateur varie le reste. **🎨 Je compose** : la liste des reels
-  du lot (vignette du thème ; un clic pour modifier, ➕ pour en ajouter, jusqu'à 10) avec ses actions (🎲 au hasard, ⧉
-  dupliquer, ↺ tout en auto, 🗑 retirer), puis le reel en cours **étape par étape**, une seule étape ouverte à la fois,
-  son choix résumé dans l'en-tête, une coche une fois faite et « Étape suivante → » en haut de l'étape :
-  1. **le format** (filtres Registre et Type sur une ligne, une vignette par format : la carte animée la plus proche,
-  l'app pour les formats en captures, un décor pour le dessin animé ; texte limité à 2 lignes, structure complète au
-  survol) ; 2. **le sujet** (recherche ; sujets rangés par **famille repliable**, celle du sujet choisi ou de la recherche
-  s'ouvre seule ; ou sujet libre) ; 3. **l'histoire**, pour le dessin animé seulement (trames ; personnages et décors en
-  sections repliées) ; 4. **le style**, en trois sections repliables dont le choix courant est lu dans l'en-tête :
-  Thème (ouverte), Musique, Voix off (▶ pour écouter) ; 5. **l'accroche** (l'exemple, la consigne au survol). « Auto » =
-  le générateur choisit. Choisir le dessin animé passe la capture du lot en « Sans capture » (le workflow l'exige) et le
-  signale. **Barre d'action fixe en bas de l'écran** : nombre de reels, durée, combien sont personnalisés, bouton
-  « Lancer le workflow » (toujours visible, plus besoin de descendre sous les listes). Les **options avancées**
-  (repliées) sont rangées par thème : contenu imposé (mode « Laisse-moi faire »), image (capture, animations), son,
-  reprise et cache. Envoyé au workflow dans le champ `plan`. Un format à cartes choisi avec une capture vidéo (`video`,
-  `video_desktop`) affiche un avertissement : ses cartes y seraient remplacées par des captures. La composition est
-  mémorisée dans le navigateur.
-- **Navigation** : onglets collés en haut de l'écran (une ligne défilante sur téléphone), pastille ● sur ⏱ Runs quand un
-  run est en cours. **Onglet 🎬 Reels** : s'ouvre sur le dernier run réussi (le menu change de run) ; chaque reel montre
-  la vidéo et deux boutons (copier la légende, télécharger), la légende et les déclinaisons Instagram (couverture,
-  carrousel, légende, images) sont dans des sections repliables.
+- **Principe** : un écran minimal par défaut, le détail seulement à la demande ; une seule couleur d'accent, presque pas
+  d'emojis, des listes plutôt que des murs de vignettes.
+- **Onglet Lancer** : nombre de reels, durée, plateformes, bouton **Lancer** dans une barre fixe en bas de l'écran
+  (nombre de reels, durée, combien sont personnalisés). Le générateur varie tout seul format, sujet, style et accroche.
+  « Choisir moi-même les reels → » ouvre le **compositeur** : une fiche par reel (une seule ouverte, les autres tiennent sur
+  une ligne de résumé), avec **Au hasard / Dupliquer / Retirer**, le **Ton** (Auto / Sérieux / Humour) et une ligne par
+  réglage : Format, Sujet, Histoire (dessin animé seulement), Accroche, Thème, Musique et voix. Chaque ligne affiche son
+  choix (« Auto » en gris) et ouvre un **sélecteur** (fenêtre, feuille du bas sur téléphone) qui se ferme au choix :
+  formats en liste (une phrase de description et l'étiquette Cartes / App / App + cartes / Dessin animé / Jeu vidéo, filtre
+  Tous / Conseil / Produit / Dessinés), sujets en liste avec recherche et « Mon propre sujet », thèmes en vignettes,
+  accroches avec leur exemple, musiques et voix avec ▶ pour écouter (« Terminé » pour fermer). Choisir le dessin animé
+  passe la capture du lot en « Sans capture » (le workflow l'exige) et le signale. Un format à cartes choisi avec une
+  capture vidéo (`video`, `video_desktop`) affiche un avertissement. Les **options avancées** (repliées) : contenu imposé
+  (mode automatique), image (capture, animations), son, reprise et cache. Envoyé au workflow dans le champ `plan`. La
+  composition est mémorisée dans le navigateur.
+- **Onglet Résultats** (runs et reels réunis) : les derniers runs (statut, durée, Logs, Reels, GitHub, Annuler ; pastille ●
+  sur l'onglet quand un run est en cours), puis les reels du dernier run réussi, qui s'ouvrent tout seuls (bouton Reels
+  d'un run pour en voir un autre). Chaque reel : la vidéo, « Copier la légende » et « Vidéo », la légende et les
+  déclinaisons Instagram (couverture, carrousel, légende, images) dans des sections repliables.
 - **Aperçus** (`docs/apercus/`, produits par `python scripts/apercus.py`) : couverture de chaque thème,
   chaque carte animée (texte d'exemple sans chiffre présenté comme réel), chaque décor et personnage du
   dessin animé, une phrase de chaque voix (enregistrements de CTA) et 8 s de chaque musique, en JPEG et
@@ -983,7 +980,7 @@ permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en
   du dessin animé, niveaux et boss du jeu vidéo) avec recherche et filtres catégorie / registre ; formats : structure, visuel, sujets
   compatibles (« Voir ses sujets ») ; thèmes : vignette, nuancier, polices, musiques ; voix et ambiances :
   ▶ pour écouter ; décors : vignette. Fiches compactes (3 lignes de texte ; un clic sur la fiche déplie tout) ; les
-  filtres catégorie / registre ne s'affichent que pour les types où ils servent. « ➕ Composer » ajoute l'élément au compositeur
+  filtres catégorie / registre ne s'affichent que pour les types où ils servent. « Ajouter au lot » ajoute l'élément au compositeur
   (dernier reel si ce champ y est libre, sinon nouveau reel).
 
 ### Créer le token GitHub (fine-grained)
