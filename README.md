@@ -952,6 +952,8 @@ permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en
 
 - **Principe** : un écran minimal par défaut, le détail seulement à la demande ; une seule couleur d'accent, presque pas
   d'emojis, des listes plutôt que des murs de vignettes.
+- **Apparence** : bouton en haut à droite de la page, qui fait défiler Auto (suit le mode clair / sombre de l'appareil) → Clair → Sombre ;
+  le choix est mémorisé dans le navigateur.
 - **Onglet Lancer** : nombre de reels, durée, plateformes, bouton **Lancer** dans une barre fixe en bas de l'écran
   (nombre de reels, durée, combien sont personnalisés). Le générateur varie tout seul format, sujet, style et accroche.
   « Choisir moi-même les reels → » ouvre le **compositeur** : une fiche par reel (une seule ouverte, les autres tiennent sur
