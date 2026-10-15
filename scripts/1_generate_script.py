@@ -709,7 +709,7 @@ Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus
 Le texte de la carte ne recopie PAS la voix : il la résume.""" + (EDUCATIF_RULE if fmt.get("educatif") else "") + ("" if sans_captures else """ Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée).""")
 
-    if not dessin:
+    if not fmt.get("dessin"):   # le dessin animé a ses propres règles d'écriture (DRAMATURGIE)
         cards_rule += COHERENCE_RULE
     annotation_rule = """
 ANNOTATION AU FEUTRE : sur la scène preuve (s'il y en a une) et au plus une autre scène SANS carte qui montre

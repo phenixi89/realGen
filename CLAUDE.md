@@ -17,8 +17,9 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   session. Messages de commit en français.
 - Échanges avec l'utilisateur en français.
 - Textes affichés dans les vidéos (prompts, cartes, sous-titres) en français accentué.
-- Vérifications avant commit : `python -m py_compile scripts/*.py` et `python scripts/catalog.py`
-  (mêmes contrôles que `.github/workflows/test.yml`).
+- Vérifications avant commit : `python -m py_compile scripts/*.py`, `python scripts/catalog.py` et
+  `python scripts/verif_prompts.py` (construit le prompt de chaque format : `py_compile` ne voit pas une variable utilisée avant
+  sa définition, run 80) — mêmes contrôles que `.github/workflows/test.yml`.
 - Enrichir le catalogue = éditer `catalog/*.json` (aucun code) ; documenter les champs dans le
   `_doc` du fichier et dans le README. Un nouveau thème, décor, personnage, voix ou ambiance a un aperçu
   dans la console : relancer `python scripts/apercus.py` et committer `docs/apercus/`.

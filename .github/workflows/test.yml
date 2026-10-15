@@ -32,6 +32,9 @@ jobs:
       - name: Valide le catalogue (catalog/*.json)
         run: python scripts/catalog.py
 
+      - name: Construit le prompt de chaque format (sans appel IA)
+        run: python scripts/verif_prompts.py
+
       - name: Vérifie run_pipeline.py --help
         run: python scripts/run_pipeline.py --help
 

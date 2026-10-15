@@ -917,6 +917,10 @@ l'onglet Actions, avec les mêmes options que `run_pipeline.py`, dont `registre`
 mode avec capture qui affiche les cartes animées (`run_pipeline.py` seul garde `video` par défaut).
 Les déclinaisons Instagram sont dans l'artefact `output`, sous `final/`.
 
+Le workflow `.github/workflows/test.yml` (chaque push) vérifie : syntaxe de tous les scripts, catalogue
+(`scripts/catalog.py`), **construction du prompt de chaque format** (`scripts/verif_prompts.py`, sans appel IA : un nom de
+variable utilisé avant sa définition passe `py_compile` mais plante tous les lancements, run 80) et `--help` de chaque étape.
+
 À configurer dans le repo GitHub (Settings → Secrets and variables → Actions) :
 - **Secrets** : `GEMINI_API_KEY`, `DEMO_EMAIL`, `DEMO_PASSWORD` (ces deux derniers inutiles en `capture_mode` `aucune`)
 - **Variable** : `SAAS_URL` (l'URL de démo)
