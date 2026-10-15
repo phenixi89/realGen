@@ -615,9 +615,18 @@ Réponds UNIQUEMENT en JSON valide :
 EDUCATIF_RULE = """
 COURS ÉCLAIR : la voix DIT la leçon et la carte en affiche les MOTS CLÉS. Au moins un mot important de la phrase dite
 revient sur la carte (elle résume la voix, elle n'ouvre pas un autre sujet). Une idée = une scène : la voix de la scène 2
-énonce déjà la 1re leçon, en une phrase complète qu'on comprend seule. Aucune relance ni suspense (« garde-la »,
-« enregistre-la », « la troisième leçon va te surprendre », « attends »), aucun renvoi à une autre scène (« la leçon
-suivante »). Le pivot et la dernière carte concluent : ils ne donnent pas une leçon de plus."""
+énonce déjà la 1re leçon, en une phrase complète qu'on comprend seule. Le pivot et la dernière carte concluent : ils ne
+donnent pas une leçon de plus."""
+
+COHERENCE_RULE = """
+VÉRITÉ ET COHÉRENCE (le reel est relu par un spectateur qui ne sait rien, puis contrôlé) :
+- Un teaser (« reste pour la formule finale », « la dernière est la plus importante ») est permis, il retient bien, mais
+  UNIQUEMENT s'il est TENU : ce qui est annoncé arrive plus loin dans le reel, en reprenant le mot de l'annonce, et le
+  nombre annoncé existe vraiment (jamais « la troisième erreur » s'il n'y en a que deux). Pas de teaser sans livraison.
+- Le titre, l'accroche et la légende décrivent CE QUE LE REEL CONTIENT (« 3 étapes » = trois étapes dites ET affichées).
+- Chaque scène dit ce que son écran montre : une carte reprend les mots de la voix ; une capture de l'app montre
+  vraiment la fonctionnalité dont parle la voix (« là, l'outil… » seulement si l'écran le fait voir).
+- Rien d'inventé sur OpusCV (voir le produit) ; un chiffre pris en exemple est présenté comme un exemple."""
 
 
 def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback: str | None,
@@ -700,6 +709,8 @@ Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus
 Le texte de la carte ne recopie PAS la voix : il la résume.""" + (EDUCATIF_RULE if fmt.get("educatif") else "") + ("" if sans_captures else """ Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée).""")
 
+    if not dessin:
+        cards_rule += COHERENCE_RULE
     annotation_rule = """
 ANNOTATION AU FEUTRE : sur la scène preuve (s'il y en a une) et au plus une autre scène SANS carte qui montre
 OpusCV, ajoute "annotation": 2 à 5 mots manuscrits sur un post-it qui pointe l'élément clé de l'écran
@@ -1127,6 +1138,7 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
             scenes[proofs[0]].pop("carte", None)
         else:
             problems.append('il manque la scène "preuve": true (conseil appliqué en direct dans OpusCV)')
+    problems += promesses_problems(scenes)
     if educatif:
         problems += educatif_problems(scenes)
     problems += common_problems(scenes, data, duration, tone, recent_hooks, forced)
@@ -1135,16 +1147,62 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
     return scenes, problems
 
 
-EDUCATIF_TEASER_RE = re.compile(
-    r"va te surprendre|\bgarde-l[ae]\b|\benregistre-l[ae]\b|\battends\b|\bla (?:deuxi[èe]me|troisi[èe]me|derni[èe]re|prochaine|suivante) (?:le[çc]on|astuce|erreur|r[èe]gle|chose)",
-    re.I)
+_MOT = r"[\wéèêëàâîïôûùç'’-]+"
+# Teaser = une promesse sur la suite du reel : « reste pour la formule finale », « attends le dernier conseil »...
+PROMESSE_RES = (
+    re.compile(rf"\breste[zs]?\s+(?:jusqu['’]à la fin\s+)?pour\s+(?:la|le|les|l['’]|ma|mon|mes)\s*({_MOT})(?:\s+({_MOT}))?", re.I),
+    re.compile(rf"\battends?(?:-moi)?\s+(?:la|le|les|l['’])\s*({_MOT})(?:\s+({_MOT}))?", re.I),
+    re.compile(rf"\b(?:la|le|l['’])\s*({_MOT})\s+(?:finale?|de la fin|qui change tout)\b", re.I),
+    re.compile(rf"\bà la fin[, ]+(?:je te donne|je te montre|tu auras|tu verras)\s+(?:la|le|les|l['’])\s*({_MOT})", re.I),
+)
+ADJ_PROMESSE = {"dernière", "derniere", "dernier", "vraie", "vrai", "meilleure", "meilleur", "seule", "seul", "bonne", "bon", "grande", "grand",
+                "deuxième", "deuxieme", "troisième", "troisieme", "quatrième", "quatrieme", "cinquième", "cinquieme"}
+ORDINAUX = {"deuxième": 2, "deuxieme": 2, "troisième": 3, "troisieme": 3, "quatrième": 4, "quatrieme": 4, "cinquième": 5, "cinquieme": 5}
+ORDINAL_RE = re.compile(r"\bla\s+(deuxi[èe]me|troisi[èe]me|quatri[èe]me|cinqui[èe]me)\s+[^.!?]{0,30}?"
+                        r"(?:va te|te surprend|surprenant|[ée]tonn|choqu|plus (?:importante?|utile|grave|surprenante?))", re.I)
+NUM_MOTS = {"un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6}
+ELEMENT_RE = re.compile(r"\b(?:[ée]tapes?|le[çc]ons?|erreurs?|astuces?|conseils?|r[èe]gles?|raisons?|points?|signes?|id[ée]es?)\s+(\d|un|une|deux|trois|quatre|cinq|six)\b", re.I)
+
+
+def promesses_problems(scenes: list[dict]) -> list[str]:
+    """
+    Un teaser retient le spectateur, a condition d'etre tenu : la chose annoncee doit arriver plus loin dans le reel
+    (son mot revient dans une scene suivante, voix ou carte) et le rang annonce (« la troisieme lecon ») doit exister.
+    Runs 76 et 79 : « la troisieme lecon va te surprendre » pour deux lecons, « reste pour la formule finale » sans formule.
+    """
+    def ecran(sc: dict) -> str:
+        c = sc.get("carte") or {}
+        return f"{sc['texte']} {c.get('surtitre', '')} {c.get('titre', '')} {carte_texte(c) if c else ''}"
+
+    problems = []
+    for i, sc in enumerate(scenes):
+        for rx in PROMESSE_RES:
+            m = rx.search(sc["texte"])
+            if not m:
+                continue
+            groupes = [g for g in m.groups() if g]
+            mot = next((g for g in groupes if g.lower() not in ADJ_PROMESSE), groupes[0])
+            racine = catalog._norm(mot)[:5]
+            suite = " ".join(catalog._norm(ecran(x)) for x in scenes[i + 1:])
+            if racine and racine not in suite:
+                problems.append(f"scène {i + 1} : tu annonces « {m.group(0)} » mais aucune scène suivante ne le livre (le mot « {mot} » "
+                                "doit revenir quand tu le donnes) : livre-le, ou retire l'annonce")
+            break
+        m = ORDINAL_RE.search(sc["texte"])
+        if m:
+            rang = ORDINAUX[m.group(1).lower()]
+            vus = [NUM_MOTS.get(n.lower(), int(n) if n.isdigit() else 0) for x in scenes for n in ELEMENT_RE.findall(ecran(x))]
+            if max(vus, default=0) < rang:
+                problems.append(f"scène {i + 1} : tu annonces « {m.group(0)} » mais le reel n'a pas de {m.group(1)} élément numéroté : "
+                                "annonce un rang qui existe")
+    return problems
 
 
 def carte_texte(card: dict) -> str:
     """Tout le texte lisible d'une carte (titre, points, avant / apres, etapes, question...)."""
     morceaux: list[str] = []
     for cle, val in card.items():
-        if cle in ("type", "style", "effet", "surtitre", "mot", "bonne", "icone"):
+        if cle in ("type", "style", "effet", "surtitre", "mot", "bonne", "icone", "marque"):
             continue
         if isinstance(val, list):
             morceaux += [str(v.get("label", v.get("texte", "")) if isinstance(v, dict) else v) for v in val]
@@ -1159,12 +1217,9 @@ def _racines(texte: str) -> set[str]:
 
 
 def educatif_problems(scenes: list[dict]) -> list[str]:
-    """Cours eclair : la voix dit la lecon que la carte resume, sans teaser ni renvoi (run 76 : cartes hors sujet)."""
+    """Cours eclair : la voix dit la lecon que la carte resume (run 76 : cartes hors sujet par rapport a la voix)."""
     problems = []
     for i, scene in enumerate(scenes, 1):
-        if EDUCATIF_TEASER_RE.search(scene["texte"]):
-            problems.append(f"scène {i} : pas de relance ni de suspense (« garde-la », « la troisième leçon va te surprendre »...) : "
-                            "dis la leçon tout de suite")
         carte = scene.get("carte")
         if carte and carte.get("type") != "quiz":
             voix, ecran = _racines(scene["texte"]), _racines(carte_texte(carte))
@@ -1445,6 +1500,57 @@ Réponds en JSON : {{"histoire": "...", "comprehensible": true|false, "problemes
     return []
 
 
+def relecture_coherence(client, data: dict, scenes: list[dict]) -> list[str]:
+    """
+    Relecture des reels a cartes / captures par un second appel : le reel est-il VRAI et COHERENT ? Promesses tenues
+    (teasers, nombre annonce), titre / accroche / legende fideles au contenu, chaque voix collee a son ecran, rien de
+    faux sur OpusCV, chiffres d'exemple signales (runs 76 et 79). Echec de l'appel : aucun probleme (jamais bloquant).
+    """
+    feats = available_features()
+    lignes = []
+    for i, sc in enumerate(scenes, 1):
+        carte = sc.get("carte")
+        if carte:
+            ecran = f"carte {carte.get('type', 'texte')} : {carte.get('surtitre', '')} | {carte_texte(carte)}"
+        elif sc.get("feature") and sc["feature"] in feats:
+            ecran = f"capture de l'application : {feats[sc['feature']].description}" + (" (preuve : le conseil appliqué en direct)" if sc.get("preuve") else "")
+            if sc.get("annotation"):
+                ecran += f" ; post-it manuscrit : « {sc['annotation']} »"
+        else:
+            ecran = "animation plein cadre (appel à l'action)" if i == len(scenes) else "illustration sous l'accroche"
+        lignes.append(f"{i}. VOIX : « {sc['texte']} »\n   ÉCRAN : {ecran}")
+    prompt = f"""Tu relis un reel court (conseil emploi / recrutement pour OpusCV) AVANT tournage. Tu es un spectateur qui ne
+connaît QUE ce qui suit. Ton rôle : vérifier que le reel est VRAI et COHÉRENT avec ce qu'on voit et entend.
+
+TITRE : « {data.get('titre', '')} »   ACCROCHE À L'ÉCRAN : « {data.get('accroche_ecran', '')} »
+LÉGENDE : « {data.get('legende', '')} »
+SCÈNES :
+{chr(10).join(lignes)}
+
+LE PRODUIT RÉEL (seule source de vérité sur OpusCV) :
+{PRODUCT_CONTEXT}
+
+Contrôle sévère, point par point :
+1. PROMESSES TENUES : tout teaser (« reste pour la formule », « la dernière est la plus utile », « tu vas être surpris ») ou
+   nombre annoncé (« 3 étapes », « la troisième erreur ») est livré explicitement plus loin ; sinon c'est un défaut.
+2. Le titre, l'accroche et la légende décrivent bien ce que contient le reel (pas un autre sujet, pas un autre nombre).
+3. Chaque VOIX colle à son ÉCRAN : une carte reprend l'idée dite ; une capture montre la fonctionnalité dont parle la voix ;
+   « là, l'outil… » n'est dit que si l'écran le fait voir.
+4. Chaque affirmation sur OpusCV est vraie d'après le produit réel (aucune fonction ni chiffre de performance inventé).
+5. Un chiffre qui sert d'exemple (« 120 % de l'objectif ») est présenté comme un exemple, jamais comme un fait ou un résultat d'OpusCV.
+
+Réponds en JSON : {{"coherent": true|false, "problemes": ["défaut précis (numéro de scène) et comment le corriger", ...]}}"""
+    try:
+        verdict = _gemini_json(client, prompt, 0.2)
+    except Exception as e:  # noqa: BLE001 -- facultatif : jamais bloquant
+        print(f"    relecture de cohérence ignorée ({e})")
+        return []
+    problemes = [str(x).strip() for x in verdict.get("problemes") or [] if str(x).strip()]
+    if verdict.get("coherent") is False or problemes:
+        return ["relecture de cohérence : " + " ; ".join(problemes or ["le reel n'est pas cohérent avec ce qu'on voit et entend"])]
+    return []
+
+
 JEU_NOM_OBJET_MAX = 20
 JEU_EVENEMENTS = ("apparition", "objet", "degats", "blessure", "xp", "niveau", "victoire")
 
@@ -1653,6 +1759,8 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
                                     bool(fmt.get("jeu")), bool(fmt.get("educatif")))
         if scenes and not problems and (fmt.get("dessin") or fmt.get("jeu")):
             problems = relecture_dessin(client, data, scenes)
+        elif scenes and not problems and not forced:
+            problems = relecture_coherence(client, data, scenes)
         if scenes:
             # Garde la tentative la plus propre (pas forcement la derniere) si aucune n'est parfaite.
             if best_problems is None or len(problems) <= len(best_problems):

@@ -544,9 +544,9 @@ d'une carte `impact`, est mis en valeur automatiquement).
   (`run_pipeline.carte_numerotee`). La barre de progression est celle du carnet.
 - **La voix dit la leçon, la carte en affiche les mots clés** (drapeau `educatif: true` du format, contrôlé par
   `educatif_problems` dans `1_generate_script.py`, qui relance l'IA sinon) : au moins un mot important de la phrase dite
-  revient sur la carte ; ni teaser (« la troisième leçon va te surprendre », « attends »), ni relance
-  (« garde-la », « enregistre-la »), ni renvoi à une autre scène. Pas de relance « enregistre » en cours éclair : la
-  scène 2 est déjà la leçon 1 (run 76 : la relance l'avait remplacée et les cartes parlaient d'autre chose que la voix).
+  revient sur la carte. Pas de relance « enregistre » en cours éclair : la scène 2 est déjà la leçon 1 (run 76 : la relance
+  l'avait remplacée et les cartes parlaient d'autre chose que la voix). Les teasers restent permis s'ils sont tenus
+  (voir « Vérité et cohérence » ci-dessous).
 - Sons : `sound_design.educatif_cues` (un clic par mot, pop par point, ding à la bonne réponse, impact sur le chiffre /
   le « VS » / le tampon) ; les instants (`FIRST_AT`, `wordGap`, `gapOf`) sont identiques dans `lecon.html`, `pop.html` et
   `sound_design.py`.
@@ -661,6 +661,19 @@ possible ; corps (3-20 s) problème précis puis solution OpusCV montrée à l'�
 `recruteur_6_secondes`. Garde-fous : chiffres uniquement concrets ou vérifiables (jamais de statistique
 inventée), public = candidats (jamais « recruteurs » dans le CTA). Format `tier_list` : Rang S = l'erreur la
 plus grave, annoncé dès l'accroche ; `temoignage_produit` : tout à la 1re personne jusqu'au CTA.
+
+**Vérité et cohérence** (reels à cartes et à captures ; le dessin animé et le jeu ont leur propre relecture) : un
+**teaser** (« reste pour la formule finale », « la dernière est la plus utile ») est permis, il retient le spectateur, mais
+il doit être **tenu**. Consigne `COHERENCE_RULE` + deux contrôles qui relancent l'écriture (3 tentatives, la meilleure est
+gardée) :
+- `promesses_problems` (règles, sans appel IA) : la chose annoncée (« formule », « astuce »…) doit revenir dans une scène
+  suivante, voix ou carte (`PROMESSE_RES`) ; un rang annoncé (« la troisième leçon va te surprendre ») doit exister parmi
+  les éléments numérotés du reel (étape / leçon / erreur… n°).
+- `relecture_coherence` (un second appel Gemini, jamais bloquant, sautée pour une séquence imposée) : un spectateur qui ne
+  connaît que le reel vérifie les promesses tenues, que le titre, l'accroche et la légende décrivent bien le contenu, que
+  chaque voix colle à son écran (carte = les mots de la voix, capture = la fonctionnalité dite), que ce qui est dit d'OpusCV
+  est vrai d'après `PRODUCT_CONTEXT`, et que les chiffres pris en exemple sont présentés comme des exemples.
+(Runs 76 et 79 : « la troisième leçon va te surprendre » pour deux leçons, « reste pour la formule finale » sans formule.)
 
 **Relance « enregistre »** (`relance_enregistrer` dans `config.json`, activée par défaut) : sur les reels
 `conseil` en registre sérieux (sauf `cours_eclair`, dont la scène 2 est déjà une leçon), la 1re phrase de la scène 2 invite en 5 à 7 mots à enregistrer la vidéo

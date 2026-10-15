@@ -59,6 +59,10 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
     seulement (`ambiances` du format dans `formats.json`) ;
   - rien ne cache la scène : les bulles passent au-dessus des têtes, les gros plans (inserts) sous la
     zone des bulles, le nuage de pensée du côté libre ; aucun son au changement de scène.
+- Reels à cartes et à captures (hors dessin animé et jeu) : un teaser est permis **s'il est tenu** (ce qui est annoncé est livré plus
+  loin, le rang annoncé existe) ; le reel doit être vrai et cohérent avec ce qu'on voit (titre / légende fidèles, voix collée à
+  l'écran, rien d'inventé sur OpusCV, chiffres d'exemple signalés) : `promesses_problems` et `relecture_coherence` dans
+  `1_generate_script.py`, consigne `COHERENCE_RULE`. Le dessin animé garde sa règle (pas de suspense artificiel).
 - Jeu vidéo rétro (`assets/anim/jeu.html`, `assets/anim/jeu/`, `catalog/jeu.json`) : format `jeu_quete`, Martin et Léa
   (héros et guide) contre un boss qui est le SYSTÈME (jamais une personne) ; mêmes règles d'écriture que le dessin animé
   (dialogue à deux voix, titre plein écran 1 s, relecture) plus les événements du jeu (apparition → blessure → objet →
