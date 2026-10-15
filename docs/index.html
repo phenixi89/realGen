@@ -19,8 +19,9 @@ body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-app
 header{padding:18px 16px;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff}
 header h1{margin:0;font-size:20px}header p{margin:2px 0 0;opacity:.85;font-size:13px}
 main{max-width:980px;margin:0 auto;padding:16px}
-nav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+nav{display:flex;gap:6px;margin:0 0 12px;padding:8px 0;flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--bg)}
 nav button{flex:1;min-width:90px}
+#runDot{color:var(--run)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
 h2{font-size:16px;margin:0 0 12px}
 label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
@@ -105,6 +106,27 @@ details>summary{cursor:pointer;padding:6px 0}
 .galerie{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.galerie figure{margin:0;flex:0 0 120px}.galerie img{width:120px;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#000}.galerie figcaption{font-size:11px;color:var(--muted);text-align:center}
 .recap{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;margin-top:10px}
 .tag{display:inline-block;padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:12px;margin:2px}
+/* Lisibilite : textes tronques (detail au survol / au clic), sections repliables, barre d'action fixe. */
+.clamp2,.clamp3{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.clamp2{-webkit-line-clamp:2}.clamp3{-webkit-line-clamp:3}
+.cards .item p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.cards .item{cursor:pointer}.cards .item.open p{display:block;-webkit-line-clamp:unset}
+.cards{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input{flex:2;min-width:180px}.filters select{flex:1;min-width:140px;width:auto}
+details.sous{border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:0 12px;background:var(--bg)}
+details.sous>summary{display:flex;gap:8px;align-items:center;padding:10px 0;font-size:14px}
+details.sous>summary .choix{margin-left:auto;color:var(--muted);font-size:12px;font-weight:400;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.sous[open]>summary{border-bottom:1px solid var(--line);margin-bottom:10px}
+details.sous .picks{padding-bottom:12px}
+.toolbar{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;margin:0 0 10px}.toolbar .pills{margin:0}.toolbar>small{font-weight:600}
+.etape .actions{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}.actions button{padding:5px 10px;font-size:12px}
+.grp{margin:16px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:4px}
+.bar{position:sticky;bottom:0;z-index:15;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 16px;margin:16px -16px -16px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 14px 14px;box-shadow:0 -6px 16px rgba(0,0,0,.07)}
+.bar .info{font-size:13px;min-width:0}.bar .info b{display:block}
+.bar button.primary{padding:11px 22px;font-weight:600}
+.reel details{margin-top:8px}.reel details summary{font-weight:600;font-size:13px}
+@media (max-width:560px){nav{flex-wrap:nowrap;overflow-x:auto}nav button{flex:0 0 auto;min-width:0;padding:8px 10px}}
+.step-hint{font-size:13px;color:var(--muted);margin:0 0 8px}
 </style></head><body>
 <header><h1>Console realGen</h1><p>Reels OpusCV : lancer, suivre, récupérer</p></header>
 <main>
@@ -117,41 +139,56 @@ details>summary{cursor:pointer;padding:6px 0}
 </section>
 
 <div id="app" class="hidden">
-<nav><button data-tab="launch" class="on">🚀 Lancer</button><button data-tab="runs">⏱ Runs</button><button data-tab="reels">🎬 Reels</button><button data-tab="catalog">📚 Catalogue</button><button onclick="logout()">Déconnexion</button></nav>
+<nav><button data-tab="launch" class="on">🚀 Lancer</button><button data-tab="runs">⏱ Runs<span id="runDot"></span></button><button data-tab="reels">🎬 Reels</button><button data-tab="catalog">📚 Catalogue</button><button onclick="logout()">Déconnexion</button></nav>
 
 <section id="tab-launch" class="card">
   <h2>Nouveau lot de reels</h2>
   <div class="modes">
-    <button id="m_auto" onclick="setCompose(false)"><b>⚡ Laisse-moi faire</b><small>Tu choisis le nombre de reels, le générateur varie tout seul (format, sujet, thème…).</small></button>
-    <button id="m_compose" onclick="setCompose(true)"><b>🎨 Je compose mes reels</b><small>Pas à pas, en voyant les thèmes, les décors et en écoutant voix et musiques.</small></button>
+    <button id="m_auto" onclick="setCompose(false)"><b>⚡ Laisse-moi faire</b><small>Le générateur varie tout : tu donnes juste le nombre de reels.</small></button>
+    <button id="m_compose" onclick="setCompose(true)"><b>🎨 Je compose</b><small>Tu choisis format, sujet, style et accroche, reel par reel.</small></button>
   </div>
   <input id="f_compose" type="checkbox" class="hidden">
   <div class="grid">
     <div class="g-only"><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
     <div class="g-only"><label>Accroche <small>« Pourquoi… » = les plus performantes</small></label><select id="f_hook"><option value="">Rotation automatique</option></select></div>
+    <div><label>Durée</label><select id="f_duration"><option>15</option><option selected>25</option><option>30</option><option>45</option><option>60</option></select></div>
     <div><label>Plateformes</label><select id="f_plateformes">
       <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
       <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
   </div>
   <div id="composer" class="hidden">
-    <h3>Tes reels <small>(un clic pour modifier ; chaque étape laissée en « Auto » est choisie par le générateur)</small></h3>
+    <h3>Tes reels <small>(clique pour modifier ; une étape en « Auto » est choisie par le générateur)</small></h3>
     <div class="lot" id="lot"></div>
+    <div class="actions"><button onclick="roll(CUR)">🎲 Au hasard</button><button onclick="dupReel(CUR)">⧉ Dupliquer</button><button onclick="resetReel(CUR)">↺ Tout en auto</button><button onclick="delReel(CUR)">🗑 Retirer</button></div>
     <div id="plan"></div>
-    <div class="row" style="margin-top:6px"><button onclick="roll(CUR)">🎲 Tirer ce reel au hasard</button><button onclick="dupReel(CUR)">⧉ Dupliquer</button><button onclick="resetReel(CUR)">↺ Ce reel en auto</button><button onclick="delReel(CUR)">🗑 Retirer</button></div>
   </div>
   <p id="capWarn" class="warn hidden"></p>
-  <details style="margin-top:14px"><summary><b>Options avancées</b> <small>(durée, format, thème, voix, capture, reprise…)</small></summary>
+  <details style="margin-top:14px"><summary><b>Options avancées</b> <small>(contenu imposé, capture, son, reprise)</small></summary>
+  <h4 class="grp">Contenu imposé <small>(mode « Laisse-moi faire » seulement)</small></h4>
   <div class="grid">
-    <div><label>Durée</label><select id="f_duration"><option>15</option><option selected>25</option><option>30</option><option>45</option><option>60</option></select></div>
     <div class="g-only"><label>Format <small>vide = auto</small></label><select id="f_format"><option value="">Automatique (mix conseil/produit)</option></select></div>
     <div class="g-only"><label>Thème visuel <small>vide = rotation</small></label><select id="f_theme"><option value="">Rotation automatique</option></select></div>
     <div class="g-only"><label>Registre</label><select id="f_registre"><option value="">Automatique (mix sérieux / humour)</option><option value="serieux">Sérieux</option><option value="humour">Humour</option></select></div>
     <div class="g-only"><label>Voix</label><select id="f_voice"><option value="auto">Auto (rotation)</option></select></div>
+  </div>
+  <div class="g-only"><label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS"></div>
+  <label>Scénario manuel <small>optionnel, chemin dans le dépôt</small></label><input id="f_scenario" placeholder="scenarios/exemple.json">
+  <h4 class="grp">Image</h4>
+  <div class="grid">
     <div><label>Capture</label><select id="f_capture_mode">
       <option value="screenshots" selected>Captures desktop + zoom (recommandé : cartes et animations complètes)</option><option value="video">Vidéo mobile (sans cartes animées)</option><option value="video_desktop">Vidéo desktop recadrée (sans cartes animées)</option><option value="aucune">Sans capture (conseils en cartes animées, dessin animé)</option></select></div>
     <div><label>Animations <small>scene/highlight : mode captures</small></label><select id="f_anims">
       <option value="none">Aucune</option><option value="all">Toutes</option><option>overlay</option><option>scene</option><option>highlight</option><option>cursor</option>
       <option>overlay,scene</option><option>overlay,highlight</option><option>scene,highlight</option><option>overlay,cursor</option><option>scene,cursor</option></select></div>
+  </div>
+  <h4 class="grp">Son</h4>
+  <div class="grid">
+    <label class="chk"><input id="f_musique" type="checkbox" checked> Musique de fond</label>
+    <label class="chk"><input id="f_sfx" type="checkbox" checked> Effets sonores</label>
+    <label class="chk"><input id="f_sans_voix" type="checkbox"> Sans voix off</label>
+  </div>
+  <h4 class="grp">Reprise et cache</h4>
+  <div class="grid">
     <div><label>Reprendre à partir de</label><select id="f_from_step">
       <option value="">Reprise normale (cache)</option>
       <option value="script">script : tout nouveau (texte + voix Gemini)</option>
@@ -159,25 +196,18 @@ details>summary{cursor:pointer;padding:6px 0}
       <option value="video">video : même texte et voix, captures refaites</option>
       <option value="subs">subs : sous-titres + montage</option>
       <option value="assemble">assemble : montage final seul</option></select></div>
-  </div>
-  <div class="g-only"><label>Angle marketing <small>optionnel</small></label><input id="f_angle" placeholder="ex : les jeunes diplômés face aux ATS"></div>
-  <label>Scénario manuel <small>optionnel, chemin dans le dépôt</small></label><input id="f_scenario" placeholder="scenarios/exemple.json">
-  <div class="grid" style="margin-top:8px">
-    <label class="chk"><input id="f_musique" type="checkbox" checked> Musique de fond</label>
-    <label class="chk"><input id="f_sfx" type="checkbox" checked> Effets sonores</label>
-    <label class="chk"><input id="f_sans_voix" type="checkbox"> Sans voix off</label>
     <label class="chk"><input id="f_force" type="checkbox"> Tout regénérer (ignorer le cache)</label>
     <label class="chk"><input id="f_allow_ai_quota" type="checkbox"> Autoriser quota IA (entretien)</label>
   </div>
   </details>
-  <div class="row" style="margin-top:14px;align-items:center"><button class="primary" id="go" onclick="launch()">Lancer le workflow</button><span class="muted" id="goInfo"></span></div>
+  <div class="bar"><div class="info"><b id="goInfo"></b><span class="muted" id="goSub"></span></div><button class="primary" id="go" onclick="launch()">🚀 Lancer le workflow</button></div>
 </section>
 
 <section id="tab-runs" class="card hidden"><h2>Derniers runs <small id="refresh"></small></h2><div id="runs">Chargement…</div></section>
 
 <section id="tab-reels" class="card hidden">
-  <h2>Reels</h2>
-  <div class="row"><select id="runPick" style="flex:1"></select><button class="primary" onclick="loadReels()">Afficher</button></div>
+  <h2>Reels <small>(le dernier run réussi s'ouvre tout seul)</small></h2>
+  <div class="row"><select id="runPick" style="flex:1" onchange="loadReels()"></select></div>
   <p id="reelsState" class="muted"></p>
   <div id="reels" class="reels"></div>
 </section>
@@ -222,7 +252,9 @@ function showTab(t){
   ["launch","runs","reels","catalog"].forEach(x => $("tab-" + x).classList.toggle("hidden", x !== t));
   store.set("rg_tab", t);
   if (t === "runs") loadRuns();
+  if (t === "reels") (async () => { if (!$("runPick").options.length) await loadRuns(); if ($("runPick").value && REELS_FOR !== $("runPick").value) loadReels(); })();
 }
+let REELS_FOR = null;
 
 async function catFile(name){
   const r = await gh(`/contents/catalog/${name}.json`, { headers: { Accept: "application/vnd.github.raw+json" } });
@@ -271,6 +303,8 @@ const PLAN_FIELD = { formats: "format", sujets: "sujet", hooks: "hook", themes: 
 function setCatKind(k){ catKind = k; store.set("rg_cat", k); renderCatalog(); }
 function renderCatalog(){
   $("catNav").innerHTML = Object.entries(KINDS).map(([k, l]) => `<button class="${k === catKind ? "on" : ""}" onclick="setCatKind('${k}')">${l} (${(CAT[k] || []).length})</button>`).join("");
+  $("catCat").classList.toggle("hidden", !["formats", "sujets"].includes(catKind));
+  $("catReg").classList.toggle("hidden", !["formats", "hooks", "themes"].includes(catKind));
   const q = $("catQ").value.trim().toLowerCase(), cat = $("catCat").value, reg = $("catReg").value;
   let items = CAT[catKind] || [];
   if (q) items = items.filter(x => JSON.stringify(x).toLowerCase().includes(q));
@@ -280,7 +314,7 @@ function renderCatalog(){
   if (reg && catKind === "themes") items = items.filter(x => themeRegs(x).includes(reg));
   if (catKind === "sujets") items = [...items].sort((a, b) => (a.famille || "").localeCompare(b.famille || ""));
   $("catInfo").textContent = { formats: "Structure de la vidéo : comment le reel est construit.", sujets: "De quoi parle le reel. Un sujet ne va qu'avec les formats de même catégorie qui acceptent un de ses tags.", hooks: "Style des 2 premières secondes (décisives pour la rétention).", themes: "Couleurs, polices, style de sous-titres et musiques possibles.", ambiances: "Musique de fond synthétisée (aucun droit d'auteur). Chaque thème en propose quelques-unes. ▶ pour écouter.", voix: "Voix off Gemini. ▶ pour écouter.", trames: "Structures d'histoire du dessin animé, une par épisode (rotation).", decors: "Lieux où Léa, Karim et le recruteur jouent la scène.", niveaux: "Lieux du jeu vidéo rétro où Martin et Léa jouent la scène.", boss: "Les adversaires de Martin dans le jeu vidéo : le système de recrutement, jamais une personne." }[catKind]
-    + ` ${items.length} élément(s).`;
+    + ` ${items.length} élément(s). Clique une fiche pour lire tout son texte.`;
   $("catalog").innerHTML = items.map(CARD[catKind]).join("") || `<p class="muted">Aucun résultat.</p>`;
   hydrate($("catalog"));
 }
@@ -311,6 +345,7 @@ const CARD = {
   boss: x => `<div class="item">${vignette(`boss/${x.id}.jpg`)}<h4>${esc(x.nom)}</h4><p>${esc(x.sens)}</p><span class="id">${esc(x.id)}</span></div>`,
   voix: x => `<div class="item"><h4>${esc(x.id)} <button onclick="ecouter('voix/${esc(x.id)}.mp3', this)" class="play" style="position:static;background:var(--acc)">▶</button></h4><p>${esc(x.description)}</p><div class="foot">${useBtn("voix", x.id)}</div></div>`,
 };
+$("catalog").onclick = e => { if (e.target.closest("button,a")) return; const it = e.target.closest(".item"); if (it) it.classList.toggle("open"); };
 function showSujetsFor(fid){ const f = byId(CAT.formats, fid); setCatKind("sujets"); $("catCat").value = f.categorie; $("catQ").value = "";
   $("catalog").innerHTML = CAT.sujets.filter(x => compatible(f, x)).map(CARD.sujets).join(""); $("catInfo").textContent = `Sujets compatibles avec « ${f.nom} ».`; }
 
@@ -398,45 +433,49 @@ const tuile = (on, onclick, visuel, titre, texte = "", extra = "") => `<div clas
 // Tuile « Auto » : grande dans les grilles d'images, compacte dans les listes de texte (compact = true).
 const AUTO = (k, on, txt = "Le générateur choisit (rotation anti-répétition)", compact = false) =>
   tuile(on, `setField(CUR,'${k}','')`, compact ? "" : `<div class="ph">🎲</div>`, compact ? "🎲 Auto" : "Auto", esc(txt));
+// Section repliable : l'etat ouvert/ferme survit aux rendus (OUVERT).
+const OUVERT = {};
+const sous = (key, titre, choix, corps, ouvert = false) => `<details class="sous"${(OUVERT[key] ?? ouvert) ? " open" : ""} ontoggle="OUVERT['${esc(key)}']=this.open"><summary><b>${titre}</b><span class="choix">${esc(choix)}</span></summary>${corps}</details>`;
+const court = (txt, plein, n = 2) => `<span class="clamp${n}" title="${esc(plein || txt)}">${esc(txt)}</span>`;
 function corpsEtape(k, r){
   if (k === "format") {
     const tous = options({ ...r, format: "" }, "format");
-    const filtres = { "": "Tous", conseil: "Conseil", produit: "Produit", humour: "Humour possible", dessin: "Dessin animé" };
+    const filtres = { "": "Tous", conseil: "Conseil", produit: "Produit", humour: "Humour", dessin: "Dessin animé" };
     const liste = tous.filter(f => !FILTRE_FMT || (FILTRE_FMT === "dessin" ? f.dessin : FILTRE_FMT === "humour" ? regs(f).includes("humour") : f.categorie === FILTRE_FMT));
-    return `<label>Registre</label><div class="pills">${["", "serieux", "humour"].map(v => `<button class="${r.registre === v ? "on" : ""}" onclick="setField(CUR,'registre','${v}')">${v ? REG_LABEL[v] : "Auto"}</button>`).join("")}</div>
+    return `<div class="toolbar"><small>Registre</small><div class="pills">${["", "serieux", "humour"].map(v => `<button class="${r.registre === v ? "on" : ""}" onclick="setField(CUR,'registre','${v}')">${v ? REG_LABEL[v] : "Auto"}</button>`).join("")}</div>
+      <small>Type</small><div class="pills">${Object.entries(filtres).map(([v, l]) => `<button class="${FILTRE_FMT === v ? "on" : ""}" onclick="FILTRE_FMT='${v}';renderPlan()">${l}</button>`).join("")}</div></div>
       ${sansCap() ? `<p class="muted">Lot « Sans capture » : les formats qui filment l'app sont masqués (Options avancées → Capture pour les retrouver).</p>` : ""}
-      <label>Formats</label><div class="pills">${Object.entries(filtres).map(([v, l]) => `<button class="${FILTRE_FMT === v ? "on" : ""}" onclick="FILTRE_FMT='${v}';renderPlan()">${l}</button>`).join("")}</div>
       <div class="picks">${AUTO("format", !r.format, "Mix conseil / produit")}${liste.map(f => tuile(r.format === f.id, `setField(CUR,'format','${esc(f.id)}')`, fmtImg(f), f.nom,
-        `${esc(premiere(f.structure))}<i>${f.dessin ? "🎬 dessin animé" : f.cartes === "aucune" ? "📱 captures de l'app" : "🃏 " + esc(CARTES[f.cartes] || "")}${regs(f).includes("humour") ? " · 😄 humour" : ""}</i>`)).join("")}</div>`;
+        `${court(premiere(f.structure), f.structure)}<i>${f.dessin ? "🎬 dessin animé" : f.cartes === "aucune" ? "📱 captures de l'app" : "🃏 " + esc(CARTES[f.cartes] || "")}${regs(f).includes("humour") ? " · 😄 humour" : ""}</i>`)).join("")}</div>`;
   }
   if (k === "sujet") {
     const q = RECH_SUJET.toLowerCase(), liste = options(r, "sujet").filter(x => !q || x.texte.toLowerCase().includes(q));
     const fam = {}; for (const x of liste) (fam[x.famille || "divers"] ||= []).push(x);
+    // Une famille s'ouvre d'elle-meme si elle porte le sujet choisi ou si une recherche est en cours.
     return `<input type="search" placeholder="Chercher un sujet (ex : entretien, LinkedIn, reconversion)" value="${esc(RECH_SUJET)}" oninput="RECH_SUJET=this.value;renderEditeur(true)">
-      <div class="picks txt" style="margin-top:10px">${AUTO("sujet", !r.sujet && !r.libre, "Le générateur choisit le sujet le plus prometteur", true)}
+      <div class="picks txt" style="margin:10px 0">${AUTO("sujet", !r.sujet && !r.libre, "Le générateur choisit le sujet le plus prometteur", true)}
         ${tuile(r.libre, `setField(CUR,'sujet','__angle')`, "", "✎ Mon propre sujet", "Écris l'angle toi-même")}</div>
       ${r.libre ? `<label>Ton sujet</label><input value="${esc(r.angle)}" placeholder="ex : les jeunes diplômés face aux ATS" onchange="setField(CUR,'angle',this.value)">` : ""}
-      ${Object.keys(fam).sort().map(f => `<h3>${esc(nice(f))}</h3><div class="picks txt">${fam[f].map(x => tuile(r.sujet === x.id, `setField(CUR,'sujet','${esc(x.id)}')`, "", x.texte)).join("")}</div>`).join("") || `<p class="muted">Aucun sujet ne correspond.</p>`}`;
+      ${Object.keys(fam).sort().map(f => sous("sujet_" + f, esc(nice(f)) + ` <small>(${fam[f].length})</small>`, fam[f].some(x => x.id === r.sujet) ? "✓ " + (byId(CAT.sujets, r.sujet) || {}).texte : "",
+        `<div class="picks txt">${fam[f].map(x => tuile(r.sujet === x.id, `setField(CUR,'sujet','${esc(x.id)}')`, "", court(x.texte, x.texte, 3).replace(/^<span/, "<span style='font-weight:400;font-size:13px'"))).join("")}</div>`,
+        !!q || fam[f].some(x => x.id === r.sujet))).join("") || `<p class="muted">Aucun sujet ne correspond.</p>`}`;
   }
   if (k === "histoire") {
     const D = CAT.dessins || {}, perso = (D.objets || []).filter(o => o.categorie === "personnage");
-    return `<p class="muted">${esc((D.serie || {}).titre ? `Série « ${D.serie.titre} » : chaque reel est un épisode. ` : "")}La trame donne la structure de l'histoire ; Gemini écrit le reste.</p>
-      <div class="picks txt">${AUTO("trame", !r.trame, "La trame la moins récemment utilisée", true)}${(CAT.trames || []).map(t => tuile(r.trame === t.id, `setField(CUR,'trame','${esc(t.id)}')`, "", t.nom, esc(t.consigne))).join("")}</div>
-      <h3>Les personnages <small>(voix écoutables)</small></h3>
-      <div class="picks">${perso.map(p => `<div class="pick">${img(`personnages/${p.id}.jpg`, "🙂")}${playBtn(`voix/${p.voix}.mp3`)}<div class="tx"><b>${esc(p.nom)}</b>${esc(p.description.split(":").pop())}<i>voix ${esc(p.voix)}</i></div></div>`).join("")}</div>
-      <h3>Les décors <small>(Gemini les choisit selon l'histoire)</small></h3>
-      <div class="galerie">${(D.fonds || []).map(f => `<figure>${img(`decors/${f.id}.jpg`, "🏠")}<figcaption>${esc(nice(f.id))}</figcaption></figure>`).join("")}</div>`;
+    return `<p class="step-hint">${esc((D.serie || {}).titre ? `Série « ${D.serie.titre} » : chaque reel est un épisode. ` : "")}La trame donne la structure ; Gemini écrit le reste.</p>
+      <div class="picks txt">${AUTO("trame", !r.trame, "La trame la moins récemment utilisée", true)}${(CAT.trames || []).map(t => tuile(r.trame === t.id, `setField(CUR,'trame','${esc(t.id)}')`, "", t.nom, court(t.consigne, t.consigne, 3))).join("")}</div>
+      ${sous("perso", "Les personnages", "voix à écouter", `<div class="picks">${perso.map(p => `<div class="pick">${img(`personnages/${p.id}.jpg`, "🙂")}${playBtn(`voix/${p.voix}.mp3`)}<div class="tx"><b>${esc(p.nom)}</b>${court(p.description.split(":").pop(), "", 2)}<i>voix ${esc(p.voix)}</i></div></div>`).join("")}</div>`)}
+      ${sous("decors", "Les décors", "choisis par Gemini selon l'histoire", `<div class="galerie">${(D.fonds || []).map(f => `<figure>${img(`decors/${f.id}.jpg`, "🏠")}<figcaption>${esc(nice(f.id))}</figcaption></figure>`).join("")}</div>`)}`;
   }
   if (k === "style") {
-    const dessin = dessinDe(r);
-    return `<h3>Thème <small>(couleurs, polices, sous-titres${dessin ? " ; le dessin animé garde son trait blanc, le thème habille l'accroche et la fin" : ""})</small></h3>
-      <div class="picks">${AUTO("theme", !r.theme)}${options(r, "theme").map(t => tuile(r.theme === t.id, `setField(CUR,'theme','${esc(t.id)}')`, img(`themes/${t.id}.jpg`, "🎨"), t.nom)).join("")}</div>
-      <h3>Musique <small>${r.theme ? "(celles du thème choisi)" : ""}</small></h3>
-      <div class="picks txt">${AUTO("ambiance", !r.ambiance, "Une des musiques du thème", true)}${tuile(r.ambiance === "aucune", "setField(CUR,'ambiance','aucune')", "", "Sans musique", "voix et effets seulement").replace('class="pick', 'class="pick son')}${options(r, "ambiance").map(a => tuile(r.ambiance === a.id, `setField(CUR,'ambiance','${esc(a.id)}')`, "", a.nom || nice(a.id), a.bpm ? `${a.bpm} BPM${a.instrument ? " · " + esc(a.instrument) : ""}` : "", playBtn(`ambiances/${a.id}.mp3`)).replace('class="pick', 'class="pick son')).join("")}</div>
-      ${dessin ? `<p class="muted">Voix : en dessin animé, chaque personnage a la sienne (étape « L'histoire »).</p>` : `<h3>Voix off</h3>
-      <div class="picks txt">${AUTO("voix", !r.voix, "Rotation des voix", true)}${CAT.voix.map(v => tuile(r.voix === v.id, `setField(CUR,'voix','${esc(v.id)}')`, "", v.id, esc(v.description), playBtn(`voix/${v.id}.mp3`)).replace('class="pick', 'class="pick son')).join("")}</div>`}`;
+    const dessin = dessinDe(r), son = e => e.replace('class="pick', 'class="pick son');
+    return `${sous("theme", "Thème", r.theme ? nomDe("theme", r.theme) : "Auto", `<p class="step-hint">Couleurs, polices, sous-titres${dessin ? ". Le dessin animé garde son trait blanc : le thème habille l'accroche et la fin" : ""}.</p>
+        <div class="picks">${AUTO("theme", !r.theme)}${options(r, "theme").map(t => tuile(r.theme === t.id, `setField(CUR,'theme','${esc(t.id)}')`, img(`themes/${t.id}.jpg`, "🎨"), t.nom)).join("")}</div>`, true)}
+      ${sous("musique", "Musique", r.ambiance ? ambName(r.ambiance) : "Auto", `${r.theme ? `<p class="step-hint">Celles du thème choisi.</p>` : ""}
+        <div class="picks txt">${AUTO("ambiance", !r.ambiance, "Une des musiques du thème", true)}${son(tuile(r.ambiance === "aucune", "setField(CUR,'ambiance','aucune')", "", "Sans musique", "voix et effets seulement"))}${options(r, "ambiance").map(a => son(tuile(r.ambiance === a.id, `setField(CUR,'ambiance','${esc(a.id)}')`, "", a.nom || nice(a.id), a.bpm ? `${a.bpm} BPM${a.instrument ? " · " + esc(a.instrument) : ""}` : "", playBtn(`ambiances/${a.id}.mp3`)))).join("")}</div>`)}
+      ${dessin ? `<p class="muted">Voix : en dessin animé, chaque personnage a la sienne (étape « L'histoire »).</p>` : sous("voix", "Voix off", r.voix || "Auto", `<div class="picks txt">${AUTO("voix", !r.voix, "Rotation des voix", true)}${CAT.voix.map(v => son(tuile(r.voix === v.id, `setField(CUR,'voix','${esc(v.id)}')`, "", v.id, court(v.description, v.description, 2), playBtn(`voix/${v.id}.mp3`)))).join("")}</div>`)}`;
   }
-  if (k === "accroche") return `<div class="picks txt">${AUTO("hook", !r.hook, undefined, true)}${options(r, "hook").map(h => tuile(r.hook === h.id, `setField(CUR,'hook','${esc(h.id)}')`, "", nice(h.id), `${esc(h.consigne)}${h.exemple ? `<i>« ${esc(h.exemple)} »</i>` : ""}`)).join("")}</div>`;
+  if (k === "accroche") return `<div class="picks txt">${AUTO("hook", !r.hook, undefined, true)}${options(r, "hook").map(h => tuile(r.hook === h.id, `setField(CUR,'hook','${esc(h.id)}')`, "", nice(h.id), court(h.exemple ? `« ${h.exemple} »` : h.consigne, h.consigne + (h.exemple ? `\n« ${h.exemple} »` : ""), 2))).join("")}</div>`;
   return "";
 }
 function renderLot(){
@@ -455,8 +494,8 @@ function renderEditeur(garderFocus){
     const fait = e.k === "histoire" ? !!r.trame : e.k === "style" ? !!(r.theme || r.ambiance || r.voix) : e.k === "sujet" ? !!(r.sujet || r.libre) : !!r[e.k === "accroche" ? "hook" : e.k];
     const ouvert = ETAPE === e.k;
     return `<div class="etape${fait ? " fait" : ""}"><button class="tete" onclick="ETAPE=ETAPE==='${e.k}'?'':'${e.k}';renderEditeur()"><span class="num">${fait ? "✓" : n + 1}</span><b>${esc(e.titre)}</b><span class="choix">${esc(e.resume(r))}</span><span>${ouvert ? "▲" : "▼"}</span></button>
-      ${ouvert ? `<div class="corps">${corpsEtape(e.k, r)}${n < etapes.length - 1 ? `<div class="row" style="margin-top:12px"><button class="primary" onclick="ouvrirEtape('${etapes[n + 1].k}')">Étape suivante →</button></div>` : ""}</div>` : ""}</div>`;
-  }).join("") + `<div class="recap"><b>Reel ${CUR + 1}</b> · ${etapes.map(e => `${esc(e.titre.split(" (")[0].replace(/^L[ea'] ?/, ""))} : <b>${esc(e.resume(r))}</b>`).join(" · ")}${cartesPerdues(byId(CAT.formats, r.format)) ? `<br><span class="warn">${CARTES_WARN}</span>` : ""}</div>`;
+      ${ouvert ? `<div class="corps">${n < etapes.length - 1 ? `<div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="primary" onclick="ouvrirEtape('${etapes[n + 1].k}')">Étape suivante →</button></div>` : ""}${corpsEtape(e.k, r)}</div>` : ""}</div>`;
+  }).join("") + (cartesPerdues(byId(CAT.formats, r.format)) ? `<p class="warn">${CARTES_WARN}</p>` : "");
   hydrate($("plan"));
   if (focus) { const s = $("plan").querySelector("input[type=search]"); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }
 }
@@ -471,7 +510,9 @@ function renderPlan(){
 function updateGoInfo(){
   const compose = $("f_compose").checked, n = compose ? PLAN.length : Number($("f_n").value || 3);
   const dessin = compose && PLAN.some(dessinDe);
-  $("goInfo").textContent = `${n} reel${n > 1 ? "s" : ""}` + (dessin ? " · dessin animé : capture « Sans capture » automatique" : "");
+  $("goInfo").textContent = `${n} reel${n > 1 ? "s" : ""} · ${$("f_duration").value} s`;
+  const choisis = compose ? PLAN.filter(r => FIELDS.some(k => r[k])).length : 0;
+  $("goSub").textContent = compose ? `${choisis} personnalisé${choisis > 1 ? "s" : ""}, ${n - choisis} en auto` + (dessin ? " · dessin animé : « Sans capture » automatique" : "") : "Tout est varié automatiquement";
 }
 function setField(i, k, v){
   const r = PLAN[i], f = k === "format" && byId(CAT.formats, v);
@@ -558,6 +599,7 @@ async function loadRuns(){
     $("runs").innerHTML = html.join("") || "Aucun run.";
     const active = runs.some(r => r.status !== "completed");
     $("refresh").textContent = active ? "· actualisation auto toutes les 15 s" : "";
+    $("runDot").textContent = active ? " ●" : "";
     if (active) timer = setInterval(() => !$("tab-runs").classList.contains("hidden") && loadRuns(), 15000);
   } catch (e) { $("runs").textContent = e.message; }
 }
@@ -606,7 +648,7 @@ function openReels(id){ showTab("reels"); $("runPick").value = id; loadReels(); 
 async function loadReels(){
   const id = $("runPick").value; if (!id) return;
   blobUrls.forEach(URL.revokeObjectURL); blobUrls = [];
-  $("reels").innerHTML = ""; const st = $("reelsState");
+  $("reels").innerHTML = ""; const st = $("reelsState"); REELS_FOR = id;
   try {
     st.textContent = "Recherche de l'artefact…";
     const { artifacts } = await ghJson(`/actions/runs/${id}/artifacts`);
@@ -625,22 +667,22 @@ async function loadReels(){
       const name = p.split("/").pop(), div = document.createElement("div");
       div.className = "reel card";
       div.innerHTML = `<b>${esc(name)}</b><video src="${url}" controls playsinline preload="metadata"></video>
-        <pre>${esc(txt) || "<i>pas de légende</i>"}</pre>
-        <div class="row"><button class="copy">📋 Copier la légende</button><a href="${url}" download="${esc(name)}"><button>⬇ Télécharger</button></a></div>`;
+        <div class="row" style="margin-top:8px"><button class="primary copy">📋 Copier la légende</button><a href="${url}" download="${esc(name)}"><button>⬇ Vidéo</button></a></div>
+        <details><summary>Légende</summary><pre>${esc(txt) || "<i>pas de légende</i>"}</pre></details>`;
       div.querySelector(".copy").onclick = () => navigator.clipboard.writeText(txt).then(() => toast("Légende copiée"));
       // Declinaisons Instagram (scripts/instagram.py) : legende, couverture, carrousel 4:5.
       const stem = p.replace(/\.mp4$/, ""), igF = zip.file(stem + ".instagram.txt"), coverF = zip.file(stem + ".couverture.jpg");
       const slides = Object.keys(zip.files).filter(k => k.startsWith(stem + "_carrousel/") && k.endsWith(".png")).sort();
       if (igF || coverF || slides.length) {
         const ig = document.createElement("div"), igTxt = igF ? await igF.async("string") : "";
-        ig.innerHTML = `<b>Instagram</b>` + (coverF ? `<p class="muted">Couverture</p><img src="${await imgUrl(coverF.name)}" alt="Couverture Instagram">` : "") +
+        ig.innerHTML = `<details><summary>Instagram (couverture, carrousel, légende)</summary>` + (coverF ? `<p class="muted">Couverture</p><img src="${await imgUrl(coverF.name)}" alt="Couverture Instagram">` : "") +
           (slides.length ? `<p class="muted">Carrousel (${slides.length} diapositives, glisse)</p><div class="strip">${(await Promise.all(slides.map(imgUrl))).map(u => `<img src="${u}" alt="Diapositive">`).join("")}</div>` : "") +
-          (igTxt ? `<pre>${esc(igTxt)}</pre>` : "");
+          (igTxt ? `<pre>${esc(igTxt)}</pre>` : "") + `</details>`;
         const row = document.createElement("div"); row.className = "row";
         if (igTxt) row.appendChild(copyBtn("📋 Copier la légende Instagram", igTxt));
         const dl = document.createElement("button"); dl.textContent = "⬇ Images Instagram";
         dl.onclick = async () => { for (const k of [coverF && coverF.name, ...slides].filter(Boolean)) { const a = document.createElement("a"); a.href = await imgUrl(k); a.download = k.split("/").slice(-2).join("_"); a.click(); } };
-        row.appendChild(dl); ig.appendChild(row); div.appendChild(ig);
+        row.appendChild(dl); ig.querySelector("details").appendChild(row); div.appendChild(ig);
       }
       $("reels").appendChild(div);
     }
@@ -658,6 +700,7 @@ async function start(){
 }
 $("f_capture_mode").addEventListener("change", () => { renderPlan(); checkCapture(); });
 $("f_n").addEventListener("input", updateGoInfo);
+$("f_duration").addEventListener("change", updateGoInfo);
 $("f_format").addEventListener("change", checkCapture);
 $("repo").value = REPO; setCompose(!!store.get("rg_compose")); start();
 </script></body></html>

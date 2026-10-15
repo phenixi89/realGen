@@ -92,7 +92,7 @@
   const mode = param("mode", "fait"), EXTRA = ["versus", "top", "quiz", "bande"].includes(mode), N = Math.round(num("n", 1));
   const texte = frTypo(param("texte", "Ton CV est *invisible* pour les robots")), icone = param("icone", ""), note = param("note", "");
   const ono = param("onomatopee", mode === "choc" ? "BAM !" : "");
-  document.getElementById("bandeau").textContent = { choc: "ALERTE !", versus: "DUEL !", top: "LE TOP", quiz: "QUIZ !", bande: "EN 3 CASES" }[mode] || `FAIT N°${N}`;
+  document.getElementById("bandeau").textContent = { choc: "ALERTE !", versus: "DUEL !", top: "LE TOP", quiz: "QUIZ !", bande: "EN 3 CASES" }[mode] || (param("resume", "") !== "" ? "EN RÉSUMÉ" : `FAIT N°${N}`);
   const zone = document.getElementById("texte"), mots = [];
   (EXTRA ? [] : (texte.match(/\*[^*]+\*[^\s*]*|[^\s*]+/g) || [])).forEach((tok) => {
     const cle = tok.startsWith("*"), s = document.createElement("span"), m = document.createElement("span");

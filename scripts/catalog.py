@@ -80,7 +80,7 @@ def gabarit_carte(theme: dict | None, card: dict, n: int = 1, total: int = 1) ->
         if mot and mot.lower() in texte.lower():
             i = texte.lower().index(mot.lower())
             texte = f"{texte[:i]}*{texte[i:i + len(mot)]}*{texte[i + len(mot):]}"
-        return famille, {**rang, "mode": "lecon" if lecon else "fait", "texte": _marque(texte), **({"resume": 1} if lecon else {})}
+        return famille, {**rang, "mode": "lecon" if lecon else "fait", "texte": _marque(texte), "resume": 1}
     if kind == "chiffre":
         grand = g("valeur") + g("unite")
         if lecon:

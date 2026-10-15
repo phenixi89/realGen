@@ -109,8 +109,9 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     # dur = duree de la scene : cadence de la frappe au clavier (carte.html),
     # reprise telle quelle par sound_design pour caler les clics.
     theme = catalog.get_theme(script.get("theme")) if script.get("theme") else None
-    # Rang des cartes « lecon » (LEÇON 2/3) : la carte impact (pivot, « EN RÉSUMÉ ») n'est pas une leçon.
-    lecons = [i for i in sorted(card_scenes) if scenes[i]["carte"].get("type") != "impact"]
+    # Rang des cartes « lecon » (LEÇON 2/3, FAIT N°2) : le pivot (carte impact, « EN RÉSUMÉ ») n'en est pas une, ni,
+    # en comics, une planche à bandeau propre (« EN 3 CASES », « DUEL ! »...) : sans cela, « FAIT N°1 » puis « FAIT N°3 ».
+    lecons = [i for i in sorted(card_scenes) if carte_numerotee(theme, scenes[i]["carte"])]
     rang = {i: (lecons.index(i) + 1 if i in lecons else len(lecons)) for i in card_scenes}
     scene_anims = {i: card_spec(scenes[i]["carte"], t_scenes[i]["end"] - t_scenes[i]["start"],
                                 theme, (rang[i], len(lecons)))
@@ -271,6 +272,16 @@ def jeu_spec(scene: dict, timing: dict, delai: float = 0.0) -> str:
 def fallback_title(texte: str, max_words: int = 9) -> str:
     words = texte.split()
     return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
+
+
+def carte_numerotee(theme: dict | None, card: dict) -> bool:
+    """La carte porte-t-elle un numero de lecon / de fait dans sa planche ?"""
+    if card.get("type") == "impact":
+        return False
+    if (theme or {}).get("cartes_gabarit") == "pop":
+        mapped = catalog.gabarit_carte(theme, card)
+        return bool(mapped) and mapped[1].get("mode") == "fait"
+    return True
 
 
 def card_spec(card: dict, duration: float, theme: dict | None = None, rang: tuple[int, int] = (1, 1)) -> str:

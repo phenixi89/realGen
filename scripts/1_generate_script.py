@@ -612,6 +612,14 @@ Réponds UNIQUEMENT en JSON valide :
     return prompt
 
 
+EDUCATIF_RULE = """
+COURS ÉCLAIR : la voix DIT la leçon et la carte en affiche les MOTS CLÉS. Au moins un mot important de la phrase dite
+revient sur la carte (elle résume la voix, elle n'ouvre pas un autre sujet). Une idée = une scène : la voix de la scène 2
+énonce déjà la 1re leçon, en une phrase complète qu'on comprend seule. Aucune relance ni suspense (« garde-la »,
+« enregistre-la », « la troisième leçon va te surprendre », « attends »), aucun renvoi à une autre scène (« la leçon
+suivante »). Le pivot et la dernière carte concluent : ils ne donnent pas une leçon de plus."""
+
+
 def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback: str | None,
                  recent_hooks: list[str]) -> str:
     if plan["format"].get("jeu"):
@@ -689,7 +697,7 @@ Effets d'apparition du titre (cartes texte) : "frappe" (tapé au clavier, idéal
 de CV ou une phrase d'offre), "suspense" (titre caché puis révélé avec un impact : UNE SEULE fois
 par reel, pour la révélation la plus forte, jamais sur deux cartes), sinon "standard". Varie-les.
 Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus) ni sur la dernière (CTA).
-Le texte de la carte ne recopie PAS la voix : il la résume.""" + ("" if sans_captures else """ Une scène avec carte garde un champ "feature"
+Le texte de la carte ne recopie PAS la voix : il la résume.""" + (EDUCATIF_RULE if fmt.get("educatif") else "") + ("" if sans_captures else """ Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée).""")
 
     annotation_rule = """
@@ -1006,7 +1014,7 @@ def wants_proof(fmt: dict) -> bool:
 
 def wants_save_nudge(fmt: dict, humour: bool) -> bool:
     """Reels conseil serieux : relance "enregistre" juste apres l'accroche (config relance_enregistrer)."""
-    return (fmt.get("categorie") == "conseil" and not humour
+    return (fmt.get("categorie") == "conseil" and not humour and not fmt.get("educatif")
             and bool(catalog.config().get("relance_enregistrer", True)))
 
 
@@ -1018,7 +1026,7 @@ def banned_phrases(text: str) -> list[str]:
 def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: str = "aucune",
              recent_hooks: list[str] | None = None, proof: bool = False,
              tone: str = "", sans_captures: bool = False, dessin: bool = False,
-             jeu: bool = False) -> tuple[list[dict], list[str]]:
+             jeu: bool = False, educatif: bool = False) -> tuple[list[dict], list[str]]:
     """
     Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA).
     sans_captures : pas de feature (""), une carte sur chaque scene sauf la 1re (icone
@@ -1119,10 +1127,51 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
             scenes[proofs[0]].pop("carte", None)
         else:
             problems.append('il manque la scène "preuve": true (conseil appliqué en direct dans OpusCV)')
+    if educatif:
+        problems += educatif_problems(scenes)
     problems += common_problems(scenes, data, duration, tone, recent_hooks, forced)
     if card_mode == "majoritaires" and not sans_captures and scenes and sum("carte" in s for s in scenes) < len(scenes) / 2:
         problems.append("ce format demande une carte pour la majorité des scènes")
     return scenes, problems
+
+
+EDUCATIF_TEASER_RE = re.compile(
+    r"va te surprendre|\bgarde-l[ae]\b|\benregistre-l[ae]\b|\battends\b|\bla (?:deuxi[èe]me|troisi[èe]me|derni[èe]re|prochaine|suivante) (?:le[çc]on|astuce|erreur|r[èe]gle|chose)",
+    re.I)
+
+
+def carte_texte(card: dict) -> str:
+    """Tout le texte lisible d'une carte (titre, points, avant / apres, etapes, question...)."""
+    morceaux: list[str] = []
+    for cle, val in card.items():
+        if cle in ("type", "style", "effet", "surtitre", "mot", "bonne", "icone"):
+            continue
+        if isinstance(val, list):
+            morceaux += [str(v.get("label", v.get("texte", "")) if isinstance(v, dict) else v) for v in val]
+        else:
+            morceaux.append(str(val))
+    return " ".join(morceaux)
+
+
+def _racines(texte: str) -> set[str]:
+    """Mots porteurs de sens reduits a 5 lettres (le pluriel et le genre ne les distinguent plus)."""
+    return {m[:5] for m in _mots_cles(texte)}
+
+
+def educatif_problems(scenes: list[dict]) -> list[str]:
+    """Cours eclair : la voix dit la lecon que la carte resume, sans teaser ni renvoi (run 76 : cartes hors sujet)."""
+    problems = []
+    for i, scene in enumerate(scenes, 1):
+        if EDUCATIF_TEASER_RE.search(scene["texte"]):
+            problems.append(f"scène {i} : pas de relance ni de suspense (« garde-la », « la troisième leçon va te surprendre »...) : "
+                            "dis la leçon tout de suite")
+        carte = scene.get("carte")
+        if carte and carte.get("type") != "quiz":
+            voix, ecran = _racines(scene["texte"]), _racines(carte_texte(carte))
+            if voix and ecran and not voix & ecran:
+                problems.append(f"scène {i} : la carte ne reprend aucun mot de la voix (« {scene['texte'][:50]}… ») : "
+                                "la voix dit la leçon et la carte en affiche les mots clés")
+    return problems
 
 
 def common_problems(scenes: list[dict], data: dict, duration: int, tone: str, recent_hooks: list[str] | None,
@@ -1601,7 +1650,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks,
                                     wants_proof(fmt) and not sans_captures and not fmt.get("dessin"),
                                     catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")),
-                                    bool(fmt.get("jeu")))
+                                    bool(fmt.get("jeu")), bool(fmt.get("educatif")))
         if scenes and not problems and (fmt.get("dessin") or fmt.get("jeu")):
             problems = relecture_dessin(client, data, scenes)
         if scenes:

@@ -643,6 +643,7 @@
       "poids": 3,
       "cartes": "majoritaires",
       "quiz": true,
+      "educatif": true,
       "registres": [
         "serieux"
       ],
