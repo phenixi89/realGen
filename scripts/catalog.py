@@ -153,6 +153,25 @@ def _gabarit_civique(card: dict, n: int, total: int) -> tuple[str, dict] | None:
     if kind == "quiz":
         return "civique", {**base, "mode": "quiz", "texte": _marque(g("question")),
                            "points": "|".join(str(x) for x in card.get("reponses") or []), "bonne": card.get("bonne", 1)}
+    # Cartes propres au plateau (formats a "cartes_civique", 1_generate_script.CIVIQUE_CARDS_RULE).
+    if kind == "duel":
+        return "civique", {**base, "mode": "duel", "texte": _marque(g("question")), "gauche": g("gauche"), "droite": g("droite"),
+                           "bonne": card.get("bonne", 1)}
+    if kind == "intrus":
+        return "civique", {**base, "mode": "intrus", "texte": _marque(g("titre")),
+                           "points": "|".join(str(x) for x in card.get("elements") or []), "bonne": card.get("intrus", 1)}
+    if kind == "relier":
+        paires = card.get("paires") or []
+        return "civique", {**base, "mode": "relier", "texte": _marque(g("titre")),
+                           "gauche": "|".join(str(x.get("a", "")) for x in paires), "droite": "|".join(str(x.get("b", "")) for x in paires)}
+    if kind == "definition":
+        return "civique", {**base, "mode": "definition", "mot": g("mot"), "sens": g("sens")}
+    if kind == "frise":
+        return "civique", {**base, "mode": "frise", "texte": _marque(g("titre")),
+                           "jalons": "|".join(f"{x.get('date', '')}~{x.get('label', '')}" for x in card.get("jalons") or [])}
+    if kind == "indices":
+        return "civique", {**base, "mode": "indices", "texte": _marque(g("titre")),
+                           "points": "|".join(str(x) for x in card.get("indices") or []), "reponse": g("reponse")}
     return None
 
 
@@ -923,6 +942,9 @@ def validate_chaine() -> list[str]:
         for s in sujets():
             if not (s.get("faits") and s.get("source")):
                 errors.append(f"sujet {s['id']} : chaine verifiee, champs 'faits' (liste) et 'source' obligatoires")
+    for f in formats():   # formats a cartes propres au plateau : chaine faceless, theme civique_plateau seulement
+        if f.get("cartes_civique") and (ch.get("produit") or f.get("themes") != ["civique_plateau"]):
+            errors.append(f"format {f['id']} : cartes_civique demande une chaine sans produit et \"themes\": [\"civique_plateau\"]")
     if not ch.get("produit"):
         for f in formats():
             if f.get("categorie") != "conseil" or (f.get("cartes") == "aucune" and not f.get("dessin")):

@@ -642,6 +642,24 @@ revient sur la carte (elle résume la voix, elle n'ouvre pas un autre sujet). Un
 énonce déjà la 1re leçon, en une phrase complète qu'on comprend seule. Le pivot et la dernière carte concluent : ils ne
 donnent pas une leçon de plus."""
 
+CIVIQUE_CARDS_RULE = """
+CARTES DU PLATEAU (en plus des cartes ci-dessus, utilise celles que demande la structure du format ; tout vient des FAITS) :
+  - carte duel (deux choix A / B, une seule juste, tirée des faits ; la voix lit la question et les deux choix, puis « Réfléchis. ») :
+    "carte": {"type": "duel", "question": "6 à 12 mots", "gauche": "1 à 4 mots", "droite": "1 à 4 mots", "bonne": 1 ou 2}
+  - carte intrus (4 éléments dont UN n'a rien à faire avec les trois autres ; les trois autres viennent des faits, l'intrus est un
+    élément évidemment étranger, jamais un faux fait présenté comme vrai) :
+    "carte": {"type": "intrus", "titre": "5 à 10 mots", "elements": ["...", "...", "...", "..."] (1 à 3 mots chacun), "intrus": 1 à 4}
+  - carte relier (2 à 4 paires, chaque paire tirée des faits ; la voix dit chaque paire) :
+    "carte": {"type": "relier", "titre": "4 à 8 mots", "paires": [{"a": "1 à 3 mots", "b": "1 à 4 mots"}, ...]}
+  - carte définition (un mot du sujet et son sens en une phrase simple tirée des faits) :
+    "carte": {"type": "definition", "mot": "un mot, 14 lettres au plus", "sens": "une phrase de 20 mots au plus"}
+  - carte frise (2 à 4 dates, chacune présente dans les faits, rangées de la plus ancienne à la plus récente) :
+    "carte": {"type": "frise", "titre": "3 à 7 mots", "jalons": [{"date": "1789", "label": "4 à 9 mots"}, ...]}
+  - carte indices (3 indices de plus en plus précis, dits un à un, puis la réponse ; chaque indice est un fait) :
+    "carte": {"type": "indices", "titre": "Qui suis-je ?" ou « Quelle est cette notion ? », "indices": ["...", "...", "..."] (12 mots au plus), "reponse": "1 à 4 mots"}
+La voix dit ce que la carte montre (les deux choix, les paires, les dates, les indices) ; la réponse est donnée par la voix de la scène
+suivante, avec la même phrase que celle des faits."""
+
 COHERENCE_RULE = """
 VÉRITÉ ET COHÉRENCE (le reel est relu par un spectateur qui ne sait rien, puis contrôlé) :
 - Un teaser (« reste pour la formule finale », « la dernière est la plus importante ») est permis, il retient bien, mais
@@ -885,6 +903,8 @@ Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus
 Le texte de la carte ne recopie PAS la voix : il la résume.""" + (EDUCATIF_RULE if fmt.get("educatif") else "") + ("" if sans_captures else """ Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée).""")
 
+    if fmt.get("cartes_civique"):   # formats du plateau civique : cartes en plus (aucun format d'OpusCV)
+        cards_rule += CIVIQUE_CARDS_RULE
     if not fmt.get("dessin"):   # le dessin animé a ses propres règles d'écriture (DRAMATURGIE)
         cards_rule += COHERENCE_RULE
     annotation_rule = """
@@ -1181,6 +1201,45 @@ def clean_card(raw) -> dict | None:
         except (TypeError, ValueError):
             bonne = 1
         return {"type": "quiz", "question": txt("question"), "reponses": reponses, "bonne": min(max(bonne, 1), len(reponses))}
+    # Cartes propres au plateau civique (assets/anim/civique.html, CIVIQUE_CARDS_RULE).
+    if kind == "duel":
+        if not (txt("question") and txt("gauche") and txt("droite")):
+            return None
+        try:
+            bonne = 2 if int(raw.get("bonne")) == 2 else 1
+        except (TypeError, ValueError):
+            bonne = 1
+        return {"type": "duel", "question": txt("question"), "gauche": txt("gauche"), "droite": txt("droite"), "bonne": bonne}
+    if kind == "intrus":
+        elements = [str(e).strip() for e in raw.get("elements") or [] if str(e).strip()][:4]
+        if not txt("titre") or len(elements) != 4:
+            return None
+        try:
+            intrus = min(max(int(raw.get("intrus")), 1), 4)
+        except (TypeError, ValueError):
+            intrus = 4
+        return {"type": "intrus", "titre": txt("titre"), "elements": elements, "intrus": intrus}
+    if kind == "relier":
+        paires = [{"a": str(p.get("a") or "").strip(), "b": str(p.get("b") or "").strip()}
+                  for p in raw.get("paires") or [] if isinstance(p, dict) and str(p.get("a") or "").strip() and str(p.get("b") or "").strip()][:4]
+        if not txt("titre") or len(paires) < 2:
+            return None
+        return {"type": "relier", "titre": txt("titre"), "paires": paires}
+    if kind == "definition":
+        if not (txt("mot") and txt("sens")):
+            return None
+        return {"type": "definition", "mot": txt("mot"), "sens": txt("sens")}
+    if kind == "frise":
+        jalons = [{"date": str(j.get("date") or "").strip(), "label": str(j.get("label") or "").strip()}
+                  for j in raw.get("jalons") or [] if isinstance(j, dict) and str(j.get("date") or "").strip() and str(j.get("label") or "").strip()][:4]
+        if not txt("titre") or len(jalons) < 2:
+            return None
+        return {"type": "frise", "titre": txt("titre"), "jalons": jalons}
+    if kind == "indices":
+        indices = [str(i).strip() for i in raw.get("indices") or [] if str(i).strip()][:3]
+        if not txt("titre") or len(indices) != 3 or not txt("reponse"):
+            return None
+        return {"type": "indices", "titre": txt("titre"), "indices": indices, "reponse": txt("reponse")}
     if kind == "meme":
         if not txt("haut") or not txt("bas"):
             return None
@@ -1426,10 +1485,11 @@ def carte_texte(card: dict) -> str:
     """Tout le texte lisible d'une carte (titre, points, avant / apres, etapes, question...)."""
     morceaux: list[str] = []
     for cle, val in card.items():
-        if cle in ("type", "style", "effet", "surtitre", "mot", "bonne", "icone", "marque"):
+        if cle in ("type", "style", "effet", "surtitre", "bonne", "icone", "marque", "intrus", "etiquette", "verdict") or (cle == "mot" and card.get("type") != "definition"):
             continue
         if isinstance(val, list):
-            morceaux += [str(v.get("label", v.get("texte", "")) if isinstance(v, dict) else v) for v in val]
+            morceaux += [(f"{v['date']} {v.get('label', '')}" if v.get("date") else f"{v['a']} {v.get('b', '')}" if "a" in v
+                          else str(v.get("label", v.get("texte", "")))) if isinstance(v, dict) else str(v) for v in val]
         else:
             morceaux.append(str(val))
     return " ".join(morceaux)
@@ -2065,7 +2125,12 @@ def etiqueter_cartes(scenes: list[dict], fmt: dict) -> None:
         if not carte or carte.get("type") == "impact":
             continue
         m = VERDICT_RE.match(sc["texte"]) if fmt.get("verdicts") else None
-        carte["etiquette"] = "RÉPONSE" if m else fmt["etiquette"]
+        etiq = fmt["etiquette"]
+        if isinstance(etiq, dict):   # une etiquette par type de carte, "*" pour les autres (format mot_du_jour)
+            etiq = etiq.get(carte.get("type"), etiq.get("*", ""))
+        carte["etiquette"] = "RÉPONSE" if m else etiq
+        if not carte["etiquette"]:
+            del carte["etiquette"]
         if m:
             carte["verdict"] = m.group(1).upper()
 

@@ -96,6 +96,18 @@ def slide_from_card(card: dict) -> dict | None:
         return {"titre": card.get("texte", ""), "texte": ""}
     if kind == "meme":
         return {"titre": card.get("haut", ""), "texte": card.get("bas", "")}
+    if kind == "duel":
+        return {"titre": card.get("question", ""), "texte": f"{card.get('gauche', '')} ou {card.get('droite', '')} ?"}
+    if kind == "intrus":
+        return {"titre": card.get("titre", ""), "texte": " · ".join(card.get("elements") or [])}
+    if kind == "relier":
+        return {"titre": card.get("titre", ""), "texte": " · ".join(f"{p.get('a', '')} = {p.get('b', '')}" for p in card.get("paires") or [])}
+    if kind == "definition":
+        return {"titre": card.get("mot", ""), "texte": card.get("sens", "")}
+    if kind == "frise":
+        return {"titre": card.get("titre", ""), "texte": " · ".join(f"{j.get('date', '')} {j.get('label', '')}" for j in card.get("jalons") or [])}
+    if kind == "indices":
+        return {"titre": card.get("titre", ""), "texte": f"Réponse : {card.get('reponse', '')}"}
     if kind == "quiz":
         reponses = card.get("reponses") or []
         bonne = min(max(int(card.get("bonne") or 1), 1), max(len(reponses), 1)) - 1

@@ -120,4 +120,6 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Chaîne `examen_civique` : nom « Objectif Civique », compte TikTok `@objectif.civique` (watermark), logo « L'Hexagone validé »
   (`assets/marques/examen_civique/`, sans Marianne ni bloc-marque de l'État) ; habillage propre, jamais celui d'OpusCV :
   thème `civique_plateau` réservé à la chaîne (`"chaines"`), gabarit `assets/anim/civique.html` (plateau de quiz en hexagones,
-  sons publiés par la page dans `window.SONS`).
+  sons publiés par la page dans `window.SONS`). Une nouvelle planche = le `mode` dans `civique.html` **et** sa carte (`clean_card`,
+  `catalog._gabarit_civique`, `carte_texte`, `instagram.slide_from_card`, `CIVIQUE_CARDS_RULE`) ; les formats qui l'utilisent ont
+  `"cartes_civique": true` (jamais un format d'OpusCV : ses prompts doivent rester identiques).

@@ -537,14 +537,28 @@ balaie, bande tricolore en bas, onglet en forme d'hexagone étiré et progressio
 | `liste` / `schema` | `liste` / `etapes` | alvéoles qui se cochent / trois étapes numérotées reliées par un trait |
 | `comparaison` | `avant_apres` | « IDÉE REÇUE » barrée, puis « EN VRAI » |
 | `impact` | `retenir` | « À RETENIR » sur une plaque, tampon hexagone + coche |
+| `duel` | `duel` | deux grandes tuiles hexagonales A / B et un « VS » doré, compte à rebours, la bonne tuile passe au vert avec des confettis, l'autre s'efface |
+| `intrus` | `intrus` | quatre tuiles ; l'intrus devient rouge et tremble, les trois autres passent au vert |
+| `relier` | `relier` | deux colonnes de capsules (la droite est décalée), des traits de couleur se tracent un à un pour relier chaque paire |
+| `definition` | `definition` | le mot en grand dans un hexagone (les lettres rebondissent une à une), sa définition sur une plaque « DÉFINITION » |
+| `frise` | `frise` | une frise verticale : la ligne se trace, un nœud hexagonal numéroté et une date en grand par jalon |
+| `indices` | `indices` | trois indices qui arrivent un à un, un hexagone « ? » qui bat, puis la réponse en plaque avec la coche verte et des confettis |
 | scène 1 | `accroche` | l'icône dessinée (trait néon) dans l'hexagone, sous l'accroche |
 | dernière scène | `fin` | le logo se trace, « OBJECTIF / CIVIQUE » (dégradé tricolore), titre, sous-titre, bouton « S'ABONNER » |
+
+**Animations communes** : hexagones qui flottent doucement derrière le contenu, **compte à rebours 3-2-1** dans un hexagone
+qui se vide (quiz, duel, intrus), **confettis hexagonaux** (tricolores et or) à chaque bonne réponse et sur la définition,
+coup de projecteur qui balaie la scène. **Transitions** du thème entre les plans : ouverture en cercle, radial, glissements
+doux, pixels, compression (`circleopen`, `radial`, `smoothleft`, `smoothup`, `pixelize`, `squeezeh`).
 
 Tampon de réponse (`verdict`) : badge hexagonal vert avec coche (VRAI) ou rouge avec croix (FAUX), à 0,45 s. Les sons
 (clics des mots, pop, tic-tac du compte à rebours, ding, buzz, coup du tampon) sont **publiés par la page** (`window.SONS`,
 lus par `render_js_anim.render_clip`) : rien à recopier dans `sound_design.py`. `run_pipeline.plan_montage` remplace
 l'illustration de l'accroche et l'écran d'appel à l'action par les planches `accroche` et `fin` quand le thème du reel a
-`"cartes_gabarit": "civique"`. Aperçu de la console : une planche quiz révélée (`apercus.py`).
+`"cartes_gabarit": "civique"`. Les six cartes `duel`, `intrus`, `relier`, `definition`, `frise` et `indices` n'existent que pour
+les formats à `"cartes_civique": true` (le prompt les décrit alors, `CIVIQUE_CARDS_RULE` ; `catalog.py` impose la chaîne sans
+produit et le seul thème `civique_plateau`) ; leurs champs sont nettoyés par `clean_card`, leur texte compte pour le contrôle des
+nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA). Aperçu de la console : une planche quiz révélée (`apercus.py`).
 
 ### Format `cours_eclair` : mini-cours éducatif (thèmes `carnet_cours` et `pop_art`)
 
@@ -648,7 +662,7 @@ affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), 
 | Chaîne | Nom | Formats | Particularités |
 |---|---|---|---|
 | `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
-| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thème propre `civique_plateau` (voir « Plateau civique ») | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
+| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | 10 formats, thème propre `civique_plateau` (voir « Plateau civique ») : `question_revision` (quiz 3 réponses), `vrai_ou_faux`, `cours_eclair`, `duel_ab` (« A ou B ? »), `trouve_intrus`, `relie_paires`, `mot_du_jour` (définition, exemple, quiz), `qui_suis_je` (3 indices), `frise_dates` (sujets à tag `dates` seulement), `serie_flash` (3 questions éclair, 35 s conseillées) | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
 | `psycho` | Dans ta tête (provisoire, `@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
 
 Changer un nom (celui de `psycho` est provisoire) : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,

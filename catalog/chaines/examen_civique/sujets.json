@@ -1,5 +1,5 @@
 {
-  "_doc": "Sujets de la chaine examen_civique (chaine verifiee) : chaque sujet porte 'faits' (phrases exactes, SEULE base autorisee pour l'IA) et 'source' (texte officiel, affichee dans la legende). tags / famille : valeurs, institutions, histoire, droits, vie_quotidienne. Ajouter un sujet = recopier les faits depuis la source officielle, jamais de memoire. Les modalites de l'examen (nombre de questions, seuil...) ne figurent volontairement pas ici tant qu'elles n'ont pas ete recopiees d'une source officielle.",
+  "_doc": "Sujets de la chaine examen_civique (chaine verifiee) : chaque sujet porte 'faits' (phrases exactes, SEULE base autorisee pour l'IA) et 'source' (texte officiel, affichee dans la legende). tags / famille : valeurs, institutions, histoire, droits, vie_quotidienne. Ajouter un sujet = recopier les faits depuis la source officielle, jamais de memoire. Les modalites de l'examen (nombre de questions, seuil...) ne figurent volontairement pas ici tant qu'elles n'ont pas ete recopiees d'une source officielle. Tag 'dates' : le sujet a au moins deux dates dans ses faits (seuls sujets proposes au format frise_dates, carte frise).",
   "sujets": [
     {
       "id": "devise",
@@ -67,7 +67,8 @@
       "id": "fete_nationale",
       "categorie": "conseil",
       "tags": [
-        "histoire"
+        "histoire",
+        "dates"
       ],
       "famille": "histoire",
       "texte": "le 14 juillet, fête nationale : ce qu'il rappelle",
@@ -98,7 +99,8 @@
       "id": "ddhc",
       "categorie": "conseil",
       "tags": [
-        "droits"
+        "droits",
+        "dates"
       ],
       "famille": "droits",
       "texte": "la Déclaration des droits de l'homme et du citoyen de 1789",
@@ -192,7 +194,8 @@
       "id": "vote_femmes",
       "categorie": "conseil",
       "tags": [
-        "histoire"
+        "histoire",
+        "dates"
       ],
       "famille": "histoire",
       "texte": "le droit de vote des femmes",
@@ -207,7 +210,8 @@
       "id": "egalite_femmes_hommes",
       "categorie": "conseil",
       "tags": [
-        "droits"
+        "droits",
+        "dates"
       ],
       "famille": "droits",
       "texte": "l'égalité entre les femmes et les hommes",
@@ -222,7 +226,8 @@
       "id": "peine_de_mort",
       "categorie": "conseil",
       "tags": [
-        "droits"
+        "droits",
+        "dates"
       ],
       "famille": "droits",
       "texte": "l'abolition de la peine de mort",
@@ -280,7 +285,8 @@
       "id": "premiere_republique",
       "categorie": "conseil",
       "tags": [
-        "histoire"
+        "histoire",
+        "dates"
       ],
       "famille": "histoire",
       "texte": "la Révolution française et la Première République",
@@ -295,7 +301,8 @@
       "id": "abolition_esclavage",
       "categorie": "conseil",
       "tags": [
-        "histoire"
+        "histoire",
+        "dates"
       ],
       "famille": "histoire",
       "texte": "l'abolition de l'esclavage",
@@ -309,7 +316,8 @@
       "id": "europe",
       "categorie": "conseil",
       "tags": [
-        "histoire"
+        "histoire",
+        "dates"
       ],
       "famille": "histoire",
       "texte": "la France, pays fondateur de l'Europe",

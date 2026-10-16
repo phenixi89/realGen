@@ -775,8 +775,12 @@
         "lofi_chill"
       ],
       "transitions": [
-        "fade",
-        "smoothleft"
+        "circleopen",
+        "radial",
+        "smoothleft",
+        "smoothup",
+        "pixelize",
+        "squeezeh"
       ],
       "dessin": "neon",
       "registres": [
