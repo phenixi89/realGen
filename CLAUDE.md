@@ -22,7 +22,7 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   sa définition, run 80) — mêmes contrôles que `.github/workflows/test.yml`.
 - Chaînes : formats, sujets, accroches et config d'une chaîne dans `catalog/chaines/<id>/` (aucun repli d'une chaîne sur
   une autre) ; `chaine.json` = identité (nom, marque, watermark, produit ou faceless, niche, public, règles, personnages,
-  série, trames). Les noms des chaînes faceless et des personnages sont PROVISOIRES : ne les changer que dans
+  série, trames). Les noms de la chaîne `psycho` et des personnages sont PROVISOIRES : ne les changer que dans
   `chaine.json`. Toute modification d'un prompt doit laisser **identiques** les prompts d'OpusCV (comparer avant / après)
   et sans trace d'OpusCV ceux des chaînes faceless (`verif_prompts.py`). Une nouvelle chaîne s'ajoute aussi aux options
   `chaine` de `generate-reels.yml` (`catalog.py` vérifie).
@@ -97,7 +97,7 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 
 ## Points ouverts (décisions utilisateur en attente)
 
-- Noms définitifs des chaînes faceless (`Objectif Civique`, `Dans ta tête`) et des personnages (Théo, Jade).
+- Nom définitif de la chaîne `psycho` (`Dans ta tête`, provisoire) et des personnages (Théo, Jade).
 - Examen civique : recopier les modalités officielles de l'examen (nombre de questions, seuil) dans un sujet sourcé.
 
 - Format `temoignage_produit` : ajouter la mention « histoire illustrative » ou le retirer.
@@ -117,3 +117,4 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Chaînes faceless : une ligne éditoriale = un dossier `catalog/chaines/<id>/` ; d'abord `examen_civique` (révision de
   l'examen civique, vérifiée) et `psycho` (psychologie du quotidien) ; « savais-tu que » et « motivation » viendront
   ensuite. Audience d'abord (monétisation plus tard) : reels courts ; TikTok, Instagram et YouTube Shorts.
+- Chaîne `examen_civique` : nom « Objectif Civique », compte TikTok `@objectif.civique` (watermark).

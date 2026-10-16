@@ -614,13 +614,13 @@ ajoutée à toutes les légendes (TikTok, Instagram, YouTube).
 affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), et la source est ajoutée aux légendes
 (« Source : … »). Un ton qui contient « lent » compte 2,2 mots/s (au lieu de 2,6) pour le budget de mots.
 
-| Chaîne | Nom (provisoire) | Formats | Particularités |
+| Chaîne | Nom | Formats | Particularités |
 |---|---|---|---|
 | `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
-| `examen_civique` | Objectif Civique (`@objectifcivique`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thèmes `carnet_cours` / `pop_art` | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
-| `psycho` | Dans ta tête (`@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
+| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thèmes `carnet_cours` / `pop_art` | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
+| `psycho` | Dans ta tête (provisoire, `@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
 
-Changer un nom provisoire : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,
+Changer un nom (celui de `psycho` est provisoire) : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,
 `serie`) dans `chaine.json`, rien d'autre. **Ajouter une chaîne** : copier le dossier d'une chaîne faceless, adapter
 `chaine.json`, les formats, sujets, accroches et la config, ajouter son id aux options `chaine` de
 `.github/workflows/generate-reels.yml`, puis `python scripts/catalog.py` et `python scripts/verif_prompts.py`. Ses phrases
