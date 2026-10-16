@@ -544,6 +544,12 @@ d'une carte `impact`, est mis en valeur automatiquement).
 
 - Carte `quiz` : `question` (4 à 9 mots), `reponses` (2 à 3), `bonne` (1..3) ; sans thème éducatif elle devient une
   carte `liste`. Aperçu : `docs/apercus/cartes/quiz.jpg`.
+- Format à `"etiquette"` (chaîne `examen_civique`) : l'onglet (carnet) ou le bandeau (comics) affiche ce texte au lieu de
+  « LEÇON n/N » (« RÉVISION », « VRAI OU FAUX ? » ; `{n}` et `{total}` remplacés) ; format à `"verdicts"` : une scène dont
+  la voix commence par « Vrai » ou « Faux » prend l'étiquette « RÉPONSE » et un **tampon VRAI (vert) / FAUX (rouge)** dès
+  0,45 s, avec son coup sonore (`etiqueter_cartes`, paramètres `etiquette` et `verdict` des gabarits, `EDU_VERDICT_AT` de
+  `sound_design.py`). Grand chiffre (planches `chiffre` et `choc`) : « 18 ans » garde son espace et la taille baisse pour
+  tenir dans la page (run 82 : « 18an » coupé).
 - Étiquette « LEÇON n/N » / « FAIT N°n » : les cartes `impact` (pivot) ne comptent pas parmi les leçons, ni, en comics, les
   planches à bandeau propre (`bande` « EN 3 CASES », `versus`, `top`, `quiz`, `choc`) : les numéros se suivent (1, 2, 3)
   (`run_pipeline.carte_numerotee`). La barre de progression est celle du carnet.
@@ -617,7 +623,7 @@ affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), 
 | Chaîne | Nom | Formats | Particularités |
 |---|---|---|---|
 | `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
-| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thèmes `carnet_cours` / `pop_art` | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
+| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thèmes `carnet_cours` / `pop_art` | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
 | `psycho` | Dans ta tête (provisoire, `@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
 
 Changer un nom (celui de `psycho` est provisoire) : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,

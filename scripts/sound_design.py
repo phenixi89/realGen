@@ -40,6 +40,7 @@ ILLUSTRATION_DRAW_START = 0.25  # illustration.html DRAW_START
 QUOTES = ' «»"“”'
 # lecon.html / pop.html : FIRST_AT (1er mot) et cadence des mots (wordGap), a garder identiques des deux cotes.
 EDU_FIRST_AT = {"lecon": 0.35, "pop": 0.3}
+EDU_VERDICT_AT = 0.45   # tampon / onomatopee VRAI ou FAUX (lecon.html et pop.html VERDICT_AT)
 
 
 def transition_sound() -> str:
@@ -63,6 +64,8 @@ def educatif_cues(name: str, params: dict, start: float, dur: float) -> list[dic
     first = EDU_FIRST_AT[name]
     points = [p for p in params.get("points", "").split("|") if p]
     cues: list[dict] = []
+    if params.get("verdict"):  # tampon VRAI / FAUX (lecon.html, pop.html : VERDICT_AT)
+        cues.append({"t": start + EDU_VERDICT_AT, "name": "impact", "gain": 0.6})
     if mode in ("lecon", "retenir", "fait", "choc"):
         import re
         words = re.findall(r"\*[^*]+\*[^\s*]*|[^\s*]+", params.get("texte", ""))

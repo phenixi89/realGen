@@ -2015,6 +2015,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
     if plan.get("sans_captures") and not catalog.sans_capture_seul(fmt):
         for scene in best[1:-1]:
             scene.setdefault("carte", fallback_card(scene["texte"]))
+    etiqueter_cartes(best, fmt)
     if cta_enregistre() and not forced:
         fixer_cta(best, plan["cta"])
     dessin_fields = {}
@@ -2046,6 +2047,27 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         **plan_fields(plan),
         **dessin_fields,
     })
+
+
+VERDICT_RE = re.compile(r"\s*(vrai|faux)\b", re.I)
+
+
+def etiqueter_cartes(scenes: list[dict], fmt: dict) -> None:
+    """
+    Format a "etiquette" (chaine examen_civique) : l'onglet / le bandeau des planches educatives dit ce qu'est la carte
+    (« RÉVISION 1/3 », « VRAI OU FAUX ? ») au lieu de « LEÇON n/N ». Format a "verdicts" : la scene dont la voix
+    commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX (run 82 : la reponse n'etait jamais affichee).
+    """
+    if not fmt.get("etiquette"):
+        return
+    for sc in scenes:
+        carte = sc.get("carte")
+        if not carte or carte.get("type") == "impact":
+            continue
+        m = VERDICT_RE.match(sc["texte"]) if fmt.get("verdicts") else None
+        carte["etiquette"] = "RÉPONSE" if m else fmt["etiquette"]
+        if m:
+            carte["verdict"] = m.group(1).upper()
 
 
 def fallback_card(texte: str) -> dict:

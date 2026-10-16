@@ -8,7 +8,8 @@
   ou mot plein cadre (param grand), avec onomatopée.
   Parametres : texte (mots clés entre *...*), n, icone (icones.js), note
   (bulle, optionnel), onomatopee (ex : BAM), pied (bandeau du bas, nom de la
-  chaine : chaine.json "pied" ; defaut OpusCV), dur.
+  chaine : chaine.json "pied" ; defaut OpusCV), etiquette (texte du bandeau a la place de « FAIT N°n », {n}
+  remplacé), verdict (VRAI | FAUX : onomatopée verte ou rouge à VERDICT_AT, repris par sound_design), dur.
   mode (la « planche ») : fait (defaut) | choc (grand = chiffre plein cadre)
   | versus (titre_g/gauche contre titre_d/droite) | top (texte = titre, points
   a|b|c numérotés) | quiz (texte = question, points = 3 réponses, bonne = 1..3)
@@ -93,8 +94,9 @@
   if (param("pied", "")) document.getElementById("pied").textContent = param("pied", "");
   const mode = param("mode", "fait"), EXTRA = ["versus", "top", "quiz", "bande"].includes(mode), N = Math.round(num("n", 1));
   const texte = frTypo(param("texte", "Ton CV est *invisible* pour les robots")), icone = param("icone", ""), note = param("note", "");
-  const ono = param("onomatopee", mode === "choc" ? "BAM !" : "");
-  document.getElementById("bandeau").textContent = { choc: "ALERTE !", versus: "DUEL !", top: "LE TOP", quiz: "QUIZ !", bande: "EN 3 CASES" }[mode] || (param("resume", "") !== "" ? "EN RÉSUMÉ" : `FAIT N°${N}`);
+  const VERDICT = param("verdict", "").toUpperCase(), VERDICT_AT = 0.45, ETIQ = param("etiquette", "");
+  const ono = VERDICT ? `${VERDICT} !` : param("onomatopee", mode === "choc" ? "BAM !" : "");
+  document.getElementById("bandeau").textContent = ETIQ ? ETIQ.replace("{n}", N) : { choc: "ALERTE !", versus: "DUEL !", top: "LE TOP", quiz: "QUIZ !", bande: "EN 3 CASES" }[mode] || (param("resume", "") !== "" ? "EN RÉSUMÉ" : `FAIT N°${N}`);
   const zone = document.getElementById("texte"), mots = [];
   (EXTRA ? [] : (texte.match(/\*[^*]+\*[^\s*]*|[^\s*]+/g) || [])).forEach((tok) => {
     const cle = tok.startsWith("*"), s = document.createElement("span"), m = document.createElement("span");
@@ -104,8 +106,11 @@
   const noteEl = document.getElementById("bulle");
   if (note && !EXTRA) noteEl.textContent = note; else noteEl.style.display = "none";
   const onoEl = document.getElementById("ono"); onoEl.textContent = ono;
+  if (VERDICT) { onoEl.style.color = VERDICT === "VRAI" ? "#7dff9a" : "var(--rose)"; onoEl.style.bottom = "auto"; onoEl.style.top = "-20px"; onoEl.style.left = "auto"; onoEl.style.right = "-10px"; }
   const grand = document.getElementById("grand");
-  if (mode === "choc") { grand.style.display = "block"; grand.textContent = param("grand", "75%"); zone.style.top = "760px"; zone.style.fontSize = "112px"; }
+  if (mode === "choc") { grand.style.display = "block"; grand.textContent = param("grand", "75%");
+    // « 18 ANS » : la taille baisse pour tenir dans la case (420 px pour « 75% »).
+    grand.style.fontSize = Math.min(420, Math.floor(1000 / (grand.textContent.length * 0.55))) + "px"; zone.style.top = "760px"; zone.style.fontSize = "112px"; }
 
   // Planches « extra » : DOM dans #extra, animation sur tl, renvoie l'instant de fin.
   function buildExtra(tl) {
@@ -178,7 +183,7 @@
       tl.add(draw, Math.min(fin + 0.05, DUR * 0.4));
     }
     if (note && !EXTRA) tl.from("#bulle", { scale: 0, rotation: -15, opacity: 0, duration: 0.35, ease: "back.out(2.6)", transformOrigin: "10% 0%" }, fin + 0.15);
-    if (ono) tl.fromTo("#ono", { opacity: 0, scale: 3 }, { opacity: 1, scale: 1, duration: 0.2, ease: "power4.in", immediateRender: false }, mode === "choc" ? 0.55 : fin + 0.5);
+    if (ono) tl.fromTo("#ono", { opacity: 0, scale: 3 }, { opacity: 1, scale: 1, duration: 0.2, ease: "power4.in", immediateRender: false }, mode === "choc" ? 0.55 : VERDICT ? VERDICT_AT : fin + 0.5);
     tl.to("#case", { y: -14, duration: Math.max(DUR, 3), ease: "sine.inOut" }, 0.4);
     expose(tl);
     const baseSeek = window.seek;

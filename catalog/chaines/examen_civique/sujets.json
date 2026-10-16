@@ -183,9 +183,10 @@
         "Sont électeurs les Français majeurs des deux sexes qui ont leurs droits civils et politiques.",
         "La majorité est fixée à 18 ans depuis la loi du 5 juillet 1974.",
         "Le vote est secret.",
-        "Il faut être inscrit sur les listes électorales pour voter."
+        "Il faut être inscrit sur les listes électorales pour voter.",
+        "Les citoyens d'un autre pays de l'Union européenne qui habitent en France peuvent voter aux élections municipales et européennes."
       ],
-      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), article 3 ; loi du 5 juillet 1974 (legifrance.gouv.fr)"
+      "source": "Constitution du 4 octobre 1958, articles 3 et 88-3 ; loi du 5 juillet 1974 (legifrance.gouv.fr) ; service-public.fr"
     },
     {
       "id": "vote_femmes",

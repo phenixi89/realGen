@@ -86,6 +86,8 @@ def gabarit_carte(theme: dict | None, card: dict, n: int = 1, total: int = 1) ->
     rang = {"n": min(n, 6), "total": min(max(total, n), 6)} if lecon else {"n": n}
     if not lecon and chaine().get("pied"):
         rang["pied"] = chaine()["pied"]   # bandeau du bas de la planche pop art : nom de la chaine
+    # Etiquette de la planche et verdict VRAI / FAUX (1_generate_script.etiqueter_cartes, formats a "etiquette").
+    rang.update({k: str(card[k]) for k in ("etiquette", "verdict") if card.get(k)})
     if kind == "texte":
         phrase = g("texte")
         params = {"texte": _marque(g("titre")), "note": phrase if len(phrase) <= 60 else ""}
@@ -98,7 +100,8 @@ def gabarit_carte(theme: dict | None, card: dict, n: int = 1, total: int = 1) ->
             texte = f"{texte[:i]}*{texte[i:i + len(mot)]}*{texte[i + len(mot):]}"
         return famille, {**rang, "mode": "lecon" if lecon else "fait", "texte": _marque(texte), "resume": 1}
     if kind == "chiffre":
-        grand = g("valeur") + g("unite")
+        # « 18 ans » (unite en lettres : espace insecable), « 75% » reste colle.
+        grand = g("valeur") + ("\u00a0" if g("unite")[:1].isalpha() else "") + g("unite")
         if lecon:
             return famille, {**rang, "mode": "chiffre", "grand": grand, "legende": _marque(g("titre"))}
         return famille, {**rang, "mode": "choc", "grand": grand, "texte": _marque(g("titre"))}
