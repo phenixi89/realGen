@@ -1,9 +1,10 @@
 {
-  "_doc": "Chaine faceless de revision de l'examen civique (titre de sejour, carte de resident, naturalisation). Nom « Objectif Civique » et compte TikTok @objectif.civique : definitifs (choisis par l'utilisateur) ; a changer ici seulement. Champs : voir catalog/chaines/opuscv/chaine.json et README « Chaînes ». Faceless : niche, public, expertise, promesse, appel_action et regles sont donnes a l'IA ; verification : true -> chaque sujet porte des 'faits' et une 'source', seule base autorisee (un nombre absent des faits fait recommencer l'IA) ; mention : ligne ajoutee a toutes les legendes ; pied : bas des planches pop art.",
+  "_doc": "Chaine faceless de revision de l'examen civique (titre de sejour, carte de resident, naturalisation). Nom « Objectif Civique » et compte TikTok @objectif.civique : definitifs (choisis par l'utilisateur) ; a changer ici seulement. Champs : voir catalog/chaines/opuscv/chaine.json et README « Chaînes ». Faceless : niche, public, expertise, promesse, appel_action et regles sont donnes a l'IA ; verification : true -> chaque sujet porte des 'faits' et une 'source', seule base autorisee (un nombre absent des faits fait recommencer l'IA) ; mention : ligne ajoutee a toutes les legendes ; pied : bas des planches pop art. logo : icone de la chaine (assets/marques/<chaine>/ : logo.svg, profil.png pour la photo de profil, logo_nom.png).",
   "nom": "Objectif Civique",
   "marque": "Objectif Civique",
   "marque_accent": 7,
   "watermark": "@objectif.civique",
+  "logo": "assets/marques/examen_civique/logo.svg",
   "pied": "OBJECTIF CIVIQUE · NON OFFICIEL",
   "produit": null,
   "niche": "la préparation de l'examen civique (titre de séjour, carte de résident, naturalisation) : valeurs, symboles, institutions, histoire, droits et devoirs en France",

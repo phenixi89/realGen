@@ -117,4 +117,5 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Chaînes faceless : une ligne éditoriale = un dossier `catalog/chaines/<id>/` ; d'abord `examen_civique` (révision de
   l'examen civique, vérifiée) et `psycho` (psychologie du quotidien) ; « savais-tu que » et « motivation » viendront
   ensuite. Audience d'abord (monétisation plus tard) : reels courts ; TikTok, Instagram et YouTube Shorts.
-- Chaîne `examen_civique` : nom « Objectif Civique », compte TikTok `@objectif.civique` (watermark).
+- Chaîne `examen_civique` : nom « Objectif Civique », compte TikTok `@objectif.civique` (watermark), logo « L'Hexagone validé »
+  (`assets/marques/examen_civique/`, sans Marianne ni bloc-marque de l'État).

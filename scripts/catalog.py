@@ -871,6 +871,8 @@ def validate_chaine() -> list[str]:
     for key in CHAMPS_CHAINE + (() if ch.get("produit") else CHAMPS_FACELESS):
         if not ch.get(key):
             errors.append(f"chaine.json : champ '{key}' manquant")
+    if ch.get("logo") and not (ROOT / ch["logo"]).exists():
+        errors.append(f"chaine.json : logo '{ch['logo']}' absent (assets/marques/<chaine>/)")
     if ch.get("produit") and ch["id"] != DEFAULT_CHAINE:
         errors.append("chaine.json : seule la chaine opuscv montre un produit (captures de l'app, features.py)")
     dessines = {o["id"] for o in _load("dessins")["objets"] if o.get("categorie") == "personnage"}

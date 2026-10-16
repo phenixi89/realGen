@@ -586,7 +586,7 @@ Une **chaîne** = une ligne éditoriale complète : `catalog/chaines/<id>/` cont
 
 | Fichier | Rôle |
 |---|---|
-| `chaine.json` | Identité : `nom`, `marque` (écran d'appel à l'action, couverture, carrousel), `marque_accent` (lettres finales de la marque en dégradé sur l'écran d'appel à l'action), `watermark` (incrusté en haut à gauche), `pied` (bas des planches pop art), `produit` (`"OpusCV"` ou `null` = faceless), dessin animé : `personnages`, `serie`, `trames` |
+| `chaine.json` | Identité : `nom`, `marque` (écran d'appel à l'action, couverture, carrousel), `marque_accent` (lettres finales de la marque en dégradé sur l'écran d'appel à l'action), `watermark` (incrusté en haut à gauche), `pied` (bas des planches pop art), `logo` (icône de la chaîne dans `assets/marques/<chaîne>/` : `logo.svg`, `profil.png` = photo de profil, `logo_nom.png` = icône + nom ; `catalog.py` vérifie qu'il existe), `produit` (`"OpusCV"` ou `null` = faceless), dessin animé : `personnages`, `serie`, `trames` |
 | `formats.json`, `sujets.json`, `hooks.json` | Formats, sujets et accroches **de la chaîne** (obligatoires, aucun repli sur une autre chaîne) |
 | `config.json` | Fusionné clé par clé par-dessus `catalog/config.json` (réglages communs) : mix, registres, CTA (`ctas_*`, `cta_anim`), phrases bannies, `consigne_humour`, textes Instagram, scène preuve, relance |
 
@@ -617,7 +617,7 @@ affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), 
 | Chaîne | Nom | Formats | Particularités |
 |---|---|---|---|
 | `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
-| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thèmes `carnet_cours` / `pop_art` | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
+| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thèmes `carnet_cours` / `pop_art` | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
 | `psycho` | Dans ta tête (provisoire, `@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
 
 Changer un nom (celui de `psycho` est provisoire) : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,
