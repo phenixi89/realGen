@@ -1,0 +1,83 @@
+{
+  "_doc": "Reglages de la chaine OpusCV (fusionnes cle par cle par-dessus catalog/config.json). mix = part cible de chaque categorie de format sur les reels generes (conseil = contenu utile, produit = demo). ctas_* : variantes d'appel a l'action, une tiree par reel. cta_anim : textes de l'ecran d'appel a l'action anime. preuve_produit : les reels conseil contiennent une scene 'preuve' ou le conseil est applique en direct dans OpusCV (false = desactive). relance_enregistrer : les reels conseil (registre serieux) glissent juste apres l'accroche une relance tres courte invitant a enregistrer la video (false = desactive) ; l'abonnement est demande dans le CTA final. phrases_bannies : conseils generiques refuses dans les textes (l'IA recommence). consigne_humour : regles d'ecriture donnees a l'IA en registre humour. instagram : legende et hashtags propres a Instagram (hashtags_max), phrase d'appel a enregistrer (cta_legende), textes de la derniere diapositive du carrousel (carrousel_fin).",
+  "mix": {
+    "conseil": 0.65,
+    "produit": 0.35
+  },
+  "ctas_produit": [
+    "Essaie gratuitement, lien en bio.",
+    "Teste ton CV gratuitement, le lien est en bio.",
+    "Ton CV relu et corrigé en deux minutes : lien en bio.",
+    "Fais le test sur ton CV, c'est gratuit, lien en bio.",
+    "Lien en bio : importe ton CV et regarde ce qu'il faut corriger."
+  ],
+  "ctas_conseil": [
+    "Abonne-toi pour la suite, et teste ton CV gratuitement avec le lien en bio.",
+    "Abonne-toi pour d'autres astuces, et vérifie ton CV gratuitement avec le lien en bio.",
+    "Envoie ça à quelqu'un qui cherche un job, abonne-toi, et teste ton CV gratuitement en bio.",
+    "Abonne-toi pour la partie 2. Le test gratuit de ton CV est en bio.",
+    "Abonne-toi pour ne rien rater, et passe ton CV au scanner via le lien en bio."
+  ],
+  "cta_anim": [
+    {
+      "title": "Teste ton CV gratuitement",
+      "sub": "Lien en bio · abonne-toi pour la suite",
+      "button": "Essaie OpusCV"
+    },
+    {
+      "title": "Ton CV corrigé en 2 minutes",
+      "sub": "Gratuit · lien en bio",
+      "button": "Tester mon CV"
+    },
+    {
+      "title": "Ton CV mérite mieux",
+      "sub": "Analyse gratuite · lien en bio",
+      "button": "Scanner mon CV"
+    },
+    {
+      "title": "Prêt à décrocher l'entretien ?",
+      "sub": "Lien en bio · c'est gratuit",
+      "button": "Essaie OpusCV"
+    }
+  ],
+  "preuve_produit": true,
+  "relance_enregistrer": true,
+  "phrases_bannies": [
+    "soignez votre CV",
+    "soigne ton CV",
+    "sois toi-même",
+    "mets en valeur tes compétences",
+    "relis-toi bien",
+    "fais attention aux fautes",
+    "sois authentique",
+    "démarque-toi",
+    "un CV clair et concis",
+    "n'oublie pas de",
+    "entretien garanti",
+    "embauche garantie",
+    "job garanti"
+  ],
+  "consigne_humour": "Le reel doit faire sourire ET rester utile : chaque blague porte un vrai conseil (on rit, puis on apprend). Procédés : exagération d'une situation que tout candidat a vécue, autodérision, décalage, dialogue absurde mais crédible, chute inattendue en fin de scène. Au moins deux chutes dans le reel, courtes, placées en fin de phrase. Humour bienveillant : on rit des situations, jamais des personnes ; aucun stéréotype (âge, origine, genre, handicap, religion, physique), rien de vulgaire, aucune moquerie envers les chômeurs ni un métier ; pas de « mdr », pas de jeu de mots forcé. Le conseil final reste précis et actionnable.",
+  "instagram": {
+    "hashtags_max": 5,
+    "cta_legende": [
+      "Enregistre ce post pour ta prochaine candidature.",
+      "Enregistre-le et envoie-le à quelqu'un qui cherche un job.",
+      "Garde-le sous le coude : enregistre ce post."
+    ],
+    "carrousel_fin": [
+      {
+        "titre": "Enregistre ce post",
+        "texte": "Et teste ton CV gratuitement : lien en bio."
+      },
+      {
+        "titre": "Ton CV mérite mieux",
+        "texte": "Analyse gratuite avec OpusCV, lien en bio."
+      },
+      {
+        "titre": "Tu as tout retenu ?",
+        "texte": "Vérifie ton CV gratuitement : lien en bio."
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "_doc": "Accroches de la chaine examen_civique : memes champs que catalog/chaines/opuscv/hooks.json (voir son _doc). Jamais de chiffre inventé : un nombre de l'accroche vient des FAITS du sujet.",
+  "hooks": [
+    {
+      "id": "question_directe",
+      "poids": 3,
+      "consigne": "Poser directement la question de révision au spectateur, au « tu », en mots simples.",
+      "exemple": "Tu sais ce que veut dire « laïque » ?"
+    },
+    {
+      "id": "trois_secondes",
+      "poids": 2,
+      "consigne": "Un petit défi : trouver la réponse avant qu'elle soit donnée.",
+      "exemple": "Trouve la réponse avant moi."
+    },
+    {
+      "id": "piege",
+      "poids": 2,
+      "consigne": "Annoncer un piège où l'on se trompe facilement, sans chiffre ni statistique.",
+      "exemple": "Attention, beaucoup se trompent ici."
+    },
+    {
+      "id": "situation_reelle",
+      "consigne": "Une situation de la vie en France où la notion sert vraiment.",
+      "exemple": "Le jour du vote, tu dois savoir ça."
+    },
+    {
+      "id": "vrai_faux",
+      "consigne": "Une affirmation courte à juger tout de suite : vrai ou faux ?",
+      "exemple": "Vrai ou faux : le 14 juillet fête la Révolution ?"
+    },
+    {
+      "id": "a_retenir",
+      "consigne": "Promettre une seule chose simple à retenir pour l'examen.",
+      "exemple": "Une seule phrase à retenir pour ton examen."
+    }
+  ]
+}

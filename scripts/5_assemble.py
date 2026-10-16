@@ -38,7 +38,7 @@ LOOP_S = 0.45
 # Duree d'affichage de l'accroche par defaut (sinon : duree de la 1re scene).
 HOOK_DEFAULT_S = 2.6
 WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-WATERMARK_TEXT = "opuscv.fr"
+WATERMARK_TEXT = catalog.chaine().get("watermark") or "opuscv.fr"   # chaine active (catalog/chaines/<id>/chaine.json)
 # Pattern interrupt : la video "claque" en zoom arriere sur la 1re image,
 # puis de petits coups de zoom a chaque mot-cle prononce (rythme visuel).
 PUNCH_OPEN_ZOOM = 0.14

@@ -4,6 +4,10 @@ pour generer N reels en une seule commande.
 
 Usage:
     python run_pipeline.py --n 3 --saas-url https://tonapp.com --voice Kore
+    python run_pipeline.py --chaine psycho --n 2       # chaine faceless : sans capture, sans URL
+
+--chaine (catalog/chaines/<id>/) est transmise a toutes les etapes par la variable
+d'environnement CHAINE (catalog.chaine_id).
 """
 import argparse
 import json
@@ -124,6 +128,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     if wants_cta and t_scenes and not chosen and last not in card_scenes:
         # Textes du CTA : variante tiree par 1_generate_script.py (config.json cta_anim).
         texts = script.get("cta_anim") or (CONSEIL_CTA if script.get("categorie") == "conseil" else {})
+        if catalog.chaine_id() != catalog.DEFAULT_CHAINE:  # nom de la chaine sur l'ecran d'appel a l'action
+            texts = {**texts, "brand": catalog.marque(), "accent": str(catalog.chaine().get("marque_accent", 0))}
         chosen = {last: "cta?" + urlencode(texts) if texts else DEFAULT_SCENE_ANIM}
     if "scene" in kinds or cards:
         scene_anims.update(chosen)
@@ -311,8 +317,23 @@ def card_spec(card: dict, duration: float, theme: dict | None = None, rang: tupl
 
 def write_caption_file(script: dict, path: Path):
     """Texte de publication (legende + hashtags) a cote du reel final."""
-    lines = [script.get("legende", "").strip(), "", " ".join(script.get("hashtags") or [])]
+    from instagram import mentions
+    lines = [script.get("legende", "").strip(), *([mentions(script)] if mentions(script) else []), "",
+             " ".join(script.get("hashtags") or [])]
     path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+
+
+YOUTUBE_TITRE_MAX = 100   # limite YouTube
+
+
+def write_youtube_file(script: dict, path: Path):
+    """YouTube Shorts : 1re ligne = titre (100 caracteres au plus, #Shorts compris), puis la description."""
+    from instagram import mentions
+    titre = " ".join(str(script.get("accroche_ecran") or script.get("titre") or "").split())
+    titre = titre[: YOUTUBE_TITRE_MAX - len(" #Shorts")].rstrip() + " #Shorts"
+    tags = list(dict.fromkeys((script.get("hashtags") or []) + ["#Shorts"]))
+    corps = [script.get("legende", "").strip(), mentions(script), " ".join(tags)]
+    path.write_text(titre + "\n\n" + "\n\n".join(x for x in corps if x) + "\n", encoding="utf-8")
 
 
 def run(cmd: list[str]):
@@ -325,6 +346,9 @@ def run(cmd: list[str]):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--chaine", type=str, default=catalog.chaine_id(), choices=catalog.chaines(),
+                        help="Chaine (catalog/chaines/<id>/) : son catalogue, son historique, sa marque ; "
+                             f"defaut {catalog.chaine_id()}. Une chaine sans produit impose --capture-mode aucune")
     parser.add_argument("--n", type=int, default=3, help="Nombre de reels a generer")
     parser.add_argument("--saas-url", type=str, default="",
                          help="URL de demo de ton SaaS (inutile avec --capture-mode aucune)")
@@ -372,11 +396,15 @@ def main():
                          help="N'affiche pas l'accroche en grand au debut de la video")
     parser.add_argument("--registre", type=str, default=None, choices=catalog.REGISTRES,
                          help="Registre impose (serieux / humour) ; sinon mix de catalog/config.json 'registres'")
-    parser.add_argument("--plateformes", type=parse_plateformes, default=["tiktok", "instagram", "carrousel"],
+    parser.add_argument("--plateformes", type=parse_plateformes, default=["tiktok", "instagram", "carrousel", "youtube"],
                          help="Declinaisons a produire, separees par des virgules : tiktok (legende .txt), "
-                              "instagram (legende .instagram.txt + couverture .jpg), carrousel (carrousel 4:5) ; "
-                              "ou all (defaut)")
+                              "instagram (legende .instagram.txt + couverture .jpg), carrousel (carrousel 4:5), "
+                              "youtube (titre + description .youtube.txt) ; ou all (defaut)")
     args = parser.parse_args()
+    catalog.set_chaine(args.chaine)   # variable CHAINE : heritee par toutes les etapes lancees ensuite
+    if not catalog.produit() and args.capture_mode != "aucune":
+        print(f"Chaine '{args.chaine}' sans produit : --capture-mode aucune impose (rien a capturer)")
+        args.capture_mode = "aucune"
     if args.format and catalog.sans_capture_seul(catalog.get_format(args.format)) and args.capture_mode != "aucune":
         print(f"Format dessine '{args.format}' (dessin anime, jeu video) : --capture-mode aucune impose (aucune capture de l'app)")
         args.capture_mode = "aucune"
@@ -413,6 +441,8 @@ def main():
                                          ("registre", args.registre)))
         # Scenarios ecrits pour des captures (features) != scenarios sans capture (cartes partout).
         stale_catalog = stale_catalog or any(bool(sc.get("sans_captures")) != sans_captures for sc in existing)
+        # Autre chaine que celle des scenarios en cache : autre catalogue, tout est a refaire.
+        stale_catalog = stale_catalog or any(sc.get("chaine", catalog.DEFAULT_CHAINE) != args.chaine for sc in existing)
         if args.scenario or args.angle or args.plan or stale_duration or stale_catalog:
             print("Parametres de scenario differents de la derniere execution -> regeneration complete")
             from_index = 0
@@ -642,7 +672,9 @@ def main():
         # (instagram) et carrousel 4:5 (carrousel), cf. instagram.py.
         if "tiktok" in args.plateformes:
             write_caption_file(scripts[i - 1], final_path.with_suffix(".txt"))
-        insta = list(args.plateformes)  # tiktok => couverture seule
+        if "youtube" in args.plateformes:
+            write_youtube_file(scripts[i - 1], final_path.with_suffix(".youtube.txt"))
+        insta = [p for p in args.plateformes if p != "youtube"]  # tiktok => couverture seule
         if insta:
             run([sys.executable, str(ROOT / "instagram.py"), "--scripts", str(scripts_path), "--index", str(i),
                  "--final", str(final_path), "--plateformes", ",".join(insta)])

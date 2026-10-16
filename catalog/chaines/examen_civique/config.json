@@ -1,0 +1,58 @@
+{
+  "_doc": "Reglages de la chaine examen_civique (fusionnes par-dessus catalog/config.json) : voir catalog/chaines/opuscv/config.json pour le sens de chaque cle. Registre serieux seulement (exactitude d'abord).",
+  "mix": {
+    "conseil": 1.0
+  },
+  "registres": {
+    "serieux": 1.0
+  },
+  "ctas_conseil": [
+    "Abonne-toi pour réviser chaque jour, et écris ta réponse en commentaire.",
+    "Abonne-toi : une question par jour pour préparer ton examen civique.",
+    "Envoie ça à quelqu'un qui prépare son examen, et abonne-toi pour la suite."
+  ],
+  "ctas_produit": [],
+  "cta_anim": [
+    {
+      "title": "Une question par jour",
+      "sub": "Abonne-toi pour réviser",
+      "button": "S'abonner"
+    },
+    {
+      "title": "Prêt pour l'examen civique ?",
+      "sub": "Révise avec nous chaque jour",
+      "button": "S'abonner"
+    },
+    {
+      "title": "Ta réponse en commentaire",
+      "sub": "Et abonne-toi pour la suite",
+      "button": "S'abonner"
+    }
+  ],
+  "preuve_produit": false,
+  "relance_enregistrer": true,
+  "phrases_bannies": [
+    "examen garanti",
+    "réussite garantie",
+    "100 % de réussite",
+    "question officielle",
+    "à coup sûr"
+  ],
+  "instagram": {
+    "hashtags_max": 5,
+    "cta_legende": [
+      "Enregistre ce post pour réviser avant ton examen.",
+      "Enregistre-le et envoie-le à quelqu'un qui prépare son examen civique."
+    ],
+    "carrousel_fin": [
+      {
+        "titre": "Enregistre ce post",
+        "texte": "Et abonne-toi : une question par jour pour réviser."
+      },
+      {
+        "titre": "Tu as trouvé ?",
+        "texte": "Écris ta réponse en commentaire et abonne-toi."
+      }
+    ]
+  }
+}

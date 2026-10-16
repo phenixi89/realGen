@@ -269,20 +269,26 @@ def precompute_cta(client, force: bool = False):
     Enregistre chaque phrase de CTA du catalogue pour chaque voix (rotation + personnages) dans
     assets/voix_cta/. force : reenregistre tout (a faire apres un changement de modele TTS, sinon
     la phrase finale n'a pas le meme grain que le reste du reel). Un appel par voix et par
-    phrase (60 aujourd'hui) : plus de la moitie du quota journalier du modele TTS au niveau 1
-    (100/jour) -- a lancer un jour sans run prevu.
+    phrase, toutes chaines confondues (plus de 100 avec les chaines examen_civique et psycho) :
+    au-dela du quota journalier du modele TTS au niveau 1 (100/jour) -- a lancer un jour sans
+    run prevu, et a relancer le lendemain (les phrases deja enregistrees sont sautees). Une phrase
+    absente est de toute facon enregistree au premier reel qui la tire (cta_clip, cache).
     """
-    cfg = catalog.config()
-    phrases = list(dict.fromkeys(p for k in ("ctas_conseil", "ctas_produit") for p in cfg.get(k) or []))
-    voices = list(dict.fromkeys([v["id"] for v in catalog.voices()] + [p["voix"] for p in catalog.personnages().values()]))
-    for voice in voices:
-        for phrase in phrases:
-            if (CTA_DIR / cta_filename(voice, phrase)).exists():
-                if not force:
-                    continue
-                (CTA_DIR / cta_filename(voice, phrase)).unlink()
-            path = cta_clip(client, voice, phrase, CTA_DIR)
-            print(f"OK -> {path}")
+    # Toutes les chaines (catalog/chaines/) : chacune a ses phrases de CTA et peut donner d'autres voix a ses personnages.
+    paires = []
+    for cid in catalog.chaines():
+        catalog.set_chaine(cid)
+        cfg = catalog.config()
+        phrases = list(dict.fromkeys(p for k in ("ctas_conseil", "ctas_produit") for p in cfg.get(k) or []))
+        voices = list(dict.fromkeys([v["id"] for v in catalog.voices()] + [p["voix"] for p in catalog.personnages().values()]))
+        paires += [(voice, phrase) for voice in voices for phrase in phrases]
+    for voice, phrase in dict.fromkeys(paires):
+        if (CTA_DIR / cta_filename(voice, phrase)).exists():
+            if not force:
+                continue
+            (CTA_DIR / cta_filename(voice, phrase)).unlink()
+        path = cta_clip(client, voice, phrase, CTA_DIR)
+        print(f"OK -> {path}")
 
 
 def convert_to_mp3(wav_path: Path, mp3_path: Path):

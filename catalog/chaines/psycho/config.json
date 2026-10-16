@@ -1,0 +1,66 @@
+{
+  "_doc": "Reglages de la chaine psycho (fusionnes par-dessus catalog/config.json) : voir catalog/chaines/opuscv/config.json pour le sens de chaque cle.",
+  "mix": {
+    "conseil": 1.0
+  },
+  "registres": {
+    "serieux": 0.6,
+    "humour": 0.4
+  },
+  "ctas_conseil": [
+    "Abonne-toi pour la suite, et envoie ça à quelqu'un qui se reconnaîtra.",
+    "Abonne-toi pour comprendre ce qui se passe dans ta tête.",
+    "Envoie ça à la personne qui fait exactement ça, et abonne-toi.",
+    "Abonne-toi : demain, un autre piège de ton cerveau."
+  ],
+  "ctas_produit": [],
+  "cta_anim": [
+    {
+      "title": "Un piège du cerveau par jour",
+      "sub": "Abonne-toi pour la suite",
+      "button": "S'abonner"
+    },
+    {
+      "title": "Tu t'es reconnu ?",
+      "sub": "Envoie-la à quelqu'un · abonne-toi",
+      "button": "S'abonner"
+    },
+    {
+      "title": "Comprends ce qui se passe",
+      "sub": "Dans ta tête · abonne-toi",
+      "button": "S'abonner"
+    }
+  ],
+  "preuve_produit": false,
+  "relance_enregistrer": true,
+  "phrases_bannies": [
+    "sois toi-même",
+    "aime-toi",
+    "pense positif",
+    "sors de ta zone de confort",
+    "pervers narcissique",
+    "personne toxique",
+    "selon une étude",
+    "les études montrent",
+    "des chercheurs ont prouvé",
+    "les scientifiques ont prouvé"
+  ],
+  "consigne_humour": "Le reel doit faire sourire ET rester utile : chaque blague porte une vraie notion (on rit, puis on comprend). Procédés : exagération d'une situation que tout le monde a vécue, autodérision, décalage entre ce qu'on pense et ce qu'on dit, chute inattendue en fin de scène. Au moins deux chutes dans le reel, courtes, placées en fin de phrase. Humour bienveillant : on rit des situations, jamais des personnes ; aucun stéréotype (âge, origine, genre, handicap, religion, physique), rien de vulgaire, aucune moquerie sur la santé mentale ; pas de « mdr », pas de jeu de mots forcé. La clé finale reste précise et utile.",
+  "instagram": {
+    "hashtags_max": 5,
+    "cta_legende": [
+      "Enregistre ce post pour la prochaine fois que ça t'arrive.",
+      "Enregistre-le et envoie-le à quelqu'un qui se reconnaîtra."
+    ],
+    "carrousel_fin": [
+      {
+        "titre": "Enregistre ce post",
+        "texte": "Et abonne-toi pour comprendre ce qui se passe dans ta tête."
+      },
+      {
+        "titre": "Tu t'es reconnu ?",
+        "texte": "Envoie-le à quelqu'un, et abonne-toi pour la suite."
+      }
+    ]
+  }
+}

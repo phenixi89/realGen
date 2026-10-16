@@ -111,7 +111,7 @@ dialog[open]{display:flex;flex-direction:column}dialog::backdrop{background:rgba
 @media (max-width:560px){.filters select{flex:1 1 100%}}
 #msg{position:fixed;left:16px;right:16px;bottom:84px;max-width:560px;margin:auto;padding:12px 14px;border-radius:10px;background:var(--fg);color:var(--bg);display:none;z-index:50}
 </style></head><body>
-<header><h1>realGen</h1><p>Reels OpusCV</p><button class="ghost quiet" id="themeBtn" onclick="cycleTheme()" title="Apparence de la console"></button></header>
+<header><h1>realGen</h1><p id="chaineNom">Reels OpusCV</p><button class="ghost quiet" id="themeBtn" onclick="cycleTheme()" title="Apparence de la console"></button></header>
 <main>
 <section id="login" class="card hidden">
   <h2>Connexion GitHub</h2>
@@ -128,11 +128,13 @@ dialog[open]{display:flex;flex-direction:column}dialog::backdrop{background:rgba
   <div class="card">
     <h2>Nouveau lot de reels</h2>
     <div class="params">
+      <div><label>Chaîne</label><select id="f_chaine" onchange="changeChaine(this.value)"><option value="opuscv">OpusCV</option></select></div>
       <div class="g-only"><label>Nombre de reels</label><input id="f_n" type="number" min="1" max="10" value="3"></div>
       <div><label>Durée</label><select id="f_duration"><option value="15">15 s</option><option value="25" selected>25 s</option><option value="30">30 s</option><option value="45">45 s</option><option value="60">60 s</option></select></div>
       <div><label>Publier sur</label><select id="f_plateformes">
         <option value="all">TikTok + Instagram + carrousel</option><option value="tiktok">TikTok seulement</option><option value="tiktok,instagram">TikTok + Instagram (sans carrousel)</option>
-        <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option></select></div>
+        <option value="tiktok,instagram,youtube">TikTok + Instagram + YouTube (sans carrousel)</option>
+        <option value="instagram,carrousel">Instagram + carrousel</option><option value="carrousel">Carrousel seulement</option><option value="youtube">YouTube Shorts seulement</option></select></div>
     </div>
     <p class="hint" id="autoHint">Format, sujet, style et accroche sont choisis et variés automatiquement.</p>
     <button class="link" id="toggleCompose" onclick="setCompose(!$('f_compose').checked)">Choisir moi-même les reels →</button>
@@ -248,14 +250,43 @@ function showTab(t){
 }
 let REELS_FOR = null;
 
+// Chaines (catalog/chaines/<id>/, miroir de scripts/catalog.py) : formats, sujets, accroches et identite propres,
+// themes / voix / musiques / dessins partages.
+const FICHIERS_CHAINE = ["formats", "sujets", "hooks", "chaine"];
+let CHAINE = store.get("rg_chaine") || "opuscv", CHAINE_INFO = {};
 async function catFile(name){
-  const r = await gh(`/contents/catalog/${name}.json`, { headers: { Accept: "application/vnd.github.raw+json" } });
+  const chemin = FICHIERS_CHAINE.includes(name) ? `catalog/chaines/${CHAINE}/${name}.json` : `catalog/${name}.json`;
+  const r = await gh(`/contents/${chemin}`, { headers: { Accept: "application/vnd.github.raw+json" } });
   return r.json();
 }
+async function loadChaines(){
+  try {
+    const dirs = (await (await gh("/contents/catalog/chaines")).json()).filter(x => x.type === "dir").map(x => x.name);
+    const sel = $("f_chaine"); sel.innerHTML = "";
+    for (const c of ["opuscv", ...dirs.filter(c => c !== "opuscv").sort()]) sel.add(new Option(c, c));
+    if (!dirs.includes(CHAINE)) CHAINE = "opuscv";
+    sel.value = CHAINE;
+  } catch (e) { CHAINE = "opuscv"; }
+}
+async function changeChaine(c){
+  CHAINE = c; store.set("rg_chaine", c);
+  PLAN = loadPlan(); CUR = 0;   // une composition par chaine (ses formats et sujets)
+  await loadCatalog();
+}
+const isFaceless = () => !CHAINE_INFO.produit;
 async function loadCatalog(){
-  const errs = [], names = ["formats","themes","voix","sujets","hooks","audio","dessins","jeu"];
-  const [f, t, v, s, h, a, d, j] = await Promise.all(names.map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
-  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: d.trames || [], dessins: d, decors: d.fonds || [], niveaux: j.niveaux || [], boss: j.boss || [] };
+  const errs = [], names = ["formats","themes","voix","sujets","hooks","audio","dessins","jeu","chaine"];
+  const [f, t, v, s, h, a, d, j, ch] = await Promise.all(names.map(n => catFile(n).catch(e => (errs.push(`${n}.json : ${e.message}`), {}))));
+  CHAINE_INFO = ch;
+  // Dessin anime : la serie, les trames et l'identite des personnages viennent de la chaine (catalog.dessins).
+  const persos = ch.personnages || {};
+  d.objets = (d.objets || []).map(o => o.categorie === "personnage" && persos[o.id] ? { ...o, ...persos[o.id] } : o);
+  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: ch.trames || [], dessins: d, decors: d.fonds || [], niveaux: j.niveaux || [], boss: j.boss || [] };
+  $("chaineNom").textContent = `Reels ${ch.nom || CHAINE}`;
+  for (const id of ["f_format", "f_theme", "f_hook", "f_voice"]) $(id).length = 1;   // garde « Automatique », retire l'ancienne chaine
+  // Chaine sans produit : rien a capturer, le pipeline impose « Sans capture ».
+  $("f_capture_mode").disabled = isFaceless();
+  if (isFaceless()) $("f_capture_mode").value = "aucune";
   for (const x of CAT.formats) $("f_format").add(new Option(`${x.nom} (${x.categorie}${regs(x).includes("humour") ? ", humour" : ""})`, x.id));
   for (const x of CAT.themes) $("f_theme").add(new Option(x.nom, x.id));
   for (const x of CAT.hooks) $("f_hook").add(new Option(nice(x.id), x.id));
@@ -278,7 +309,7 @@ const sansCap = () => $("f_capture_mode").value === "aucune";
 const cartesPerdues = fmt => fmt && fmt.cartes !== "aucune" && !["screenshots", "aucune"].includes($("f_capture_mode").value);
 const CARTES_WARN = "⚠ Ce format a des cartes animées : elles ne seront pas affichées en capture vidéo (captures de l'app à la place). Choisis « Captures desktop + zoom » ou « Sans capture ».";
 // Dessin anime : aucune capture de l'app ; le pipeline passe de lui-meme en capture « aucune ».
-const DESSIN_WARN = "ℹ Format dessin animé : la capture passe automatiquement à « Sans capture » (Léa et Karim jouent la scène, chacun avec sa voix).";
+const DESSIN_WARN = "ℹ Format dessin animé : la capture passe automatiquement à « Sans capture » (les personnages jouent la scène, chacun avec sa voix).";
 function checkCapture(){
   const f = byId(CAT.formats, $("f_format").value);
   const dessin = f && f.dessin && !sansCap();
@@ -305,7 +336,7 @@ function renderCatalog(){
   if (reg && catKind === "hooks") items = items.filter(x => regs(x).includes(reg));
   if (reg && catKind === "themes") items = items.filter(x => themeRegs(x).includes(reg));
   if (catKind === "sujets") items = [...items].sort((a, b) => (a.famille || "").localeCompare(b.famille || ""));
-  $("catInfo").textContent = { formats: "Structure de la vidéo : comment le reel est construit.", sujets: "De quoi parle le reel. Un sujet ne va qu'avec les formats de même catégorie qui acceptent un de ses tags.", hooks: "Style des 2 premières secondes (décisives pour la rétention).", themes: "Couleurs, polices, style de sous-titres et musiques possibles.", ambiances: "Musique de fond synthétisée (aucun droit d'auteur). Chaque thème en propose quelques-unes. ▶ pour écouter.", voix: "Voix off Gemini. ▶ pour écouter.", trames: "Structures d'histoire du dessin animé, une par épisode (rotation).", decors: "Lieux où Léa, Karim et le recruteur jouent la scène.", niveaux: "Lieux du jeu vidéo rétro où Martin et Léa jouent la scène.", boss: "Les adversaires de Martin dans le jeu vidéo : le système de recrutement, jamais une personne." }[catKind]
+  $("catInfo").textContent = { formats: "Structure de la vidéo : comment le reel est construit.", sujets: "De quoi parle le reel. Un sujet ne va qu'avec les formats de même catégorie qui acceptent un de ses tags.", hooks: "Style des 2 premières secondes (décisives pour la rétention).", themes: "Couleurs, polices, style de sous-titres et musiques possibles.", ambiances: "Musique de fond synthétisée (aucun droit d'auteur). Chaque thème en propose quelques-unes. ▶ pour écouter.", voix: "Voix off Gemini. ▶ pour écouter.", trames: "Structures d'histoire du dessin animé, une par épisode (rotation).", decors: "Lieux où les personnages du dessin animé jouent la scène.", niveaux: "Lieux du jeu vidéo rétro où Martin et Léa jouent la scène.", boss: "Les adversaires de Martin dans le jeu vidéo : le système de recrutement, jamais une personne." }[catKind]
     + ` ${items.length} élément(s). Clique une fiche pour lire tout son texte.`;
   $("catalog").innerHTML = items.map(CARD[catKind]).join("") || `<p class="muted">Aucun résultat.</p>`;
   hydrate($("catalog"));
@@ -372,9 +403,11 @@ const premiere = t => { const m = String(t || "").match(/^.*?[.!?](\s|$)/); retu
 // --- Compositeur : une combinaison par reel (input "plan" du workflow), editee etape par etape ---
 const FIELDS = ["registre", "format", "sujet", "angle", "trame", "hook", "theme", "ambiance", "voix"];
 const blank = () => ({ ...Object.fromEntries(FIELDS.map(k => [k, ""])), libre: false });
-let PLAN = (() => { try { const p = JSON.parse(store.get("rg_plan")); return Array.isArray(p) && p.length ? p.map(r => ({ ...blank(), ...r })) : [blank()]; } catch { return [blank()]; } })();
+const planKey = () => CHAINE === "opuscv" ? "rg_plan" : `rg_plan_${CHAINE}`;
+const loadPlan = () => { try { const p = JSON.parse(store.get(planKey())); return Array.isArray(p) && p.length ? p.map(r => ({ ...blank(), ...r })) : [blank()]; } catch { return [blank()]; } };
+let PLAN = loadPlan();
 let CUR = 0, FILTRE_FMT = "";
-const savePlan = () => store.set("rg_plan", JSON.stringify(PLAN));
+const savePlan = () => store.set(planKey(), JSON.stringify(PLAN));
 function setCompose(on){
   $("f_compose").checked = on; store.set("rg_compose", on ? "1" : "");
   $("composer").classList.toggle("hidden", !on); $("autoHint").classList.toggle("hidden", on);
@@ -530,7 +563,7 @@ function planInput(){
 }
 
 async function launch(){
-  const inputs = { n: String($("f_n").value || 3) };
+  const inputs = { chaine: CHAINE, n: String($("f_n").value || 3) };
   for (const k of ["duration","format","theme","hook","registre","plateformes","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
   for (const k of ["musique","sfx","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
   if ($("f_compose").checked) {
@@ -674,7 +707,7 @@ async function loadReels(){
 async function start(){
   if (!TOKEN) { $("login").classList.remove("hidden"); return; }
   $("login").classList.add("hidden"); $("app").classList.remove("hidden");
-  try { await loadCatalog(); } catch (e) { toast(e.message, 8000); $("catalog").textContent = e.message; }
+  try { await loadChaines(); PLAN = loadPlan(); await loadCatalog(); } catch (e) { toast(e.message, 8000); $("catalog").textContent = e.message; }
   loadRuns();
   showTab(store.get("rg_tab") || "launch");
 }

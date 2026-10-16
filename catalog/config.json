@@ -1,9 +1,5 @@
 {
-  "_doc": "Reglages de la selection de contenu. mix = part cible de chaque categorie de format sur les reels generes (conseil = contenu utile, produit = demo). historique_* = nombre d'elements recents evites. similarite_max = au-dela (0-1), une accroche trop proche d'une ancienne est refusee et l'IA recommence. ctas_* : variantes d'appel a l'action, une tiree par reel. preuve_produit : les reels conseil contiennent une scene 'preuve' ou le conseil est applique en direct dans OpusCV (false = desactive). relance_enregistrer : les reels conseil (registre serieux) glissent juste apres l'accroche une relance tres courte invitant a enregistrer la video (false = desactive) ; l'abonnement est demande dans le CTA final. phrases_bannies : conseils generiques refuses dans les textes (l'IA recommence). registres : part cible de chaque registre d'ecriture (serieux / humour), tiree comme le mix. historique_registres : fenetre de mesure. consigne_humour : regles d'ecriture donnees a l'IA en registre humour. ton_humour : ton de lecture par defaut en registre humour. instagram : legende et hashtags propres a Instagram (hashtags_max), phrase d'appel a enregistrer (cta_legende), textes de la derniere diapositive du carrousel (carrousel_fin). historique_familles : nombre de reels recents dont la famille de sujet (sujets.json famille) est evitee.",
-  "mix": {
-    "conseil": 0.65,
-    "produit": 0.35
-  },
+  "_doc": "Reglages COMMUNS a toutes les chaines (la chaine active les complete ou les remplace, cle par cle, avec catalog/chaines/<chaine>/config.json). historique_* = nombre d'elements recents evites (mesures dans l'historique de la chaine). similarite_max = au-dela (0-1), une accroche trop proche d'une ancienne est refusee et l'IA recommence. registres : part cible de chaque registre d'ecriture (serieux / humour). historique_registres : fenetre de mesure. ton_humour : ton de lecture par defaut en registre humour. historique_familles : nombre de reels recents dont la famille de sujet (sujets.json famille) est evitee. Propres a chaque chaine (config.json de la chaine) : mix, ctas_*, cta_anim, preuve_produit, relance_enregistrer, phrases_bannies, consigne_humour, instagram.",
   "registres": {
     "serieux": 0.7,
     "humour": 0.3
@@ -16,83 +12,7 @@
   "historique_accroches": 30,
   "similarite_max": 0.72,
   "historique_voix": 2,
-  "ctas_produit": [
-    "Essaie gratuitement, lien en bio.",
-    "Teste ton CV gratuitement, le lien est en bio.",
-    "Ton CV relu et corrigé en deux minutes : lien en bio.",
-    "Fais le test sur ton CV, c'est gratuit, lien en bio.",
-    "Lien en bio : importe ton CV et regarde ce qu'il faut corriger."
-  ],
-  "ctas_conseil": [
-    "Abonne-toi pour la suite, et teste ton CV gratuitement avec le lien en bio.",
-    "Abonne-toi pour d'autres astuces, et vérifie ton CV gratuitement avec le lien en bio.",
-    "Envoie ça à quelqu'un qui cherche un job, abonne-toi, et teste ton CV gratuitement en bio.",
-    "Abonne-toi pour la partie 2. Le test gratuit de ton CV est en bio.",
-    "Abonne-toi pour ne rien rater, et passe ton CV au scanner via le lien en bio."
-  ],
-  "cta_anim": [
-    {
-      "title": "Teste ton CV gratuitement",
-      "sub": "Lien en bio · abonne-toi pour la suite",
-      "button": "Essaie OpusCV"
-    },
-    {
-      "title": "Ton CV corrigé en 2 minutes",
-      "sub": "Gratuit · lien en bio",
-      "button": "Tester mon CV"
-    },
-    {
-      "title": "Ton CV mérite mieux",
-      "sub": "Analyse gratuite · lien en bio",
-      "button": "Scanner mon CV"
-    },
-    {
-      "title": "Prêt à décrocher l'entretien ?",
-      "sub": "Lien en bio · c'est gratuit",
-      "button": "Essaie OpusCV"
-    }
-  ],
-  "preuve_produit": true,
-  "relance_enregistrer": true,
-  "phrases_bannies": [
-    "soignez votre CV",
-    "soigne ton CV",
-    "sois toi-même",
-    "mets en valeur tes compétences",
-    "relis-toi bien",
-    "fais attention aux fautes",
-    "sois authentique",
-    "démarque-toi",
-    "un CV clair et concis",
-    "n'oublie pas de",
-    "entretien garanti",
-    "embauche garantie",
-    "job garanti"
-  ],
-  "consigne_humour": "Le reel doit faire sourire ET rester utile : chaque blague porte un vrai conseil (on rit, puis on apprend). Procédés : exagération d'une situation que tout candidat a vécue, autodérision, décalage, dialogue absurde mais crédible, chute inattendue en fin de scène. Au moins deux chutes dans le reel, courtes, placées en fin de phrase. Humour bienveillant : on rit des situations, jamais des personnes ; aucun stéréotype (âge, origine, genre, handicap, religion, physique), rien de vulgaire, aucune moquerie envers les chômeurs ni un métier ; pas de « mdr », pas de jeu de mots forcé. Le conseil final reste précis et actionnable.",
   "ton_humour": "pince-sans-rire et complice, avec un sourire dans la voix, courte pause avant chaque chute, débit posé et naturel, avec de courtes pauses entre les phrases",
-  "instagram": {
-    "hashtags_max": 5,
-    "cta_legende": [
-      "Enregistre ce post pour ta prochaine candidature.",
-      "Enregistre-le et envoie-le à quelqu'un qui cherche un job.",
-      "Garde-le sous le coude : enregistre ce post."
-    ],
-    "carrousel_fin": [
-      {
-        "titre": "Enregistre ce post",
-        "texte": "Et teste ton CV gratuitement : lien en bio."
-      },
-      {
-        "titre": "Ton CV mérite mieux",
-        "texte": "Analyse gratuite avec OpusCV, lien en bio."
-      },
-      {
-        "titre": "Tu as tout retenu ?",
-        "texte": "Vérifie ton CV gratuitement : lien en bio."
-      }
-    ]
-  },
   "cta_enregistre": true,
   "_note_cta_enregistre": "true : la derniere phrase d'un reel est exactement une phrase de ctas_conseil / ctas_produit (Gemini ne la reecrit pas) et sa voix vient d'un enregistrement fait une fois par voix (assets/voix_cta/, python scripts/2_generate_voice.py --precompute-cta), colle a la fin au meme volume. false : Gemini ecrit un CTA dans l'esprit de la phrase tiree, synthetise avec le reste."
 }

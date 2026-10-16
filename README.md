@@ -1,7 +1,9 @@
-# Reel Pipeline — OpusCV
+# Reel Pipeline — OpusCV et chaînes faceless
 
-Pipeline automatique de génération de reels TikTok/Instagram pour OpusCV (SaaS d'optimisation de CV) :
+Pipeline automatique de génération de reels TikTok / Instagram / YouTube Shorts, d'abord pour OpusCV (SaaS d'optimisation de CV) :
 scénario + choix d'angle (Gemini) → voix off (Gemini TTS) → démo écran (Playwright) → sous-titres (Whisper) → montage final (FFmpeg, musique + CTA mis en avant).
+Le même outil fait tourner plusieurs **chaînes** (voir « Chaînes ») : OpusCV (avec captures de l'app) et des chaînes
+faceless sans produit — `examen_civique` (révision de l'examen civique) et `psycho` (psychologie du quotidien).
 
 ## Installation locale
 
@@ -34,7 +36,7 @@ export $(cat .env | xargs)
 | Variable | Obligatoire | Description |
 |---|---|---|
 | `GEMINI_API_KEY` | oui | Clé API Gemini — [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) |
-| `SAAS_URL` | oui (ou `--saas-url`), sauf `--capture-mode aucune` | URL de démo d'OpusCV |
+| `SAAS_URL` | oui (ou `--saas-url`), sauf `--capture-mode aucune` et chaîne sans produit | URL de démo d'OpusCV |
 | `DEMO_EMAIL` / `DEMO_PASSWORD` | selon le parcours | Identifiants du compte de démo (connexion réelle capturée). Un compte Pro évite le filigrane « OPUSCV.TECH » du plan gratuit sur l'aperçu capturé |
 | `GEMINI_MODEL` | non | Modèle texte (défaut : `gemini-flash-latest`) |
 | `GEMINI_TTS_MODEL` | non | Modèle des voix (défaut : `gemini-3.8-flash-tts`, choisi à l'écoute après le run 58) |
@@ -54,6 +56,7 @@ Principales options de `run_pipeline.py` :
 
 | Option | Défaut | Description |
 |---|---|---|
+| `--chaine` | `opuscv` | Chaîne (`catalog/chaines/<id>/`) : son catalogue, son historique, sa marque — voir « Chaînes ». Une chaîne sans produit impose `--capture-mode aucune` et n'a pas besoin de `--saas-url` |
 | `--n` | 3 | Nombre de reels à générer (ignoré avec `--scenario`) |
 | `--duration` | 25 | Durée cible de chaque reel, en secondes |
 | `--capture-mode` | `video` | `screenshots` (captures nettes composées, recommandé — voir ci-dessous), `video` (enregistrement mobile continu), `video_desktop` (enregistrement desktop recadré par fonctionnalité), `aucune` (sans capture de l'app — voir « Mode sans captures ») |
@@ -64,7 +67,7 @@ Principales options de `run_pipeline.py` :
 | `--format` / `--theme` / `--hook` | auto | Impose un élément du catalogue (voir « Ligne éditoriale ») |
 | `--registre` | auto | `serieux` ou `humour` (sinon mix de `config.json` `registres`, 70 / 30) — voir « Registre humour » |
 | `--plan` | — | Combinaison imposée reel par reel (JSON, remplace `--n`) — voir « Combinaison par reel » |
-| `--plateformes` | `all` | Déclinaisons produites : `tiktok` (légende `.txt`), `instagram` (légende Instagram + couverture), `carrousel` (carrousel 4:5), séparées par des virgules — voir « Instagram » |
+| `--plateformes` | `all` | Déclinaisons produites : `tiktok` (légende `.txt`), `instagram` (légende Instagram + couverture), `carrousel` (carrousel 4:5), `youtube` (titre + description Shorts `.youtube.txt`), séparées par des virgules — voir « Instagram et YouTube » |
 | `--no-sfx` | — | Sans effets sonores (musique conservée) — case « sfx » dans le workflow |
 | `--no-music` | — | Sans musique de fond (voix et effets conservés) — case « Musique de fond » dans le workflow et la console ; par reel : `"ambiance": "aucune"` dans `--plan` |
 | `--no-hook-overlay` | — | N'affiche pas l'accroche en grand au début |
@@ -331,8 +334,9 @@ objets et leurs ancres, actions des personnages et des objets, expressions, gest
 icônes) et des règles de mise en scène (positions au sol, face à face, objets posés ou tenus, personnage
 assis) :
 
-- **Série « Karim cherche un job »** (`serie` dans `formats.json` et `dessins.json`) : chaque reel est un
-  épisode numéroté (historique `output/content_history.json`, gardé d'un run à l'autre par le cache du
+- **Série « Karim cherche un job »** (`serie` dans `formats.json` et dans `chaine.json` de la chaîne ; chaque chaîne a
+  sa série, ses trames et l'identité de ses personnages) : chaque reel est un
+  épisode numéroté (historique de la chaîne, `output/content_history.json` pour OpusCV, gardé d'un run à l'autre par le cache du
   workflow). Gemini rend aussi `resume_episode` (une phrase : ce qui arrive à Karim, où il en est) ; les 5
   derniers résumés sont rappelés à l'épisode suivant (continuité, clins d'œil, pas d'histoire refaite).
   Couverture : surtitre « Karim cherche un job · ép. N » (`serie_titre` du scénario).
@@ -376,7 +380,7 @@ assis) :
   refusée, la phrase est donnée tout de suite ; la chute est une réaction ou un retournement, pas un slogan.
   Les mots sont comptés sans la ponctuation isolée (`nb_mots` : « … ? » ne compte pas pour un mot). Le titre
   à l'écran garde son « ? » collé au dernier mot (espace insécable, `hook.html`).
-- **Trame d'histoire** (`trames` de `dessins.json`, une par reel, la moins récemment utilisée ;
+- **Trame d'histoire** (`trames` du `chaine.json` de la chaîne, une par reel, la moins récemment utilisée ;
   imposable par `--plan` : `"trame"`) : 17 trames : avant / après, ce que pense le recruteur, quiproquo,
   l'erreur en direct, vrai ou faux, le chat juge (running gag), ça aurait pu être pire, la phrase à retenir,
   à la place du recruteur (rôles inversés), dix minutes avant (compte à rebours), deux lendemains, le faux
@@ -508,7 +512,8 @@ la phrase exacte entre « guillemets » : c'est un **objet obtenu** ; (3) Martin
 - **Son** : bruitages 8 bits synthétisés par `audio_gen.py` (`blip` à chaque réplique, `coup`, `degats`, `blessure`, `objet`,
   `niveau`, `victoire`, `boss`), publiés par la page (`window.SONS`) à l'instant exact ; musiques **chiptune**
   (`chiptune_quete`, `chiptune_boss`, instrument `chip` : ondes carrées étroites). Thèmes `jeu_arcade` et `jeu_donjon`
-  (réservés à ce format : `"formats"` dans `themes.json`, `"themes"` dans `formats.json`), sans sous-titres incrustés (le
+  (réservés à ce format : `"formats"` dans `themes.json`, `"themes"` dans `formats.json` ; un format qui cite un thème réservé
+dans ses `"themes"` y a droit aussi, ex. `question_revision` de la chaîne `examen_civique`), sans sous-titres incrustés (le
   texte est dans la boîte de dialogue).
 - Réservé à `--capture-mode aucune` (imposé automatiquement).
 
@@ -575,18 +580,66 @@ droite, `{expr,geste}` optionnel, 6 répliques au plus), `gauche` / `droite` (pe
 python scripts/render_js_anim.py --spec "dialogue?surtitre=En entretien&repliques=g:Tu as postulé à combien d'offres ? {doute}|d:Cinquante. Zéro réponse. {triste,hausse}" --duration 9 --out /tmp/dialogue.mp4
 ```
 
+## Chaînes (`catalog/chaines/`)
+
+Une **chaîne** = une ligne éditoriale complète : `catalog/chaines/<id>/` contient
+
+| Fichier | Rôle |
+|---|---|
+| `chaine.json` | Identité : `nom`, `marque` (écran d'appel à l'action, couverture, carrousel), `marque_accent` (lettres finales de la marque en dégradé sur l'écran d'appel à l'action), `watermark` (incrusté en haut à gauche), `pied` (bas des planches pop art), `produit` (`"OpusCV"` ou `null` = faceless), dessin animé : `personnages`, `serie`, `trames` |
+| `formats.json`, `sujets.json`, `hooks.json` | Formats, sujets et accroches **de la chaîne** (obligatoires, aucun repli sur une autre chaîne) |
+| `config.json` | Fusionné clé par clé par-dessus `catalog/config.json` (réglages communs) : mix, registres, CTA (`ctas_*`, `cta_anim`), phrases bannies, `consigne_humour`, textes Instagram, scène preuve, relance |
+
+Partagés par toutes les chaînes : `themes.json`, `audio.json`, `voix.json`, `dessins.json` (décors, objets, dessins des
+personnages), `jeu.json`. La chaîne active est passée à toutes les étapes par la variable d'environnement `CHAINE`
+(`run_pipeline.py --chaine`, champ `chaine` du workflow, sélecteur de la console) ; chaque chaîne a son **historique**
+anti-répétition (`output/content_history.json` pour OpusCV, `output/content_history_<id>.json` pour les autres) et
+sa numérotation d'épisodes. `python scripts/catalog.py` valide toutes les chaînes (`python scripts/catalog.py psycho`
+pour une seule) et vérifie que les options `chaine` du workflow suivent les dossiers.
+
+**Chaîne faceless** (`"produit": null`) : aucune capture (capture `aucune` imposée, pas de compte démo ni d'URL),
+formats `conseil` à cartes ou dessinés uniquement (pas de jeu vidéo pour l'instant). Le prompt ne dit rien d'OpusCV ni
+de l'emploi : il part de `niche`, `public`, `expertise`, `promesse`, `appel_action` et `regles` (règles impératives de la
+chaîne) de `chaine.json` (`intro_faceless`, `niche_rule`, `neutraliser` dans `1_generate_script.py`) ; les exemples
+écrits pour OpusCV (carte scan, « ligne de CV réécrite », « Pourquoi personne ne me rappelle ? »…) sont remplacés
+par leur version générale (`exemple_accroche` / `exemple_replique` de la chaîne pour le dessin animé), la relecture de
+cohérence contrôle les règles de la chaîne au lieu du produit. `scripts/verif_prompts.py` échoue si un prompt d'une
+chaîne faceless parle encore d'OpusCV. Le dessin animé garde les mêmes dessins (Karim, Léa, le recruteur) mais la
+chaîne leur donne un autre nom et un autre rôle (`personnages` : `nom`, `description`, `role`, `voix`), sa série et ses
+trames ; `caracteres` donne leur caractère à l'IA (consigne `DRAMATURGIE_NICHE`). Légendes : `mention` de la chaîne
+ajoutée à toutes les légendes (TikTok, Instagram, YouTube).
+
+**Chaîne vérifiée** (`"verification": true`) : chaque sujet porte `faits` (phrases recopiées d'une source officielle) et
+`source` ; les faits sont la **seule base autorisée** (bloc « FAITS VÉRIFIÉS » du prompt), un nombre supérieur à 10 dit ou
+affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), et la source est ajoutée aux légendes
+(« Source : … »). Un ton qui contient « lent » compte 2,2 mots/s (au lieu de 2,6) pour le budget de mots.
+
+| Chaîne | Nom (provisoire) | Formats | Particularités |
+|---|---|---|---|
+| `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
+| `examen_civique` | Objectif Civique (`@objectifcivique`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thèmes `carnet_cours` / `pop_art` | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
+| `psycho` | Dans ta tête (`@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
+
+Changer un nom provisoire : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,
+`serie`) dans `chaine.json`, rien d'autre. **Ajouter une chaîne** : copier le dossier d'une chaîne faceless, adapter
+`chaine.json`, les formats, sujets, accroches et la config, ajouter son id aux options `chaine` de
+`.github/workflows/generate-reels.yml`, puis `python scripts/catalog.py` et `python scripts/verif_prompts.py`. Ses phrases
+de CTA sont enregistrées au premier reel qui les tire (ou d'avance : `python scripts/2_generate_voice.py --precompute-cta`).
+
 ## Ligne éditoriale : le catalogue (`catalog/`)
 
 Pour éviter que les reels se ressemblent, chaque vidéo combine un **registre** (sérieux ou humour) et
-4 choix pris dans des fichiers JSON éditables (aucun code à toucher pour enrichir) :
+4 choix pris dans des fichiers JSON éditables (aucun code à toucher pour enrichir). Ce qui suit décrit la chaîne
+OpusCV ; formats, sujets, accroches et config sont dans `catalog/chaines/opuscv/` (voir « Chaînes ») :
 
 | Fichier | Contenu | Exemples |
 |---|---|---|
-| `catalog/formats.json` | **Structure** de la vidéo (37 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
-| `catalog/sujets.json` | **De quoi** parle la vidéo (165 sujets, 14 familles), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, carrière et emploi (négocier, démissionner, choisir une offre, premier jour…), métiers (CV de commercial, de développeur, de soignant…), familles produit (dont les nouveautés : 6 mises en page, conversion de langue, chiffres sans invention, sections libres, lettre en PDF…) |
-| `catalog/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` et, pour celles centrées sur le CV (`erreur_visible`, `comparaison_inattendue`), des `tags` : elles ne sont tirées que pour un sujet de ce tag (pas pour « démissionner proprement ») | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
+| `catalog/chaines/opuscv/formats.json` | **Structure** de la vidéo (37 « capsules »), catégorie `conseil` (contenu utile) ou `produit` (démo), registres compatibles (`registres`), usage des cartes animées, ton de lecture (`ton`, `ton_humour`) | voir le tableau ci-dessous |
+| `catalog/chaines/opuscv/sujets.json` | **De quoi** parle la vidéo (165 sujets, 14 familles), avec des tags croisés avec les formats et une **famille** (grand thème) qui tourne | ATS, rédaction du CV, forme du CV, parcours, candidature, lettre, entretien, LinkedIn, organisation de la recherche, carrière et emploi (négocier, démissionner, choisir une offre, premier jour…), métiers (CV de commercial, de développeur, de soignant…), familles produit (dont les nouveautés : 6 mises en page, conversion de langue, chiffres sans invention, sections libres, lettre en PDF…) |
+| `catalog/chaines/opuscv/hooks.json` | **Style d'accroche** des 2 premières secondes (25), avec leurs `registres` et, pour celles centrées sur le CV (`erreur_visible`, `comparaison_inattendue`), des `tags` : elles ne sont tirées que pour un sujet de ce tag (pas pour « démissionner proprement ») | question choc, chiffre, erreur, contre-intuitif, POV, stop, verdict, scénario catastrophe ; en humour : autodérision, « Personne : … Moi : … », fausse pub, exagération, réplique absurde, plot twist… |
 | `catalog/themes.json` | **Habillage** : couleurs, polices (`assets/fonts/`), style des sous-titres, ambiances musicales, support des dessins (`dessin`), `registres` (absent = tous) | violet nuit, corail, vert, bleu corporate, bande dessinée pop, sitcom pastel… |
-| `catalog/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), mix de registres (`registres` : sérieux 70 % / humour 30 %), règles d'écriture humoristique (`consigne_humour`, `ton_humour`), fenêtres anti-répétition, seuil de similarité, variantes de CTA (`ctas_*`, `cta_anim`), textes Instagram (`instagram`), scène preuve, phrases bannies | |
+| `catalog/config.json` | Réglages communs : mix de registres (`registres` : sérieux 70 % / humour 30 %), `ton_humour`, fenêtres anti-répétition, seuil de similarité, CTA enregistré | |
+| `catalog/chaines/opuscv/config.json` | Mix cible (`conseil` 65 % / `produit` 35 %), règles d'écriture humoristique (`consigne_humour`), variantes de CTA (`ctas_*`, `cta_anim`), textes Instagram (`instagram`), scène preuve, relance, phrases bannies | |
 
 ### Les capsules (`formats.json`)
 
@@ -651,7 +704,7 @@ Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
 - l'**accroche** et le **thème** tournent (tirage pondéré par `poids`, sans les plus récents) ; les accroches « Pourquoi… ? » sur une douleur vécue (`question_choc`, `pourquoi_douleur`, poids 3) sont favorisées, les listes, chiffres et « secrets » réduits (poids 0,5) car ils ont moins bien performé ;
 - les **exemples de phrases** de CV ou de lettre donnés dans un reel n'inventent aucun chiffre précis (« 200 k€ de ventes ») : formule sans chiffre ou « [ton chiffre] » (consigne commune à tous les formats) ;
 - une accroche trop proche d'une accroche déjà publiée est refusée et Gemini recommence ;
-- tout est historisé dans `output/content_history.json` (persisté entre les runs CI par le cache).
+- tout est historisé dans l'historique de la chaîne (`output/content_history.json` pour OpusCV, `content_history_<id>.json` pour les autres ; persisté entre les runs CI par le cache).
 
 **Prompt du scénario** (`build_prompt`, `scripts/1_generate_script.py`) : Gemini joue un expert du contenu
 viral emploi/recrutement (TikTok, Reels, Shorts) avec des règles strictes : accroche (0-3 s) au tutoiement,
@@ -733,7 +786,7 @@ Imposer un élément : `--format liste_erreurs`, `--theme vert_confiance`, `--ho
 
 `--plan` impose, reel par reel, tout ou partie de la combinaison : une liste JSON d'objets aux clés
 `format`, `sujet`, `hook`, `theme`, `voix`, `registre`, `ambiance` (id de `audio.json`, ou `aucune` = sans musique), `trame`
-(dessin animé : id de `trames` dans `dessins.json`, proposé par la console quand le format est un dessin
+(dessin animé : id de `trames` dans le `chaine.json` de la chaîne, proposé par la console quand le format est un dessin
 animé) et `angle` (sujet libre, à la place de `sujet`). Une clé absente ou vide reste automatique (rotation
 anti-répétition habituelle) ; une clé renseignée l'emporte sur l'option globale correspondante. Le
 nombre de reels est la longueur de la liste. Sujet imposé sans format : le format est tiré parmi ceux
@@ -771,7 +824,7 @@ Environ 30 % des reels sont écrits sur un ton humoristique (`config.json` `regi
 - thèmes dédiés : **bande dessinée pop** (`bd_pop`, police Bangers, sous-titres mot à mot) et **sitcom
   pastel** (`sitcom_pastel`, aussi en sérieux), sur l'ambiance **comique sautillante**.
 
-## Instagram (`--plateformes`)
+## Instagram et YouTube (`--plateformes`)
 
 Le même reel vertical 9:16 sert de Reel Instagram ; `scripts/instagram.py` (appelé par
 `run_pipeline.py` après l'assemblage) produit en plus, à côté de `output/final/reel_XX.mp4` :
@@ -781,7 +834,11 @@ Le même reel vertical 9:16 sert de Reel Instagram ; `scripts/instagram.py` (app
 | `tiktok` | `reel_XX.txt` | légende courte + 4 à 6 hashtags |
 | `instagram` | `reel_XX.instagram.txt` | légende Instagram (1re ligne accrocheuse visible avant « plus », résumé des conseils, question, invitation à enregistrer) + 5 hashtags au plus (`instagram.hashtags_max`) |
 | `tiktok` ou `instagram` | `reel_XX.couverture.jpg` | couverture 1080×1920 : l'accroche en grand sur un fond uni aux couleurs du thème (jamais une capture, illisible une fois réduite dans la grille), texte dans la zone commune aux recadrages de la grille (3:4 et carré) ; surtitre pour une série : « Karim cherche un job · ép. N » (dessin animé), « Jour N/30 » (`serie_30_jours`). À importer comme couverture à la publication (voir ci-dessous) |
+| `youtube` | `reel_XX.youtube.txt` | YouTube Shorts : 1re ligne = titre (l'accroche, 100 caractères au plus, « #Shorts » compris), puis la description (légende, hashtags + `#Shorts`) ; écrit par `run_pipeline.py` |
 | `carrousel` | `reel_XX_carrousel/01.png…` + `legende.txt` | carrousel 4:5 (1080×1350) : couverture, une idée par diapositive (numéro, barre de progression, « Glisse → »), diapositive finale d'appel à l'action (`instagram.carrousel_fin`) |
+
+Chaîne vérifiée ou à `mention` (voir « Chaînes ») : « Source : … » et la mention de la chaîne (« Chaîne non officielle… »)
+sont ajoutées à toutes les légendes. Marque de la couverture et du carrousel : `marque` de la chaîne.
 
 **Publication** : manuelle pour l'instant (vidéo, légende et couverture téléchargées depuis la console).
 La publication automatique après validation (Instagram via l'API Instagram Login, brouillon TikTok via
@@ -928,8 +985,9 @@ Il dit aussi ce que l'outil ne fait pas : pas de score, jamais de chiffre invent
 ## Automatisation via GitHub Actions
 
 Le workflow `.github/workflows/generate-reels.yml` tourne chaque lundi (et manuellement via
-l'onglet Actions, avec les mêmes options que `run_pipeline.py`, dont `registre`, `hook`, `plan` et
-`plateformes`). Capture par défaut du workflow (et donc du lancement du lundi) : `screenshots`, le seul
+l'onglet Actions, avec les mêmes options que `run_pipeline.py`, dont `chaine`, `registre`, `hook`, `plan` et
+`plateformes`). Le lancement du lundi produit la chaîne `opuscv` ; les autres chaînes se lancent à la main (console ou
+Actions, champ `chaine`), sans réveil du service de démo ni compte démo. Capture par défaut du workflow (et donc du lancement du lundi) : `screenshots`, le seul
 mode avec capture qui affiche les cartes animées (`run_pipeline.py` seul garde `video` par défaut).
 Les déclinaisons Instagram sont dans l'artefact `output`, sous `final/`.
 
@@ -960,7 +1018,8 @@ si le premier chargement dépasse le délai habituel.
   réessayer le modèle principal). Une autre erreur (clé invalide…) arrête tout de suite, comme un
   quota du jour épuisé (429 « per day ») : la voix passe alors directement au modèle de secours, qui
   a son propre quota. Quotas du niveau 1 pour les voix : 10 requêtes/minute et 100/jour par modèle ;
-  un reel = 1 appel, mais `--precompute-cta` en fait 60 (à lancer un jour sans run).
+  un reel = 1 appel, mais `--precompute-cta` enregistre chaque phrase de CTA de toutes les chaînes pour chaque voix
+  (plus de 100 appels : à lancer un jour sans run, et à relancer le lendemain, les phrases déjà enregistrées sont sautées).
 - Voix : `gemini-3.8-flash-tts` (version stable) ; le secours `gemini-3.1-flash-tts-preview` est une préversion (pas de SLA garanti).
 - Whisper tourne en CPU (`--model small` par défaut) ; largement suffisant pour des reels de 15-30s.
 - Aucun GPU nécessaire pour ce pipeline (pas d'avatar animé, juste du screen-record + montage).
@@ -987,6 +1046,9 @@ permission *Contents : Read-only*. Une erreur inattendue de la page s'affiche en
   d'emojis, des listes plutôt que des murs de vignettes.
 - **Apparence** : bouton en haut à droite de la page, qui fait défiler Auto (suit le mode clair / sombre de l'appareil) → Clair → Sombre ;
   le choix est mémorisé dans le navigateur.
+- **Chaîne** : sélecteur en tête de l'onglet Lancer (dossiers de `catalog/chaines/`) ; il recharge formats, sujets,
+  accroches, trames et personnages de la chaîne, garde une composition par chaîne et envoie `chaine` au workflow. Une
+  chaîne sans produit grise le choix de capture (« Sans capture » imposé). Le titre de la page affiche le nom de la chaîne.
 - **Onglet Lancer** : nombre de reels, durée, plateformes, bouton **Lancer** dans une barre fixe en bas de l'écran
   (nombre de reels, durée, combien sont personnalisés). Le générateur varie tout seul format, sujet, style et accroche.
   « Choisir moi-même les reels → » ouvre le **compositeur** : une fiche par reel (une seule ouverte, les autres tiennent sur

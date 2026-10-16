@@ -1,0 +1,66 @@
+{
+  "_doc": "Accroches de la chaine psycho : memes champs que catalog/chaines/opuscv/hooks.json (voir son _doc). dessin : false = jamais dite par un personnage du dessin anime.",
+  "hooks": [
+    {
+      "id": "pourquoi_quotidien",
+      "poids": 3,
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "consigne": "Une question « Pourquoi… ? » sur une réaction que tout le monde a, au « tu ».",
+      "exemple": "Pourquoi tu repousses toujours au lendemain ?"
+    },
+    {
+      "id": "toi_aussi",
+      "poids": 2,
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "consigne": "« Toi aussi, tu… ? » : une petite situation gênante où le spectateur se reconnaît tout de suite.",
+      "exemple": "Toi aussi, tu relis ton message avant de l'envoyer ?"
+    },
+    {
+      "id": "ton_cerveau",
+      "poids": 2,
+      "consigne": "Ce que ton cerveau fait sans te le dire, en une phrase simple.",
+      "exemple": "Ton cerveau te ment quand tu as peur."
+    },
+    {
+      "id": "idee_recue",
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "consigne": "Une idée reçue très répandue, retournée tout de suite.",
+      "exemple": "Non, tu n'es pas paresseux."
+    },
+    {
+      "id": "situation",
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "consigne": "Une situation précise et un peu embarrassante, racontée au présent.",
+      "exemple": "Tu dis « oui » et tu penses « non »."
+    },
+    {
+      "id": "pov",
+      "registres": [
+        "humour"
+      ],
+      "dessin": false,
+      "consigne": "Format « POV : » qui met le spectateur dans une situation vécue.",
+      "exemple": "POV : tu as répété ta phrase dix fois et tu bégaies quand même."
+    },
+    {
+      "id": "exageration",
+      "registres": [
+        "humour"
+      ],
+      "consigne": "Pousser une réaction du quotidien jusqu'à l'absurde, en une phrase courte et visuelle.",
+      "exemple": "J'ai tellement réfléchi à ma réponse que la conversation est finie."
+    }
+  ]
+}

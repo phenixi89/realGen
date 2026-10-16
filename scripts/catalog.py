@@ -1,22 +1,32 @@
 """
-Catalogue editorial et visuel des reels (dossier catalog/ a la racine) :
+Catalogue editorial et visuel des reels (dossier catalog/ a la racine).
 
-    formats.json  structure des videos (liste d'erreurs, mythe/realite, demo...)
-    sujets.json   de quoi parle la video (conseil ou produit)
-    hooks.json    styles d'accroche des 2 premieres secondes
+Partage par toutes les chaines (catalog/) :
     themes.json   couleurs, polices, style des sous-titres, ambiance musicale
     audio.json    ambiances musicales et effets sonores (scripts/audio_gen.py)
     voix.json     voix TTS en rotation et ton de lecture par defaut
-    config.json   mix conseil/produit, registres serieux/humour, anti-redondance,
-                  textes propres a Instagram
+    dessins.json  dessin anime : decors, objets, personnages dessines
+    jeu.json      jeu video retro
+    config.json   reglages communs (anti-redondance, registres...)
+
+Propre a chaque chaine (catalog/chaines/<chaine>/, chaine active : variable
+d'environnement CHAINE, defaut "opuscv", run_pipeline.py --chaine) :
+    chaine.json   identite (nom, marque, watermark, produit ou faceless, niche,
+                  public, regles, personnages et serie du dessin anime)
+    formats.json  structure des videos (liste d'erreurs, mythe/realite, demo...)
+    sujets.json   de quoi parle la video
+    hooks.json    styles d'accroche des 2 premieres secondes
+    config.json   fusionne cle par cle par-dessus catalog/config.json (mix, CTA,
+                  phrases bannies, textes Instagram...)
 
 Tout s'enrichit en editant ces JSON, sans toucher au code : ce module les
-charge, les valide (python catalog.py) et fait les choix "intelligents" --
-tirage pondere qui evite ce qui a ete publie recemment (historique persiste
-dans output/content_history.json) et respecte le mix conseil/produit cible.
+charge, les valide (python catalog.py, toutes les chaines) et fait les choix
+"intelligents" -- tirage pondere qui evite ce qui a ete publie recemment
+(historique de la chaine, cf. history_path) et respecte le mix cible.
 """
 import difflib
 import json
+import os
 import random
 import re
 import sys
@@ -26,6 +36,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG_DIR = ROOT / "catalog"
+CHAINES_DIR = CATALOG_DIR / "chaines"
+DEFAULT_CHAINE = "opuscv"
+# Fichiers editoriaux : chaque chaine a les siens (aucun repli sur une autre chaine).
+FICHIERS_CHAINE = ("formats", "sujets", "hooks")
 FONTS_DIR = ROOT / "assets" / "fonts"
 DEFAULT_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 # Police manuscrite des dessins (cartes schema, annotations) -- OFL, assets/fonts/.
@@ -70,6 +84,8 @@ def gabarit_carte(theme: dict | None, card: dict, n: int = 1, total: int = 1) ->
     kind = card.get("type", "texte")
     g = lambda k: str(card.get(k) or "").strip()
     rang = {"n": min(n, 6), "total": min(max(total, n), 6)} if lecon else {"n": n}
+    if not lecon and chaine().get("pied"):
+        rang["pied"] = chaine()["pied"]   # bandeau du bas de la planche pop art : nom de la chaine
     if kind == "texte":
         phrase = g("texte")
         params = {"texte": _marque(g("titre")), "note": phrase if len(phrase) <= 60 else ""}
@@ -118,9 +134,69 @@ MIX_WINDOW = 10
 REGISTRES = ("serieux", "humour")
 
 
+# ---------------------------------------------------------------------------
+# Chaines (catalog/chaines/<id>/)
+# ---------------------------------------------------------------------------
+
+def chaine_id() -> str:
+    """Chaine active : variable d'environnement CHAINE (transmise aux etapes du pipeline), sinon OpusCV."""
+    return os.environ.get("CHAINE") or DEFAULT_CHAINE
+
+
+def set_chaine(cid: str) -> None:
+    """Active une chaine pour ce processus et ceux qu'il lance (variable CHAINE)."""
+    if cid not in chaines():
+        raise KeyError(f"chaine inconnue '{cid}' (disponibles : {', '.join(chaines())})")
+    os.environ["CHAINE"] = cid
+
+
+def chaines() -> list[str]:
+    """Ids des chaines : dossiers de catalog/chaines/ qui ont un chaine.json (la chaine par defaut d'abord)."""
+    ids = sorted(p.parent.name for p in CHAINES_DIR.glob("*/chaine.json"))
+    return sorted(ids, key=lambda c: c != DEFAULT_CHAINE)
+
+
 @lru_cache(maxsize=None)
+def _read(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def chaine() -> dict:
+    """Identite de la chaine active (chaine.json), avec son id."""
+    return {**_read(CHAINES_DIR / chaine_id() / "chaine.json"), "id": chaine_id()}
+
+
+def produit() -> str | None:
+    """Nom du produit montre par la chaine (captures de l'app), None pour une chaine faceless."""
+    return chaine().get("produit") or None
+
+
+def marque() -> str:
+    """Nom affiche sur l'ecran d'appel a l'action, la couverture et le carrousel."""
+    ch = chaine()
+    return ch.get("marque") or ch.get("nom") or ch["id"]
+
+
+def history_path(out_dir: Path) -> Path:
+    """Historique anti-redondance de la chaine active (OpusCV garde content_history.json)."""
+    cid = chaine_id()
+    return out_dir / ("content_history.json" if cid == DEFAULT_CHAINE else f"content_history_{cid}.json")
+
+
 def _load(name: str) -> dict:
-    return json.loads((CATALOG_DIR / f"{name}.json").read_text(encoding="utf-8"))
+    """
+    Fichier du catalogue pour la chaine active : formats / sujets / hooks dans le dossier de la chaine (obligatoires) ;
+    config = catalog/config.json complete cle par cle par celui de la chaine ; les autres sont partages.
+    """
+    propre = CHAINES_DIR / chaine_id() / f"{name}.json"
+    if name in FICHIERS_CHAINE:
+        if not propre.exists():
+            raise FileNotFoundError(f"{propre.relative_to(ROOT)} absent : chaque chaine a ses {name}")
+        return _read(propre)
+    base = _read(CATALOG_DIR / f"{name}.json")
+    if name == "config" and propre.exists():
+        return {**base, **_read(propre)}
+    return base
 
 
 def config() -> dict:
@@ -153,7 +229,15 @@ def icons() -> dict[str, dict]:
 
 
 def dessins() -> dict:
-    return _load("dessins")
+    """
+    Dessin anime (catalog/dessins.json) complete par la chaine active (chaine.json) : sa serie, ses trames et ses
+    personnages (nom, description, role, voix : memes dessins, une autre identite d'une chaine a l'autre).
+    """
+    base, ch = _load("dessins"), chaine()
+    persos = ch.get("personnages") or {}
+    objets = [{**o, **persos[o["id"]]} if o.get("categorie") == "personnage" and o["id"] in persos else o
+              for o in base["objets"]]
+    return {**base, "objets": objets, "serie": ch.get("serie") or {}, "trames": ch.get("trames") or []}
 
 
 def _types_dessin_js() -> dict[str, set[str]]:
@@ -620,8 +704,9 @@ def pick_hook(history: list[dict], rng: random.Random, registre: str | None = No
 
 
 def pick_theme(history: list[dict], rng: random.Random, registre: str | None = None, fmt: dict | None = None) -> dict:
-    """Theme tire (registre, format) : un theme a "formats" est reserve a ces formats, et un format a "themes" n'utilise que ceux-la."""
-    ok = [t for t in themes() if (not t.get("formats") or (fmt and fmt["id"] in t["formats"]))
+    """Theme tire (registre, format) : un theme a "formats" est reserve a ces formats (et a ceux qui le citent dans leurs
+    "themes"), et un format a "themes" n'utilise que ceux-la."""
+    ok = [t for t in themes() if (not t.get("formats") or (fmt and (fmt["id"] in t["formats"] or t["id"] in (fmt.get("themes") or []))))
           and (not (fmt and fmt.get("themes")) or t["id"] in fmt["themes"])] or themes()
     pool = [t for t in ok if registre is None or registre in registres_of(t, REGISTRES)] or ok
     return weighted_pick(pool, _recent(history, "theme", config()["historique_themes"]), rng)
@@ -771,8 +856,44 @@ def too_similar(text: str, previous: list[str]) -> str | None:
 # Validation
 # ---------------------------------------------------------------------------
 
-def validate_catalog() -> list[str]:
+CHAMPS_CHAINE = ("nom", "watermark")
+# Chaine faceless (sans produit) : ce que le prompt d'ecriture dit d'elle (1_generate_script.py).
+CHAMPS_FACELESS = ("niche", "public", "expertise", "promesse")
+
+
+def validate_chaine() -> list[str]:
+    """chaine.json de la chaine active : champs obligatoires, personnages existants, sujets sources si verifies."""
     errors = []
+    try:
+        ch = chaine()
+    except (OSError, ValueError) as e:
+        return [f"chaine.json illisible : {e}"]
+    for key in CHAMPS_CHAINE + (() if ch.get("produit") else CHAMPS_FACELESS):
+        if not ch.get(key):
+            errors.append(f"chaine.json : champ '{key}' manquant")
+    if ch.get("produit") and ch["id"] != DEFAULT_CHAINE:
+        errors.append("chaine.json : seule la chaine opuscv montre un produit (captures de l'app, features.py)")
+    dessines = {o["id"] for o in _load("dessins")["objets"] if o.get("categorie") == "personnage"}
+    for pid, perso in (ch.get("personnages") or {}).items():
+        if pid not in dessines:
+            errors.append(f"chaine.json : personnage '{pid}' absent de dessins.json (choix : {sorted(dessines)})")
+    if not isinstance(ch.get("regles") or [], list):
+        errors.append("chaine.json : regles doit etre une liste de phrases")
+    if ch.get("verification"):
+        for s in sujets():
+            if not (s.get("faits") and s.get("source")):
+                errors.append(f"sujet {s['id']} : chaine verifiee, champs 'faits' (liste) et 'source' obligatoires")
+    if not ch.get("produit"):
+        for f in formats():
+            if f.get("categorie") != "conseil" or (f.get("cartes") == "aucune" and not f.get("dessin")):
+                errors.append(f"format {f['id']} : chaine sans produit, formats 'conseil' a cartes ou dessines seulement")
+            if f.get("jeu"):
+                errors.append(f"format {f['id']} : le jeu video (Martin, Lea) reste propre a la chaine opuscv pour l'instant")
+    return errors
+
+
+def validate_catalog() -> list[str]:
+    errors = validate_chaine()
     for name, items in (("formats", formats()), ("sujets", sujets()), ("hooks", hooks()), ("themes", themes())):
         ids = [i.get("id") for i in items]
         if len(ids) != len(set(ids)) or None in ids:
@@ -875,10 +996,11 @@ def validate_catalog() -> list[str]:
             for tid in f.get("themes") or []:
                 if tid not in {t["id"] for t in themes()}:
                     errors.append(f"format {f['id']} : theme '{tid}' absent de themes.json")
+        tous_formats = {f["id"] for c in chaines() for f in _read(CHAINES_DIR / c / "formats.json")["formats"]}
         for t in themes():
             for fid in t.get("formats") or []:
-                if fid not in {f["id"] for f in formats()}:
-                    errors.append(f"theme {t['id']} : format '{fid}' absent de formats.json")
+                if fid not in tous_formats:
+                    errors.append(f"theme {t['id']} : format '{fid}' absent des formats.json des chaines")
         if not (FONTS_DIR / "PressStart2P-Regular.ttf").exists():
             errors.append("police PressStart2P-Regular.ttf absente de assets/fonts/ (jeu video)")
     except (ValueError, OSError, KeyError) as e:
@@ -902,15 +1024,35 @@ def apercus_manquants() -> list[str]:
 
 
 if __name__ == "__main__":
-    problems = validate_catalog()
-    for p in problems:
-        print(f"ERREUR: {p}", file=sys.stderr)
-    manquants = apercus_manquants()
-    if manquants:  # pas bloquant : la console affiche alors une vignette neutre
-        print(f"ATTENTION: {len(manquants)} apercu(s) de la console manquant(s) ({', '.join(manquants[:6])}"
-              f"{'...' if len(manquants) > 6 else ''}) : python scripts/apercus.py", file=sys.stderr)
-    print(f"{len(formats())} formats, {len(sujets())} sujets, {len(hooks())} accroches, {len(themes())} themes, "
-          f"{len(icons())} icones, {len(dessins()['fonds'])} fonds et {len(dessins()['objets'])} objets dessines")
-    for f in formats():
-        print(f"  {f['id']:22} [{f['categorie']}/{'+'.join(registres_of(f))}] {len(compatible_sujets(f))} sujets compatibles")
+    # Toutes les chaines (python catalog.py) ou une seule (python catalog.py <chaine>).
+    a_valider = sys.argv[1:] or chaines()
+    problems = []
+    for cid in a_valider:
+        try:
+            set_chaine(cid)
+        except KeyError as e:
+            problems.append(str(e))
+            print(f"ERREUR: {e}", file=sys.stderr)
+            continue
+        erreurs = validate_catalog()
+        problems += erreurs
+        for p in erreurs:
+            print(f"ERREUR [{cid}]: {p}", file=sys.stderr)
+        manquants = apercus_manquants()
+        if manquants:  # pas bloquant : la console affiche alors une vignette neutre
+            print(f"ATTENTION [{cid}]: {len(manquants)} apercu(s) de la console manquant(s) ({', '.join(manquants[:6])}"
+                  f"{'...' if len(manquants) > 6 else ''}) : python scripts/apercus.py", file=sys.stderr)
+        print(f"Chaine {cid} ({chaine().get('nom')}) : {len(formats())} formats, {len(sujets())} sujets, "
+              f"{len(hooks())} accroches, {len(themes())} themes, {len(icons())} icones, "
+              f"{len(dessins()['fonds'])} fonds et {len(dessins()['objets'])} objets dessines")
+        for f in formats():
+            print(f"  {f['id']:22} [{f['categorie']}/{'+'.join(registres_of(f))}] {len(compatible_sujets(f))} sujets compatibles")
+    # Liste des chaines du workflow (input « chaine ») : une chaine absente ne serait pas lancable depuis GitHub.
+    wf = ROOT / ".github" / "workflows" / "generate-reels.yml"
+    if wf.exists() and not sys.argv[1:]:
+        bloc = re.search(r"\n      chaine:\n(.*?)\n      [a-z_]+:\n", wf.read_text(encoding="utf-8"), re.S)
+        options = re.findall(r"^\s+- ([a-z_]+)$", bloc.group(1), re.M) if bloc else []
+        if sorted(options) != sorted(chaines()):
+            problems.append("workflow")
+            print(f"ERREUR: generate-reels.yml, input chaine : options {options} != chaines {chaines()}", file=sys.stderr)
     sys.exit(1 if problems else 0)

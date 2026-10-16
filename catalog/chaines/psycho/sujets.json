@@ -1,0 +1,221 @@
+{
+  "_doc": "Sujets de la chaine psycho : notions reconnues de psychologie du quotidien. tags / famille : emotions, relations, pensee, habitudes, travail. Ajouter un sujet = une notion reconnue, decrite en une phrase simple (pas de chiffre ni d'etude citee).",
+  "sujets": [
+    {
+      "id": "effet_projecteur",
+      "categorie": "conseil",
+      "tags": [
+        "pensee"
+      ],
+      "famille": "pensee",
+      "texte": "l'effet projecteur : on croit que tout le monde remarque nos erreurs, alors que presque personne ne les voit"
+    },
+    {
+      "id": "biais_confirmation",
+      "categorie": "conseil",
+      "tags": [
+        "pensee"
+      ],
+      "famille": "pensee",
+      "texte": "le biais de confirmation : on cherche surtout ce qui confirme ce qu'on pense déjà"
+    },
+    {
+      "id": "biais_negativite",
+      "categorie": "conseil",
+      "tags": [
+        "pensee"
+      ],
+      "famille": "pensee",
+      "texte": "le biais de négativité : une critique pèse plus lourd que plusieurs compliments"
+    },
+    {
+      "id": "cout_irrecuperable",
+      "categorie": "conseil",
+      "tags": [
+        "pensee"
+      ],
+      "famille": "pensee",
+      "texte": "le piège du « j'ai déjà trop investi » : continuer quelque chose qui ne marche plus parce qu'on y a mis du temps"
+    },
+    {
+      "id": "dissonance",
+      "categorie": "conseil",
+      "tags": [
+        "pensee"
+      ],
+      "famille": "pensee",
+      "texte": "la dissonance cognitive : on se raconte une bonne raison quand nos actes contredisent nos idées"
+    },
+    {
+      "id": "ancrage",
+      "categorie": "conseil",
+      "tags": [
+        "pensee"
+      ],
+      "famille": "pensee",
+      "texte": "l'effet d'ancrage : le premier chiffre entendu influence tout le reste (prix, négociation)"
+    },
+    {
+      "id": "prophetie",
+      "categorie": "conseil",
+      "tags": [
+        "pensee"
+      ],
+      "famille": "pensee",
+      "texte": "la prophétie autoréalisatrice : s'attendre à rater pousse à agir d'une façon qui fait rater"
+    },
+    {
+      "id": "procrastination",
+      "categorie": "conseil",
+      "tags": [
+        "habitudes"
+      ],
+      "famille": "habitudes",
+      "texte": "la procrastination : on ne fuit pas la tâche, on fuit l'émotion désagréable qu'elle provoque"
+    },
+    {
+      "id": "commencer_petit",
+      "categorie": "conseil",
+      "tags": [
+        "habitudes"
+      ],
+      "famille": "habitudes",
+      "texte": "commencer par deux minutes seulement pour débloquer une tâche qu'on repousse"
+    },
+    {
+      "id": "zeigarnik",
+      "categorie": "conseil",
+      "tags": [
+        "habitudes"
+      ],
+      "famille": "habitudes",
+      "texte": "l'effet Zeigarnik : une tâche pas finie reste dans la tête bien plus qu'une tâche finie"
+    },
+    {
+      "id": "perfectionnisme",
+      "categorie": "conseil",
+      "tags": [
+        "habitudes"
+      ],
+      "famille": "habitudes",
+      "texte": "le perfectionnisme qui bloque : attendre que ce soit parfait pour commencer"
+    },
+    {
+      "id": "dire_non",
+      "categorie": "conseil",
+      "tags": [
+        "relations"
+      ],
+      "famille": "relations",
+      "texte": "dire non sans se justifier pendant dix minutes, et pourquoi c'est si difficile"
+    },
+    {
+      "id": "attribution",
+      "categorie": "conseil",
+      "tags": [
+        "relations"
+      ],
+      "famille": "relations",
+      "texte": "l'erreur d'attribution : quand l'autre est en retard il est « pas sérieux », quand c'est nous « il y avait des bouchons »"
+    },
+    {
+      "id": "effet_halo",
+      "categorie": "conseil",
+      "tags": [
+        "relations"
+      ],
+      "famille": "relations",
+      "texte": "l'effet de halo : une seule qualité (ou un seul défaut) colore tout ce qu'on pense d'une personne"
+    },
+    {
+      "id": "reformuler",
+      "categorie": "conseil",
+      "tags": [
+        "relations"
+      ],
+      "famille": "relations",
+      "texte": "reformuler ce que l'autre vient de dire pour calmer une dispute"
+    },
+    {
+      "id": "je_plutot_que_tu",
+      "categorie": "conseil",
+      "tags": [
+        "relations"
+      ],
+      "famille": "relations",
+      "texte": "dire « je » plutôt que « tu » pour faire un reproche sans déclencher une guerre"
+    },
+    {
+      "id": "benjamin_franklin",
+      "categorie": "conseil",
+      "tags": [
+        "relations"
+      ],
+      "famille": "relations",
+      "texte": "l'effet Benjamin Franklin : demander un petit service à quelqu'un peut le rapprocher de nous"
+    },
+    {
+      "id": "nommer_emotion",
+      "categorie": "conseil",
+      "tags": [
+        "emotions"
+      ],
+      "famille": "emotions",
+      "texte": "mettre un mot précis sur son émotion aide à la calmer"
+    },
+    {
+      "id": "rumination",
+      "categorie": "conseil",
+      "tags": [
+        "emotions"
+      ],
+      "famille": "emotions",
+      "texte": "la rumination : repasser la même scène en boucle dans sa tête, et comment en sortir"
+    },
+    {
+      "id": "comparaison_sociale",
+      "categorie": "conseil",
+      "tags": [
+        "emotions"
+      ],
+      "famille": "emotions",
+      "texte": "la comparaison sur les réseaux : on compare nos coulisses à la vitrine des autres"
+    },
+    {
+      "id": "colere_pause",
+      "categorie": "conseil",
+      "tags": [
+        "emotions"
+      ],
+      "famille": "emotions",
+      "texte": "la colère : pourquoi attendre un peu avant de répondre change tout"
+    },
+    {
+      "id": "imposteur",
+      "categorie": "conseil",
+      "tags": [
+        "travail"
+      ],
+      "famille": "travail",
+      "texte": "le sentiment d'imposture : croire qu'on ne mérite pas sa place malgré ses réussites"
+    },
+    {
+      "id": "charge_mentale",
+      "categorie": "conseil",
+      "tags": [
+        "travail"
+      ],
+      "famille": "travail",
+      "texte": "la charge mentale : penser à tout, tout le temps, même quand on ne fait rien"
+    },
+    {
+      "id": "multitache",
+      "categorie": "conseil",
+      "tags": [
+        "travail"
+      ],
+      "famille": "travail",
+      "texte": "faire plusieurs choses à la fois : on a l'impression d'aller plus vite, on passe surtout son temps à changer de tâche"
+    }
+  ]
+}

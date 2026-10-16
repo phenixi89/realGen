@@ -9,9 +9,14 @@ editorial (catalog/, cf. catalog.py) :
   registre-> serieux ou humour (config.json "registres") : filtre formats,
              accroches et themes, ajoute les regles d'ecriture humoristique
 
-Chaque choix evite ce qui a ete publie recemment (output/content_history.json)
-et respecte le mix conseil/produit et le mix de registres de
-catalog/config.json : c'est ce qui empeche les reels de tous se ressembler.
+Chaque choix evite ce qui a ete publie recemment (historique de la chaine,
+output/content_history*.json) et respecte le mix de formats et de registres
+de la config de la chaine : c'est ce qui empeche les reels de se ressembler.
+
+Chaine active (variable CHAINE, run_pipeline.py --chaine) : catalogue de
+catalog/chaines/<chaine>/. Une chaine sans produit (faceless) ecrit sans rien
+dire d'OpusCV ni de l'emploi : niche, public et regles de son chaine.json
+(intro_faceless, neutraliser, niche_rule), faits sources si verifiee.
 
 Le scenario porte aussi ses textes Instagram (legende_instagram,
 hashtags_instagram, carrousel), exploites par scripts/instagram.py.
@@ -110,6 +115,7 @@ FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
 # de texte -- c'est le texte qui fixe la duree reelle du reel, pas l'inverse.
 WORDS_PER_SECOND = 2.6
 FAST_WORDS_PER_SECOND = 3.4
+SLOW_WORDS_PER_SECOND = 2.2   # estimation (ton « débit lent »), a recaler sur les premiers reels
 # Dessin anime (dialogue TTS a deux voix, repliques courtes) : ~2,9 mots/s mesures sur les
 # premiers reels ; un peu en dessous pour garder de l'air entre les repliques.
 DIALOGUE_WORDS_PER_SECOND = 2.3   # mesure au run 64 : 78 mots = 33,7 s (voix posees, pauses avant les chutes)
@@ -139,8 +145,11 @@ MIN_WORDS_ACCENT_CHECK = 12
 
 
 def words_per_second(tone: str = "") -> float:
-    """Un ton "rapide" fait parler le TTS nettement plus vite (mesure : ~3.3 mots/s)."""
-    return FAST_WORDS_PER_SECOND if re.search(r"rapide|haletant", tone or "", re.I) else WORDS_PER_SECOND
+    """Un ton "rapide" fait parler le TTS nettement plus vite (mesure : ~3.3 mots/s), un ton "lent" moins vite
+    (chaine examen_civique : public dont le francais n'est pas toujours la langue maternelle)."""
+    if re.search(r"rapide|haletant", tone or "", re.I):
+        return FAST_WORDS_PER_SECOND
+    return SLOW_WORDS_PER_SECOND if re.search(r"\blent\b", tone or "", re.I) else WORDS_PER_SECOND
 
 
 VITESSE_VOIX: list[float] = []   # mots/s mesures sur les derniers dessins animes (output/vitesse_voix.json, ecrit par 2_generate_voice.py)
@@ -217,6 +226,12 @@ def choose_sujet(client, fmt: dict, history: list[dict], rng: random.Random) -> 
                  "Le dessin animé donne un VRAI conseil de recherche d'emploi ou de carrière ; le produit n'est pas son sujet.")
     else:
         cadre = f"Tu es stratège de contenu TikTok/Instagram pour OpusCV (optimisation de CV par IA).\n\n{PRODUCT_CONTEXT}"
+    public = "d'un chercheur d'emploi"
+    if faceless():
+        ch = catalog.chaine()
+        cadre = (f"Tu es {'scénariste de séries courtes et ' if fmt.get('dessin') else 'stratège de contenu TikTok / Instagram / YouTube, '}"
+                 f"{ch['expertise']}, pour une chaîne consacrée à {ch['niche']}.")
+        public = f"du public visé ({ch['public']})"
     prompt = f"""{cadre}
 
 Le prochain reel suit le format « {fmt['nom']} » : {fmt['structure']}
@@ -224,7 +239,7 @@ Le prochain reel suit le format « {fmt['nom']} » : {fmt['structure']}
 Sujets possibles (non utilisés récemment) :
 {listing}
 
-Choisis le sujet qui a le plus de chances d'arrêter le scroll d'un chercheur d'emploi et de
+Choisis le sujet qui a le plus de chances d'arrêter le scroll {public} et de
 bien fonctionner avec ce format. Réponds UNIQUEMENT en JSON : {{"id": "...", "raison": "..."}}"""
     try:
         data = _gemini_json(client, prompt, 0.9)
@@ -251,6 +266,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
     """
     plans = []
     working = list(history)
+    sans_captures = sans_captures or faceless()   # chaine sans produit : rien a capturer
     for i in range(n):
         ov = (overrides[i] if overrides and i < len(overrides) else None) or {}
         fid, reel_angle = ov.get("format") or format_id, ov.get("angle") or (None if ov.get("sujet") else angle)
@@ -637,6 +653,158 @@ VÉRITÉ ET COHÉRENCE (le reel est relu par un spectateur qui ne sait rien, pui
 - Rien d'inventé sur OpusCV (voir le produit) ; un chiffre pris en exemple est présenté comme un exemple."""
 
 
+# ---------------------------------------------------------------------------
+# Chaines sans produit (faceless, catalog/chaines/<id>/chaine.json) : memes formats et memes controles,
+# l'ecriture vient de la chaine (niche, public, regles) et rien ne parle d'OpusCV ni de l'emploi.
+# ---------------------------------------------------------------------------
+
+def faceless() -> bool:
+    """Chaine active sans produit : aucune capture, aucun produit cite, ecriture tiree de chaine.json."""
+    return not catalog.produit()
+
+
+def noms_dessin() -> tuple[str, str, str]:
+    """(heros, guide, tiers) du dessin anime de la chaine : noms des personnages dessines karim, lea et recruteur."""
+    p = catalog.personnages()
+    nom = lambda pid, defaut: (p.get(pid) or {}).get("nom") or defaut
+    return nom("karim", "Karim"), nom("lea", "Léa"), nom("recruteur", "le recruteur")
+
+
+DRAMATURGIE_NICHE = """ÉCRITURE : UN PROBLÈME, UNE CLÉ, EN MOTS SIMPLES (un mini-scénario, pas une fiche lue à deux voix) :
+  - LANGAGE : les mots de tous les jours, des phrases courtes (une idée par réplique, 12 mots au plus), qu'un enfant de
+    12 ans comprend. Aucun jargon, aucune formule de coach, aucun nom de « règle » ou de « méthode » inventé : on dit
+    simplement ce qui se passe et quoi faire ;
+  - CONTEXTE : dans les 2 premières répliques, le spectateur sait QUI a un problème, DANS QUELLE SITUATION (un moment précis
+    de la vie de tous les jours) et QUEL EST le problème. Jamais de phrase abstraite sans situation ;
+  - PROBLÈME (au début) : une situation précise que le spectateur a vécue, montrée (pas une idée) ;
+  - LA CLÉ (au milieu) : {guide} (ou le personnage qui sait) nomme simplement ce qui se passe et dit QUOI faire, avec les mots
+    exacts à se dire ou à dire entre « guillemets français », sur cet exemple précis ; l'autre l'essaie ensuite. Une seule
+    chose à faire, et POURQUOI ça marche en une courte phrase simple ;
+  - Jamais de phrase adressée au public dans l'histoire (« reste pour la suite », « attends la fin ») ;
+  - OUVERTURE : la 1re réplique fait 8 mots au plus, dit de qui ou de quoi on parle (pas de « lui », « ça », « elle » sans
+    qu'on sache), et ne reprend pas les mots du titre ;
+  - RÉSULTAT (à la fin) : on VOIT que ça marche (gros plan, message reçu, sourire), puis une chute courte : une RÉACTION ou
+    un retournement drôle, jamais un slogan ni une morale ;
+  - PAS DE SUSPENSE ARTIFICIEL : on ne fait pas patienter (« attends la suite », « tu vas voir ») ; la phrase est dite tout de suite ;
+  - {heros} vit le problème et agit ; {guide} l'aide en 1 ou 2 répliques à la fois, comme une amie, jamais en donnant un cours :
+    jamais plus de 2 répliques de suite par le même personnage ;
+  - MONTRE, NE FAIS PAS LA LEÇON : la clé passe par un essai raté puis réussi, pas par un discours ;
+  - PERSONNAGES : {caracteres} ; les gags viennent d'eux, pas de blagues plaquées ;
+  - PROMESSE TENUE : ce qu'un personnage annonce est dit mot pour mot plus loin, avant la chute ;
+  - COMPRÉHENSION (le point le plus important) : relis ton histoire comme un spectateur qui n'a QUE le titre et les
+    répliques. Il doit pouvoir la raconter en deux phrases : qui est qui, ce qui ne va pas, ce qu'on essaie, ce qui se
+    passe, pourquoi c'est drôle. Chaque réplique répond à la précédente ; un personnage garde le même rôle d'un bout à
+    l'autre ; la chute découle de ce qu'on vient de voir, sans qu'il faille la deviner ;
+  - CE QU'ON DIT = CE QU'ON VOIT : un nombre ou un objet cité dans une réplique correspond exactement à ce qui est dessiné ;
+  - ORIGINALITÉ : évite l'histoire attendue ; choisis une situation précise et surprenante, mais toujours compréhensible
+    tout de suite.
+"""
+
+
+def dramaturgie_niche() -> str:
+    heros, guide, _ = noms_dessin()
+    caracteres = catalog.chaine().get("caracteres") or f"{heros} est maladroit et de bonne foi, {guide} est pince-sans-rire"
+    return DRAMATURGIE_NICHE.format(heros=heros, guide=guide, caracteres=caracteres)
+
+
+def faits_rule(sujet: dict) -> str:
+    """Sujet a faits sources (chaine verifiee, ex : examen civique) : la seule base autorisee du reel."""
+    faits = [str(f).strip() for f in sujet.get("faits") or [] if str(f).strip()]
+    if not faits:
+        return ""
+    return ("FAITS VÉRIFIÉS (la SEULE base autorisée pour ce reel ; source : " + str(sujet.get("source") or "officielle")
+            + ") :\n" + "\n".join(f"  - {f}" for f in faits) + "\n"
+            "N'affirme RIEN qui ne soit pas dans ces faits : ni date, ni chiffre, ni règle, ni nom en plus. Une question de quiz "
+            "ou une affirmation « vrai ou faux » porte sur l'un de ces faits, et la bonne réponse en est tirée telle quelle.\n")
+
+
+def niche_rule(plan: dict) -> str:
+    """Consignes propres a la chaine (chaine.json "regles") et faits du sujet, ajoutees avant les contraintes."""
+    ch = catalog.chaine()
+    regles = "".join(f"  - {r}\n" for r in ch.get("regles") or [])
+    out = f"\nRÈGLES DE LA CHAÎNE « {ch.get('nom', ch['id'])} » (impératives) :\n{regles}" if regles else ""
+    return out + ("\n" + faits_rule(plan["sujet"]) if plan["sujet"].get("faits") else "")
+
+
+def neutraliser(prompt: str) -> str:
+    """
+    Prompt d'une chaine sans produit : les passages ecrits pour OpusCV et l'emploi (exemples de cartes, de repliques,
+    regles sur le produit) sont remplaces par leur version generale. verif_prompts.py verifie qu'il n'en reste rien.
+    """
+    heros, guide, tiers = noms_dessin()
+    ch = catalog.chaine()
+    question_tu = ch.get("exemple_accroche") or "Pourquoi tu n'y arrives jamais ?"
+    question_je = ch.get("exemple_replique") or "Pourquoi je n'y arrive jamais ?"
+    remplacements = (
+        (DRAMATURGIE, dramaturgie_niche()),
+        ("une statistique inventée sur OpusCV", "une statistique inventée"),
+        ("idéale pour une ligne de CV réécrite", "idéale pour une phrase maladroite puis la bonne"),
+        ("idéale pour expliquer un mécanisme : le tri par l'ATS, le trajet d'une candidature, ce que\n    regarde un recruteur)",
+         "idéale pour expliquer un mécanisme)"),
+        ("entre le candidat\n    \"moi\" et un interlocuteur, ex : la réponse d'un recruteur)", "entre\n    \"moi\" et un interlocuteur)"),
+        ('"contact": "Recruteur", "messages": [{"de": "recruteur"', '"contact": "Camille", "messages": [{"de": "camille"'),
+        ("  - carte scan (le CV passé au scanner ATS face à l'offre : mots-clés de l'offre trouvés / manquants, 3 à 6 au\n"
+         "    total, repris de \"offre_emploi\") :\n"
+         "    \"carte\": {\"type\": \"scan\", \"surtitre\": \"...\", \"titre\": \"...\", \"trouves\": [\"...\"], \"manquants\": [\"...\"]}\n", ""),
+        ("jamais une réponse piège inventée sur OpusCV", "jamais une réponse inventée"),
+        ("Tu peux citer OpusCV à la fin comme l'outil qui aide, sans décrire d'écran que le spectateur ne voit pas.",
+         "Aucun produit ni aucune application n'est cité : la chaîne apporte le contenu, rien d'autre."),
+        ("- Chaque scène dit ce que son écran montre : une carte reprend les mots de la voix ; une capture de l'app montre\n"
+         "  vraiment la fonctionnalité dont parle la voix (« là, l'outil… » seulement si l'écran le fait voir).\n"
+         "- Rien d'inventé sur OpusCV (voir le produit) ; un chiffre pris en exemple est présenté comme un exemple.",
+         "- Chaque scène dit ce que son écran montre : une carte reprend les mots de la voix.\n"
+         "- Rien d'inventé : ni étude, ni statistique, ni date ou règle incertaine ; un chiffre pris en exemple est présenté comme un exemple."),
+        ("« Garde-la avant de\npostuler. »", "« Garde-la pour\nplus tard. »"),
+        ("injustice du recrutement", "envie de comprendre"),
+        ("« 80 % des candidats », « 4 candidats sur 5 »", "« 80 % des gens », « 4 personnes sur 5 »"),
+        ("« 80 % des candidats »", "« 80 % des gens »"),
+        ("(le recruteur qui juge,", "(quelqu'un qui juge,"),
+        ("(chez le recruteur,", "(chez un ami,"),
+        ("Quand l'offre demande 5 ans d'expérience pour un stage", "Quand je dis « j'arrive dans cinq minutes »"),
+        ("Moi, né l'an dernier", "Moi, encore sous la douche"),
+        ("une formulation\nde CV ou une phrase d'offre", "une formulation\nà retenir"),
+        ('(ex : "relance", "pitch", "recruteur")', '(ex : "réflexe", "erreur", "clé")'),
+        ("Pourquoi personne ne te rappelle ?", question_tu),
+        ("Pourquoi personne ne me rappelle ?", question_je),
+        ("Pourquoi personne ne me\nrappelle ?", question_je),
+        ("Tu envoies le même CV partout ?", "Tu as déjà essayé autrement ?"),
+        ("Léa et Karim, ou Karim et le recruteur ; un troisième", f"{guide} et {heros}, ou {heros} et {tiers} ; un troisième"),
+        ("gros plan caméra sur une réaction, le CV corrigé à l'écran\n"
+         "    (\"corriger\" : la phrase faible barrée puis la bonne), l'e-mail ou la notification reçus, le tampon du recruteur,\n"
+         "    ou ce qu'imagine un personnage (\"imaginer\") ; le CV à l'écran dès que le conseil porte sur une formulation ;",
+         "gros plan caméra sur une réaction, une phrase corrigée à l'écran\n"
+         "    (\"corriger\" : la phrase maladroite barrée puis la bonne), le message ou la notification reçus, un tampon,\n"
+         "    ou ce qu'imagine un personnage (\"imaginer\") ;"),
+        ("(recruteur derrière son bureau : le recruteur, puis la table)", "(quelqu'un derrière un bureau : le personnage, puis la table)"),
+        ("(un entretien se passe dans la salle d'entretien, un appel chez soi...)", "(une discussion au café, un appel chez soi...)"),
+        ("  - le dialogue ne parle PAS du produit : jamais « OpusCV » ni « l'appli » dans une réplique, sauf l'appel à\n"
+         "    l'action final ; l'histoire donne un conseil emploi/recrutement valable avec ou sans outil, et aucun\n"
+         "    personnage n'invente de chiffre de performance (« 50 refus évités ») ni de fonction.",
+         "  - aucun produit ni aucune marque dans les répliques ; aucun personnage n'invente de chiffre, d'étude ni de statistique."),
+        ("Une phrase de CV donnée en exemple ne dicte jamais de chiffres au spectateur (« écris : 30 comptes, 95 % de\n"
+         "satisfaction ») : elle dit d'où ils viennent (« avec TES vrais chiffres : combien de comptes ? ») -- OpusCV\n"
+         "n'écrit jamais un chiffre que le candidat ne lui a pas donné. Citations entre « guillemets français ».",
+         "Une phrase donnée en exemple n'invente aucun chiffre. Citations entre « guillemets français »."),
+        ("OpusCV n'est cité que dans l'appel à l'action final (phrase imposée), jamais dans l'histoire.",
+         "Aucun produit n'est cité, ni dans l'histoire ni dans l'appel à l'action."),
+    )
+    for avant, apres in remplacements:
+        prompt = prompt.replace(avant, apres)
+    return prompt
+
+
+def intro_faceless(dessin: bool) -> str:
+    """Debut du prompt d'une chaine sans produit (chaine.json : expertise, niche, promesse)."""
+    ch = catalog.chaine()
+    if dessin:
+        return (f"Tu es scénariste de séries courtes (sitcom, comédie de situation) ET {ch['expertise']}. Tu écris un mini-scénario "
+                f"original pour une chaîne TikTok / Instagram / YouTube Shorts consacrée à {ch['niche']}. Objectif : {ch['promesse']}. "
+                "Le reel est de la valeur pour le spectateur, pas une publicité : aucun produit n'est cité.\n")
+    return (f"Tu es un expert en création de contenu viral (TikTok, Instagram Reels, YouTube Shorts) ET {ch['expertise']}. "
+            f"Tu écris pour une chaîne sans visage consacrée à {ch['niche']}. Objectif : {ch['promesse']}. L'accroche doit être très forte "
+            "et le contenu vrai : aucun produit n'est cité.\n")
+
+
 def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback: str | None,
                  recent_hooks: list[str]) -> str:
     if plan["format"].get("jeu"):
@@ -737,6 +905,9 @@ applique ce conseil (ex : "checklist" pour les erreurs détectées, "adapter" po
 """
     intent = ("contenu utile : le spectateur doit apprendre quelque chose, le produit n'est qu'un outil"
               if fmt["categorie"] == "conseil" else "démonstration du produit")
+    sans_produit = faceless()   # chaine faceless : ecriture tiree de chaine.json, rien sur OpusCV ni l'emploi
+    if sans_produit:
+        intent = "contenu utile : le spectateur doit apprendre quelque chose"
     registre_rule = ""
     if humour:
         registre_rule = f"""
@@ -751,6 +922,8 @@ Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
                  if plan["sujet"].get("famille") in ("ats_mots_cles", "redaction_cv", "produit_analyse")
                  else "ne dérive pas vers les logiciels ATS, les mots-clés ni le fait de chiffrer ses résultats "
                       "(thèmes déjà très traités sur le compte) ; traite CE sujet, avec ses exemples propres.")
+    if sans_produit:
+        off_topic = "traite CE sujet, avec ses exemples propres."
     dessin = bool(fmt.get("dessin"))
     if dessin:
         lo_s, hi_s = dessin_bounds(duration)
@@ -799,6 +972,8 @@ Base-toi UNIQUEMENT sur ces informations produit réelles, n'invente aucune fonc
 
 {PRODUCT_CONTEXT}
 """)
+    if sans_produit:
+        intro = intro_faceless(dessin)
     hook_rule = (f"""ACCROCHE (décisive pour la rétention) : une QUESTION simple, que le spectateur se pose vraiment, sur un problème
 précis qu'il a vécu (inspiration de style, sans la recopier : « {hook['id']} » — {hook['consigne']} ; ex. « {hook['exemple']} »).
 Deux façons, au choix, et JAMAIS un slogan ni un titre dit par un personnage :
@@ -820,6 +995,32 @@ statistique ni de pourcentage inventé (« 80 % des candidats », « 4 candidats
              "recruteur, appliqué et visible ; rythme rapide, phrases courtes, zéro blabla." if dessin else
              "Corps (3-20 s) : expose vite le problème précis, puis la solution concrète apportée par OpusCV (montrée à\n"
              "l'écran) ; rythme rapide, phrases courtes, zéro blabla.")
+    public_rule = """Public : des CANDIDATS qui cherchent un emploi (jamais des recruteurs) ; le CTA parle de leur recherche
+(décrocher un entretien, un job), pas de « recrutements ».
+Appel à l'action (fin) : incite à tester gratuitement l'outil (ex : « Lien en bio pour tester gratuitement »)."""
+    chiffres_rule = """les exemples de phrases de CV ou de lettre n'inventent AUCUN chiffre précis (pas « 200 k€ de ventes ») :
+  formule sans chiffre, ou « [ton chiffre] » quand il en faut un"""
+    hashtags_ex = "#cv, #emploi, #recherchedemploi"
+    demo_fields = """- "offre_emploi" : une offre d'emploi fictive courte (2 à 4 phrases : intitulé, missions, exigences clés)
+  plausible pour ce sujet — utilisée dans les démos « adapter le CV » et « lettre de motivation ».
+  Varie le métier/secteur d'un scénario à l'autre ;
+- "theme_style" : 2 à 4 mots décrivant le style visuel de CV le plus adapté (ex : « sobre et corporate »).
+"""
+    demo_json = '"offre_emploi": "...",\n "theme_style": "...", '
+    niche = ""
+    if sans_produit:
+        ch = catalog.chaine()
+        corps = ("Corps : l'histoire (voir DESSIN ANIMÉ ci-dessous) pose vite le problème précis, puis la clé concrète, "
+                 "appliquée et visible ; rythme rapide, phrases courtes, zéro blabla." if dessin else
+                 "Corps (3-20 s) : expose vite la question ou le problème précis, puis la réponse concrète, expliquée\n"
+                 "simplement ; rythme rapide, phrases courtes, zéro blabla.")
+        public_rule = (f"Public : {ch['public']}.\nAppel à l'action (fin) : "
+                       f"{ch.get('appel_action') or 'invite à s’abonner pour la suite'}.")
+        chiffres_rule = ("AUCUN chiffre, AUCUNE date, étude ou statistique inventés : un chiffre ne s'écrit que s'il est sûr\n"
+                         "  (ou donné dans les FAITS VÉRIFIÉS)")
+        hashtags_ex = ch.get("hashtags_exemple") or "#apprendre, #savoir"
+        demo_fields = demo_json = ""
+        niche = niche_rule(plan)
     prompt = f"""{intro}
 Tu écris le SCÉNARIO d'un reel vertical de {duration} secondes, en français.
 
@@ -830,15 +1031,13 @@ SUJET : {plan['sujet']['texte']}
 
 {hook_rule}
 {corps}
-Public : des CANDIDATS qui cherchent un emploi (jamais des recruteurs) ; le CTA parle de leur recherche
-(décrocher un entretien, un job), pas de « recrutements ».
-Appel à l'action (fin) : incite à tester gratuitement l'outil (ex : « Lien en bio pour tester gratuitement »).
+{public_rule}
 {save_rule}Ne réutilise pas ces accroches déjà publiées, ni leur formulation :
 {avoid_hooks}
 
 {screen_rule}
 {cards_rule}
-{proof_rule}{annotation_rule}
+{proof_rule}{annotation_rule}{niche}
 Contraintes :
 - entre {lo_s} et {hi_s} scènes ;
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
@@ -848,8 +1047,7 @@ Contraintes :
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est
   affiché tel quel en sous-titres ;
 - pas d'emoji, pas de hashtag, pas d'indication de mise en scène dans les textes ;
-- les exemples de phrases de CV ou de lettre n'inventent AUCUN chiffre précis (pas « 200 k€ de ventes ») :
-  formule sans chiffre, ou « [ton chiffre] » quand il en faut un ;
+- {chiffres_rule} ;
 - ORIGINALITÉ : aucun conseil générique ou évident (interdit : {banned}) ;
   chaque scène apporte un élément concret : un exemple de formulation, une phrase à dire ou à écrire,
   un cas précis ou une astuce actionnable immédiatement ;
@@ -868,7 +1066,7 @@ Fournis aussi :
 - "mots_cles" : 3 à 6 mots-clés du texte dit (mots isolés, tels qu'écrits dans les textes des scènes),
   mis en couleur dans les sous-titres — les mots qui portent le message (ex : "relance", "pitch", "recruteur") ;
 - "legende" : la description de la publication TikTok (1 à 2 phrases + une question pour faire commenter) ;
-- "hashtags" : 4 à 6 hashtags pertinents pour TikTok (ex : #cv, #emploi, #recherchedemploi) ;
+- "hashtags" : 4 à 6 hashtags pertinents pour TikTok (ex : {hashtags_ex}) ;
 - "legende_instagram" : la description Instagram, plus riche : une 1re ligne accrocheuse (visible avant « plus »),
   puis 2 à 4 phrases courtes qui résument les conseils du reel, une question pour faire commenter, et une
   invitation à enregistrer le post (sauts de ligne autorisés, pas d'emoji) ;
@@ -877,15 +1075,11 @@ Fournis aussi :
   [{{"titre": "4 à 9 mots", "texte": "1 à 2 phrases, 30 mots max"}}] : la 1re = la couverture (promesse forte,
   "texte" = sous-titre court), puis une idée concrète par diapositive (lisible sans le son ni la vidéo) ;
   pas de diapositive d'appel à l'action (ajoutée automatiquement) ;
-- "offre_emploi" : une offre d'emploi fictive courte (2 à 4 phrases : intitulé, missions, exigences clés)
-  plausible pour ce sujet — utilisée dans les démos « adapter le CV » et « lettre de motivation ».
-  Varie le métier/secteur d'un scénario à l'autre ;
-- "theme_style" : 2 à 4 mots décrivant le style visuel de CV le plus adapté (ex : « sobre et corporate »).
-"""
+{demo_fields}"""
     if plan.get("episode"):
         prompt += f"\nC'est l'épisode {plan['episode']} de la série : ne répète pas les conseils d'un épisode précédent.\n"
     if dessin and plan.get("episode"):
-        prompt += ('Fournis aussi "resume_episode" : UNE phrase (25 mots max) qui résume ce qui arrive à Karim dans cet '
+        prompt += (f'Fournis aussi "resume_episode" : UNE phrase (25 mots max) qui résume ce qui arrive à {noms_dessin()[0]} dans cet '
                    "épisode et où il en est à la fin (elle sera rappelée à l'épisode suivant).\n")
     if forced:
         sequence = "\n".join(
@@ -908,9 +1102,8 @@ Recopie à l'identique les textes imposés ; écris uniquement les textes manqua
     prompt += """
 Réponds UNIQUEMENT en JSON valide :
 {"titre": "...", "accroche_ecran": "...", "mots_cles": ["..."], "legende": "...", "hashtags": ["#..."],
- "legende_instagram": "...", "hashtags_instagram": ["#..."], "carrousel": [{"titre": "...", "texte": "..."}], "offre_emploi": "...",
- "theme_style": "...", "scenes": [""" + scene_json + "}\n"
-    return prompt
+ "legende_instagram": "...", "hashtags_instagram": ["#..."], "carrousel": [{"titre": "...", "texte": "..."}], """ + demo_json + """"scenes": [""" + scene_json + "}\n"
+    return neutraliser(prompt) if sans_produit else prompt
 
 
 def clean_card(raw) -> dict | None:
@@ -1206,6 +1399,29 @@ def promesses_problems(scenes: list[dict]) -> list[str]:
     return problems
 
 
+NOMBRE_RE = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def faits_problems(scenes: list[dict], data: dict, sujet: dict) -> list[str]:
+    """
+    Chaine verifiee (sujet a "faits" sources) : un nombre dit ou affiche (date, age, effectif, pourcentage) qui n'est
+    pas dans les faits du sujet est suppose invente. Les petits nombres (10 et moins) servent a compter (« 3 questions »).
+    """
+    if not sujet.get("faits"):
+        return []
+    permis = set(NOMBRE_RE.findall(" ".join(map(str, sujet["faits"])) + " " + str(sujet.get("source") or "")))
+    textes = [str(data.get("accroche_ecran") or ""), str(data.get("titre") or "")]
+    for sc in scenes:
+        textes.append(sc["texte"])
+        if sc.get("carte"):
+            textes.append(f"{sc['carte'].get('surtitre', '')} {carte_texte(sc['carte'])}")
+    inventes = sorted({n for t in textes for n in NOMBRE_RE.findall(t.replace("\u202f", "").replace("\xa0", ""))
+                       if n not in permis and float(n.replace(",", ".")) > 10}, key=lambda n: float(n.replace(",", ".")))
+    if inventes:
+        return [f"nombre(s) absent(s) des FAITS VÉRIFIÉS : {', '.join(inventes)} -- n'utilise que les dates et chiffres des faits fournis"]
+    return []
+
+
 def carte_texte(card: dict) -> str:
     """Tout le texte lisible d'une carte (titre, points, avant / apres, etapes, question...)."""
     morceaux: list[str] = []
@@ -1479,8 +1695,14 @@ def relecture_dessin(client, data: dict, scenes: list[dict]) -> list[str]:
             dessin.append(f"décor {d.get('fond', 'vide')} ; objets : {', '.join(o['type'] for o in d.get('objets', []))}")
             dessin += [f"texte barré / corrigé à l'écran : « {a.get('avant', '')} » devient « {a.get('apres', '')} »"
                        for a in d.get("actions", []) if a.get("action") == "corriger"]
-    prompt = f"""Tu relis le scénario d'un {"mini jeu vidéo rétro" if any("jeu" in s_ for s_ in scenes) else "mini dessin animé"} de 25 secondes (conseil emploi / recrutement, deux personnages,
-{"Martin et Léa" if any("jeu" in s_ for s_ in scenes) else "Karim et Léa"}) AVANT tournage. Tu es un spectateur qui ne connaît QUE ce qui suit, rien d'autre.
+    sujet_court, duo, roles = "conseil emploi / recrutement", "Karim et Léa", "s'il est le recruteur ou le\n   candidat"
+    if any("jeu" in s_ for s_ in scenes):
+        duo = "Martin et Léa"
+    elif faceless():
+        heros, guide, _ = noms_dessin()
+        sujet_court, duo, roles = catalog.chaine()["niche"], f"{heros} et {guide}", "qui il est ou quel rôle il\n   joue"
+    prompt = f"""Tu relis le scénario d'un {"mini jeu vidéo rétro" if any("jeu" in s_ for s_ in scenes) else "mini dessin animé"} de 25 secondes ({sujet_court}, deux personnages,
+{duo}) AVANT tournage. Tu es un spectateur qui ne connaît QUE ce qui suit, rien d'autre.
 
 TITRE affiché seul une seconde : « {data.get('accroche_ecran', '')} »
 RÉPLIQUES, dans l'ordre :
@@ -1489,8 +1711,7 @@ CE QUI EST DESSINÉ : {' | '.join(dessin) or 'rien de précis'}
 
 Travail :
 1. Raconte l'histoire en deux phrases, comme si tu la découvrais (qui est qui, ce qui se passe, la chute).
-2. Cherche tout ce qui ne se comprend pas du premier coup : un personnage dont on ne sait pas s'il est le recruteur ou le
-   candidat, un changement de rôle sans explication, une réplique qui ne répond pas à la précédente, une chute qu'il faut
+2. Cherche tout ce qui ne se comprend pas du premier coup : un personnage dont on ne sait pas {roles}, un changement de rôle sans explication, une réplique qui ne répond pas à la précédente, une chute qu'il faut
    deviner ou qui n'est pas drôle, un nombre dit qui ne correspond pas à ce qui est dessiné, un conseil flou ou faux.
 3. Verdict sévère : "comprehensible" est false si l'un de ces défauts gêne la compréhension d'un spectateur pressé.
 
@@ -1508,7 +1729,7 @@ Réponds en JSON : {{"histoire": "...", "comprehensible": true|false, "problemes
     return []
 
 
-def relecture_coherence(client, data: dict, scenes: list[dict]) -> list[str]:
+def relecture_coherence(client, data: dict, scenes: list[dict], sujet: dict | None = None) -> list[str]:
     """
     Relecture des reels a cartes / captures par un second appel : le reel est-il VRAI et COHERENT ? Promesses tenues
     (teasers, nombre annonce), titre / accroche / legende fideles au contenu, chaque voix collee a son ecran, rien de
@@ -1527,7 +1748,17 @@ def relecture_coherence(client, data: dict, scenes: list[dict]) -> list[str]:
         else:
             ecran = "animation plein cadre (appel à l'action)" if i == len(scenes) else "illustration sous l'accroche"
         lignes.append(f"{i}. VOIX : « {sc['texte']} »\n   ÉCRAN : {ecran}")
-    prompt = f"""Tu relis un reel court (conseil emploi / recrutement pour OpusCV) AVANT tournage. Tu es un spectateur qui ne
+    sujet_court, verite = "conseil emploi / recrutement pour OpusCV", f"""LE PRODUIT RÉEL (seule source de vérité sur OpusCV) :
+{PRODUCT_CONTEXT}"""
+    point4 = "4. Chaque affirmation sur OpusCV est vraie d'après le produit réel (aucune fonction ni chiffre de performance inventé)."
+    if faceless():
+        ch = catalog.chaine()
+        sujet_court = f"chaîne « {ch.get('nom', ch['id'])} » : {ch['niche']}"
+        regles = "".join(f"\n- {r}" for r in ch.get("regles") or [])
+        verite = f"RÈGLES DE LA CHAÎNE :{regles or ' (aucune)'}" + ("\n" + faits_rule(sujet) if sujet and sujet.get("faits") else "")
+        point4 = ("4. Chaque affirmation est vraie : conforme aux FAITS VÉRIFIÉS s'il y en a (rien en plus), sinon à un savoir "
+                  "reconnu ; aucune règle de la chaîne n'est enfreinte.")
+    prompt = f"""Tu relis un reel court ({sujet_court}) AVANT tournage. Tu es un spectateur qui ne
 connaît QUE ce qui suit. Ton rôle : vérifier que le reel est VRAI et COHÉRENT avec ce qu'on voit et entend.
 
 TITRE : « {data.get('titre', '')} »   ACCROCHE À L'ÉCRAN : « {data.get('accroche_ecran', '')} »
@@ -1535,8 +1766,7 @@ LÉGENDE : « {data.get('legende', '')} »
 SCÈNES :
 {chr(10).join(lignes)}
 
-LE PRODUIT RÉEL (seule source de vérité sur OpusCV) :
-{PRODUCT_CONTEXT}
+{verite}
 
 Contrôle sévère, point par point :
 1. PROMESSES TENUES : tout teaser (« reste pour la formule », « la dernière est la plus utile », « tu vas être surpris ») ou
@@ -1544,8 +1774,8 @@ Contrôle sévère, point par point :
 2. Le titre, l'accroche et la légende décrivent bien ce que contient le reel (pas un autre sujet, pas un autre nombre).
 3. Chaque VOIX colle à son ÉCRAN : une carte reprend l'idée dite ; une capture montre la fonctionnalité dont parle la voix ;
    « là, l'outil… » n'est dit que si l'écran le fait voir.
-4. Chaque affirmation sur OpusCV est vraie d'après le produit réel (aucune fonction ni chiffre de performance inventé).
-5. Un chiffre qui sert d'exemple (« 120 % de l'objectif ») est présenté comme un exemple, jamais comme un fait ou un résultat d'OpusCV.
+{point4}
+5. Un chiffre qui sert d'exemple (« 120 % de l'objectif ») est présenté comme un exemple, jamais comme un fait{" ou un résultat d'OpusCV" if not faceless() else ""}.
 
 Réponds en JSON : {{"coherent": true|false, "problemes": ["défaut précis (numéro de scène) et comment le corriger", ...]}}"""
     try:
@@ -1765,10 +1995,12 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
                                     wants_proof(fmt) and not sans_captures and not fmt.get("dessin"),
                                     catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")),
                                     bool(fmt.get("jeu")), bool(fmt.get("educatif")))
+        if scenes and faceless():
+            problems += faits_problems(scenes, data, plan["sujet"])
         if scenes and not problems and (fmt.get("dessin") or fmt.get("jeu")):
             problems = relecture_dessin(client, data, scenes)
         elif scenes and not problems and not forced:
-            problems = relecture_coherence(client, data, scenes)
+            problems = relecture_coherence(client, data, scenes, plan["sujet"])
         if scenes:
             # Garde la tentative la plus propre (pas forcement la derniere) si aucune n'est parfaite.
             if best_problems is None or len(problems) <= len(best_problems):
@@ -1850,7 +2082,7 @@ def instagram_fields(data: dict) -> dict:
 
 
 def plan_fields(plan: dict) -> dict:
-    return {"format": plan["format"]["id"], "categorie": plan["format"]["categorie"],
+    return {"chaine": catalog.chaine_id(), "format": plan["format"]["id"], "categorie": plan["format"]["categorie"],
             "sujet": plan["sujet"]["id"], "famille": plan["sujet"].get("famille"),
             "hook": plan["hook"]["id"], "theme": plan["theme"]["id"],
             "episode": plan["episode"], "voix": plan["voix"]["id"],
@@ -1859,6 +2091,7 @@ def plan_fields(plan: dict) -> dict:
             "cta_anim": plan.get("cta_anim") or {},
             "ambiance": plan.get("ambiance"),
             **({"trame": plan["trame"]["id"]} if plan.get("trame") else {}),
+            **({"source": plan["sujet"]["source"]} if plan["sujet"].get("source") else {}),
             **({"serie_titre": (catalog.dessins().get("serie") or {}).get("titre")}
                if plan["format"].get("dessin") and plan.get("episode") else {}),
             **({"sans_captures": True} if plan.get("sans_captures") else {}),
@@ -2002,7 +2235,7 @@ def main():
             return
 
     charger_vitesse(out_path.parent / "vitesse_voix.json")
-    history_path = out_path.parent / "content_history.json"
+    history_path = catalog.history_path(out_path.parent)   # historique propre a la chaine active
     history = catalog.load_history(history_path)
     rng = random.Random(args.seed)
     recent_hooks = catalog.recent_accroches(history)
@@ -2012,7 +2245,8 @@ def main():
     if args.scenario:
         for i, item in enumerate(load_scenario_file(Path(args.scenario), args.duration, args.sans_captures), 1):
             plan = plan_reels(None, 1, history, rng,
-                              item.get("format") or args.format or ("liste_erreurs" if args.sans_captures else "demo_produit"),
+                              item.get("format") or args.format or (catalog.formats()[0]["id"] if faceless() else
+                                                                    "liste_erreurs" if args.sans_captures else "demo_produit"),
                               item.get("theme") or args.theme, item.get("hook") or args.hook, item["angle"],
                               item.get("registre") or args.registre, args.sans_captures)[0]
             if all(s["texte"] for s in item["scenes"]):

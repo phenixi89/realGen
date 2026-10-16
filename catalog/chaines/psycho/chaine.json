@@ -1,0 +1,92 @@
+{
+  "_doc": "Chaine faceless de psychologie du quotidien. Nom, marque, watermark, pied et prenoms des personnages : PROVISOIRES, a changer ici seulement. Champs : voir catalog/chaines/opuscv/chaine.json et README « Chaînes ». personnages : memes dessins que l'univers OpusCV (karim, lea, recruteur), autre identite (nom, description, voix) ; caracteres : le caractere de chacun, donne a l'IA ; exemple_accroche / exemple_replique : exemples de question (au « tu » / au « je ») montres a l'IA a la place de ceux d'OpusCV.",
+  "nom": "Dans ta tête",
+  "marque": "Dans ta tête",
+  "marque_accent": 0,
+  "watermark": "@danstatete",
+  "pied": "DANS TA TÊTE · LA PSYCHO DU QUOTIDIEN",
+  "produit": null,
+  "niche": "la psychologie du quotidien : émotions, relations, habitudes et pièges de la pensée",
+  "public": "des adultes curieux de comprendre leurs réactions et celles des autres",
+  "expertise": "vulgarisateur en psychologie, qui explique des notions reconnues avec des mots simples",
+  "promesse": "le spectateur comprend un mécanisme qu'il vit tous les jours et repart avec un réflexe simple à essayer",
+  "appel_action": "invite à s'abonner pour la suite et à envoyer la vidéo à quelqu'un qui se reconnaîtra",
+  "regles": [
+    "Uniquement des notions reconnues en psychologie (biais, effets, émotions connus) : jamais d'« étude de Harvard », de chiffre ni de statistique inventés.",
+    "Le nom d'une notion se dit simplement et s'explique tout de suite (« l'effet projecteur : on croit que tout le monde nous regarde »).",
+    "Jamais de diagnostic ni d'étiquette sur une personne (« toxique », « pervers narcissique », « bipolaire ») : on décrit un comportement, pas quelqu'un.",
+    "Pas de conseil médical : si une souffrance dure ou fait peur, on dit simplement d'en parler à un professionnel.",
+    "Bienveillant : on ne se moque jamais de celui qui vit le problème ; on rit de la situation."
+  ],
+  "verification": false,
+  "hashtags_exemple": "#psychologie, #psycho, #developpementpersonnel",
+  "exemple_accroche": "Pourquoi tu dis toujours oui ?",
+  "exemple_replique": "Pourquoi je dis toujours oui ?",
+  "caracteres": "Théo est maladroit et de bonne foi, Jade est pince-sans-rire et attentive, le chef est pressé mais pas méchant",
+  "personnages": {
+    "karim": {
+      "nom": "Théo",
+      "description": "Théo : cheveux courts avec un épi, chemise, cravate bleue, pantalon. Il vit les petits pièges du quotidien."
+    },
+    "lea": {
+      "nom": "Jade",
+      "description": "Jade : queue de cheval (chouchou corail), veste cintrée, jupe. L'amie qui comprend ce qui se passe dans la tête des gens."
+    },
+    "recruteur": {
+      "nom": "le chef",
+      "role": "secondaire",
+      "description": "Le chef de Théo (ou un voisin, un inconnu, selon l'histoire) : crâne dégarni, cheveux gris sur les côtés, lunettes rondes, moustache, veste et cravate verte."
+    }
+  },
+  "serie": {
+    "titre": "Dans la tête de Théo",
+    "consigne": "Théo vit, épisode après épisode, les petits pièges psychologiques du quotidien (au travail, en couple, entre amis, avec lui-même) ; Jade, son amie, met un nom simple sur ce qui se passe et lui donne une clé à essayer. Chaque épisode se comprend seul ; Théo progresse un peu à chaque fois, le chat reste imperturbable. Le reel est une vraie notion de psychologie portée par une histoire, jamais un cours."
+  },
+  "trames": [
+    {
+      "id": "avant_apres",
+      "nom": "Avant / après",
+      "consigne": "Théo réagit comme d'habitude et ça rate (on le voit), Jade met un nom sur ce qui se passe, il refait autrement et ça marche (on le voit aussi)."
+    },
+    {
+      "id": "dans_sa_tete",
+      "nom": "Ce qu'il pense vraiment",
+      "consigne": "On voit (nuage de pensée, « imaginer ») ce que Théo se raconte dans sa tête, en décalage avec la réalité ; Jade le ramène au réel avec la clé."
+    },
+    {
+      "id": "quiproquo",
+      "nom": "Quiproquo",
+      "consigne": "Théo interprète une situation de travers (un message court, un regard) et réagit trop fort ; Jade montre l'autre lecture possible."
+    },
+    {
+      "id": "le_chat_juge",
+      "nom": "Le chat juge",
+      "consigne": "Le chat est le juge silencieux : il réagit à chaque essai de Théo (dort, s'en va, miaule) jusqu'à la bonne réaction, qu'il approuve enfin. Running gag."
+    },
+    {
+      "id": "deux_futurs",
+      "nom": "Deux lendemains",
+      "consigne": "Deux versions du même moment : la réaction habituelle de Théo et sa suite, puis la réaction avec la clé et une suite très différente (split-screen possible)."
+    },
+    {
+      "id": "faux_ami",
+      "nom": "Le faux conseil",
+      "consigne": "Une idée reçue de psychologie (« il suffit de penser positif ») envoie Théo dans le mur ; Jade démonte l'idée avec un exemple concret, sans faire la leçon."
+    },
+    {
+      "id": "miroir",
+      "nom": "Le miroir",
+      "consigne": "Théo se moque d'un comportement chez quelqu'un d'autre, puis se surprend à faire exactement la même chose ; Jade nomme le mécanisme."
+    },
+    {
+      "id": "flashback",
+      "nom": "Tout a commencé quand…",
+      "consigne": "On ouvre sur la conséquence (une dispute, une soirée gâchée), puis « Tout a commencé quand… » : un retour en arrière montre le moment où le piège s'est refermé, et la clé qui l'aurait évité."
+    },
+    {
+      "id": "compte_a_rebours",
+      "nom": "Dix minutes avant",
+      "consigne": "Un moment stressant arrive dans dix minutes (une prise de parole, un rendez-vous) : Jade aide Théo en direct avec une seule clé simple, la tension monte (horloge, téléphone qui vibre)."
+    }
+  ]
+}

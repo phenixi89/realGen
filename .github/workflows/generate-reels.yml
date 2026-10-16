@@ -5,6 +5,15 @@ on:
     - cron: "0 8 * * 1" # chaque lundi 08:00 UTC
   workflow_dispatch:
     inputs:
+      chaine:
+        description: "Chaine (catalog/chaines/) : opuscv, ou une chaine faceless (sans capture de l'app)"
+        type: choice
+        options:
+          - opuscv
+          - examen_civique
+          - psycho
+        required: false
+        default: opuscv
       n:
         description: "Nombre de reels a generer"
         required: false
@@ -78,14 +87,16 @@ on:
         required: false
         default: ""
       plateformes:
-        description: "Declinaisons : tiktok (legende), instagram (legende + couverture), carrousel (carrousel 4:5)"
+        description: "Declinaisons : tiktok (legende), instagram (legende + couverture), carrousel (carrousel 4:5), youtube (titre + description Shorts)"
         type: choice
         options:
           - all
           - tiktok
           - tiktok,instagram
+          - tiktok,instagram,youtube
           - instagram,carrousel
           - carrousel
+          - youtube
         required: false
         default: all
       from_step:
@@ -154,7 +165,7 @@ jobs:
       # qu'il se reveille, au lieu d'attendre le cold-start plus tard,
       # bloquant en plein milieu du run, a l'etape 3 (Playwright).
       - name: Warm-up du service de demo (arriere-plan)
-        if: ${{ github.event.inputs.capture_mode != 'aucune' }}
+        if: ${{ github.event.inputs.capture_mode != 'aucune' && (github.event.inputs.chaine || 'opuscv') == 'opuscv' }}
         run: |
           # `disown` est un builtin bash absent du shell minimal de l'image
           # (`sh`/dash) et de toute facon inutile ici : un `&` simple suffit
@@ -207,6 +218,7 @@ jobs:
           [ -n "$INPUT_HOOK" ] && extra+=(--hook "$INPUT_HOOK")
           [ -n "$INPUT_PLAN" ] && extra+=(--plan "$INPUT_PLAN")
           python scripts/run_pipeline.py \
+            --chaine "${{ github.event.inputs.chaine || 'opuscv' }}" \
             --n "${{ github.event.inputs.n || '3' }}" \
             --duration "${{ github.event.inputs.duration || '25' }}" \
             --saas-url "${{ vars.SAAS_URL }}" \

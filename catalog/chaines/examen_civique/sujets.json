@@ -1,0 +1,353 @@
+{
+  "_doc": "Sujets de la chaine examen_civique (chaine verifiee) : chaque sujet porte 'faits' (phrases exactes, SEULE base autorisee pour l'IA) et 'source' (texte officiel, affichee dans la legende). tags / famille : valeurs, institutions, histoire, droits, vie_quotidienne. Ajouter un sujet = recopier les faits depuis la source officielle, jamais de memoire. Les modalites de l'examen (nombre de questions, seuil...) ne figurent volontairement pas ici tant qu'elles n'ont pas ete recopiees d'une source officielle.",
+  "sujets": [
+    {
+      "id": "devise",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs"
+      ],
+      "famille": "valeurs",
+      "texte": "la devise de la République : Liberté, Égalité, Fraternité",
+      "faits": [
+        "La devise de la République française est « Liberté, Égalité, Fraternité ».",
+        "Elle est écrite dans l'article 2 de la Constitution de 1958.",
+        "Le principe de la République est : « gouvernement du peuple, par le peuple et pour le peuple »."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), article 2"
+    },
+    {
+      "id": "symboles_article2",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs"
+      ],
+      "famille": "valeurs",
+      "texte": "le drapeau, l'hymne et la langue de la République",
+      "faits": [
+        "L'emblème national est le drapeau tricolore : bleu, blanc, rouge.",
+        "L'hymne national est « La Marseillaise ».",
+        "La langue de la République est le français.",
+        "Ces trois symboles sont écrits dans l'article 2 de la Constitution."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), article 2"
+    },
+    {
+      "id": "laicite",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs"
+      ],
+      "famille": "valeurs",
+      "texte": "la laïcité : ce qu'elle veut dire, ce qu'elle protège",
+      "faits": [
+        "L'article 1 de la Constitution dit : la France est une République indivisible, laïque, démocratique et sociale.",
+        "La République respecte toutes les croyances.",
+        "La loi du 9 décembre 1905 sépare les Églises et l'État.",
+        "La loi de 1905 assure la liberté de conscience : chacun est libre de croire ou de ne pas croire."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), article 1 ; loi du 9 décembre 1905 concernant la séparation des Églises et de l'État"
+    },
+    {
+      "id": "egalite_loi",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs"
+      ],
+      "famille": "valeurs",
+      "texte": "l'égalité devant la loi, sans distinction d'origine ni de religion",
+      "faits": [
+        "La République assure l'égalité devant la loi de tous les citoyens.",
+        "Cette égalité vaut sans distinction d'origine, de race ou de religion.",
+        "C'est écrit dans l'article 1 de la Constitution de 1958."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), article 1"
+    },
+    {
+      "id": "fete_nationale",
+      "categorie": "conseil",
+      "tags": [
+        "histoire"
+      ],
+      "famille": "histoire",
+      "texte": "le 14 juillet, fête nationale : ce qu'il rappelle",
+      "faits": [
+        "Le 14 juillet est la fête nationale française.",
+        "La loi du 6 juillet 1880 en a fait la fête nationale.",
+        "Il rappelle la prise de la Bastille, le 14 juillet 1789.",
+        "Il rappelle aussi la fête de la Fédération, le 14 juillet 1790."
+      ],
+      "source": "loi du 6 juillet 1880 (legifrance.gouv.fr) ; elysee.fr, les symboles de la République"
+    },
+    {
+      "id": "marianne",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs"
+      ],
+      "famille": "valeurs",
+      "texte": "Marianne, figure de la République",
+      "faits": [
+        "Marianne est une figure qui représente la République française.",
+        "Son buste se trouve dans les mairies.",
+        "Son visage figure aussi sur les timbres et sur le logo de l'État."
+      ],
+      "source": "elysee.fr, les symboles de la République"
+    },
+    {
+      "id": "ddhc",
+      "categorie": "conseil",
+      "tags": [
+        "droits"
+      ],
+      "famille": "droits",
+      "texte": "la Déclaration des droits de l'homme et du citoyen de 1789",
+      "faits": [
+        "La Déclaration des droits de l'homme et du citoyen date du 26 août 1789.",
+        "Son article 1 dit : « Les hommes naissent et demeurent libres et égaux en droits. »",
+        "Le préambule de la Constitution de 1958 y fait référence : elle fait partie de nos droits fondamentaux."
+      ],
+      "source": "Déclaration des droits de l'homme et du citoyen de 1789 ; préambule de la Constitution de 1958 (legifrance.gouv.fr)"
+    },
+    {
+      "id": "president",
+      "categorie": "conseil",
+      "tags": [
+        "institutions"
+      ],
+      "famille": "institutions",
+      "texte": "le président de la République : comment il est élu",
+      "faits": [
+        "Le président de la République est élu pour cinq ans.",
+        "Il est élu au suffrage universel direct : ce sont les électeurs qui votent pour lui.",
+        "Nul ne peut exercer plus de deux mandats consécutifs.",
+        "Il nomme le Premier ministre."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), articles 6 et 8"
+    },
+    {
+      "id": "parlement",
+      "categorie": "conseil",
+      "tags": [
+        "institutions"
+      ],
+      "famille": "institutions",
+      "texte": "le Parlement : l'Assemblée nationale et le Sénat",
+      "faits": [
+        "Le Parlement comprend l'Assemblée nationale et le Sénat.",
+        "Le Parlement vote la loi et contrôle l'action du Gouvernement.",
+        "Les députés sont au nombre de 577 au plus ; ils sont élus au suffrage direct.",
+        "Les sénateurs sont au nombre de 348 au plus."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), article 24"
+    },
+    {
+      "id": "gouvernement",
+      "categorie": "conseil",
+      "tags": [
+        "institutions"
+      ],
+      "famille": "institutions",
+      "texte": "le Gouvernement et le Premier ministre",
+      "faits": [
+        "Le président de la République nomme le Premier ministre.",
+        "Le Gouvernement détermine et conduit la politique de la Nation.",
+        "Le Premier ministre dirige l'action du Gouvernement."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), articles 8, 20 et 21"
+    },
+    {
+      "id": "constitution",
+      "categorie": "conseil",
+      "tags": [
+        "institutions"
+      ],
+      "famille": "institutions",
+      "texte": "la Constitution de la Ve République",
+      "faits": [
+        "La Constitution actuelle date du 4 octobre 1958.",
+        "C'est la Constitution de la Ve République.",
+        "Elle fixe l'organisation des pouvoirs et les grands principes de la République."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr)"
+    },
+    {
+      "id": "droit_de_vote",
+      "categorie": "conseil",
+      "tags": [
+        "droits"
+      ],
+      "famille": "droits",
+      "texte": "qui peut voter aux élections en France",
+      "faits": [
+        "Sont électeurs les Français majeurs des deux sexes qui ont leurs droits civils et politiques.",
+        "La majorité est fixée à 18 ans depuis la loi du 5 juillet 1974.",
+        "Le vote est secret.",
+        "Il faut être inscrit sur les listes électorales pour voter."
+      ],
+      "source": "Constitution du 4 octobre 1958 (legifrance.gouv.fr), article 3 ; loi du 5 juillet 1974 (legifrance.gouv.fr)"
+    },
+    {
+      "id": "vote_femmes",
+      "categorie": "conseil",
+      "tags": [
+        "histoire"
+      ],
+      "famille": "histoire",
+      "texte": "le droit de vote des femmes",
+      "faits": [
+        "En France, les femmes ont obtenu le droit de vote par l'ordonnance du 21 avril 1944.",
+        "Elles ont voté pour la première fois en 1945.",
+        "Le préambule de la Constitution de 1946 dit : la loi garantit à la femme des droits égaux à ceux de l'homme."
+      ],
+      "source": "ordonnance du 21 avril 1944 ; préambule de la Constitution de 1946 (legifrance.gouv.fr)"
+    },
+    {
+      "id": "egalite_femmes_hommes",
+      "categorie": "conseil",
+      "tags": [
+        "droits"
+      ],
+      "famille": "droits",
+      "texte": "l'égalité entre les femmes et les hommes",
+      "faits": [
+        "La loi garantit à la femme, dans tous les domaines, des droits égaux à ceux de l'homme.",
+        "Ce principe est écrit dans le préambule de la Constitution de 1946.",
+        "Le préambule de 1946 fait partie de nos droits fondamentaux, comme la Déclaration de 1789."
+      ],
+      "source": "préambule de la Constitution de 1946 (legifrance.gouv.fr)"
+    },
+    {
+      "id": "peine_de_mort",
+      "categorie": "conseil",
+      "tags": [
+        "droits"
+      ],
+      "famille": "droits",
+      "texte": "l'abolition de la peine de mort",
+      "faits": [
+        "La peine de mort a été abolie en France par la loi du 9 octobre 1981.",
+        "Depuis 2007, la Constitution dit : « Nul ne peut être condamné à la peine de mort. »"
+      ],
+      "source": "loi du 9 octobre 1981 ; Constitution de 1958, article 66-1 (legifrance.gouv.fr)"
+    },
+    {
+      "id": "ecole",
+      "categorie": "conseil",
+      "tags": [
+        "droits"
+      ],
+      "famille": "droits",
+      "texte": "l'école en France : obligatoire, gratuite et laïque",
+      "faits": [
+        "L'instruction est obligatoire pour tous les enfants de 3 à 16 ans.",
+        "L'âge de 3 ans vient de la loi du 26 juillet 2019.",
+        "L'enseignement public est gratuit et laïque."
+      ],
+      "source": "code de l'éducation, article L131-1 ; loi du 26 juillet 2019 ; préambule de la Constitution de 1946 (legifrance.gouv.fr)"
+    },
+    {
+      "id": "impot",
+      "categorie": "conseil",
+      "tags": [
+        "droits"
+      ],
+      "famille": "droits",
+      "texte": "payer l'impôt : un devoir partagé selon ses moyens",
+      "faits": [
+        "La Déclaration de 1789 dit qu'une contribution commune est indispensable.",
+        "Elle doit être répartie entre tous les citoyens selon leurs moyens.",
+        "C'est l'article 13 de la Déclaration des droits de l'homme et du citoyen."
+      ],
+      "source": "Déclaration des droits de l'homme et du citoyen de 1789, article 13"
+    },
+    {
+      "id": "mariage",
+      "categorie": "conseil",
+      "tags": [
+        "droits"
+      ],
+      "famille": "droits",
+      "texte": "le mariage civil en France",
+      "faits": [
+        "En France, le mariage civil est célébré à la mairie.",
+        "Depuis la loi du 17 mai 2013, le mariage est ouvert aux couples de même sexe."
+      ],
+      "source": "loi du 17 mai 2013 (legifrance.gouv.fr) ; service-public.fr"
+    },
+    {
+      "id": "premiere_republique",
+      "categorie": "conseil",
+      "tags": [
+        "histoire"
+      ],
+      "famille": "histoire",
+      "texte": "la Révolution française et la Première République",
+      "faits": [
+        "La Révolution française commence en 1789.",
+        "La prise de la Bastille a lieu le 14 juillet 1789.",
+        "La Première République est proclamée en septembre 1792."
+      ],
+      "source": "elysee.fr ; vie-publique.fr"
+    },
+    {
+      "id": "abolition_esclavage",
+      "categorie": "conseil",
+      "tags": [
+        "histoire"
+      ],
+      "famille": "histoire",
+      "texte": "l'abolition de l'esclavage",
+      "faits": [
+        "L'esclavage a été définitivement aboli en France par le décret du 27 avril 1848.",
+        "La loi du 21 mai 2001 reconnaît la traite et l'esclavage comme un crime contre l'humanité."
+      ],
+      "source": "décret du 27 avril 1848 ; loi du 21 mai 2001 (legifrance.gouv.fr)"
+    },
+    {
+      "id": "europe",
+      "categorie": "conseil",
+      "tags": [
+        "histoire"
+      ],
+      "famille": "histoire",
+      "texte": "la France, pays fondateur de l'Europe",
+      "faits": [
+        "La France est l'un des six pays fondateurs de la Communauté économique européenne.",
+        "Cette communauté a été créée par le traité de Rome, signé en 1957.",
+        "Les pièces et billets en euros circulent en France depuis le 1er janvier 2002."
+      ],
+      "source": "europa.eu ; vie-publique.fr"
+    },
+    {
+      "id": "numeros_urgence",
+      "categorie": "conseil",
+      "tags": [
+        "vie_quotidienne"
+      ],
+      "famille": "vie_quotidienne",
+      "texte": "les numéros d'urgence à connaître",
+      "faits": [
+        "Le 15 appelle le SAMU, pour une urgence médicale.",
+        "Le 17 appelle la police ou la gendarmerie.",
+        "Le 18 appelle les pompiers.",
+        "Le 112 est le numéro d'urgence européen, valable dans toute l'Union européenne."
+      ],
+      "source": "service-public.fr, numéros d'urgence"
+    },
+    {
+      "id": "securite_sociale",
+      "categorie": "conseil",
+      "tags": [
+        "vie_quotidienne"
+      ],
+      "famille": "vie_quotidienne",
+      "texte": "la Sécurité sociale",
+      "faits": [
+        "La Sécurité sociale a été créée en 1945.",
+        "Elle protège contre les risques de la vie : maladie, accident du travail, vieillesse, famille."
+      ],
+      "source": "ordonnances d'octobre 1945 ; securite-sociale.fr"
+    }
+  ]
+}

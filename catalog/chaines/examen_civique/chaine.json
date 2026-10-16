@@ -1,0 +1,25 @@
+{
+  "_doc": "Chaine faceless de revision de l'examen civique (titre de sejour, carte de resident, naturalisation). Nom, marque, watermark et pied : PROVISOIRES, a changer ici seulement. Champs : voir catalog/chaines/opuscv/chaine.json et README « Chaînes ». Faceless : niche, public, expertise, promesse, appel_action et regles sont donnes a l'IA ; verification : true -> chaque sujet porte des 'faits' et une 'source', seule base autorisee (un nombre absent des faits fait recommencer l'IA) ; mention : ligne ajoutee a toutes les legendes ; pied : bas des planches pop art.",
+  "nom": "Objectif Civique",
+  "marque": "Objectif Civique",
+  "marque_accent": 7,
+  "watermark": "@objectifcivique",
+  "pied": "OBJECTIF CIVIQUE · NON OFFICIEL",
+  "produit": null,
+  "niche": "la préparation de l'examen civique (titre de séjour, carte de résident, naturalisation) : valeurs, symboles, institutions, histoire, droits et devoirs en France",
+  "public": "des personnes étrangères qui préparent l'examen civique pour leur titre de séjour ou leur naturalisation, dont le français n'est pas toujours la langue maternelle",
+  "expertise": "formateur en éducation civique, qui explique la France avec des mots simples et exacts",
+  "promesse": "le spectateur révise une notion de l'examen, trouve la bonne réponse et comprend pourquoi, en moins d'une minute",
+  "appel_action": "invite à s'abonner pour réviser chaque jour et à écrire sa réponse en commentaire",
+  "regles": [
+    "Français très simple (niveau A2-B1) : phrases courtes sujet-verbe-complément, un mot difficile est expliqué tout de suite.",
+    "Exactitude absolue : rien d'autre que les FAITS VÉRIFIÉS du sujet ; jamais de date, de chiffre ou de règle en plus.",
+    "Ce sont des questions de RÉVISION : ne présente jamais une question comme « la question officielle de l'examen », et ne cite aucun barème ni aucune règle de l'examen.",
+    "Neutre et respectueux : aucune opinion politique, aucun jugement sur l'immigration, une religion ou un pays d'origine.",
+    "Jamais de promesse de réussite (« examen garanti ») ni de conseil sur un dossier personnel : pour son dossier, on renvoie aux sites officiels.",
+    "La chaîne n'est pas officielle : jamais « nous, l'administration », jamais un ministère présenté comme l'auteur."
+  ],
+  "verification": true,
+  "mention": "Chaîne non officielle, pour réviser. Pour ton dossier, vérifie toujours sur service-public.fr.",
+  "hashtags_exemple": "#examencivique, #naturalisation, #titredesejour"
+}

@@ -1,0 +1,85 @@
+{
+  "_doc": "Formats de la chaine psycho : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Sans capture : dessin anime (serie de la chaine), mini-cours (themes carnet_cours / pop_art), idee recue vs realite.",
+  "formats": [
+    {
+      "id": "dessin_anime",
+      "nom": "Dessin animé : dans la tête de Théo",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "autorisees",
+      "dessin": true,
+      "registres": [
+        "humour",
+        "serieux"
+      ],
+      "sujets": [
+        "emotions",
+        "relations",
+        "pensee",
+        "habitudes",
+        "travail"
+      ],
+      "structure": "Mini-série dessinée : Jade et Théo (personnages au trait) vivent une VRAIE situation du quotidien en 1 à 4 scènes dessinées, une par lieu ou moment (café, salon, métro, bureau, visio...). Le reel est un mini-scénario en 3 actes : (1) l'accroche, dite par un personnage, pose la situation et le problème ; (2) Théo réagit comme tout le monde, ça coince, Jade met un nom simple sur le mécanisme et donne UNE clé concrète (une phrase à se dire ou à dire) ; (3) Théo l'essaie et ça marche, puis une chute-réaction. Le sujet est une notion de psychologie reconnue, jamais un produit. Épisode d'une série : « Dans la tête de Théo » ; l'histoire suit la trame imposée.",
+      "ton": "dialogue vivant et naturel entre deux amis, débit assez vif, les répliques s'enchaînent sans temps mort, une très courte pause seulement avant la chute",
+      "serie": true,
+      "ambiances": [
+        "jazz_cafe",
+        "bossa_douce",
+        "ukulele_bonne_humeur",
+        "boite_a_musique",
+        "cinema_doux",
+        "ambient_matin",
+        "acoustique",
+        "piano_minimal",
+        "lofi_chill",
+        "comique_sautillant"
+      ],
+      "ton_humour": "pince-sans-rire et complice, avec un sourire dans la voix, débit vif et naturel, répliques enchaînées sans pause entre les personnages, une très courte pause seulement avant la chute"
+    },
+    {
+      "id": "cours_eclair",
+      "nom": "Mini-cours éclair",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "quiz": true,
+      "educatif": true,
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "emotions",
+        "relations",
+        "pensee",
+        "habitudes",
+        "travail"
+      ],
+      "themes": [
+        "carnet_cours",
+        "pop_art"
+      ],
+      "structure": "Mini-cours de psychologie de 30 à 35 secondes, une seule notion. Scène 1 (accroche, sans carte) : la question ou la situation que tout le monde vit. Puis 3 LEÇONS courtes, chacune une scène-carte d'UNE phrase de 10 mots au plus (mots simples) : ce qui se passe, pourquoi le cerveau fait ça, et quoi faire ; varie les cartes (texte, comparaison avant/après, schéma, liste ; un quiz possible à la place d'une leçon, sa réponse donnée par la voix). Avant-dernière scène (carte impact) : la phrase à retenir, en 4 à 9 mots. Dernière scène : CTA. Les leçons sont données d'un trait, sans suspense.",
+      "ton": "pédagogue, calme et complice, comme un ami qui s'y connaît ; débit posé, courtes pauses entre les leçons"
+    },
+    {
+      "id": "mythe_realite",
+      "nom": "Idée reçue vs réalité",
+      "categorie": "conseil",
+      "poids": 1,
+      "cartes": "majoritaires",
+      "registres": [
+        "serieux",
+        "humour"
+      ],
+      "sujets": [
+        "emotions",
+        "relations",
+        "pensee",
+        "habitudes",
+        "travail"
+      ],
+      "structure": "Accroche. Puis 2 paires de scènes-cartes : une carte style 'mythe' (surtitre 'Idée reçue', titre = l'idée fausse et répandue) suivie d'une carte style 'realite' (surtitre 'Réalité', titre = ce qu'on sait vraiment, texte = le réflexe à essayer). Dernière scène : CTA.",
+      "ton": "complice puis affirmé sur la réalité, débit posé et naturel, avec de courtes pauses entre les phrases"
+    }
+  ]
+}

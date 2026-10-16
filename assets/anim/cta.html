@@ -3,7 +3,7 @@
   Scene d'appel a l'action (mode scene) : remplace les captures d'une scene
   par un plan anime plein cadre. Fond = derniere capture de la scene (?bg=),
   floutee et assombrie, en lent zoom continu pour ne jamais figer l'image.
-  Parametres : bg, brand, title, sub, button.
+  Parametres : bg, brand (nom de la chaine, defaut OpusCV), accent (lettres finales en degrade, defaut 2), title, sub, button.
 -->
 <html lang="fr"><head><meta charset="utf-8">
 <style>
@@ -41,9 +41,12 @@
     bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; });
   }
   const brand = param("brand", "OpusCV");
-  // "Opus" + "CV" en degrade : met en valeur la fin du nom de marque.
-  document.getElementById("brand").innerHTML = brand.split("").map((c) => `<b>${c}</b>`).join("");
-  document.querySelectorAll("#brand b").forEach((b, i) => { if (i >= brand.length - 2) b.innerHTML = `<i>${b.textContent}</i>`; });
+  // "Opus" + "CV" en degrade : met en valeur la fin du nom de marque (accent = nombre de lettres finales, 0 = aucune).
+  const accent = num("accent", 2);
+  // Nom long (chaine « Objectif Civique ») : la taille baisse pour tenir sur une ligne (OpusCV garde 150 px).
+  document.getElementById("brand").style.fontSize = Math.min(150, Math.floor(1000 / (brand.length * 0.6))) + "px";
+  document.getElementById("brand").innerHTML = brand.split("").map((c) => `<b>${c === " " ? "&nbsp;" : c}</b>`).join("");
+  document.querySelectorAll("#brand b").forEach((b, i) => { if (accent > 0 && i >= brand.length - accent) b.innerHTML = `<i>${b.innerHTML}</i>`; });
   // frTypo : espace insecable avant ? ! : -- la ponctuation reste dans le mot (span) qui la precede.
   const title = frTypo(param("title", "Ton CV prêt à envoyer"));
   document.getElementById("title").innerHTML = title.split(" ").map(() => "<span></span>").join("");

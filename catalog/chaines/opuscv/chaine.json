@@ -1,0 +1,99 @@
+{
+  "_doc": "Identite de la chaine (voir README « Chaînes »). nom : nom de la chaine (provisoire, modifiable a tout moment). marque : nom affiche sur l'ecran d'appel a l'action, la couverture et le carrousel ; marque_accent : nombre de lettres finales mises en couleur sur l'ecran d'appel a l'action. watermark : texte incruste en haut a gauche de chaque reel. produit : nom du produit montre (captures de l'app, PRODUCT_CONTEXT de 1_generate_script.py) ou null pour une chaine faceless (sans produit, --capture-mode aucune impose). serie / trames / personnages : dessin anime de la chaine (voir catalog/dessins.json).",
+  "nom": "OpusCV",
+  "marque": "OpusCV",
+  "marque_accent": 2,
+  "watermark": "opuscv.fr",
+  "produit": "OpusCV",
+  "serie": {
+    "titre": "Karim cherche un job",
+    "consigne": "Karim cherche un emploi, épisode après épisode ; Léa est son amie qui s'y connaît ; le recruteur apparaît quand l'histoire passe chez un employeur. Karim garde ce qu'il a vécu (on peut y faire un clin d'œil), mais chaque épisode se comprend seul. Le reel est un vrai conseil emploi/recrutement porté par une histoire : jamais un spot pour un produit. Fil rouge possible : l'objectif du moment de Karim (un entretien, une offre à choisir, une période d'essai…), qui progresse d'épisode en épisode : Karim apprend, ses réflexes s'améliorent, le chat reste imperturbable."
+  },
+  "trames": [
+    {
+      "id": "avant_apres",
+      "nom": "Avant / après",
+      "consigne": "Karim fait l'erreur et ça rate (on le voit), Léa lui montre comment faire, il refait et ça marche (on le voit aussi)."
+    },
+    {
+      "id": "cote_recruteur",
+      "nom": "Ce que pense le recruteur",
+      "consigne": "Le recruteur lit le CV ou écoute Karim : on entend (ou on voit, nuage de pensée) ce qu'il pense vraiment, en décalage avec ce que Karim croit faire passer ; puis la correction."
+    },
+    {
+      "id": "quiproquo",
+      "nom": "Quiproquo",
+      "consigne": "Karim comprend un conseil de travers et l'applique à la lettre, avec un résultat absurde ; Léa recadre avec la vraie méthode."
+    },
+    {
+      "id": "erreur_en_direct",
+      "nom": "L'erreur en direct",
+      "consigne": "On assiste à l'erreur pendant qu'elle se fait (Karim écrit, envoie, répond…) ; quelqu'un l'arrête juste avant, ou trop tard, et montre la bonne version."
+    },
+    {
+      "id": "vrai_ou_faux",
+      "nom": "Vrai ou faux",
+      "consigne": "Léa teste Karim : elle énonce une idée reçue, il répond sûr de lui, elle le piège et donne la vraie réponse avec un exemple concret."
+    },
+    {
+      "id": "le_chat_juge",
+      "nom": "Le chat juge",
+      "consigne": "Le chat est le juge silencieux : il réagit à chaque essai de Karim (dort, s'en va, miaule) jusqu'à la bonne version, qu'il approuve enfin. Running gag."
+    },
+    {
+      "id": "ca_aurait_pu",
+      "nom": "Ça aurait pu être pire",
+      "consigne": "Karim imagine (nuage de pensée) le pire scénario de sa candidature ; Léa le ramène au réel avec la petite chose concrète qui change tout."
+    },
+    {
+      "id": "regle_nommee",
+      "nom": "La phrase à retenir",
+      "consigne": "Karim se plante à cause d'un réflexe courant ; Léa lui donne UNE consigne simple : la phrase exacte à dire ou à écrire. On la voit appliquée avec succès, et la chute la répète en une formule courte que le spectateur peut redire."
+    },
+    {
+      "id": "inversion_roles",
+      "nom": "À la place du recruteur",
+      "consigne": "Les rôles s'inversent : Karim joue le recruteur et reçoit Léa, qui commet toutes les erreurs de candidat qu'il commet lui-même. Il s'agace, comprend ce que ça fait de l'autre côté, et la correction vient de lui."
+    },
+    {
+      "id": "compte_a_rebours",
+      "nom": "Dix minutes avant",
+      "consigne": "Entretien ou appel dans dix minutes : urgence, salle d'attente ou couloir, Léa coache Karim en direct. La tension monte (horloge, téléphone qui vibre), un seul conseil tient en une phrase, et la chute arrive quand la porte s'ouvre."
+    },
+    {
+      "id": "deux_futurs",
+      "nom": "Deux lendemains",
+      "consigne": "On joue deux versions du même moment : la version habituelle de Karim, avec sa conséquence le lendemain, puis la version avec le conseil, avec un lendemain très différent. Le contraste se montre en split-screen (objet diptyque, action « comparer ») ou en deux scènes de même décor (calendrier, notification, tampon)."
+    },
+    {
+      "id": "faux_ami",
+      "nom": "Le faux conseil",
+      "consigne": "Un conseil populaire (« un ami m'a dit », « sur un forum… ») envoie Karim droit dans le mur. Léa démonte l'idée reçue avec un exemple concret et la vraie pratique, sans faire la leçon."
+    },
+    {
+      "id": "enquete",
+      "nom": "L'enquête",
+      "consigne": "Karim et Léa enquêtent comme dans un polar : pourquoi aucune réponse ? Indices, suspects (l'objet du mail, le jour d'envoi, la relance), puis le vrai coupable est démasqué. Ton de film noir, tout au second degré."
+    },
+    {
+      "id": "flashback",
+      "nom": "Tout a commencé quand…",
+      "consigne": "On ouvre sur le résultat (le poste décroché, ou le refus qui pique), puis « Tout a commencé quand… » : un retour en arrière en une ou deux scènes montre le moment qui a tout changé, et la chute boucle sur la première image."
+    },
+    {
+      "id": "repetition_generale",
+      "nom": "La répétition générale",
+      "consigne": "Léa joue le recruteur (moustache, bureau improvisé) et fait répéter Karim sur la question qui fâche. Trois essais de plus en plus meilleurs, avec un running gag, jusqu'à la bonne réponse, dite à voix haute, qu'on peut copier."
+    },
+    {
+      "id": "coup_de_fil",
+      "nom": "Le coup de fil surprise",
+      "consigne": "Le téléphone sonne au pire moment (métro, courses, canapé) : c'est un recruteur. On n'entend QUE Karim et Léa (la voix du recruteur au bout du fil n'est jamais entendue) : Karim répète ou reformule à voix haute ce qu'il entend (« Demain, quatorze heures ? »), Léa lui souffle les bons réflexes (se présenter, demander un créneau, noter). Tension comique, puis réussite."
+    },
+    {
+      "id": "confidence_recruteur",
+      "nom": "Ce que je ne dis jamais",
+      "consigne": "Dans l'ascenseur ou la salle d'attente, le recruteur lâche à Karim, off the record, ce qu'il ne dit jamais en entretien. Seuls Karim et le recruteur parlent (Léa, si elle est là, ne dit rien : elle réagit par ses gestes) ; l'appel à l'action est dit par Karim. Révélation franche, un peu gênante, qui change la façon de se préparer."
+    }
+  ]
+}

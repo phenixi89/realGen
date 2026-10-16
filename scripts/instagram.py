@@ -31,10 +31,11 @@ from pathlib import Path
 import catalog
 from render_js_anim import render_stills
 
-PLATEFORMES = ("tiktok", "instagram", "carrousel")
+# youtube : titre + description YouTube Shorts (.youtube.txt), ecrits par run_pipeline.py (rien a rendre ici).
+PLATEFORMES = ("tiktok", "instagram", "carrousel", "youtube")
 CARROUSEL_SIZE = (1080, 1350)
 CARROUSEL_MAX = 9  # diapositives ecrites + la finale
-BRAND = "OpusCV"
+BRAND = catalog.marque()   # nom de la chaine active (chaine.json "marque")
 
 
 def parse_plateformes(value: str) -> list[str]:
@@ -63,7 +64,14 @@ def instagram_caption(script: dict) -> str:
             legende = f"{legende}\n\n{cta}".strip()
     tags = script.get("hashtags_instagram") or script.get("hashtags") or []
     tags = tags[: cfg.get("hashtags_max", 5)]
+    legende = "\n\n".join(x for x in [legende, mentions(script)] if x)
     return (legende + ("\n\n" + " ".join(tags) if tags else "")).strip() + "\n"
+
+
+def mentions(script: dict) -> str:
+    """Lignes ajoutees a toutes les legendes : source du sujet (chaine verifiee) et mention de la chaine (« non officielle »)."""
+    lignes = [f"Source : {script['source']}." if script.get("source") else "", catalog.chaine().get("mention") or ""]
+    return "\n".join(x for x in lignes if x)
 
 
 def slide_from_card(card: dict) -> dict | None:

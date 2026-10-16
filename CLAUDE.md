@@ -1,11 +1,11 @@
 # realGen — consignes pour Claude
 
-Pipeline de reels TikTok/Instagram pour OpusCV (acquisition organique). Documentation
-utilisateur : `README.md`.
+Pipeline de reels TikTok/Instagram/YouTube Shorts pour OpusCV (acquisition organique) et pour des chaînes
+faceless (`catalog/chaines/<id>/` : `opuscv`, `examen_civique`, `psycho`). Documentation utilisateur : `README.md`.
 
 ## Règle permanente : documentation à jour
 
-**Chaque modification (code, catalogue `catalog/*.json`, gabarits `assets/anim/`, workflow,
+**Chaque modification (code, catalogue `catalog/*.json` et `catalog/chaines/*/`, gabarits `assets/anim/`, workflow,
 console `docs/`) met à jour `README.md` dans le même commit** : nouvelle option, nouveau
 format/thème/ambiance, changement de comportement ou de valeur par défaut, règle de montage.
 Si la modification change une consigne de ce fichier, mettre aussi à jour `CLAUDE.md`.
@@ -20,19 +20,29 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Vérifications avant commit : `python -m py_compile scripts/*.py`, `python scripts/catalog.py` et
   `python scripts/verif_prompts.py` (construit le prompt de chaque format : `py_compile` ne voit pas une variable utilisée avant
   sa définition, run 80) — mêmes contrôles que `.github/workflows/test.yml`.
-- Enrichir le catalogue = éditer `catalog/*.json` (aucun code) ; documenter les champs dans le
+- Chaînes : formats, sujets, accroches et config d'une chaîne dans `catalog/chaines/<id>/` (aucun repli d'une chaîne sur
+  une autre) ; `chaine.json` = identité (nom, marque, watermark, produit ou faceless, niche, public, règles, personnages,
+  série, trames). Les noms des chaînes faceless et des personnages sont PROVISOIRES : ne les changer que dans
+  `chaine.json`. Toute modification d'un prompt doit laisser **identiques** les prompts d'OpusCV (comparer avant / après)
+  et sans trace d'OpusCV ceux des chaînes faceless (`verif_prompts.py`). Une nouvelle chaîne s'ajoute aussi aux options
+  `chaine` de `generate-reels.yml` (`catalog.py` vérifie).
+- Chaîne vérifiée (`examen_civique`, `"verification": true`) : un sujet = des `faits` recopiés d'une source officielle
+  (jamais de mémoire) + `source` ; aucune date ni chiffre hors des faits. Neutre, « non officielle », jamais de
+  promesse de réussite. Chaîne `psycho` : notions reconnues seulement, jamais de diagnostic ni d'étude inventée.
+- Enrichir le catalogue = éditer `catalog/*.json` ou `catalog/chaines/<id>/*.json` (aucun code) ; documenter les champs dans le
   `_doc` du fichier et dans le README. Un nouveau thème, décor, personnage, voix ou ambiance a un aperçu
   dans la console : relancer `python scripts/apercus.py` et committer `docs/apercus/`.
 - Icônes dessinables : `assets/anim/icones.js` (JSON strict après `window.ICONES = `, lu aussi par
   `catalog.py`). Nouveau gabarit dessiné : s'appuyer sur `assets/anim/sketch.js`. Tout instant
   d'animation repris par `scripts/sound_design.py` doit rester identique des deux côtés.
 - Dessin animé (`assets/anim/scene.html`) : un type (personnage, animal, objet, décor, fond) = un
-  `Dessin.enregistrer` dans `assets/anim/dessin/*.js` **et** une entrée dans `catalog/dessins.json`
+  `Dessin.enregistrer` dans `assets/anim/dessin/*.js` **et** une entrée dans `catalog/dessins.json` (série, trames et
+  identité des personnages : `chaine.json` de chaque chaîne)
   (`catalog.py` vérifie la correspondance). Penser par objet, pas par scène ; touches de couleur légères
   (lavis) plutôt qu'aplats. Une action qui fait du bruit le signale avec `Dessin.son(nom, t)` (nom déclaré dans
   `catalog/audio.json` "bruitages" et produit par `scripts/audio_gen.py`).
 - Dessin animé, règles d'écriture et de mise en scène (contrôlées dans `1_generate_script.py`, détail
-  dans le README « Format `dessin_anime` ») :
+  dans le README « Format `dessin_anime` » ; elles valent pour toutes les chaînes, les noms ci-dessous sont ceux d'OpusCV) :
   - deux personnages parlent au plus par reel (voix Gemini multi-locuteurs) ; l'appel à l'action est dit
     par un personnage `principal` (Léa ou Karim) ;
   - une scène = un lieu et un moment : même décor sans `ellipse` = même scène (fusionnée) ; les plans
@@ -87,6 +97,9 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 
 ## Points ouverts (décisions utilisateur en attente)
 
+- Noms définitifs des chaînes faceless (`Objectif Civique`, `Dans ta tête`) et des personnages (Théo, Jade).
+- Examen civique : recopier les modalités officielles de l'examen (nombre de questions, seuil) dans un sujet sourcé.
+
 - Format `temoignage_produit` : ajouter la mention « histoire illustrative » ou le retirer.
 - Publication automatique après validation, reportée par l'utilisateur : workflow « TikTok : autoriser »
   (échange du code OAuth, `TIKTOK_REFRESH_TOKEN` écrit via `SECRETS_PAT`) et workflow « Publier un reel »
@@ -99,4 +112,8 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Voix : `gemini-3.8-flash-tts` avec un ton par réplique (choisi à l'écoute), secours
   `gemini-3.1-flash-tts-preview` (également apprécié).
 - Dessin animé = série « Karim cherche un job » (épisodes numérotés, résumés gardés dans l'historique),
-  une trame d'histoire par épisode, chute obligatoire avant l'appel à l'action.
+  une trame d'histoire par épisode, chute obligatoire avant l'appel à l'action. Chaîne `psycho` : série « Dans la tête
+  de Théo » (mêmes dessins, autres noms).
+- Chaînes faceless : une ligne éditoriale = un dossier `catalog/chaines/<id>/` ; d'abord `examen_civique` (révision de
+  l'examen civique, vérifiée) et `psycho` (psychologie du quotidien) ; « savais-tu que » et « motivation » viendront
+  ensuite. Audience d'abord (monétisation plus tard) : reels courts ; TikTok, Instagram et YouTube Shorts.
