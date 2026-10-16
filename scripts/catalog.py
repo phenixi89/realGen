@@ -78,6 +78,8 @@ def gabarit_carte(theme: dict | None, card: dict, n: int = 1, total: int = 1) ->
     Planches des gabarits : assets/anim/lecon.html et pop.html (parametre mode).
     """
     famille = (theme or {}).get("cartes_gabarit")
+    if famille == "civique":
+        return _gabarit_civique(card, n, total)
     if famille not in ("lecon", "pop"):
         return None
     lecon = famille == "lecon"
@@ -119,6 +121,38 @@ def gabarit_carte(theme: dict | None, card: dict, n: int = 1, total: int = 1) ->
     if kind == "quiz":
         return famille, {**rang, "mode": "quiz", "texte": _marque(g("question")),
                          "points": "|".join(str(x) for x in card.get("reponses") or []), "bonne": card.get("bonne", 1)}
+    return None
+
+
+def _gabarit_civique(card: dict, n: int, total: int) -> tuple[str, dict] | None:
+    """Plateau de l'examen civique (assets/anim/civique.html, theme civique_plateau) : une planche par type de carte."""
+    g = lambda k: str(card.get(k) or "").strip()
+    base = {"n": min(n, 6), "total": min(max(total, n), 6), **{k: str(card[k]) for k in ("etiquette", "verdict") if card.get(k)}}
+    kind = card.get("type", "texte")
+    if kind == "texte":
+        phrase = g("texte")
+        return "civique", {**base, "mode": "fait", "texte": _marque(g("titre")), "note": phrase if len(phrase) <= 60 else ""}
+    if kind == "impact":
+        texte, mot = g("texte"), g("mot")
+        if mot and mot.lower() in texte.lower():
+            i = texte.lower().index(mot.lower())
+            texte = f"{texte[:i]}*{texte[i:i + len(mot)]}*{texte[i + len(mot):]}"
+        return "civique", {**base, "mode": "retenir", "texte": _marque(texte)}
+    if kind == "chiffre":
+        grand = g("valeur") + ("\u00a0" if g("unite")[:1].isalpha() else "") + g("unite")
+        return "civique", {**base, "mode": "chiffre", "grand": grand, "legende": _marque(g("titre"))}
+    if kind == "comparaison":
+        return "civique", {**base, "mode": "avant_apres", "avant": g("avant"), "apres": _marque(g("apres")),
+                           "titre_avant": "IDÉE REÇUE", "titre_apres": "EN VRAI"}
+    if kind == "liste":
+        return "civique", {**base, "mode": "liste", "texte": _marque(g("titre") or g("surtitre")),
+                           "points": "|".join(str(x) for x in card.get("points") or [])}
+    if kind == "schema":
+        return "civique", {**base, "mode": "etapes", "texte": _marque(g("titre")),
+                           "points": "|".join(e.get("label", "") for e in card.get("etapes") or [])}
+    if kind == "quiz":
+        return "civique", {**base, "mode": "quiz", "texte": _marque(g("question")),
+                           "points": "|".join(str(x) for x in card.get("reponses") or []), "bonne": card.get("bonne", 1)}
     return None
 
 
@@ -709,7 +743,8 @@ def pick_hook(history: list[dict], rng: random.Random, registre: str | None = No
 def pick_theme(history: list[dict], rng: random.Random, registre: str | None = None, fmt: dict | None = None) -> dict:
     """Theme tire (registre, format) : un theme a "formats" est reserve a ces formats (et a ceux qui le citent dans leurs
     "themes"), et un format a "themes" n'utilise que ceux-la."""
-    ok = [t for t in themes() if (not t.get("formats") or (fmt and (fmt["id"] in t["formats"] or t["id"] in (fmt.get("themes") or []))))
+    ok = [t for t in themes() if (not t.get("chaines") or chaine_id() in t["chaines"])   # theme propre a une chaine
+          and (not t.get("formats") or (fmt and (fmt["id"] in t["formats"] or t["id"] in (fmt.get("themes") or []))))
           and (not (fmt and fmt.get("themes")) or t["id"] in fmt["themes"])] or themes()
     pool = [t for t in ok if registre is None or registre in registres_of(t, REGISTRES)] or ok
     return weighted_pick(pool, _recent(history, "theme", config()["historique_themes"]), rng)
@@ -1002,6 +1037,10 @@ def validate_catalog() -> list[str]:
                 if tid not in {t["id"] for t in themes()}:
                     errors.append(f"format {f['id']} : theme '{tid}' absent de themes.json")
         tous_formats = {f["id"] for c in chaines() for f in _read(CHAINES_DIR / c / "formats.json")["formats"]}
+        for t in themes():
+            for c in t.get("chaines") or []:
+                if c not in chaines():
+                    errors.append(f"theme {t['id']} : chaine '{c}' absente de catalog/chaines/")
         for t in themes():
             for fid in t.get("formats") or []:
                 if fid not in tous_formats:

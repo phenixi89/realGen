@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), themes educatifs carnet_cours / pop_art (planches quiz, lecon...). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX.",
+  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX.",
   "formats": [
     {
       "id": "question_revision",
@@ -20,8 +20,7 @@
         "vie_quotidienne"
       ],
       "themes": [
-        "carnet_cours",
-        "pop_art"
+        "civique_plateau"
       ],
       "structure": "Scène 1 (accroche, sans carte) : la question posée au spectateur, au « tu ». Scène 2 : carte quiz (la question en 4 à 9 mots, 3 réponses courtes dont une seule juste, tirée des FAITS) ; la voix lit la question et les trois réponses, puis dit « Réfléchis… ». Scène 3 : la voix donne la bonne réponse et l'explique en une phrase simple (carte texte, ou chiffre si la réponse est une date ou un nombre des FAITS). Scène 4 : un deuxième fait lié pour mieux retenir (carte texte, liste ou schéma). Dernière scène : CTA qui demande d'écrire sa réponse en commentaire.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
@@ -44,8 +43,7 @@
         "vie_quotidienne"
       ],
       "themes": [
-        "carnet_cours",
-        "pop_art"
+        "civique_plateau"
       ],
       "structure": "Accroche qui lance le quiz (« Vrai ou faux : ... »). 2 ou 3 affirmations tirées des FAITS (une fausse au moins, fausse de façon évidente une fois corrigée) : pour chacune, une carte texte (surtitre 'Vrai ou faux ?', titre = l'affirmation, effet 'suspense' sur une seule) laisse une seconde au spectateur, puis la scène suivante COMMENCE par « Vrai ! » ou « Faux ! » (un tampon VRAI / FAUX s'affiche) et la voix l'explique simplement, sa carte montrant le fait exact. Dernière scène : CTA qui demande son score en commentaire.",
       "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse",
@@ -71,8 +69,7 @@
         "vie_quotidienne"
       ],
       "themes": [
-        "carnet_cours",
-        "pop_art"
+        "civique_plateau"
       ],
       "structure": "Mini-cours de révision de 30 à 35 secondes, une seule notion. Scène 1 (accroche, sans carte) : la promesse (« Retiens ça pour ton examen civique »). Puis 2 ou 3 LEÇONS courtes tirées des FAITS, chacune une scène-carte d'UNE phrase de 10 mots au plus (mots simples) : varie les cartes (texte, chiffre pour une date des faits, schéma, liste ; un quiz possible à la place d'une leçon, sa réponse donnée par la voix) ; la voix dit la leçon, la carte la résume en mots clés. Avant-dernière scène (carte impact) : la phrase à retenir, en 4 à 9 mots. Dernière scène : CTA.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les leçons"

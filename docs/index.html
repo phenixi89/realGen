@@ -281,7 +281,7 @@ async function loadCatalog(){
   // Dessin anime : la serie, les trames et l'identite des personnages viennent de la chaine (catalog.dessins).
   const persos = ch.personnages || {};
   d.objets = (d.objets || []).map(o => o.categorie === "personnage" && persos[o.id] ? { ...o, ...persos[o.id] } : o);
-  CAT = { formats: f.formats || [], themes: t.themes || [], voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: ch.trames || [], dessins: d, decors: d.fonds || [], niveaux: j.niveaux || [], boss: j.boss || [] };
+  CAT = { formats: f.formats || [], themes: (t.themes || []).filter(x => !x.chaines || x.chaines.includes(CHAINE)), voix: v.voix || [], sujets: s.sujets || [], hooks: h.hooks || [], ambiances: a.ambiances || [], trames: ch.trames || [], dessins: d, decors: d.fonds || [], niveaux: j.niveaux || [], boss: j.boss || [] };
   $("chaineNom").textContent = `Reels ${ch.nom || CHAINE}`;
   for (const id of ["f_format", "f_theme", "f_hook", "f_voice"]) $(id).length = 1;   // garde « Automatique », retire l'ancienne chaine
   // Chaine sans produit : rien a capturer, le pipeline impose « Sans capture ».
@@ -424,7 +424,7 @@ function options(r, k){
     case "sujet": return CAT.sujets.filter(x => !fmt || compatible(fmt, x));
     // Dessin anime : l'accroche est dite par un personnage (hooks.json "dessin": false = exclue, ex : POV).
     case "hook": return CAT.hooks.filter(x => (!r.registre || regs(x).includes(r.registre)) && (!dessinDe(r) || x.dessin !== false) && (!x.tags || !r.sujet || (((CAT.sujets.find(u => u.id === r.sujet) || {}).tags || x.tags).some(t => x.tags.includes(t)))));
-    case "theme": return CAT.themes.filter(x => !r.registre || themeRegs(x).includes(r.registre));
+    case "theme": return CAT.themes.filter(x => !r.registre || themeRegs(x).includes(r.registre));   // CAT.themes : deja ceux de la chaine
     case "ambiance": { const fm = byId(CAT.formats, r.format), liste = th ? CAT.ambiances.filter(a => (th.ambiances || [th.ambiance]).includes(a.id)) : CAT.ambiances;
       if (!fm || !fm.ambiances) return liste;   // format a musiques douces (dessin animé) : celles du thème qui y figurent, sinon celles du format
       const dans = liste.filter(a => fm.ambiances.includes(a.id)); return dans.length ? dans : CAT.ambiances.filter(a => fm.ambiances.includes(a.id)); }

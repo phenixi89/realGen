@@ -118,4 +118,6 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   l'examen civique, vérifiée) et `psycho` (psychologie du quotidien) ; « savais-tu que » et « motivation » viendront
   ensuite. Audience d'abord (monétisation plus tard) : reels courts ; TikTok, Instagram et YouTube Shorts.
 - Chaîne `examen_civique` : nom « Objectif Civique », compte TikTok `@objectif.civique` (watermark), logo « L'Hexagone validé »
-  (`assets/marques/examen_civique/`, sans Marianne ni bloc-marque de l'État).
+  (`assets/marques/examen_civique/`, sans Marianne ni bloc-marque de l'État) ; habillage propre, jamais celui d'OpusCV :
+  thème `civique_plateau` réservé à la chaîne (`"chaines"`), gabarit `assets/anim/civique.html` (plateau de quiz en hexagones,
+  sons publiés par la page dans `window.SONS`).

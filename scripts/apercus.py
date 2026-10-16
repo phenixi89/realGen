@@ -60,8 +60,15 @@ def _scene(fond: str, objets: list[dict]) -> dict:
                                  "echelle": 0.95, "sol": 1720}, ensure_ascii=False)}
 
 
+# Theme a plateau propre (cartes_gabarit "civique") : l'apercu montre une planche quiz revelee, pas une couverture OpusCV.
+QUIZ_CIVIQUE = {"mode": "quiz", "texte": "Quelle est la *devise* de la République ?", "n": "1", "total": "3",
+                "points": "Liberté, Égalité, Fraternité|Travail, Famille, Patrie|Paix et Justice", "bonne": "1", "dur": "6"}
+
+
 def themes_jobs() -> list:
-    return [("couverture", {**catalog.anim_params(t), "titre": TITRE_THEME, "surtitre": t["nom"]},
+    return [("civique", {**catalog.anim_params(t), **QUIZ_CIVIQUE}, OUT / "themes" / f"{t['id']}.jpg")
+            if t.get("cartes_gabarit") == "civique" else
+            ("couverture", {**catalog.anim_params(t), "titre": TITRE_THEME, "surtitre": t["nom"]},
              OUT / "themes" / f"{t['id']}.jpg") for t in catalog.themes()]
 
 

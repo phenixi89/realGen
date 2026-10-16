@@ -1,5 +1,5 @@
 {
-  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'. dessin : support des cartes dessinees a la main et des annotations (assets/anim/sketch.js) -- 'papier' (feutre sur feuille), 'craie' (tableau), 'neon' (traits lumineux). registres : registres d'ecriture ou le theme peut etre tire ('serieux' et/ou 'humour', absent = les deux). cartes_gabarit : 'lecon' (carnet de cours, assets/anim/lecon.html) ou 'pop' (comics pop-art, assets/anim/pop.html) -- les cartes du scenario y sont dessinees avec la planche qui correspond a leur type (catalog.gabarit_carte) ; palette des gabarits propre a eux, les couleurs du theme servent aux sous-titres, a la couverture et au CTA.",
+  "_doc": "Themes visuels des reels : couleurs, polices, style des sous-titres et ambiance musicale (id de catalog/audio.json). Un theme est tire par reel (en evitant les plus recents) sauf --theme impose. Ajouter un theme = ajouter une entree ; polices dans assets/fonts/. Couleurs en hex #rrggbb. couleurs.mot_cle = couleur des mots-cles dans les sous-titres. transitions = enchainement des transitions ffmpeg xfade entre les plans. ambiances : liste d'ambiances compatibles (une tiree par reel en evitant les plus recentes ; sinon 'ambiance'). sous_titres.style : karaoke | encadre | boite | mot. cadre : 'navigateur' (captures dans une fenetre de navigateur sur fond aux couleurs du theme, defaut) ou 'aucun'. dessin : support des cartes dessinees a la main et des annotations (assets/anim/sketch.js) -- 'papier' (feutre sur feuille), 'craie' (tableau), 'neon' (traits lumineux). registres : registres d'ecriture ou le theme peut etre tire ('serieux' et/ou 'humour', absent = les deux). cartes_gabarit : 'lecon' (carnet de cours, assets/anim/lecon.html), 'pop' (comics pop-art, assets/anim/pop.html) ou 'civique' (plateau de quiz de la chaine examen_civique, assets/anim/civique.html : il dessine aussi l'accroche et l'ecran d'appel a l'action) -- les cartes du scenario y sont dessinees avec la planche qui correspond a leur type (catalog.gabarit_carte) ; palette des gabarits propre a eux, les couleurs du theme servent aux sous-titres, a la couverture et au CTA. chaines : theme reserve a ces chaines (catalog/chaines/<id>/), jamais tire pour une autre.",
   "themes": [
     {
       "id": "violet_nuit",
@@ -738,6 +738,52 @@
       "dessin": "papier",
       "registres": [
         "serieux"
+      ]
+    },
+    {
+      "id": "civique_plateau",
+      "nom": "Plateau Hexagone (examen civique)",
+      "poids": 1,
+      "formats": [
+        "question_revision",
+        "vrai_ou_faux"
+      ],
+      "cartes_gabarit": "civique",
+      "couleurs": {
+        "primaire": "#2D5BE3",
+        "secondaire": "#EF3E4A",
+        "fond": "#14204F",
+        "texte": "#FFF7EA",
+        "surligne": "#FFC94A",
+        "contour": "#0c1538",
+        "pastille": "#14204F",
+        "mot_cle": "#FFC94A"
+      },
+      "police_titre": "Anton-Regular.ttf",
+      "police_texte": "Poppins-Bold.ttf",
+      "sous_titres": {
+        "taille": 60,
+        "majuscules": false,
+        "contour": 6,
+        "style": "boite"
+      },
+      "ambiance": "piano_minimal",
+      "ambiances": [
+        "piano_minimal",
+        "ambient_matin",
+        "acoustique",
+        "lofi_chill"
+      ],
+      "transitions": [
+        "fade",
+        "smoothleft"
+      ],
+      "dessin": "neon",
+      "registres": [
+        "serieux"
+      ],
+      "chaines": [
+        "examen_civique"
       ]
     }
   ]

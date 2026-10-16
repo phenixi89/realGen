@@ -521,6 +521,31 @@ dans ses `"themes"` y a droit aussi, ex. `question_revision` de la chaîne `exam
 python scripts/run_pipeline.py --n 1 --format jeu_quete --duration 25
 ```
 
+### Plateau civique (`civique_plateau`, chaîne `examen_civique`)
+
+Un habillage **propre à la chaîne Objectif Civique**, jamais utilisé par OpusCV (thème réservé : `"chaines":
+["examen_civique"]` dans `themes.json`, tous les formats de la chaîne n'ont que lui). Gabarit `assets/anim/civique.html`,
+dans l'univers du logo « L'Hexagone validé » : plateau de quiz marine, alvéoles d'hexagones qui dérivent, projecteur qui
+balaie, bande tricolore en bas, onglet en forme d'hexagone étiré et progression en petits hexagones. Polices Anton
+(titres) et Poppins. Planches (`catalog._gabarit_civique`, paramètre `mode`) :
+
+| Carte du scénario | Planche | Ce qu'on voit |
+|---|---|---|
+| `texte` | `fait` | la phrase mot à mot (mots clés en or, soulignés en tricolore) ; un grand hexagone avec un « ? » si c'est une question, sinon la coche du logo |
+| `quiz` | `quiz` | la question, trois réponses en capsules (badges hexagonaux A / B / C), **compte à rebours 3-2-1** dans un hexagone qui se vide, puis la bonne réponse s'allume en vert, les autres s'éteignent |
+| `chiffre` | `chiffre` | le nombre dans un hexagone tricolore qui se trace |
+| `liste` / `schema` | `liste` / `etapes` | alvéoles qui se cochent / trois étapes numérotées reliées par un trait |
+| `comparaison` | `avant_apres` | « IDÉE REÇUE » barrée, puis « EN VRAI » |
+| `impact` | `retenir` | « À RETENIR » sur une plaque, tampon hexagone + coche |
+| scène 1 | `accroche` | l'icône dessinée (trait néon) dans l'hexagone, sous l'accroche |
+| dernière scène | `fin` | le logo se trace, « OBJECTIF / CIVIQUE » (dégradé tricolore), titre, sous-titre, bouton « S'ABONNER » |
+
+Tampon de réponse (`verdict`) : badge hexagonal vert avec coche (VRAI) ou rouge avec croix (FAUX), à 0,45 s. Les sons
+(clics des mots, pop, tic-tac du compte à rebours, ding, buzz, coup du tampon) sont **publiés par la page** (`window.SONS`,
+lus par `render_js_anim.render_clip`) : rien à recopier dans `sound_design.py`. `run_pipeline.plan_montage` remplace
+l'illustration de l'accroche et l'écran d'appel à l'action par les planches `accroche` et `fin` quand le thème du reel a
+`"cartes_gabarit": "civique"`. Aperçu de la console : une planche quiz révélée (`apercus.py`).
+
 ### Format `cours_eclair` : mini-cours éducatif (thèmes `carnet_cours` et `pop_art`)
 
 Une vidéo éducative de 30 à 35 s, une seule idée : accroche (« 3 choses qui rendent ton CV invisible »), 3
@@ -623,7 +648,7 @@ affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), 
 | Chaîne | Nom | Formats | Particularités |
 |---|---|---|---|
 | `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
-| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thèmes `carnet_cours` / `pop_art` | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
+| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | `question_revision` (quiz : question, 3 réponses, réponse expliquée), `vrai_ou_faux`, `cours_eclair` — thème propre `civique_plateau` (voir « Plateau civique ») | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
 | `psycho` | Dans ta tête (provisoire, `@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
 
 Changer un nom (celui de `psycho` est provisoire) : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,

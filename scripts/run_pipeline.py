@@ -131,6 +131,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         if catalog.chaine_id() != catalog.DEFAULT_CHAINE:  # nom de la chaine sur l'ecran d'appel a l'action
             texts = {**texts, "brand": catalog.marque(), "accent": str(catalog.chaine().get("marque_accent", 0))}
         chosen = {last: "cta?" + urlencode(texts) if texts else DEFAULT_SCENE_ANIM}
+        if (theme or {}).get("cartes_gabarit") == "civique":   # plateau civique : son propre ecran de fin (logo trace)
+            chosen = {last: "civique?" + urlencode({**texts, "mode": "fin"})}
     if "scene" in kinds or cards:
         scene_anims.update(chosen)
     if cards:
@@ -146,6 +148,9 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
                           "dur": f"{t['end'] - t['start']:.2f}"}
                 if i > 0:  # hors accroche : la phrase cle en titre, faute de carte
                     params["titre"] = fallback_title(scenes[i].get("texte", ""))
+                if (theme or {}).get("cartes_gabarit") == "civique":   # plateau civique : l'icone dans l'hexagone
+                    scene_anims[i] = "civique?" + urlencode({**params, "mode": "accroche"})
+                    continue
                 scene_anims[i] = "illustration?" + urlencode(params)
     for i, spec in sorted(scene_anims.items()):
         video_args += ["--scene-anim", f"{i}={spec}"]
