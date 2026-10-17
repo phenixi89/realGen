@@ -130,9 +130,9 @@
     FONTS_READY.then(() => {
       const tl = gsap.timeline({ paused: true })
         .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
-        .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2.2)" }, 0.05);
-      tl.from(persos.g.root, { y: 420, duration: 0.55, ease: "back.out(1.2)" }, 0)
-        .from(persos.d.root, { y: 420, duration: 0.55, ease: "back.out(1.2)" }, 0.12);
+        .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(1.7)" }, 0.05);
+      tl.from(persos.g.root, { y: 420, duration: 0.55, ease: "back.out(1.7)" }, 0)
+        .from(persos.d.root, { y: 420, duration: 0.55, ease: "back.out(1.7)" }, 0.12);
       gsap.set(bulles, { opacity: 0, scale: 0.4 });
       for (const k of ["g", "d"]) {
         Moteur.expression(tl, persos[k], "neutre", 0);
@@ -147,7 +147,7 @@
         Moteur.regarder(tl, lui, 0, l.de);                 // celui qui parle regarde la camera
         Moteur.regarder(tl, autre, 5 * autre.cote, l.de);  // l'autre le regarde
         Moteur.parler(tl, lui, l.de + 0.05, l.a - 0.1);
-        tl.to(bulles[i], { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, l.de);
+        tl.to(bulles[i], { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.7)" }, l.de);
         if (i < lignes.length - 1) tl.to(bulles[i], { opacity: 0, scale: 0.85, duration: 0.15 }, l.a + GAP - 0.05);
       });
       addAmbient(tl, 8);

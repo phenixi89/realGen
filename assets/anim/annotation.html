@@ -7,7 +7,7 @@
   mots, optionnel). Reste affiche jusqu'a la fin du clip. Suit le zoom de la
   capture comme highlight.html (common.js zoomCss).
   Parametres : x, y | rx, ry, rw, rh ; texte ; delay (debut, s) ; pen (1 =
-  feutre visible) ; zoom/step/zmax/fps/fx/fy ; + theme.
+  feutre visible) ; zoom/frames/zmax/fps/fx/fy ; + theme.
   Instant partage avec scripts/sound_design.py : le trace commence a ?delay=.
 -->
 <html lang="fr"><head><meta charset="utf-8">
@@ -53,7 +53,7 @@
       sk.arrow(sx, sy, ex, ey, { color: RED, width: 10, bend: sx < cx ? -0.25 : 0.25, head: 40 });
     }
     const tl = gsap.timeline({ paused: true }).add(sk.draw, 0);
-    if (noteBox) tl.fromTo(note, { scale: 0.3, opacity: 0, rotate: -14 }, { scale: 1, opacity: 1, rotate: noteBox.x > 540 ? 3 : -4, duration: 0.4, ease: "back.out(2.2)" }, 0.45);
+    if (noteBox) tl.fromTo(note, { scale: 0.3, opacity: 0, rotate: -14 }, { scale: 1, opacity: 1, rotate: noteBox.x > 540 ? 3 : -4, duration: 0.4, ease: "back.out(1.7)" }, 0.45);
     tl.to({}, { duration: 3 }, 0);  // l'annotation reste affichee (le rendu couvre tout le clip)
     expose(tl);
     const layer = document.getElementById("layer"), baseSeek = window.seek;

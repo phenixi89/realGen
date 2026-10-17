@@ -47,7 +47,7 @@
   const tl = gsap.timeline({ paused: true })
     .fromTo(rect, { strokeDashoffset: per }, { strokeDashoffset: 0, duration: 0.7, ease: "power2.inOut" }, 0)
     .from("#glow", { opacity: 0, duration: 0.5 }, 0.3)
-    .from(".c", { scale: 0.2, opacity: 0, duration: 0.35, stagger: 0.06, ease: "back.out(3)" }, 0.45)
+    .from(".c", { scale: 0.2, opacity: 0, duration: 0.35, stagger: 0.06, ease: "back.out(1.7)" }, 0.45)
     .fromTo("#sweep div", { left: "-40%" }, { left: "110%", duration: 0.8, ease: "power2.inOut" }, 0.6)
     .to("#glow", { opacity: 0.4, duration: 0.3, yoyo: true, repeat: 1 }, 1.0)
     .to("#box", { opacity: 0, scale: 1.04, duration: 0.4, ease: "power2.in" }, 1.9);

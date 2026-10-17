@@ -16,9 +16,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-FPS = 25
+# Cadence unique du montage (rendu des gabarits, zoom, assemblage final) : 30 i/s, celle des
+# telephones et des plateformes (25 i/s, norme de la television, saccade legerement a l'ecran).
+FPS = 30
 XFADE_DURATION = 0.35
-XFADE_TRANSITIONS = ["fade", "slideleft", "fade", "slideright", "smoothup"]
+# Un fondu sur deux (le rythme respire), les autres en mouvements lies (defilement, zoom) : plus
+# proche d'un montage que le trio fondu / glisse a gauche / glisse a droite de ffmpeg.
+XFADE_TRANSITIONS = ["fade", "smoothup", "fade", "smoothleft", "fade", "zoomin", "fade", "smoothright"]
 # En dessous, un plan n'a pas le temps d'etre lu : une scene courte montre
 # moins de captures (les dernieres, qui montrent l'etat final de l'action).
 MIN_ITEM_S = 1.2

@@ -6,7 +6,7 @@
   curseur s'enfonce, une onde part du point), puis s'efface. Suit le zoom de
   la capture comme highlight.html (common.js zoomCss).
   Instants partages avec scripts/sound_design.py : CLICK_AT (clic).
-  Parametres : x, y, delay, zoom/step/zmax/fps/fx/fy, + theme.
+  Parametres : x, y, delay, zoom/frames/zmax/fps/fx/fy, + theme.
 -->
 <html lang="fr"><head><meta charset="utf-8">
 <style>
@@ -32,8 +32,9 @@
   const tipX = X - 8, tipY = Y - 6;
   gsap.set(["#r1", "#r2", "#spot"], { x: X, y: Y });
   const tl = gsap.timeline({ paused: true })
-    .fromTo("#cursor", { x: X + 320, y: Math.min(Y + 520, 1900), opacity: 0 },
-      { x: tipX, y: tipY, opacity: 1, duration: CLICK_AT - 0.1, ease: "power3.out" }, 0)
+    // Trajet en arc (x et y arrivent avec des courbes differentes, comme une main) et non en ligne droite.
+    .fromTo("#cursor", { x: X + 320, opacity: 0 }, { x: tipX, opacity: 1, duration: CLICK_AT - 0.1, ease: "power2.out" }, 0)
+    .fromTo("#cursor", { y: Math.min(Y + 520, 1900) }, { y: tipY, duration: CLICK_AT - 0.1, ease: "power4.out" }, 0)
     .to("#cursor", { scale: 0.82, duration: 0.08, yoyo: true, repeat: 1, transformOrigin: "10% 8%" }, CLICK_AT)
     .fromTo("#spot", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.25, immediateRender: false }, CLICK_AT)
     .fromTo("#r1", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 3.2, duration: 0.6, ease: "power2.out", immediateRender: false }, CLICK_AT)

@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 import catalog
 
-FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+FONT_PATH = catalog.DEFAULT_FONT  # sans theme : Poppins Bold (assets/fonts/)
 FONT_SIZE = 58
 CTA_FONT_SIZE = 68  # derniere cue (appel a l'action) : plus grande, plus visible
 HIGHLIGHT_COLOR = (255, 215, 0, 255)   # ambre/doré : mot en cours

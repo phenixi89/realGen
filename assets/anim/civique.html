@@ -135,7 +135,7 @@
       m.className = "m" + (cle ? " cle" : ""); m.textContent = cle ? tok.replace(/\*/g, "") : tok; el.appendChild(m); mots.push(m); });
     if (mots.length > 10) el.style.fontSize = "86px";
     const g = gap ?? Math.min(0.3, Math.max(0.12, (DUR * 0.55 - t0) / Math.max(mots.length, 1)));
-    mots.forEach((m, i) => { const t = t0 + i * g; tl.from(m, { y: 40, opacity: 0, scale: 0.85, duration: 0.22, ease: "back.out(2.2)" }, t);
+    mots.forEach((m, i) => { const t = t0 + i * g; tl.from(m, { y: 40, opacity: 0, scale: 0.85, duration: 0.22, ease: "back.out(1.7)" }, t);
       if (m.classList.contains("cle")) tl.fromTo(m, { "--ul": 0 }, { "--ul": 1, duration: 0.3, ease: "power2.out", immediateRender: false }, t + 0.15);
       son(t, "click", { gain: 0.35 }); });
     return t0 + mots.length * g;
@@ -158,7 +158,7 @@
   function croix(cx, cy, s, t, parent) {
     const p = svgEl("path", { d: `M${cx - 110 * s} ${cy - 110 * s} L${cx + 110 * s} ${cy + 110 * s} M${cx + 110 * s} ${cy - 110 * s} L${cx - 110 * s} ${cy + 110 * s}`,
       fill: "none", stroke: "#FFF7EA", "stroke-width": 70 * s, "stroke-linecap": "round" }, parent);
-    tl.from(p, { scale: 0, svgOrigin: `${cx} ${cy}`, duration: 0.25, ease: "back.out(3)" }, t); return p;
+    tl.from(p, { scale: 0, svgOrigin: `${cx} ${cy}`, duration: 0.25, ease: "back.out(1.7)" }, t); return p;
   }
   function icon(cx, cy, size, t) {
     if (!icone || !(window.ICONES || {})[icone]) return null;
@@ -175,7 +175,7 @@
   function compte(cx, cy, debut, rev, r = 110, fs = 150) {
     const per = 6 * r, ring = svgEl("polygon", { points: hexPts(cx, cy, r), fill: "rgba(255,247,234,.08)", stroke: "url(#tri)", "stroke-width": 16, "stroke-linejoin": "round" });
     ring.style.strokeDasharray = per;
-    tl.from(ring, { opacity: 0, scale: 0.4, svgOrigin: `${cx} ${cy}`, duration: 0.3, ease: "back.out(2)" }, debut - 0.3)
+    tl.from(ring, { opacity: 0, scale: 0.4, svgOrigin: `${cx} ${cy}`, duration: 0.3, ease: "back.out(1.7)" }, debut - 0.3)
       .fromTo(ring, { strokeDashoffset: 0 }, { strokeDashoffset: per, duration: rev - debut, ease: "none", immediateRender: false }, debut);
     const pas = (rev - debut) / 3;
     [3, 2, 1].forEach((k, i) => { const d = svgEl("text", { x: cx, y: cy + fs * 0.32, "text-anchor": "middle", "font-family": "CVTitle", "font-size": fs, fill: "#FFF7EA", opacity: 0 });
@@ -209,14 +209,14 @@
     tl.from("#fond", { opacity: 0, duration: 0.25 }, 0)
       .fromTo("#alveoles", { x: 0, y: 0 }, { x: -60, y: -104, duration: Math.max(DUR, 3), ease: "none" }, 0)
       .fromTo("#projo", { rotation: -10 }, { rotation: 10, duration: Math.max(DUR, 3), ease: "sine.inOut" }, 0)
-      .from("#haut", { y: -60, opacity: 0, duration: 0.3, ease: "back.out(2)" }, 0.05);
+      .from("#haut", { y: -60, opacity: 0, duration: 0.3, ease: "back.out(1.7)" }, 0.05);
     son(0.05, "pop", { gain: 0.6 });
     flottants();
 
     if (mode === "fait" || mode === "retenir") {
       if (mode === "retenir") {
         const pl = add("plaque", `<span class="tab" style="background:var(--rouge)">À RETENIR</span><div class="txt"></div>`, { top: "520px", fontSize: "88px" });
-        tl.from(pl, { y: 120, opacity: 0, rotation: -3, duration: 0.4, ease: "back.out(1.8)" }, 0.15);
+        tl.from(pl, { y: 120, opacity: 0, rotation: -3, duration: 0.4, ease: "back.out(1.7)" }, 0.15);
         fin = motAMot(pl.querySelector(".txt"), texte, FIRST_AT + 0.2);
         const g = svgEl("g", {}); const cy = 1330;
         hexagone(540, cy, 150, fin + 0.2, { fill: "#14204F", width: 18, parent: g }); coche(540, cy, 0.42, fin + 0.55, null, g);
@@ -229,10 +229,10 @@
         else if (/\?\s*$/.test(texte)) {   // une question : un « ? » qui attend la reponse, jamais une coche avant elle
           hexagone(540, 1060, 170, fin, { fill: "#14204F", width: 16 });
           const q = svgEl("text", { x: 540, y: 1125, "text-anchor": "middle", "font-family": "CVTitle", "font-size": 190, fill: "#FFC94A" });
-          q.textContent = "?"; tl.from(q, { opacity: 0, scale: 0.3, svgOrigin: "540 1060", duration: 0.3, ease: "back.out(3)" }, fin + 0.3); son(fin + 0.3, "pop");
+          q.textContent = "?"; tl.from(q, { opacity: 0, scale: 0.3, svgOrigin: "540 1060", duration: 0.3, ease: "back.out(1.7)" }, fin + 0.3); son(fin + 0.3, "pop");
         } else { const g = svgEl("g", {}); hexagone(540, 1060, 170, fin, { fill: "#14204F", width: 16, parent: g }); coche(540, 1060, 0.5, fin + 0.35, null, g); son(fin + 0.35, "ding", { gain: 0.6 }); }
         if (note) { const n = document.getElementById("note"); n.style.display = "block"; n.textContent = frTypo(note);
-          tl.from(n, { y: 60, opacity: 0, duration: 0.35, ease: "back.out(2)" }, fin + 0.2); son(fin + 0.2, "pop"); }
+          tl.from(n, { y: 60, opacity: 0, duration: 0.35, ease: "back.out(1.7)" }, fin + 0.2); son(fin + 0.2, "pop"); }
       }
     } else if (mode === "chiffre") {
       const grand = param("grand", "75%"), fs = Math.min(330, Math.floor(620 / (grand.length * 0.5)));
@@ -251,7 +251,7 @@
       const finOpts = FIRST_AT + 0.6 + points.length * gap, rev = Math.max(finOpts + 1.2, DUR - 0.8);
       compte(880, 470, finOpts, rev);
       pods.forEach((p, i) => { if (i === bonne - 1) {
-          tl.to(p, { backgroundColor: "rgba(34,181,115,.9)", borderColor: "#7dffb8", scale: 1.04, duration: 0.25, ease: "back.out(3)" }, rev)
+          tl.to(p, { backgroundColor: "rgba(34,181,115,.9)", borderColor: "#7dffb8", scale: 1.04, duration: 0.25, ease: "back.out(1.7)" }, rev)
             .to(p.querySelector(".hexb"), { backgroundColor: "#FFF7EA", color: "#22B573", duration: 0.2 }, rev);
         } else tl.to(p, { opacity: 0.25, x: i % 2 ? 12 : -12, duration: 0.2 }, rev).to(p, { x: 0, duration: 0.15 }, rev + 0.2); });
       son(rev, "ding"); confettis(540, 900 + (bonne - 1) * 216, rev + 0.1, 14); fin = rev + 0.5;
@@ -260,11 +260,11 @@
       tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
       const choix = [[param("gauche", "Choix A"), 290, "A"], [param("droite", "Choix B"), 790, "B"]], bonne = Math.round(num("bonne", 1)) === 2 ? 2 : 1;
       const tuiles = choix.map(([txt, cx, l], i) => { const t = add("tuile", `<div class="in"><span class="let">${l}</span>${hl(txt)}</div>`, { left: `${cx - 200}px`, top: "700px" });
-        const at = FIRST_AT + 0.5 + i * 0.3; tl.from(t, { scale: 0, rotation: i ? 25 : -25, duration: 0.45, ease: "back.out(2)" }, at); son(at + 0.05, "pop"); return t; });
-      const vs = add("vs", "VS", {}); tl.from(vs, { scale: 0, rotation: -90, duration: 0.4, ease: "back.out(3)" }, FIRST_AT + 1.0); son(FIRST_AT + 1.05, "impact", { gain: 0.5 });
+        const at = FIRST_AT + 0.5 + i * 0.3; tl.from(t, { scale: 0, rotation: i ? 25 : -25, duration: 0.45, ease: "back.out(1.7)" }, at); son(at + 0.05, "pop"); return t; });
+      const vs = add("vs", "VS", {}); tl.from(vs, { scale: 0, rotation: -90, duration: 0.4, ease: "back.out(1.7)" }, FIRST_AT + 1.0); son(FIRST_AT + 1.05, "impact", { gain: 0.5 });
       const finOpts = FIRST_AT + 1.4, rev = Math.max(finOpts + 1.2, DUR - 0.8);
       compte(540, 1370, finOpts, rev, 95, 125);
-      tuiles.forEach((t, i) => { if (i === bonne - 1) { tl.to(t.querySelector(".in"), { backgroundColor: "#22B573", duration: 0.2 }, rev).to(t, { scale: 1.1, duration: 0.3, ease: "back.out(3)" }, rev); }
+      tuiles.forEach((t, i) => { if (i === bonne - 1) { tl.to(t.querySelector(".in"), { backgroundColor: "#22B573", duration: 0.2 }, rev).to(t, { scale: 1.1, duration: 0.3, ease: "back.out(1.7)" }, rev); }
         else tl.to(t, { opacity: 0.22, scale: 0.88, duration: 0.3 }, rev); });
       tl.to(vs, { opacity: 0, scale: 0.4, duration: 0.2 }, rev);
       son(rev, "ding"); confettis(bonne === 1 ? 290 : 790, 931, rev + 0.1, 18); fin = rev + 0.5;
@@ -274,7 +274,7 @@
       const els = points.slice(0, 4), intrus = Math.min(Math.max(Math.round(num("bonne", 1)), 1), els.length) - 1;
       const pos = [[290, 790], [790, 790], [290, 1270], [790, 1270]];
       const tuiles = els.map((txt, i) => { const t = add("tuile", `<div class="in" style="padding-top:20px;font-size:50px">${hl(txt)}</div>`, { left: `${pos[i][0] - 200}px`, top: `${pos[i][1] - 231}px` });
-        const at = FIRST_AT + 0.4 + i * 0.28; tl.from(t, { scale: 0, rotation: (i % 2 ? 1 : -1) * 30, duration: 0.4, ease: "back.out(2)" }, at); son(at + 0.05, "pop"); return t; });
+        const at = FIRST_AT + 0.4 + i * 0.28; tl.from(t, { scale: 0, rotation: (i % 2 ? 1 : -1) * 30, duration: 0.4, ease: "back.out(1.7)" }, at); son(at + 0.05, "pop"); return t; });
       const finOpts = FIRST_AT + 0.4 + els.length * 0.28 + 0.2, rev = Math.max(finOpts + 1.2, DUR - 0.9);
       compte(540, 1030, finOpts, rev, 90, 120);
       tuiles.forEach((t, i) => { const ins = t.querySelector(".in");
@@ -296,7 +296,7 @@
         const ln = svgEl("path", { d: `M450 ${y1} C 540 ${y1}, 550 ${y2}, 640 ${y2}`, fill: "none", stroke: cols[i], "stroke-width": 16, "stroke-linecap": "round" });
         const len = 260; ln.style.strokeDasharray = len; ln.style.strokeDashoffset = len;
         tl.to(ln, { strokeDashoffset: 0, duration: Math.min(0.5, gap), ease: "power2.inOut" }, t);
-        const nd = svgEl("circle", { cx: 640, cy: y2, r: 18, fill: cols[i] }); tl.from(nd, { scale: 0, svgOrigin: `640 ${y2}`, duration: 0.2, ease: "back.out(3)" }, t + Math.min(0.5, gap) - 0.1);
+        const nd = svgEl("circle", { cx: 640, cy: y2, r: 18, fill: cols[i] }); tl.from(nd, { scale: 0, svgOrigin: `640 ${y2}`, duration: 0.2, ease: "back.out(1.7)" }, t + Math.min(0.5, gap) - 0.1);
         son(t, "feutre", { duration: Math.min(0.5, gap) }); son(t + Math.min(0.5, gap), "pop"); fin = t + gap; }
       son(fin, "ding"); fin += 0.5;
     } else if (mode === "definition") {
@@ -311,7 +311,7 @@
         const t = FIRST_AT + 0.35 + i * 0.07; tl.from(sp, { y: -120, opacity: 0, rotation: (i % 2 ? 1 : -1) * 25, duration: 0.3, ease: "bounce.out" }, t); son(t, "click", { gain: 0.4 }); });
       const dt = FIRST_AT + 0.35 + mot.length * 0.07 + 0.35;
       const pl = add("plaque", `<span class="tab" style="background:var(--bleu)">DÉFINITION</span>${hl(param("sens", "Ce que le mot veut dire."))}`, { top: "1020px", fontSize: "60px" });
-      tl.from(pl, { y: 140, opacity: 0, duration: 0.4, ease: "back.out(1.8)" }, dt); son(dt, "pop"); confettis(540, 650, dt + 0.05, 12); fin = dt + 0.6;
+      tl.from(pl, { y: 140, opacity: 0, duration: 0.4, ease: "back.out(1.7)" }, dt); son(dt, "pop"); confettis(540, 650, dt + 0.05, 12); fin = dt + 0.6;
     } else if (mode === "frise") {
       const t0 = add("abs", hl(texte), { top: "330px", fontSize: "76px", lineHeight: 1.2 });
       tl.from(t0, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
@@ -324,7 +324,7 @@
         const nd = add("hexb", i + 1 + "", { position: "absolute", left: `${x0 - 60}px`, top: `${y - 68}px`, width: "120px", height: "136px" });
         const d = add("abs", esc(j.d), { left: "320px", top: `${y - 90}px`, fontFamily: "CVTitle,sans-serif", fontSize: j.d.length > 6 ? "84px" : J.length > 3 ? "96px" : "120px", lineHeight: 1.1, color: "#FFC94A", right: "40px" });
         const l = add("abs", hl(j.l), { left: "320px", top: `${y + (j.d.length > 6 ? 14 : J.length > 3 ? 14 : 36)}px`, right: "60px", fontSize: J.length > 3 ? "38px" : "46px", lineHeight: 1.12 });
-        tl.from(nd, { scale: 0, rotation: -90, duration: 0.35, ease: "back.out(3)" }, t).from(d, { x: 90, opacity: 0, duration: 0.35, ease: "power3.out" }, t + 0.1)
+        tl.from(nd, { scale: 0, rotation: -90, duration: 0.35, ease: "back.out(1.7)" }, t).from(d, { x: 90, opacity: 0, duration: 0.35, ease: "power3.out" }, t + 0.1)
           .from(l, { y: 24, opacity: 0, duration: 0.3 }, t + 0.25); son(t, "pop"); son(t + 0.1, "impact", { gain: 0.35 }); fin = t + 0.6; });
       son(fin, "ding", { gain: 0.6 });
     } else if (mode === "indices") {
@@ -337,9 +337,9 @@
       const rev = Math.max(fin + 0.9, DUR - 0.9), cy = 1390;
       const hx = svgEl("polygon", { points: hexPts(170, cy, 120), fill: "#14204F", stroke: "url(#tri)", "stroke-width": 16, "stroke-linejoin": "round" });
       const q = svgEl("text", { x: 170, y: cy + 58, "text-anchor": "middle", "font-family": "CVTitle", "font-size": 170, fill: "#FFC94A" }); q.textContent = "?";
-      tl.from([hx, q], { opacity: 0, scale: 0.3, svgOrigin: `170 ${cy}`, duration: 0.35, ease: "back.out(2)" }, fin).to(q, { scale: 1.12, svgOrigin: `170 ${cy}`, duration: 0.4, repeat: 3, yoyo: true, ease: "sine.inOut" }, fin + 0.3);
+      tl.from([hx, q], { opacity: 0, scale: 0.3, svgOrigin: `170 ${cy}`, duration: 0.35, ease: "back.out(1.7)" }, fin).to(q, { scale: 1.12, svgOrigin: `170 ${cy}`, duration: 0.4, repeat: 3, yoyo: true, ease: "sine.inOut" }, fin + 0.3);
       const rp = add("plaque", `<div>${hl(param("reponse", "La réponse"))}</div>`, { left: "330px", top: `${cy - 100}px`, padding: "36px 40px", fontSize: "62px", right: "70px", textAlign: "center" });
-      tl.fromTo(rp, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.4)" }, rev).to(q, { opacity: 0, duration: 0.15 }, rev);
+      tl.fromTo(rp, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.7)" }, rev).to(q, { opacity: 0, duration: 0.15 }, rev);
       coche(170, cy, 0.3, rev + 0.15, "#22B573"); son(rev, "ding"); confettis(500, cy, rev + 0.1, 14); fin = rev + 0.6;
     } else if (mode === "liste" || mode === "etapes") {
       const t = add("abs", hl(texte), { top: "380px", fontSize: "92px", lineHeight: 1.15 });
@@ -351,15 +351,15 @@
         const row = add("abs", `<span class="hexb" style="width:140px;height:158px">${mode === "etapes" ? i + 1 : "✓"}</span><span style="flex:1">${hl(pt)}</span>`,
           { top: top + "px", display: "flex", alignItems: "center", gap: "40px", fontSize: "66px", lineHeight: 1.12 });
         tl.from(row, { x: -120, opacity: 0, duration: 0.3, ease: "power3.out" }, t)
-          .from(row.querySelector(".hexb"), { scale: 0, rotation: -60, duration: 0.3, ease: "back.out(2.5)" }, t + 0.1);
+          .from(row.querySelector(".hexb"), { scale: 0, rotation: -60, duration: 0.3, ease: "back.out(1.7)" }, t + 0.1);
         son(t + 0.1, "pop"); fin = t + 0.6; });
     } else if (mode === "avant_apres") {
       const c1 = add("plaque", `<span class="tab" style="background:var(--rouge)">${esc(param("titre_avant", "AVANT"))}</span>${hl(param("avant", "Une idée reçue"))}<span class="barre"></span>`, { top: "460px", transform: "rotate(-1.5deg)", fontSize: "68px" });
       const c2 = add("plaque", `<span class="tab" style="background:var(--vert)">${esc(param("titre_apres", "APRÈS"))}</span>${hl(param("apres", "La bonne réponse"))}`, { top: "1000px", transform: "rotate(1deg)", fontSize: "68px" });
-      tl.from(c1, { y: 120, opacity: 0, duration: 0.4, ease: "back.out(1.8)" }, FIRST_AT)
+      tl.from(c1, { y: 120, opacity: 0, duration: 0.4, ease: "back.out(1.7)" }, FIRST_AT)
         .fromTo(c1.querySelector(".barre"), { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "power2.inOut", immediateRender: false }, FIRST_AT + 1.0)
         .to(c1, { opacity: 0.5, duration: 0.2 }, FIRST_AT + 1.3)
-        .from(c2, { y: 160, opacity: 0, scale: 0.9, duration: 0.45, ease: "back.out(2)" }, FIRST_AT + 1.5);
+        .from(c2, { y: 160, opacity: 0, scale: 0.9, duration: 0.45, ease: "back.out(1.7)" }, FIRST_AT + 1.5);
       son(FIRST_AT + 1.0, "buzz", { gain: 0.6 }); son(FIRST_AT + 1.6, "ding"); fin = FIRST_AT + 2.2;
     } else if (mode === "accroche") {
       const titre = param("titre", "");
@@ -379,14 +379,14 @@
       const b = add("abs", "", { top: "800px" }); b.id = "brand";
       b.innerHTML = parts.length > 1 ? `${esc(parts.slice(0, -1).join(" ").toUpperCase())}<br><b>${esc(parts[parts.length - 1].toUpperCase())}</b>` : `<b>${esc(brand.toUpperCase())}</b>`;
       if (brand.length > 14) b.style.fontSize = "132px";
-      tl.from(b, { y: 80, opacity: 0, duration: 0.4, ease: "back.out(2)" }, 0.9);
+      tl.from(b, { y: 80, opacity: 0, duration: 0.4, ease: "back.out(1.7)" }, 0.9);
       // Titre, sous-titre et bouton empiles dans un bloc : un titre sur deux lignes ne chevauche plus le reste.
       const bloc = add("abs", "", { top: "1110px", display: "flex", flexDirection: "column", alignItems: "center", gap: "26px", textAlign: "center" });
       const ti = add("", hl(param("title", "Une question par jour")), { fontSize: "62px", lineHeight: 1.15 }, bloc);
       const sub = add("", hl(param("sub", "Abonne-toi pour réviser")), { fontSize: "44px", color: "#9fb0e8", lineHeight: 1.15 }, bloc);
       const bt = add("", `<span id="bouton">${esc(param("button", "S'abonner").toUpperCase())}</span>`, {}, bloc);
       tl.from(ti, { y: 40, opacity: 0, duration: 0.3 }, 1.2).from(sub, { opacity: 0, duration: 0.3 }, 1.35)
-        .from(bt, { scale: 0.4, opacity: 0, duration: 0.35, ease: "back.out(2.5)" }, 1.5)
+        .from(bt, { scale: 0.4, opacity: 0, duration: 0.35, ease: "back.out(1.7)" }, 1.5)
         .to(bt, { scale: 1.06, duration: 0.45, repeat: 5, yoyo: true, ease: "sine.inOut" }, 2.0);
       son(1.5, "sparkle"); fin = 2.0;
     }

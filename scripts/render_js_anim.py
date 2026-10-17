@@ -23,17 +23,27 @@ Usage (test/apercu d'un gabarit) :
     python render_js_anim.py --spec scene --scene ma_scene.json --duration 20 --out /tmp/scene.mp4
 """
 import argparse
+import io
 import json
+import os
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode
 
+from timeline import FPS  # cadence unique du montage (30 i/s)
+
 ANIM_DIR = Path(__file__).resolve().parent.parent / "assets" / "anim"
-FPS = 25
 SIZE = (1080, 1920)
 READY_TIMEOUT_MS = 15000
+# Flou de mouvement : chaque image est la moyenne de trois instants (1/4, 1/2, 1/4) pris a une
+# demi-image d'ecart autour de son instant -- l'effet d'une camera dont l'obturateur reste ouvert le
+# temps d'une image. Sans lui, un element qui bouge vite apparait net a chaque image, donc haché.
+# Les demi-images sont partagees entre deux images voisines (2 prises de vue par image au lieu de 3)
+# et une animation a l'arret n'est rendue qu'une fois. REALGEN_FLOU=0 (run_pipeline.py --sans-flou,
+# render_js_anim.py --sans-flou) : sans flou, rendu 2 fois plus rapide.
+FLOU = os.environ.get("REALGEN_FLOU", "1") != "0"
 
 
 def parse_spec(spec: str) -> tuple[str, dict[str, str]]:
@@ -53,8 +63,22 @@ def file_uri(path: str | Path) -> str:
     return Path(path).resolve().as_uri()
 
 
+def _fusionner(avant: bytes, centre: bytes, apres: bytes, transparent: bool):
+    """
+    Moyenne 1/4, 1/2, 1/4 des trois prises de vue. Alpha pre-multiplie (mode PIL "RGBa") : sans lui,
+    les bords des elements sur fond transparent prennent un liseré sombre.
+    """
+    from PIL import Image
+
+    mode = "RGBa" if transparent else "RGB"
+    a, b, c = (Image.open(io.BytesIO(x)).convert(mode) for x in (avant, centre, apres))
+    out = Image.blend(Image.blend(a, c, 0.5), b, 0.5)
+    return out.convert("RGBA") if transparent else out
+
+
 def render_frames(name: str, params: dict, out_dir: Path, duration: float | None = None,
-                  fps: int = FPS, transparent: bool = True, sons: list | None = None) -> int:
+                  fps: int = FPS, transparent: bool = True, sons: list | None = None,
+                  flou: bool | None = None) -> int:
     """
     -> nombre d'images ecrites dans out_dir (00000.png, 00001.png...).
     duration=None : duree naturelle du gabarit (window.DURATION) ; au-dela,
@@ -62,9 +86,11 @@ def render_frames(name: str, params: dict, out_dir: Path, duration: float | None
     une scene plus longue que lui.
     sons : liste completee par les bruitages publies par la page (window.SONS,
     dessin anime : [{"t", "name", "duration"?, "gain"?}], t depuis le debut du clip).
+    flou : flou de mouvement (defaut FLOU) ; False = une prise de vue nette par image.
     """
     from playwright.sync_api import sync_playwright
 
+    flou = FLOU if flou is None else flou
     out_dir.mkdir(parents=True, exist_ok=True)
     for old in out_dir.glob("*.png"):
         old.unlink()
@@ -79,10 +105,43 @@ def render_frames(name: str, params: dict, out_dir: Path, duration: float | None
             if sons is not None:
                 sons.extend(c for c in page.evaluate("window.SONS || []") if c["t"] < total)
             count = max(1, round(total * fps))
-            for i in range(count):
+
+            def shot(t: float) -> bytes:
                 # "; 0" : ne renvoie rien a Python (sinon serialisation de l'objet GSAP)
-                page.evaluate(f"window.seek({i / fps}); 0")
-                page.screenshot(path=str(out_dir / f"{i:05d}.png"), omit_background=transparent)
+                page.evaluate(f"window.seek({max(t, 0):.5f}); 0")
+                return page.screenshot(omit_background=transparent)
+
+            if not flou:
+                for i in range(count):
+                    (out_dir / f"{i:05d}.png").write_bytes(shot(i / fps))
+                return count
+
+            nettes: dict[int, bytes] = {}   # instants i / fps, calcules une fois (cle = image)
+            demies: dict[int, bytes] = {}   # instants (k - 0.5) / fps, partages par les images k - 1 et k
+
+            def nette(i: int) -> bytes:
+                if i not in nettes:
+                    nettes[i] = shot(i / fps)
+                return nettes[i]
+
+            def demie(k: int) -> bytes:
+                if k not in demies:
+                    demies[k] = shot((k - 0.5) / fps)
+                return demies[k]
+
+            for k in range(count):
+                centre = nette(k)
+                # Identique a la voisine : l'animation est a l'arret de ce cote, la demi-image aussi.
+                avant_fixe = k == 0 or nette(k - 1) == centre
+                apres_fixe = nette(k + 1) == centre
+                dest = out_dir / f"{k:05d}.png"
+                if avant_fixe and apres_fixe:
+                    dest.write_bytes(centre)
+                else:
+                    _fusionner(centre if avant_fixe else demie(k), centre, centre if apres_fixe else demie(k + 1),
+                               transparent).save(dest)
+                nettes.pop(k - 1, None)
+                demies.pop(k, None)
         finally:
             browser.close()
     return count
@@ -137,7 +196,12 @@ def main():
                          help="Image fixe LxH (ex : 1080x1350) : --out en .png/.jpg, etat final du gabarit")
     parser.add_argument("--scene", type=str, default=None,
                          help="Fichier JSON d'une scene de dessin anime (gabarit scene) : passe en parametre ?scene=")
+    parser.add_argument("--sans-flou", action="store_true",
+                         help="Sans flou de mouvement (une prise de vue nette par image : rendu 2 fois plus rapide)")
     args = parser.parse_args()
+    if args.sans_flou:
+        os.environ["REALGEN_FLOU"] = "0"
+        globals()["FLOU"] = False
 
     name, params = parse_spec(args.spec)
     if args.scene:

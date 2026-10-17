@@ -60,7 +60,7 @@
     // Mouvements lents sur toute la duree (la scene peut durer plus que l'intro) :
     .fromTo("#bg", { scale: 1.12 }, { scale: 1, duration: 12, ease: "none" }, 0)
     .fromTo("#glow", { scale: 0.8, opacity: 0.6 }, { scale: 1.15, opacity: 1, duration: 3, repeat: 3, yoyo: true, ease: "sine.inOut" }, 0)
-    .from("#brand b", { y: 120, opacity: 0, rotateX: -90, duration: 0.55, stagger: 0.05, ease: "back.out(2)" }, 0.15)
+    .from("#brand b", { y: 120, opacity: 0, rotateX: -90, duration: 0.55, stagger: 0.05, ease: "back.out(1.7)" }, 0.15)
     .from("#title span", { y: 50, opacity: 0, duration: 0.4, stagger: 0.06, ease: "power3.out" }, 0.6)
     .from("#sub", { opacity: 0, y: 20, duration: 0.4 }, ">-.1")
     .from("#btn span", { scale: 0.4, opacity: 0, duration: 0.6, ease: "elastic.out(1,.55)" }, ">-.15")

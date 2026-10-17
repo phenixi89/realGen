@@ -32,6 +32,10 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 - Enrichir le catalogue = éditer `catalog/*.json` ou `catalog/chaines/<id>/*.json` (aucun code) ; documenter les champs dans le
   `_doc` du fichier et dans le README. Un nouveau thème, décor, personnage, voix ou ambiance a un aperçu
   dans la console : relancer `python scripts/apercus.py` et committer `docs/apercus/`.
+- Cadence et mouvement : 30 i/s, source unique `timeline.FPS` (jamais `25` écrit en dur) ; le flou de mouvement est dans
+  `render_js_anim.py` (`--sans-flou`, `REALGEN_FLOU=0`). Un gabarit à cartes reprend `window.EASE` (`common.js`) : un seul rebond
+  `back.out(1.7)`, pas de réglage propre ; le zoom des captures a la même formule dans `3b_build_video_from_screenshots.py` et
+  `common.js` (`zoomAt`). Les sous-titres commencent à y = 1574 : le contenu des gabarits reste au-dessus.
 - Icônes dessinables : `assets/anim/icones.js` (JSON strict après `window.ICONES = `, lu aussi par
   `catalog.py`). Nouveau gabarit dessiné : s'appuyer sur `assets/anim/sketch.js`. Tout instant
   d'animation repris par `scripts/sound_design.py` doit rester identique des deux côtés.

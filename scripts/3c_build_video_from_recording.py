@@ -31,7 +31,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from timeline import clip_lengths, concat_with_xfade, load_timeline, plan_items
+from timeline import FPS, clip_lengths, concat_with_xfade, load_timeline, plan_items
 
 OUT_SIZE = (1080, 1920)
 OUT_RATIO = OUT_SIZE[0] / OUT_SIZE[1]
@@ -171,7 +171,7 @@ def _extract_fitted(raw_path: Path, clip_path: Path, seg: dict, length: float, c
     else:
         start, take, pad = seg["start"], natural, length - natural
     x, y, w, h = crop_box
-    vf = f"crop={w}:{h}:{x}:{y},scale={OUT_SIZE[0]}:{OUT_SIZE[1]},setsar=1,fps=25"
+    vf = f"crop={w}:{h}:{x}:{y},scale={OUT_SIZE[0]}:{OUT_SIZE[1]},setsar=1,fps={FPS}"
     if pad > 0:
         vf += f",tpad=stop_mode=clone:stop_duration={pad:.3f}"
     vf += ",format=yuv420p"

@@ -39,14 +39,14 @@
     bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
   const tl = gsap.timeline({ paused: true })
     .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
-    .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(2.2)" }, 0.05)
+    .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(1.7)" }, 0.05)
     .from("#title", { y: 40, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.2);
   const gap = itemGap(points.length);
   document.querySelectorAll("li").forEach((li, i) => {
     const t = FIRST_AT + i * gap;
     tl.from(li, { x: -80, opacity: 0, duration: 0.35, ease: "power3.out" }, t)
       .to(li.querySelector("b"), { opacity: 1, duration: 0.01 }, t + 0.2)
-      .fromTo(li.querySelector("b"), { scale: 0.3 }, { scale: 1, duration: 0.3, ease: "back.out(3)", immediateRender: false }, t + 0.2);
+      .fromTo(li.querySelector("b"), { scale: 0.3 }, { scale: 1, duration: 0.3, ease: "back.out(1.7)", immediateRender: false }, t + 0.2);
   });
   tl.to("#box", { y: -12, duration: 2.2, repeat: 4, yoyo: true, ease: "sine.inOut" }, FIRST_AT + points.length * gap + 0.4);
   addAmbient(tl);

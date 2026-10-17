@@ -71,6 +71,7 @@ Principales options de `run_pipeline.py` :
 | `--no-sfx` | — | Sans effets sonores (musique conservée) — case « sfx » dans le workflow |
 | `--no-music` | — | Sans musique de fond (voix et effets conservés) — case « Musique de fond » dans le workflow et la console ; par reel : `"ambiance": "aucune"` dans `--plan` |
 | `--no-hook-overlay` | — | N'affiche pas l'accroche en grand au début |
+| `--sans-flou` | — | Sans flou de mouvement sur les animations (rendu ≈ 2 fois plus rapide) — voir « Cadence et flou de mouvement » |
 | `--anims` | `none` | Animations HTML/JS intégrées au montage : `overlay`, `scene`, `highlight` (séparées par des virgules), `all` ou `none` — voir ci-dessous |
 | `--from-step` | — | Reprend à partir d'une étape (`script`/`voice`/`video`/`subs`/`assemble`) sans tout regénérer |
 | `--force` | — | Régénère tout depuis zéro |
@@ -169,6 +170,24 @@ python scripts/render_js_anim.py --spec cta --duration 4 --out /tmp/cta.mp4
 
 Nouveau gabarit : une page 1080×1920 qui charge `vendor/gsap.min.js` et `common.js`, construit une
 timeline GSAP en pause et appelle `expose(tl)` (voir `common.js` pour le contrat).
+
+### Cadence et flou de mouvement
+
+- **30 images/s partout** (`timeline.FPS`, source unique : rendu des gabarits, zoom des captures, enregistrement
+  desktop, assemblage final). 25 i/s, la norme de la télévision, saccade légèrement sur un téléphone à 60 Hz. Un gabarit
+  qui dépend de la cadence la lit dans l'URL (`?fps=`).
+- **Flou de mouvement** (`render_js_anim.py`) : chaque image est la moyenne de trois instants pris à une demi-image
+  d'écart (poids 1/4, 1/2, 1/4), comme une caméra dont l'obturateur reste ouvert le temps d'une image. Les éléments fixes
+  restent nets, ceux qui bougent vite laissent un léger filé. Les demi-images sont partagées entre images voisines
+  (2 prises de vue par image au lieu de 3) et une animation à l'arrêt n'est rendue qu'une fois. Coût : ≈ 2 fois le temps
+  de rendu des animations ; `--sans-flou` (`run_pipeline.py` ou `render_js_anim.py`, variable `REALGEN_FLOU=0`) le retire.
+  Le mélange se fait en alpha pré-multiplié : pas de liseré sombre sur les bords transparents des surimpressions.
+- **Zoom des captures** : courbe en sinus (départ et arrivée ralentis) de 1 à `ZOOM_MAX` sur toute la durée du plan,
+  plus une ligne droite. Même formule dans ffmpeg (`3b_build_video_from_screenshots.py`) et dans `common.js` (`zoomAt`,
+  paramètres d'URL `zoom`, `frames`, `zmax`, `fps`) pour que le souligne, le curseur et l'annotation restent collés à la carte.
+- **Langage de mouvement** (`window.EASE`, `common.js`) : une seule courbe par intention — entrée `power3.out`, sortie
+  `power2.in`, rebond « pop » `back.out(1.7)` (un seul réglage dans tous les gabarits à cartes ; les dessins animés,
+  `dessin/*.js`, gardent leurs rebonds plus marqués), dérive lente `sine.inOut`. Un nouveau gabarit reprend ces valeurs.
 
 ### Dessin à la main (`sketch.js`)
 
@@ -951,7 +970,9 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
   agrandi), `encadre` (mot prononcé sur une pastille), `boite` (phrase sur un bandeau), `mot` (un
   seul mot à la fois, en très grand). Les **mots-clés** choisis par Gemini (`mots_cles`) s'affichent
   dans la couleur d'accent du thème (`couleurs.mot_cle`). La ponctuation isolée par une espace
-  (« », :, ?, !) reste collée à son mot : jamais de guillemet seul à l'écran.
+  (« », :, ?, !) reste collée à son mot : jamais de guillemet seul à l'écran. Police : celle du thème (`police_texte`) ;
+  sans thème, repli sur Poppins Bold (`catalog.DEFAULT_FONT`), plus la police système. Les sous-titres commencent à
+  y = 1574 sur 1920 : les gabarits gardent leur contenu au-dessus (≈ 1500), ne pas les remonter sans revoir toutes les planches.
 - **Captures habillées** (`cadre` dans `themes.json`, `navigateur` par défaut) : la capture est posée
   dans une fenêtre de navigateur, avec ombre et liseré, sur un fond aux couleurs du thème.
 - **Accroche « pattern interrupt »** : le texte claque (flash, secousse), le mot fort est souligné ;
@@ -971,10 +992,12 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
 - **Fin en boucle** : les dernières images se fondent dans la première (accroche comprise), la
   vidéo s'enchaîne sans coupure → revisionnages (`--no-loop` pour un fondu au noir).
 - **Zoom ciblé** : chaque capture zoome vers son bouton d'action (repéré à la capture, `focus`
-  dans `captures.json`) au lieu du centre.
-- **Curseur animé** (`--anims cursor`) : une flèche vient cliquer sur ce bouton, avec un son de
-  clic de souris. Avec `highlight`, les deux alternent d'une scène à l'autre.
-- **Transitions par thème** (`transitions` dans `themes.json`, transitions ffmpeg xfade).
+  dans `captures.json`) au lieu du centre, en courbe douce (voir « Cadence et flou de mouvement »).
+- **Curseur animé** (`--anims cursor`) : une flèche vient cliquer sur ce bouton en suivant un arc (x et y arrivent avec
+  des courbes différentes), avec un son de clic de souris. Avec `highlight`, les deux alternent d'une scène à l'autre.
+- **Transitions** : par thème (`transitions` dans `themes.json`, transitions ffmpeg xfade) ; sans réglage, un fondu
+  sur deux et, entre les deux, défilement vers le haut, vers la gauche, zoom puis vers la droite
+  (`timeline.XFADE_TRANSITIONS`, 0,35 s, chacune démarre pile au début de la scène suivante).
 - **9 types de cartes** (choisis par Gemini, voir le tableau des cartes) : texte, chiffre,
   comparaison, liste, schéma dessiné à la main, conversation, scan ATS, typographie cinétique, mème.
 - **Dessin à la main** : cartes schéma et annotations au feutre sur les captures (voir « Dessin à

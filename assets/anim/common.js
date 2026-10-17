@@ -33,16 +33,25 @@ window.frTypo = (s) => String(s).replace(/ +([?!:;Â»])/g, "\u00a0$1").replace(/Â
   window.FONTS_READY = Promise.all(fonts);
 }
 
+// Langage de mouvement commun : une seule courbe par intention, reprise par tous les gabarits a cartes
+// (un rebond "pop" unique, pas huit reglages). Entree : decelere (power3.out) ; sortie : plus courte et
+// acceleree (power2.in) ; pop : petit depassement (back.out 1.7, ~10 %) reserve aux moments forts ;
+// doux : derive lente (fond, lumiere). Les dessins animes (dessin/*.js) gardent leurs propres courbes.
+window.EASE = { entree: "power3.out", sortie: "power2.in", pop: "back.out(1.7)", doux: "sine.inOut" };
+
 // Reproduction du zoom ffmpeg zoompan de 3b_build_video_from_screenshots.py,
 // image par image, pour qu'une surimpression reste collee a la capture qui
-// zoome : ?zoom=in|out|none, ?step, ?zmax, ?fps, ?fx/?fy (point vise, en
-// fraction du cadre ; 0.5/0.5 = centre). Fenetre visible clampee au cadre,
-// exactement comme zoompan.
+// zoome : ?zoom=in|out|none, ?frames (nombre d'images du plan), ?zmax, ?fps, ?fx/?fy (point vise,
+// en fraction du cadre ; 0.5/0.5 = centre). Courbe en sinus (depart et arrivee ralentis) entre 1 et
+// zmax sur toute la duree du plan -- meme formule que 3b_build_video_from_screenshots.py.
+// Fenetre visible clampee au cadre, exactement comme zoompan.
 window.zoomAt = (t) => {
-  const n = Math.round(t * num("fps", 25)), step = num("step", 0.0015), zmax = num("zmax", 1.18);
+  const fps = num("fps", 30), n = Math.round(t * fps), zmax = num("zmax", 1.18);
+  const total = Math.max(num("frames", Math.round(3.5 * fps)) - 1, 1);
+  const e = 0.5 - 0.5 * Math.cos(Math.PI * Math.min(n / total, 1));
   const mode = param("zoom", "none");
-  if (mode === "out") return n === 0 ? 1 : Math.max(zmax - step * (n - 1), 1);
-  if (mode === "in") return Math.min(1 + step * (n + 1), zmax);
+  if (mode === "out") return zmax - (zmax - 1) * e;
+  if (mode === "in") return 1 + (zmax - 1) * e;
   return 1;
 };
 window.zoomCss = (t, W = 1080, H = 1920) => {

@@ -24,15 +24,12 @@ from PIL import Image
 import catalog
 from scene_compose import frame_scene
 from render_js_anim import file_uri, parse_spec, render_clip, render_frames
-from timeline import clip_lengths, concat_with_xfade, load_timeline, plan_items
+from timeline import FPS, XFADE_TRANSITIONS, clip_lengths, concat_with_xfade, load_timeline, plan_items
 
-FPS = 25
 OUT_SIZE = (1080, 1920)
 XFADE_DURATION = 0.5
-# Alterne quelques transitions xfade standard (toutes supportees nativement
-# par ffmpeg) pour eviter que l'assemblage entier ait le meme fondu repete.
-XFADE_TRANSITIONS = ["fade", "slideleft", "fade", "slideright"]
-ZOOM_STEP = 0.0015
+# Zoom lent sur la capture : 1 -> ZOOM_MAX (ou l'inverse) sur toute la duree du plan, en courbe douce
+# (depart et arrivee ralentis, sinus), pas en ligne droite : le mouvement ne parait plus mecanique.
 ZOOM_MAX = 1.18
 # Le souligne attend la fin du fondu d'entree du clip (timeline.XFADE_DURATION).
 HIGHLIGHT_DELAY_S = 0.45
@@ -56,11 +53,10 @@ def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool
     fx, fy = focus or (0.5, 0.5)
     # Zoom alterne in/out d'une image a l'autre pour eviter un mouvement
     # repetitif identique sur tout l'assemblage. Modifier ces expressions ?
-    # assets/anim/highlight.html (zoomAt) les reproduit pour suivre la carte.
-    if zoom_out:
-        z_expr = f"if(eq(on,1),{ZOOM_MAX},max(zoom-{ZOOM_STEP},1.0))"
-    else:
-        z_expr = f"min(zoom+{ZOOM_STEP},{ZOOM_MAX})"
+    # assets/anim/common.js (zoomAt) les reproduit pour que les surimpressions suivent la carte.
+    progress = f"min(on/{max(frames - 1, 1)},1)"
+    ease = f"(0.5-0.5*cos(PI*{progress}))"
+    z_expr = f"{ZOOM_MAX}-({ZOOM_MAX}-1)*{ease}" if zoom_out else f"1+({ZOOM_MAX}-1)*{ease}"
 
     vf = (
         # Les captures desktop (mode screenshots) sont en paysage (1440x900) ;
@@ -232,7 +228,7 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
                 card = card_by_file.get(media.name)
                 focus = focus_by_file.get(media.name)
                 fxy = (focus[0] / OUT_SIZE[0], focus[1] / OUT_SIZE[1]) if focus else None
-                zoom_params = {"zoom": "out" if zoom_out else "in", "step": ZOOM_STEP, "zmax": ZOOM_MAX,
+                zoom_params = {"zoom": "out" if zoom_out else "in", "frames": int(length * FPS), "zmax": ZOOM_MAX,
                                "fps": FPS, "fx": (fxy or (0.5, 0.5))[0], "fy": (fxy or (0.5, 0.5))[1]}
                 first_of_scene = scene_index != previous_scene and scene_index not in (highlight_skip or set())
                 # Curseur si possible ; avec le souligne aussi actif, une scene sur deux.

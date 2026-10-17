@@ -94,8 +94,8 @@
   const tl = gsap.timeline({ paused: true })
     .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
     .fromTo("#grad", { opacity: 0.6, x: -30 }, { opacity: 1, x: 30, duration: 10, ease: "sine.inOut" }, 0)
-    .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.45, ease: "back.out(2.2)" }, 0.05)
-    .from("#icon", { rotate: -120, scale: 0, duration: 0.4, ease: "back.out(3)" }, 0.3);
+    .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.45, ease: "back.out(1.7)" }, 0.05)
+    .from("#icon", { rotate: -120, scale: 0, duration: 0.4, ease: "back.out(1.7)" }, 0.3);
   if (EFFET === "frappe") {
     const chars = { n: 0 }, n = titre.length, dt = typeInterval(n);
     tl.to(chars, { n, duration: n * dt, ease: "none", onUpdate: () => (typed.textContent = titre.slice(0, Math.round(chars.n))) }, TYPE_START)
@@ -107,7 +107,7 @@
       .to("#charge", { width: "100%", duration: SUSPENSE_REVEAL - 0.15, ease: "power1.in" }, 0.1)
       .set(["#mask", "#charge"], { display: "none" }, SUSPENSE_REVEAL)
       .fromTo("#flash", { opacity: 0.85 }, { opacity: 0, duration: 0.4, ease: "power2.out", immediateRender: false }, SUSPENSE_REVEAL)
-      .fromTo("#title span", { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: 0.35, stagger: 0.03, ease: "back.out(2)" }, SUSPENSE_REVEAL)
+      .fromTo("#title span", { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: 0.35, stagger: 0.03, ease: "back.out(1.7)" }, SUSPENSE_REVEAL)
       .fromTo("#box", { x: -14 }, { x: 0, duration: 0.3, ease: "elastic.out(1.2,.3)", immediateRender: false }, SUSPENSE_REVEAL);
   } else {
     tl.from("#title span", { y: 70, opacity: 0, rotateX: -60, duration: 0.45, stagger: 0.07, ease: "power3.out" }, 0.25);

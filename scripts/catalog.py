@@ -41,7 +41,9 @@ DEFAULT_CHAINE = "opuscv"
 # Fichiers editoriaux : chaque chaine a les siens (aucun repli sur une autre chaine).
 FICHIERS_CHAINE = ("formats", "sujets", "hooks")
 FONTS_DIR = ROOT / "assets" / "fonts"
-DEFAULT_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+# Repli sans theme : Poppins Bold (OFL, assets/fonts/) ; DejaVu seulement si le fichier manque.
+DEFAULT_FONT = str(FONTS_DIR / "Poppins-Bold.ttf") if (FONTS_DIR / "Poppins-Bold.ttf").exists() \
+    else "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 # Police manuscrite des dessins (cartes schema, annotations) -- OFL, assets/fonts/.
 HAND_FONT = "Kalam-Bold.ttf"
 # Dessin anime : le titre occupe seul l'ecran cette duree (s), puis la voix et la scene commencent
@@ -641,7 +643,7 @@ def compatible_sujets(fmt: dict) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def font_path(theme: dict | None, role: str = "texte") -> str:
-    """role : 'titre' ou 'texte'. Police absente -> DejaVu (toujours installee)."""
+    """role : 'titre' ou 'texte'. Police absente -> Poppins Bold (DejaVu si elle manque aussi)."""
     name = (theme or {}).get(f"police_{role}")
     if name and (FONTS_DIR / name).exists():
         return str(FONTS_DIR / name)

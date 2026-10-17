@@ -11,6 +11,7 @@ d'environnement CHAINE (catalog.chaine_id).
 """
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -397,6 +398,8 @@ def main():
                          help="Sans effets sonores (la musique reste) ; reglages fins : catalog/audio.json")
     parser.add_argument("--no-music", action="store_true",
                          help="Sans musique de fond (voix et effets conserves) ; sinon une ambiance par reel (catalog/audio.json)")
+    parser.add_argument("--sans-flou", action="store_true",
+                         help="Sans flou de mouvement sur les animations (rendu 2 fois plus rapide ; voir render_js_anim.py)")
     parser.add_argument("--no-hook-overlay", action="store_true",
                          help="N'affiche pas l'accroche en grand au debut de la video")
     parser.add_argument("--registre", type=str, default=None, choices=catalog.REGISTRES,
@@ -406,6 +409,8 @@ def main():
                               "instagram (legende .instagram.txt + couverture .jpg), carrousel (carrousel 4:5), "
                               "youtube (titre + description .youtube.txt) ; ou all (defaut)")
     args = parser.parse_args()
+    if args.sans_flou:  # lu par render_js_anim.py dans chaque etape (variable d'environnement heritee)
+        os.environ["REALGEN_FLOU"] = "0"
     catalog.set_chaine(args.chaine)   # variable CHAINE : heritee par toutes les etapes lancees ensuite
     if not catalog.produit() and args.capture_mode != "aucune":
         print(f"Chaine '{args.chaine}' sans produit : --capture-mode aucune impose (rien a capturer)")

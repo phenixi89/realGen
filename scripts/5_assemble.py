@@ -270,7 +270,7 @@ def assemble(video_path: Path, audio_path: Path, subs_path: Path, out_path: Path
 
     final.write_videofile(
         str(out_path),
-        fps=25,
+        fps=ANIM_FPS,
         codec="libx264",
         audio_codec="aac",
         preset="medium",

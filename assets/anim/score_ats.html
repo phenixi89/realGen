@@ -74,9 +74,9 @@
     const a = (i / parts.length) * Math.PI * 2, r = 260 + (i % 3) * 70;
     tl.fromTo(p, { x: 0, y: 0, opacity: 1, scale: 1 }, { immediateRender: false, x: Math.cos(a) * r, y: Math.sin(a) * r, opacity: 0, scale: 0.3, duration: 0.8, ease: "power3.out" }, "burst");
   });
-  tl.from(".row", { x: -60, opacity: 0, duration: 0.4, stagger: 0.15, ease: "back.out(2)" }, "burst")
-    .from(".ck", { scale: 0, duration: 0.3, stagger: 0.15, ease: "back.out(3)" }, "burst+=.1");
-  if (CTA) tl.from("#cta span", { y: 80, scale: 0.6, opacity: 0, duration: 0.55, ease: "back.out(2)" }, "-=.1")
+  tl.from(".row", { x: -60, opacity: 0, duration: 0.4, stagger: 0.15, ease: "back.out(1.7)" }, "burst")
+    .from(".ck", { scale: 0, duration: 0.3, stagger: 0.15, ease: "back.out(1.7)" }, "burst+=.1");
+  if (CTA) tl.from("#cta span", { y: 80, scale: 0.6, opacity: 0, duration: 0.55, ease: "back.out(1.7)" }, "-=.1")
              .fromTo("#shine", { x: "-120%" }, { x: "120%", duration: 0.8, ease: "power1.inOut" }, "+=.1");
   tl.to("#layer", { opacity: 0, y: -40, duration: 0.45, ease: "power2.in" }, "+=1.1");
   expose(tl);
