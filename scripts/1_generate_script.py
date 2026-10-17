@@ -1435,6 +1435,10 @@ def civique_problems(scenes: list[dict]) -> list[str]:
     reponse « À toi ! » au lieu de la notion cherchee).
     """
     problems = []
+    for i, sc in enumerate(scenes):   # run 86 : « C'est la laïcité. » seule = une carte affichée 1,1 s, illisible
+        if sc.get("carte") and len(sc["texte"].split()) < 6:
+            problems.append(f"scène {i + 1} : une carte demande une phrase d'au moins 6 mots (celle-ci en a {len(sc['texte'].split())}) : "
+                            "fusionne-la avec la phrase voisine, la carte reste affichée le temps de la dire")
     for i, sc in enumerate(scenes):
         carte = sc.get("carte") or {}
         if carte.get("type") != "indices":
