@@ -184,9 +184,12 @@ timeline GSAP en pause et appelle `expose(tl)` (voir `common.js` pour le contrat
   net à 25 i/s grâce à la capture rapide (ci-dessous) ; `--sans-flou` (`run_pipeline.py` ou `render_js_anim.py`, variable `REALGEN_FLOU=0`) le retire.
   Le mélange se fait en alpha pré-multiplié : pas de liseré sombre sur les bords transparents des surimpressions.
   Jamais de flou sur `jeu` (pixel art) ni `scene` (dessin animé, traits qui bouillonnent à la main) : `SANS_FLOU` dans `render_js_anim.py`.
-- **Zoom des captures** : courbe en sinus (départ et arrivée ralentis) de 1 à `ZOOM_MAX` sur toute la durée du plan,
+- **Zoom des captures** : courbe en sinus (départ et arrivée ralentis) de 1 à `ZOOM_MAX` (1,12) sur toute la durée du plan,
   plus une ligne droite. Même formule dans ffmpeg (`3b_build_video_from_screenshots.py`) et dans `common.js` (`zoomAt`,
   paramètres d'URL `zoom`, `frames`, `zmax`, `fps`) pour que le souligne, le curseur et l'annotation restent collés à la carte.
+  Le zoom suit le bouton visé **en hauteur** mais son décalage latéral est borné (`keep_card_in_view`, marge de 14 px) : la fenêtre
+  du navigateur reste entière à l'écran. Au run 89, 4 captures sur 9 perdaient de 40 à 51 px de bord (la fenêtre, presque aussi large que
+  l'écran, était poussée hors cadre par la visée sur le bouton) ; pire marge après correction : +13,6 px.
 - **Langage de mouvement** (`window.EASE`, `common.js`) : une seule courbe par intention, jamais un réglage propre à un gabarit —
   `entree` (apparition principale, décélérée), `sortie` (plus courte, accélérée), `pop` (petit rebond des moments forts),
   `rebond` (gros rebond joueur : bouton d'appel à l'action, lettres qui tombent) et `doux` (dérive lente du fond). Les valeurs

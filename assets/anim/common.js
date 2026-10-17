@@ -53,7 +53,7 @@ window.EASE = {
 // zmax sur toute la duree du plan -- meme formule que 3b_build_video_from_screenshots.py.
 // Fenetre visible clampee au cadre, exactement comme zoompan.
 window.zoomAt = (t) => {
-  const fps = num("fps", 30), n = Math.round(t * fps), zmax = num("zmax", 1.18);
+  const fps = num("fps", 30), n = Math.round(t * fps), zmax = num("zmax", 1.12);
   const total = Math.max(num("frames", Math.round(3.5 * fps)) - 1, 1);
   const e = 0.5 - 0.5 * Math.cos(Math.PI * Math.min(n / total, 1));
   const mode = param("zoom", "none");

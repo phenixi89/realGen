@@ -30,7 +30,8 @@ OUT_SIZE = (1080, 1920)
 XFADE_DURATION = 0.5
 # Zoom lent sur la capture : 1 -> ZOOM_MAX (ou l'inverse) sur toute la duree du plan, en courbe douce
 # (depart et arrivee ralentis, sinus), pas en ligne droite : le mouvement ne parait plus mecanique.
-ZOOM_MAX = 1.18
+CARD_MARGIN = 14   # marge (px) gardee de chaque cote de la carte par keep_card_in_view
+ZOOM_MAX = 1.12   # l'ancien zoom lineaire atteignait ~1,09 a 1,15 sur un plan de 2 a 4 s ; la courbe douce atteint toujours son maximum
 # Le souligne attend la fin du fondu d'entree du clip (timeline.XFADE_DURATION).
 HIGHLIGHT_DELAY_S = 0.45
 CURSOR_CLICK_AT = 1.0  # assets/anim/cursor.html CLICK_AT
@@ -39,6 +40,25 @@ CURSOR_CLICK_AT = 1.0  # assets/anim/cursor.html CLICK_AT
 ANNOTATION_DELAY_S = 0.45
 ANNOTATION_AFTER_CLICK_S = 0.3
 ANNOTATION_MIN_VISIBLE_S = 1.3
+
+
+def keep_card_in_view(fxy: tuple[float, float] | None, card: list[int] | None,
+                      zmax: float = ZOOM_MAX, width: int = OUT_SIZE[0]) -> tuple[float, float] | None:
+    """
+    Point vise (fractions du cadre) dont le decalage lateral est borne pour que la carte reste ENTIERE dans la vue au zoom
+    maximal : le zoom suit le bouton en hauteur mais ne repousse plus le bord de la fenetre du navigateur hors de l'ecran
+    (les cartes font presque toute la largeur ; run 89 : bord gauche rogne).
+    """
+    if not fxy or not card:
+        return fxy
+    x, _, w, _ = card
+    span = width / zmax                                   # largeur visible au zoom maximal
+    lo, hi = x + w + CARD_MARGIN - span, x - CARD_MARGIN  # debuts de fenetre qui gardent toute la carte, avec une marge
+    if lo > hi:                                           # carte plus large que la vue : centree
+        lo = hi = (lo + hi) / 2
+    lo, hi = max(lo, 0.0), min(hi, width - span)          # la fenetre reste dans le cadre
+    lo = min(lo, hi)
+    return (min(max(fxy[0], (lo + span / 2) / width), (hi + span / 2) / width), fxy[1])
 
 
 def build_clip(image_path: Path, clip_path: Path, seconds: float, zoom_out: bool,
@@ -227,7 +247,7 @@ def build_video_on_timeline(screens_dir: Path, out_path: Path, timeline: dict,
             else:
                 card = card_by_file.get(media.name)
                 focus = focus_by_file.get(media.name)
-                fxy = (focus[0] / OUT_SIZE[0], focus[1] / OUT_SIZE[1]) if focus else None
+                fxy = keep_card_in_view((focus[0] / OUT_SIZE[0], focus[1] / OUT_SIZE[1]) if focus else None, card)
                 zoom_params = {"zoom": "out" if zoom_out else "in", "frames": int(length * FPS), "zmax": ZOOM_MAX,
                                "fps": FPS, "fx": (fxy or (0.5, 0.5))[0], "fy": (fxy or (0.5, 0.5))[1]}
                 first_of_scene = scene_index != previous_scene and scene_index not in (highlight_skip or set())

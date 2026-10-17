@@ -36,7 +36,8 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   `render_js_anim.py` (`--sans-flou`, `REALGEN_FLOU=0`, jamais sur `jeu` ni `scene` : `SANS_FLOU`). Un gabarit à cartes n'a **aucune
   courbe propre** : il prend `window.EASE` (`entree`, `sortie`, `pop`, `rebond`, `doux`, `common.js`), dont les valeurs viennent du
   profil de mouvement de la chaîne (`catalog/config.json` « mouvements », `mouvement` dans `chaine.json` ; OpusCV = `dynamique`,
-  ses courbes d'avant). Le zoom des captures a la même formule dans `3b_build_video_from_screenshots.py` et `common.js` (`zoomAt`).
+  ses courbes d'avant). Le zoom des captures a la même formule dans `3b_build_video_from_screenshots.py` et `common.js` (`zoomAt`) ;
+  il ne doit jamais rogner la fenêtre de la capture (`keep_card_in_view`).
   Les sous-titres commencent à y = 1574 : le contenu des gabarits reste au-dessus. Après avoir touché un gabarit :
   `python scripts/verif_gabarits.py` (aussi dans `test.yml`).
 - Icônes dessinables : `assets/anim/icones.js` (JSON strict après `window.ICONES = `, lu aussi par
