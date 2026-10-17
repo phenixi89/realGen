@@ -115,7 +115,7 @@ FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
 # de texte -- c'est le texte qui fixe la duree reelle du reel, pas l'inverse.
 WORDS_PER_SECOND = 2.6
 FAST_WORDS_PER_SECOND = 3.4
-SLOW_WORDS_PER_SECOND = 2.2   # estimation (ton « débit lent »), a recaler sur les premiers reels
+SLOW_WORDS_PER_SECOND = 1.9   # ton « débit lent » : 93 mots en 49,6 s au run 83 (1,87 mots/s, pauses comprises)
 # Dessin anime (dialogue TTS a deux voix, repliques courtes) : ~2,9 mots/s mesures sur les
 # premiers reels ; un peu en dessous pour garder de l'air entre les repliques.
 DIALOGUE_WORDS_PER_SECOND = 2.3   # mesure au run 64 : 78 mots = 33,7 s (voix posees, pauses avant les chutes)

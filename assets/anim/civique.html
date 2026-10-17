@@ -78,7 +78,7 @@
     border:5px solid rgba(255,247,234,.35);font-size:56px;line-height:1.15;box-shadow:0 18px 40px rgba(0,0,0,.35)}
   .indice .tab{position:absolute;left:36px;top:-34px;font-family:CVTitle,sans-serif;font-size:44px;letter-spacing:.06em;color:var(--marine);background:var(--or);padding:4px 26px 0;border-radius:12px}
   #verdict{position:absolute;left:760px;top:250px;width:260px;height:300px;display:none}
-  #note{position:absolute;left:150px;right:150px;top:1440px;padding:26px 40px;border-radius:24px;background:rgba(255,247,234,.12);
+  #note{position:absolute;left:150px;right:150px;top:1330px;padding:26px 40px;border-radius:24px;background:rgba(255,247,234,.12);
     border:4px solid rgba(255,247,234,.4);font-size:48px;line-height:1.25;text-align:center;display:none}
   #brand{font-family:CVTitle,sans-serif;font-size:150px;line-height:.95;text-align:center;letter-spacing:.02em}
   #brand b{font-weight:400;background:linear-gradient(90deg,var(--bleu),#fff 50%,var(--rouge));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -225,12 +225,12 @@
       } else {
         const t = add("abs texte", "", { top: "420px" });
         fin = motAMot(t, texte, FIRST_AT);
-        if (icone && (window.ICONES || {})[icone]) { hexagone(540, 1150, 250, Math.min(fin, DUR * 0.4), { width: 18 }); croquis = icon(540, 1150, 300, Math.min(fin, DUR * 0.4) + 0.3); }
+        if (icone && (window.ICONES || {})[icone]) { hexagone(540, 1060, 250, Math.min(fin, DUR * 0.4), { width: 18 }); croquis = icon(540, 1060, 300, Math.min(fin, DUR * 0.4) + 0.3); }
         else if (/\?\s*$/.test(texte)) {   // une question : un « ? » qui attend la reponse, jamais une coche avant elle
-          hexagone(540, 1150, 170, fin, { fill: "#14204F", width: 16 });
-          const q = svgEl("text", { x: 540, y: 1215, "text-anchor": "middle", "font-family": "CVTitle", "font-size": 190, fill: "#FFC94A" });
-          q.textContent = "?"; tl.from(q, { opacity: 0, scale: 0.3, svgOrigin: "540 1150", duration: 0.3, ease: "back.out(3)" }, fin + 0.3); son(fin + 0.3, "pop");
-        } else { const g = svgEl("g", {}); hexagone(540, 1150, 170, fin, { fill: "#14204F", width: 16, parent: g }); coche(540, 1150, 0.5, fin + 0.35, null, g); son(fin + 0.35, "ding", { gain: 0.6 }); }
+          hexagone(540, 1060, 170, fin, { fill: "#14204F", width: 16 });
+          const q = svgEl("text", { x: 540, y: 1125, "text-anchor": "middle", "font-family": "CVTitle", "font-size": 190, fill: "#FFC94A" });
+          q.textContent = "?"; tl.from(q, { opacity: 0, scale: 0.3, svgOrigin: "540 1060", duration: 0.3, ease: "back.out(3)" }, fin + 0.3); son(fin + 0.3, "pop");
+        } else { const g = svgEl("g", {}); hexagone(540, 1060, 170, fin, { fill: "#14204F", width: 16, parent: g }); coche(540, 1060, 0.5, fin + 0.35, null, g); son(fin + 0.35, "ding", { gain: 0.6 }); }
         if (note) { const n = document.getElementById("note"); n.style.display = "block"; n.textContent = frTypo(note);
           tl.from(n, { y: 60, opacity: 0, duration: 0.35, ease: "back.out(2)" }, fin + 0.2); son(fin + 0.2, "pop"); }
       }
@@ -263,7 +263,7 @@
         const at = FIRST_AT + 0.5 + i * 0.3; tl.from(t, { scale: 0, rotation: i ? 25 : -25, duration: 0.45, ease: "back.out(2)" }, at); son(at + 0.05, "pop"); return t; });
       const vs = add("vs", "VS", {}); tl.from(vs, { scale: 0, rotation: -90, duration: 0.4, ease: "back.out(3)" }, FIRST_AT + 1.0); son(FIRST_AT + 1.05, "impact", { gain: 0.5 });
       const finOpts = FIRST_AT + 1.4, rev = Math.max(finOpts + 1.2, DUR - 0.8);
-      compte(540, 1560, finOpts, rev, 100, 130);
+      compte(540, 1370, finOpts, rev, 95, 125);
       tuiles.forEach((t, i) => { if (i === bonne - 1) { tl.to(t.querySelector(".in"), { backgroundColor: "#22B573", duration: 0.2 }, rev).to(t, { scale: 1.1, duration: 0.3, ease: "back.out(3)" }, rev); }
         else tl.to(t, { opacity: 0.22, scale: 0.88, duration: 0.3 }, rev); });
       tl.to(vs, { opacity: 0, scale: 0.4, duration: 0.2 }, rev);
@@ -301,25 +301,25 @@
       son(fin, "ding"); fin += 0.5;
     } else if (mode === "definition") {
       const mot = param("mot", "Laïcité"), fs = Math.min(200, Math.floor(880 / (mot.length * 0.5)));
-      hexagone(540, 700, 330, FIRST_AT, { width: 18, dur: 0.7 });
-      const w = add("abs", "", { top: `${700 - fs * 0.58}px`, fontFamily: "CVTitle,sans-serif", fontSize: `${fs}px`, lineHeight: 1.1, textAlign: "center", color: "#FFC94A", whiteSpace: "nowrap" });
+      hexagone(540, 650, 300, FIRST_AT, { width: 18, dur: 0.7 });
+      const w = add("abs", "", { top: `${650 - fs * 0.58}px`, fontFamily: "CVTitle,sans-serif", fontSize: `${fs}px`, lineHeight: 1.1, textAlign: "center", color: "#FFC94A", whiteSpace: "nowrap" });
       [...mot.toUpperCase()].forEach((c, i) => { const sp = document.createElement("span"); sp.style.display = "inline-block"; sp.innerHTML = c === " " ? "&nbsp;" : esc(c); w.appendChild(sp);
         const t = FIRST_AT + 0.35 + i * 0.07; tl.from(sp, { y: -120, opacity: 0, rotation: (i % 2 ? 1 : -1) * 25, duration: 0.3, ease: "bounce.out" }, t); son(t, "click", { gain: 0.4 }); });
       const dt = FIRST_AT + 0.35 + mot.length * 0.07 + 0.35;
-      const pl = add("plaque", `<span class="tab" style="background:var(--bleu)">DÉFINITION</span>${hl(param("sens", "Ce que le mot veut dire."))}`, { top: "1130px", fontSize: "62px" });
-      tl.from(pl, { y: 140, opacity: 0, duration: 0.4, ease: "back.out(1.8)" }, dt); son(dt, "pop"); confettis(540, 700, dt + 0.05, 12); fin = dt + 0.6;
+      const pl = add("plaque", `<span class="tab" style="background:var(--bleu)">DÉFINITION</span>${hl(param("sens", "Ce que le mot veut dire."))}`, { top: "1020px", fontSize: "60px" });
+      tl.from(pl, { y: 140, opacity: 0, duration: 0.4, ease: "back.out(1.8)" }, dt); son(dt, "pop"); confettis(540, 650, dt + 0.05, 12); fin = dt + 0.6;
     } else if (mode === "frise") {
       const t0 = add("abs", hl(texte), { top: "330px", fontSize: "76px", lineHeight: 1.2 });
       tl.from(t0, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
       const J = param("jalons", "").split("|").filter(Boolean).slice(0, 4).map((x) => { const [d, ...r] = x.split("~"); return { d, l: r.join("~") }; });
-      const x0 = 190, y0 = 700, step = Math.min(330, 800 / Math.max(J.length - 1, 1)), yN = y0 + (J.length - 1) * step;
+      const x0 = 190, y0 = 650, step = Math.min(300, 690 / Math.max(J.length - 1, 1)), yN = y0 + (J.length - 1) * step;
       const ln = svgEl("line", { x1: x0, y1: y0, x2: x0, y2: yN, stroke: "rgba(255,247,234,.55)", "stroke-width": 10, "stroke-linecap": "round" });
       const g = Math.min(1.0, Math.max(0.5, (DUR * 0.7 - FIRST_AT - 0.5) / J.length));
       tl.from(ln, { attr: { y2: y0 }, duration: g * Math.max(J.length - 1, 1), ease: "none" }, FIRST_AT + 0.4);
       J.forEach((j, i) => { const y = y0 + i * step, t = FIRST_AT + 0.5 + i * g;
         const nd = add("hexb", i + 1 + "", { position: "absolute", left: `${x0 - 60}px`, top: `${y - 68}px`, width: "120px", height: "136px" });
-        const d = add("abs", esc(j.d), { left: "320px", top: `${y - 90}px`, fontFamily: "CVTitle,sans-serif", fontSize: j.d.length > 6 ? "88px" : "120px", lineHeight: 1.1, color: "#FFC94A", right: "40px" });
-        const l = add("abs", hl(j.l), { left: "320px", top: `${y + (j.d.length > 6 ? 18 : 36)}px`, right: "60px", fontSize: "46px", lineHeight: 1.15 });
+        const d = add("abs", esc(j.d), { left: "320px", top: `${y - 90}px`, fontFamily: "CVTitle,sans-serif", fontSize: j.d.length > 6 ? "84px" : J.length > 3 ? "96px" : "120px", lineHeight: 1.1, color: "#FFC94A", right: "40px" });
+        const l = add("abs", hl(j.l), { left: "320px", top: `${y + (j.d.length > 6 ? 14 : J.length > 3 ? 14 : 36)}px`, right: "60px", fontSize: J.length > 3 ? "38px" : "46px", lineHeight: 1.12 });
         tl.from(nd, { scale: 0, rotation: -90, duration: 0.35, ease: "back.out(3)" }, t).from(d, { x: 90, opacity: 0, duration: 0.35, ease: "power3.out" }, t + 0.1)
           .from(l, { y: 24, opacity: 0, duration: 0.3 }, t + 0.25); son(t, "pop"); son(t + 0.1, "impact", { gain: 0.35 }); fin = t + 0.6; });
       son(fin, "ding", { gain: 0.6 });
@@ -328,9 +328,9 @@
       tl.from(t0, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
       const I = points.slice(0, 3), g = Math.min(1.1, Math.max(0.6, (DUR * 0.5 - FIRST_AT) / I.length));
       I.forEach((txt, i) => { const t = FIRST_AT + 0.5 + i * g;
-        const c = add("indice", `<span class="tab">INDICE ${i + 1}</span>${hl(txt)}`, { top: `${520 + i * 290}px` });
+        const c = add("indice", `<span class="tab">INDICE ${i + 1}</span>${hl(txt)}`, { top: `${470 + i * 260}px` });
         tl.from(c, { x: i % 2 ? 200 : -200, opacity: 0, duration: 0.4, ease: "power3.out" }, t); son(t, "pop"); fin = t + 0.6; });
-      const rev = Math.max(fin + 0.9, DUR - 0.9), cy = 1560;
+      const rev = Math.max(fin + 0.9, DUR - 0.9), cy = 1390;
       const hx = svgEl("polygon", { points: hexPts(170, cy, 120), fill: "#14204F", stroke: "url(#tri)", "stroke-width": 16, "stroke-linejoin": "round" });
       const q = svgEl("text", { x: 170, y: cy + 58, "text-anchor": "middle", "font-family": "CVTitle", "font-size": 170, fill: "#FFC94A" }); q.textContent = "?";
       tl.from([hx, q], { opacity: 0, scale: 0.3, svgOrigin: `170 ${cy}`, duration: 0.35, ease: "back.out(2)" }, fin).to(q, { scale: 1.12, svgOrigin: `170 ${cy}`, duration: 0.4, repeat: 3, yoyo: true, ease: "sine.inOut" }, fin + 0.3);
@@ -340,10 +340,10 @@
     } else if (mode === "liste" || mode === "etapes") {
       const t = add("abs", hl(texte), { top: "380px", fontSize: "92px", lineHeight: 1.15 });
       tl.from(t, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
-      const pts = mode === "etapes" ? points.slice(0, 3) : points, gap = Math.min(0.8, Math.max(0.35, (DUR * 0.7 - FIRST_AT) / pts.length));
+      const pts = mode === "etapes" ? points.slice(0, 3) : points.slice(0, 4), gap = Math.min(0.8, Math.max(0.35, (DUR * 0.7 - FIRST_AT) / pts.length));
       if (mode === "etapes" && pts.length > 1) { const l = svgEl("line", { x1: 150, y1: 820, x2: 150, y2: 820 + (pts.length - 1) * 300, stroke: "url(#tri)", "stroke-width": 12, "stroke-linecap": "round" });
         tl.from(l, { attr: { y2: 820 }, duration: gap * (pts.length - 1), ease: "none" }, FIRST_AT + 0.6); }
-      pts.forEach((pt, i) => { const top = (mode === "etapes" ? 750 + i * 300 : 760 + i * 220), t = FIRST_AT + 0.5 + i * gap;
+      pts.forEach((pt, i) => { const top = (mode === "etapes" ? 750 + i * 300 : 740 + i * Math.min(220, 700 / pts.length)), t = FIRST_AT + 0.5 + i * gap;
         const row = add("abs", `<span class="hexb" style="width:140px;height:158px">${mode === "etapes" ? i + 1 : "✓"}</span><span style="flex:1">${hl(pt)}</span>`,
           { top: top + "px", display: "flex", alignItems: "center", gap: "40px", fontSize: "66px", lineHeight: 1.12 });
         tl.from(row, { x: -120, opacity: 0, duration: 0.3, ease: "power3.out" }, t)
@@ -368,17 +368,17 @@
       fin = 1.4;
     } else if (mode === "fin") {
       document.getElementById("projo").style.opacity = 1.4;
-      const g = svgEl("g", {}); hexagone(540, 640, 230, 0.1, { width: 30, dur: 0.6, parent: g, fill: "#14204F" }); coche(540, 640, 0.62, 0.65, null, g);
-      svgEl("circle", { cx: 540 + 188 * 0.62, cy: 640 - 120 * 0.62, r: 16, fill: "#EF3E4A" }, g);
+      const g = svgEl("g", {}); hexagone(540, 520, 210, 0.1, { width: 28, dur: 0.6, parent: g, fill: "#14204F" }); coche(540, 520, 0.56, 0.65, null, g);
+      svgEl("circle", { cx: 540 + 188 * 0.56, cy: 520 - 120 * 0.56, r: 15, fill: "#EF3E4A" }, g);
       son(0.65, "ding");
       const brand = param("brand", "Objectif Civique"), parts = brand.split(" ");
-      const b = add("abs", "", { top: "960px" }); b.id = "brand";
+      const b = add("abs", "", { top: "800px" }); b.id = "brand";
       b.innerHTML = parts.length > 1 ? `${esc(parts.slice(0, -1).join(" ").toUpperCase())}<br><b>${esc(parts[parts.length - 1].toUpperCase())}</b>` : `<b>${esc(brand.toUpperCase())}</b>`;
       if (brand.length > 14) b.style.fontSize = "132px";
       tl.from(b, { y: 80, opacity: 0, duration: 0.4, ease: "back.out(2)" }, 0.9);
-      const ti = add("abs", hl(param("title", "Une question par jour")), { top: "1310px", fontSize: "64px", textAlign: "center", lineHeight: 1.2 });
-      const sub = add("abs", hl(param("sub", "Abonne-toi pour réviser")), { top: "1410px", fontSize: "44px", textAlign: "center", color: "#9fb0e8" });
-      const bt = add("abs", `<span id="bouton">${esc(param("button", "S'abonner").toUpperCase())}</span>`, { top: "1510px", textAlign: "center" });
+      const ti = add("abs", hl(param("title", "Une question par jour")), { top: "1130px", fontSize: "62px", textAlign: "center", lineHeight: 1.2 });
+      const sub = add("abs", hl(param("sub", "Abonne-toi pour réviser")), { top: "1225px", fontSize: "44px", textAlign: "center", color: "#9fb0e8" });
+      const bt = add("abs", `<span id="bouton">${esc(param("button", "S'abonner").toUpperCase())}</span>`, { top: "1310px", textAlign: "center" });
       tl.from(ti, { y: 40, opacity: 0, duration: 0.3 }, 1.2).from(sub, { opacity: 0, duration: 0.3 }, 1.35)
         .from(bt, { scale: 0.4, opacity: 0, duration: 0.35, ease: "back.out(2.5)" }, 1.5)
         .to(bt, { scale: 1.06, duration: 0.45, repeat: 5, yoyo: true, ease: "sine.inOut" }, 2.0);

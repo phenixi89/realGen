@@ -551,6 +551,8 @@ qui se vide (quiz, duel, intrus), **confettis hexagonaux** (tricolores et or) à
 coup de projecteur qui balaie la scène. **Transitions** du thème entre les plans : ouverture en cercle, radial, glissements
 doux, pixels, compression (`circleopen`, `radial`, `smoothleft`, `smoothup`, `pixelize`, `squeezeh`).
 
+**Zone libre** : les sous-titres incrustés occupent le bas de l'écran (à partir de y = 1574 sur 1920) : toutes les planches du plateau gardent leur contenu au-dessus de y ≈ 1500 (note, hexagone, définition, frise, indices, appel à l'action).
+
 Tampon de réponse (`verdict`) : badge hexagonal vert avec coche (VRAI) ou rouge avec croix (FAUX), à 0,45 s. Les sons
 (clics des mots, pop, tic-tac du compte à rebours, ding, buzz, coup du tampon) sont **publiés par la page** (`window.SONS`,
 lus par `render_js_anim.render_clip`) : rien à recopier dans `sound_design.py`. `run_pipeline.plan_montage` remplace
@@ -657,7 +659,7 @@ ajoutée à toutes les légendes (TikTok, Instagram, YouTube).
 **Chaîne vérifiée** (`"verification": true`) : chaque sujet porte `faits` (phrases recopiées d'une source officielle) et
 `source` ; les faits sont la **seule base autorisée** (bloc « FAITS VÉRIFIÉS » du prompt), un nombre supérieur à 10 dit ou
 affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), et la source est ajoutée aux légendes
-(« Source : … »). Un ton qui contient « lent » compte 2,2 mots/s (au lieu de 2,6) pour le budget de mots.
+(« Source : … »). Un ton qui contient « lent » compte 1,9 mot/s (au lieu de 2,6, mesuré au run 83) pour le budget de mots.
 
 | Chaîne | Nom | Formats | Particularités |
 |---|---|---|---|

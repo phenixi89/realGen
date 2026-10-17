@@ -72,7 +72,8 @@
         "civique_plateau"
       ],
       "structure": "Mini-cours de révision de 30 à 35 secondes, une seule notion. Scène 1 (accroche, sans carte) : la promesse (« Retiens ça pour ton examen civique »). Puis 2 ou 3 LEÇONS courtes tirées des FAITS, chacune une scène-carte d'UNE phrase de 10 mots au plus (mots simples) : varie les cartes (texte, chiffre pour une date des faits, schéma, liste ; un quiz possible à la place d'une leçon, sa réponse donnée par la voix) ; la voix dit la leçon, la carte la résume en mots clés. Avant-dernière scène (carte impact) : la phrase à retenir, en 4 à 9 mots. Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les leçons"
+      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les leçons",
+      "etiquette": "LEÇON {n}/{total}"
     },
     {
       "id": "duel_ab",
