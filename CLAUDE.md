@@ -17,8 +17,8 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   session. Messages de commit en français.
 - Échanges avec l'utilisateur en français.
 - Textes affichés dans les vidéos (prompts, cartes, sous-titres) en français accentué.
-- Vérifications avant commit : `python -m py_compile scripts/*.py`, `python scripts/catalog.py` et
-  `python scripts/verif_prompts.py` (construit le prompt de chaque format : `py_compile` ne voit pas une variable utilisée avant
+- Vérifications avant commit : `python -m py_compile scripts/*.py`, `python scripts/catalog.py`,
+  `python scripts/verif_gabarits.py` (charge chaque gabarit d'animation) et `python scripts/verif_prompts.py` (construit le prompt de chaque format : `py_compile` ne voit pas une variable utilisée avant
   sa définition, run 80) — mêmes contrôles que `.github/workflows/test.yml`.
 - Chaînes : formats, sujets, accroches et config d'une chaîne dans `catalog/chaines/<id>/` (aucun repli d'une chaîne sur
   une autre) ; `chaine.json` = identité (nom, marque, watermark, produit ou faceless, niche, public, règles, personnages,
@@ -33,9 +33,12 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   `_doc` du fichier et dans le README. Un nouveau thème, décor, personnage, voix ou ambiance a un aperçu
   dans la console : relancer `python scripts/apercus.py` et committer `docs/apercus/`.
 - Cadence et mouvement : 30 i/s, source unique `timeline.FPS` (jamais `25` écrit en dur) ; le flou de mouvement est dans
-  `render_js_anim.py` (`--sans-flou`, `REALGEN_FLOU=0`). Un gabarit à cartes reprend `window.EASE` (`common.js`) : un seul rebond
-  `back.out(1.7)`, pas de réglage propre ; le zoom des captures a la même formule dans `3b_build_video_from_screenshots.py` et
-  `common.js` (`zoomAt`). Les sous-titres commencent à y = 1574 : le contenu des gabarits reste au-dessus.
+  `render_js_anim.py` (`--sans-flou`, `REALGEN_FLOU=0`, jamais sur `jeu` ni `scene` : `SANS_FLOU`). Un gabarit à cartes n'a **aucune
+  courbe propre** : il prend `window.EASE` (`entree`, `sortie`, `pop`, `rebond`, `doux`, `common.js`), dont les valeurs viennent du
+  profil de mouvement de la chaîne (`catalog/config.json` « mouvements », `mouvement` dans `chaine.json` ; OpusCV = `dynamique`,
+  ses courbes d'avant). Le zoom des captures a la même formule dans `3b_build_video_from_screenshots.py` et `common.js` (`zoomAt`).
+  Les sous-titres commencent à y = 1574 : le contenu des gabarits reste au-dessus. Après avoir touché un gabarit :
+  `python scripts/verif_gabarits.py` (aussi dans `test.yml`).
 - Icônes dessinables : `assets/anim/icones.js` (JSON strict après `window.ICONES = `, lu aussi par
   `catalog.py`). Nouveau gabarit dessiné : s'appuyer sur `assets/anim/sketch.js`. Tout instant
   d'animation repris par `scripts/sound_design.py` doit rester identique des deux côtés.

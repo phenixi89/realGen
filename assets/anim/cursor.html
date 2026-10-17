@@ -40,7 +40,7 @@
     .fromTo("#r1", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 3.2, duration: 0.6, ease: "power2.out", immediateRender: false }, CLICK_AT)
     .fromTo("#r2", { opacity: 0.7, scale: 0.4 }, { opacity: 0, scale: 2.2, duration: 0.6, ease: "power2.out", immediateRender: false }, CLICK_AT + 0.12)
     .to("#spot", { opacity: 0, duration: 0.5 }, CLICK_AT + 0.6)
-    .to("#cursor", { x: tipX + 40, y: tipY + 30, opacity: 0, duration: 0.45, ease: "power2.in" }, CLICK_AT + 1.0);
+    .to("#cursor", { x: tipX + 40, y: tipY + 30, opacity: 0, duration: 0.45, ease: EASE.sortie }, CLICK_AT + 1.0);
   expose(tl);
   const layer = document.getElementById("layer"), baseSeek = window.seek;
   window.seek = (t) => { baseSeek(t - DELAY); layer.style.transform = zoomCss(t); };

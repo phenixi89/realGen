@@ -162,6 +162,7 @@ dialog[open]{display:flex;flex-direction:column}dialog::backdrop{background:rgba
         <div><label>Animations <small>scene/highlight : mode captures</small></label><select id="f_anims">
           <option value="none">Aucune</option><option value="all">Toutes</option><option>overlay</option><option>scene</option><option>highlight</option><option>cursor</option>
           <option>overlay,scene</option><option>overlay,highlight</option><option>scene,highlight</option><option>overlay,cursor</option><option>scene,cursor</option></select></div>
+        <label class="chk"><input id="f_flou" type="checkbox" checked> Flou de mouvement <small>(décocher : rendu plus rapide)</small></label>
       </div>
       <h4 class="grp">Son</h4>
       <div class="grid">
@@ -565,7 +566,7 @@ function planInput(){
 async function launch(){
   const inputs = { chaine: CHAINE, n: String($("f_n").value || 3) };
   for (const k of ["duration","format","theme","hook","registre","plateformes","voice","capture_mode","anims","from_step","angle","scenario"]) inputs[k] = $("f_" + k).value.trim();
-  for (const k of ["musique","sfx","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
+  for (const k of ["musique","sfx","flou","sans_voix","force","allow_ai_quota"]) inputs[k] = String($("f_" + k).checked);
   if ($("f_compose").checked) {
     // Mode composition : une combinaison par reel ; les choix globaux cedent la place.
     if (PLAN.some(r => r.libre && !r.angle)) return toast("Sujet libre choisi mais vide : écris-le ou repasse en Auto", 6000);

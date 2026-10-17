@@ -23,6 +23,7 @@ Usage (test/apercu d'un gabarit) :
     python render_js_anim.py --spec scene --scene ma_scene.json --duration 20 --out /tmp/scene.mp4
 """
 import argparse
+import base64
 import io
 import json
 import os
@@ -44,6 +45,9 @@ READY_TIMEOUT_MS = 15000
 # et une animation a l'arret n'est rendue qu'une fois. REALGEN_FLOU=0 (run_pipeline.py --sans-flou,
 # render_js_anim.py --sans-flou) : sans flou, rendu 2 fois plus rapide.
 FLOU = os.environ.get("REALGEN_FLOU", "1") != "0"
+# Jamais de flou sur ces gabarits : le jeu rétro est du pixel art (le flou le salirait) et les traits du dessin animé
+# « bouillonnent » volontairement, image par image, comme à la main. Ce sont aussi les rendus les plus longs.
+SANS_FLOU = {"jeu", "scene"}
 
 
 def parse_spec(spec: str) -> tuple[str, dict[str, str]]:
@@ -86,11 +90,11 @@ def render_frames(name: str, params: dict, out_dir: Path, duration: float | None
     une scene plus longue que lui.
     sons : liste completee par les bruitages publies par la page (window.SONS,
     dessin anime : [{"t", "name", "duration"?, "gain"?}], t depuis le debut du clip).
-    flou : flou de mouvement (defaut FLOU) ; False = une prise de vue nette par image.
+    flou : flou de mouvement (defaut FLOU, sauf gabarits de SANS_FLOU) ; False = une prise de vue nette par image.
     """
     from playwright.sync_api import sync_playwright
 
-    flou = FLOU if flou is None else flou
+    flou = (FLOU if flou is None else flou) and name not in SANS_FLOU
     out_dir.mkdir(parents=True, exist_ok=True)
     for old in out_dir.glob("*.png"):
         old.unlink()
@@ -106,9 +110,29 @@ def render_frames(name: str, params: dict, out_dir: Path, duration: float | None
                 sons.extend(c for c in page.evaluate("window.SONS || []") if c["t"] < total)
             count = max(1, round(total * fps))
 
+            # Capture par le protocole DevTools avec optimizeForSpeed (PNG peu compresse) : ~4 fois plus rapide que
+            # page.screenshot() pour des images strictement identiques ; repli sur page.screenshot() si indisponible.
+            cdp = None
+            try:
+                cdp = page.context.new_cdp_session(page)
+                if transparent:   # ce que fait page.screenshot(omit_background=True)
+                    cdp.send("Emulation.setDefaultBackgroundColorOverride", {"color": {"r": 0, "g": 0, "b": 0, "a": 0}})
+            except Exception:  # noqa: BLE001
+                cdp = None
+
             def shot(t: float) -> bytes:
+                nonlocal cdp
                 # "; 0" : ne renvoie rien a Python (sinon serialisation de l'objet GSAP)
                 page.evaluate(f"window.seek({max(t, 0):.5f}); 0")
+                if cdp is not None:
+                    try:
+                        # Attend que le navigateur ait affiche l'etat qu'on vient de poser : sans cela, la capture directe
+                        # prend parfois l'image precedente (page.screenshot() fait cette attente lui-meme).
+                        page.evaluate("new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => ok(0))))")
+                        return base64.b64decode(cdp.send("Page.captureScreenshot", {
+                            "format": "png", "optimizeForSpeed": True, "fromSurface": True})["data"])
+                    except Exception:  # noqa: BLE001
+                        cdp = None
                 return page.screenshot(omit_background=transparent)
 
             if not flou:
@@ -139,7 +163,7 @@ def render_frames(name: str, params: dict, out_dir: Path, duration: float | None
                     dest.write_bytes(centre)
                 else:
                     _fusionner(centre if avant_fixe else demie(k), centre, centre if apres_fixe else demie(k + 1),
-                               transparent).save(dest)
+                               transparent).save(dest, compress_level=1)   # fichiers temporaires : compression minimale (4x plus vite)
                 nettes.pop(k - 1, None)
                 demies.pop(k, None)
         finally:

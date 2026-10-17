@@ -35,6 +35,9 @@ jobs:
       - name: Construit le prompt de chaque format (sans appel IA)
         run: python scripts/verif_prompts.py
 
+      - name: Charge chaque gabarit d'animation avec chaque profil de mouvement
+        run: python scripts/verif_gabarits.py
+
       - name: Vérifie run_pipeline.py --help
         run: python scripts/run_pipeline.py --help
 

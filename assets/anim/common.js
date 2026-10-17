@@ -33,11 +33,18 @@ window.frTypo = (s) => String(s).replace(/ +([?!:;»])/g, "\u00a0$1").replace(/�
   window.FONTS_READY = Promise.all(fonts);
 }
 
-// Langage de mouvement commun : une seule courbe par intention, reprise par tous les gabarits a cartes
-// (un rebond "pop" unique, pas huit reglages). Entree : decelere (power3.out) ; sortie : plus courte et
-// acceleree (power2.in) ; pop : petit depassement (back.out 1.7, ~10 %) reserve aux moments forts ;
-// doux : derive lente (fond, lumiere). Les dessins animes (dessin/*.js) gardent leurs propres courbes.
-window.EASE = { entree: "power3.out", sortie: "power2.in", pop: "back.out(1.7)", doux: "sine.inOut" };
+// Langage de mouvement commun : une seule courbe par intention, reprise par tous les gabarits a cartes (jamais un
+// reglage propre a un gabarit). Les valeurs viennent du profil de mouvement de la chaine (catalog/config.json
+// « mouvements », passe en ?ease_entree= ... par catalog.anim_params) ; sans parametre : profil « dynamique ».
+//   entree : apparition principale (decelere) ; sortie : disparition, plus courte (acceleree) ;
+//   pop : petit rebond reserve aux moments forts ; rebond : gros rebond joueur (bouton, lettres qui tombent) ;
+//   doux : derive lente (fond, lumiere).
+// Les dessins animes (dessin/*.js, scene.html) et le jeu (jeu.html) gardent leurs propres courbes.
+window.EASE = {
+  entree: param("ease_entree", "power3.out"), sortie: param("ease_sortie", "power2.in"),
+  pop: param("ease_pop", "back.out(1.7)"), rebond: param("ease_rebond", "elastic.out(1,.55)"),
+  doux: param("ease_doux", "sine.inOut"),
+};
 
 // Reproduction du zoom ffmpeg zoompan de 3b_build_video_from_screenshots.py,
 // image par image, pour qu'une surimpression reste collee a la capture qui

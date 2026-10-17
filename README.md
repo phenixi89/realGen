@@ -71,7 +71,7 @@ Principales options de `run_pipeline.py` :
 | `--no-sfx` | — | Sans effets sonores (musique conservée) — case « sfx » dans le workflow |
 | `--no-music` | — | Sans musique de fond (voix et effets conservés) — case « Musique de fond » dans le workflow et la console ; par reel : `"ambiance": "aucune"` dans `--plan` |
 | `--no-hook-overlay` | — | N'affiche pas l'accroche en grand au début |
-| `--sans-flou` | — | Sans flou de mouvement sur les animations (rendu ≈ 2 fois plus rapide) — voir « Cadence et flou de mouvement » |
+| `--sans-flou` | — | Sans flou de mouvement sur les animations — voir « Cadence et flou de mouvement » ; case « flou » du workflow et de la console (groupe Animations) |
 | `--anims` | `none` | Animations HTML/JS intégrées au montage : `overlay`, `scene`, `highlight` (séparées par des virgules), `all` ou `none` — voir ci-dessous |
 | `--from-step` | — | Reprend à partir d'une étape (`script`/`voice`/`video`/`subs`/`assemble`) sans tout regénérer |
 | `--force` | — | Régénère tout depuis zéro |
@@ -179,15 +179,33 @@ timeline GSAP en pause et appelle `expose(tl)` (voir `common.js` pour le contrat
 - **Flou de mouvement** (`render_js_anim.py`) : chaque image est la moyenne de trois instants pris à une demi-image
   d'écart (poids 1/4, 1/2, 1/4), comme une caméra dont l'obturateur reste ouvert le temps d'une image. Les éléments fixes
   restent nets, ceux qui bougent vite laissent un léger filé. Les demi-images sont partagées entre images voisines
-  (2 prises de vue par image au lieu de 3) et une animation à l'arrêt n'est rendue qu'une fois. Coût : ≈ 2 fois le temps
-  de rendu des animations ; `--sans-flou` (`run_pipeline.py` ou `render_js_anim.py`, variable `REALGEN_FLOU=0`) le retire.
+  (2 prises de vue par image au lieu de 3) et une animation à l'arrêt n'est rendue qu'une fois. Coût mesuré (machine sans GPU, plan de
+  1,2 s) : ≈ 2,5 fois le rendu net (1,16 s par image contre 0,46 s), soit environ 40 % de plus par seconde d'animation que l'ancien rendu
+  net à 25 i/s grâce à la capture rapide (ci-dessous) ; `--sans-flou` (`run_pipeline.py` ou `render_js_anim.py`, variable `REALGEN_FLOU=0`) le retire.
   Le mélange se fait en alpha pré-multiplié : pas de liseré sombre sur les bords transparents des surimpressions.
+  Jamais de flou sur `jeu` (pixel art) ni `scene` (dessin animé, traits qui bouillonnent à la main) : `SANS_FLOU` dans `render_js_anim.py`.
 - **Zoom des captures** : courbe en sinus (départ et arrivée ralentis) de 1 à `ZOOM_MAX` sur toute la durée du plan,
   plus une ligne droite. Même formule dans ffmpeg (`3b_build_video_from_screenshots.py`) et dans `common.js` (`zoomAt`,
   paramètres d'URL `zoom`, `frames`, `zmax`, `fps`) pour que le souligne, le curseur et l'annotation restent collés à la carte.
-- **Langage de mouvement** (`window.EASE`, `common.js`) : une seule courbe par intention — entrée `power3.out`, sortie
-  `power2.in`, rebond « pop » `back.out(1.7)` (un seul réglage dans tous les gabarits à cartes ; les dessins animés,
-  `dessin/*.js`, gardent leurs rebonds plus marqués), dérive lente `sine.inOut`. Un nouveau gabarit reprend ces valeurs.
+- **Langage de mouvement** (`window.EASE`, `common.js`) : une seule courbe par intention, jamais un réglage propre à un gabarit —
+  `entree` (apparition principale, décélérée), `sortie` (plus courte, accélérée), `pop` (petit rebond des moments forts),
+  `rebond` (gros rebond joueur : bouton d'appel à l'action, lettres qui tombent) et `doux` (dérive lente du fond). Les valeurs
+  viennent du **profil de mouvement de la chaîne** (`catalog/config.json` « mouvements », choisi par `mouvement` dans `chaine.json`,
+  transmis aux gabarits en `?ease_entree=…` par `catalog.anim_params`) :
+
+  | Profil | entrée | sortie | pop | rebond | Pour |
+  |---|---|---|---|---|---|
+  | `dynamique` (défaut) | `power3.out` | `power2.in` | `back.out(1.7)` | `elastic.out(1,.55)` | énergie d'acquisition (OpusCV) |
+  | `pose` | `power2.out` | `power1.in` | `back.out(1.1)` | `back.out(1.1)` | sobre, confiance (examen civique) |
+  | `fluide` | `expo.out` | `sine.in` | `back.out(1.3)` | `back.out(1.3)` | arrivées longues et soyeuses (psychologie) |
+
+  Un nouveau profil = une entrée dans `config.json`, aucun code (`catalog.py` vérifie les cinq courbes). Les dessins animés
+  (`scene.html`, `dessin/*.js`) et le jeu (`jeu.html`) gardent leurs propres courbes. Un nouveau gabarit reprend `EASE`.
+- **Capture des images** : par le protocole DevTools avec `optimizeForSpeed` (PNG peu compressé) après un cycle d'affichage, environ
+  2 à 4 fois plus rapide que `page.screenshot()` (qui compense largement le coût du flou). Mesuré : aucune image décalée, seuls
+  quelques centaines de pixels de bord (texte qui bouge) diffèrent d'un demi-pixel ; repli automatique sur `page.screenshot()`.
+- **Contrôle des gabarits** : `python scripts/verif_gabarits.py [gabarit…]` charge chaque gabarit avec chaque profil de mouvement, avance
+  l'animation à plusieurs instants et échoue sur toute erreur JavaScript (ce que `py_compile` ne voit pas ; 26 × 3 en ≈ 12 s).
 
 ### Dessin à la main (`sketch.js`)
 
@@ -652,7 +670,7 @@ Une **chaîne** = une ligne éditoriale complète : `catalog/chaines/<id>/` cont
 
 | Fichier | Rôle |
 |---|---|
-| `chaine.json` | Identité : `nom`, `marque` (écran d'appel à l'action, couverture, carrousel), `marque_accent` (lettres finales de la marque en dégradé sur l'écran d'appel à l'action), `watermark` (incrusté en haut à gauche), `pied` (bas des planches pop art), `logo` (icône de la chaîne dans `assets/marques/<chaîne>/` : `logo.svg`, `profil.png` = photo de profil, `logo_nom.png` = icône + nom ; `catalog.py` vérifie qu'il existe), `produit` (`"OpusCV"` ou `null` = faceless), dessin animé : `personnages`, `serie`, `trames` |
+| `chaine.json` | Identité : `nom`, `marque` (écran d'appel à l'action, couverture, carrousel), `marque_accent` (lettres finales de la marque en dégradé sur l'écran d'appel à l'action), `watermark` (incrusté en haut à gauche), `pied` (bas des planches pop art), `logo` (icône de la chaîne dans `assets/marques/<chaîne>/` : `logo.svg`, `profil.png` = photo de profil, `logo_nom.png` = icône + nom ; `catalog.py` vérifie qu'il existe), `mouvement` (profil de mouvement des animations : `dynamique` par défaut, `pose`, `fluide` — voir « Cadence et flou de mouvement »), `produit` (`"OpusCV"` ou `null` = faceless), dessin animé : `personnages`, `serie`, `trames` |
 | `formats.json`, `sujets.json`, `hooks.json` | Formats, sujets et accroches **de la chaîne** (obligatoires, aucun repli sur une autre chaîne) |
 | `config.json` | Fusionné clé par clé par-dessus `catalog/config.json` (réglages communs) : mix, registres, CTA (`ctas_*`, `cta_anim`), phrases bannies, `consigne_humour`, textes Instagram, scène preuve, relance |
 
@@ -685,6 +703,8 @@ affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), 
 | `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
 | `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | 10 formats, thème propre `civique_plateau` (voir « Plateau civique ») : `question_revision` (quiz 3 réponses), `vrai_ou_faux`, `cours_eclair`, `duel_ab` (« A ou B ? »), `trouve_intrus`, `relie_paires`, `mot_du_jour` (définition, exemple, quiz), `qui_suis_je` (3 indices), `frise_dates` (sujets à tag `dates` seulement), `serie_flash` (3 questions éclair, 35 s conseillées) | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
 | `psycho` | Dans ta tête (provisoire, `@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
+
+**Mouvement** : `opuscv` = `dynamique` (rebonds francs, entrées vives), `examen_civique` = `pose` (sobre, rebond à peine marqué : une chaîne qui doit inspirer confiance), `psycho` = `fluide` (arrivées longues et soyeuses). Les profils sont dans `catalog/config.json` (« mouvements »).
 
 Changer un nom (celui de `psycho` est provisoire) : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,
 `serie`) dans `chaine.json`, rien d'autre. **Ajouter une chaîne** : copier le dossier d'une chaîne faceless, adapter
@@ -973,6 +993,8 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
   (« », :, ?, !) reste collée à son mot : jamais de guillemet seul à l'écran. Police : celle du thème (`police_texte`) ;
   sans thème, repli sur Poppins Bold (`catalog.DEFAULT_FONT`), plus la police système. Les sous-titres commencent à
   y = 1574 sur 1920 : les gabarits gardent leur contenu au-dessus (≈ 1500), ne pas les remonter sans revoir toutes les planches.
+  Chaque nouvelle phrase **arrive** : fondu et petite montée (~23 px) en 0,14 s sur son premier mot (`CAPTION_*`, `5_assemble.py`) ;
+  les mots suivants gardent la même image. Le filigrane suit la police du thème (repli Poppins Bold).
 - **Captures habillées** (`cadre` dans `themes.json`, `navigateur` par défaut) : la capture est posée
   dans une fenêtre de navigateur, avec ombre et liseré, sur un fond aux couleurs du thème.
 - **Accroche « pattern interrupt »** : le texte claque (flash, secousse), le mot fort est souligné ;
@@ -1003,6 +1025,7 @@ python scripts/instagram.py --scripts output/scripts.json --index 1 --final outp
 - **Dessin à la main** : cartes schéma et annotations au feutre sur les captures (voir « Dessin à
   la main »), sur papier, tableau à craie ou néon selon le thème.
 - **Texture** : grain de film léger et particules lentes sur les cartes et le CTA.
+- **Appel à l'action animé** (`cta.html`) : les lettres de la marque tombent une à une, le titre monte mot à mot, un reflet lumineux traverse le bouton, qui entre avec le `rebond` du profil de la chaîne puis « respire » (+3 %) ; la flèche rebondit sous lui.
 - **Contraste automatique** : sur les thèmes à couleur principale claire (jaune craie, cyan néon,
   bleu givré, jaune affiche), le texte posé sur cette couleur (pastilles, accroche, bouton du CTA,
   bulles, mot fort) passe en sombre (`--c1fg` calculé dans `assets/anim/common.js`).
@@ -1063,7 +1086,8 @@ Les déclinaisons Instagram sont dans l'artefact `output`, sous `final/`.
 
 Le workflow `.github/workflows/test.yml` (chaque push) vérifie : syntaxe de tous les scripts, catalogue
 (`scripts/catalog.py`), **construction du prompt de chaque format** (`scripts/verif_prompts.py`, sans appel IA : un nom de
-variable utilisé avant sa définition passe `py_compile` mais plante tous les lancements, run 80) et `--help` de chaque étape.
+variable utilisé avant sa définition passe `py_compile` mais plante tous les lancements, run 80), **chargement de chaque gabarit d'animation avec chaque
+profil de mouvement** (`scripts/verif_gabarits.py`) et `--help` de chaque étape.
 
 À configurer dans le repo GitHub (Settings → Secrets and variables → Actions) :
 - **Secrets** : `GEMINI_API_KEY`, `DEMO_EMAIL`, `DEMO_PASSWORD` (ces deux derniers inutiles en `capture_mode` `aucune`)

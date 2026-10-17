@@ -62,12 +62,12 @@
     draw.timeScale(Math.max(1, natural / Math.max(PUNCH_AT - 0.1 - DRAW_START, 0.6)));
     const tl = gsap.timeline({ paused: true })
       .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
-      .from("#haut span", { y: 50, opacity: 0, duration: 0.35, stagger: 0.04, ease: "power3.out" }, 0.05)
-      .from("#panel", { y: 60, opacity: 0, scale: 0.94, duration: 0.35, ease: "power3.out" }, 0.15)
+      .from("#haut span", { y: 50, opacity: 0, duration: 0.35, stagger: 0.04, ease: EASE.entree }, 0.05)
+      .from("#panel", { y: 60, opacity: 0, scale: 0.94, duration: 0.35, ease: EASE.entree }, 0.15)
       .add(draw, DRAW_START)
-      .fromTo("#bas", { opacity: 0, scale: 1.8, rotate: -4 }, { opacity: 1, scale: 1, rotate: -2, duration: 0.3, ease: "back.out(1.7)", immediateRender: false }, PUNCH_AT)
+      .fromTo("#bas", { opacity: 0, scale: 1.8, rotate: -4 }, { opacity: 1, scale: 1, rotate: -2, duration: 0.3, ease: EASE.pop, immediateRender: false }, PUNCH_AT)
       .fromTo("#flash", { opacity: 0.9 }, { opacity: 0, duration: 0.45, ease: "power2.out", immediateRender: false }, PUNCH_AT)
-      .fromTo("#stage", { x: -16 }, { x: 0, duration: 0.35, ease: "elastic.out(1.2,.3)", immediateRender: false }, PUNCH_AT)
+      .fromTo("#stage", { x: -16 }, { x: 0, duration: 0.35, ease: EASE.rebond, immediateRender: false }, PUNCH_AT)
       .to("#stage", { scale: 1.03, duration: 2.5, ease: "sine.inOut" }, PUNCH_AT + 0.4);
     addAmbient(tl, 8);
     expose(tl, bgReady);

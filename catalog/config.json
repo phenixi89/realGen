@@ -14,5 +14,29 @@
   "historique_voix": 2,
   "ton_humour": "pince-sans-rire et complice, avec un sourire dans la voix, courte pause avant chaque chute, débit posé et naturel, avec de courtes pauses entre les phrases",
   "cta_enregistre": true,
-  "_note_cta_enregistre": "true : la derniere phrase d'un reel est exactement une phrase de ctas_conseil / ctas_produit (Gemini ne la reecrit pas) et sa voix vient d'un enregistrement fait une fois par voix (assets/voix_cta/, python scripts/2_generate_voice.py --precompute-cta), colle a la fin au meme volume. false : Gemini ecrit un CTA dans l'esprit de la phrase tiree, synthetise avec le reste."
+  "_note_cta_enregistre": "true : la derniere phrase d'un reel est exactement une phrase de ctas_conseil / ctas_produit (Gemini ne la reecrit pas) et sa voix vient d'un enregistrement fait une fois par voix (assets/voix_cta/, python scripts/2_generate_voice.py --precompute-cta), colle a la fin au meme volume. false : Gemini ecrit un CTA dans l'esprit de la phrase tiree, synthetise avec le reste.",
+  "_note_mouvements": "Identite de mouvement : courbes GSAP reprises par tous les gabarits d'animation (assets/anim/common.js, window.EASE) ; chaque chaine en choisit une avec \"mouvement\" dans son chaine.json (defaut : dynamique). entree = apparition principale (decelere) ; sortie = disparition (plus courte, acceleree) ; pop = petit rebond reserve aux moments forts (back.out(n) : n grand = depasse plus) ; rebond = gros rebond joueur (bouton d'appel a l'action, lettres qui tombent : elastic pour une chaine energique, un simple depassement pour une chaine sobre) ; doux = derive lente (fond, lumiere). dynamique = energie d'acquisition (OpusCV) ; pose = sobre, sans rebond marque, pour une chaine qui doit inspirer confiance (examen civique) ; fluide = arrivees longues et soyeuses (psychologie du quotidien). Un nouveau profil = une entree ici, aucun code (catalog.py verifie les cinq courbes, scripts/verif_gabarits.py les essaie toutes).",
+  "mouvements": {
+    "dynamique": {
+      "entree": "power3.out",
+      "sortie": "power2.in",
+      "pop": "back.out(1.7)",
+      "rebond": "elastic.out(1,.55)",
+      "doux": "sine.inOut"
+    },
+    "pose": {
+      "entree": "power2.out",
+      "sortie": "power1.in",
+      "pop": "back.out(1.1)",
+      "rebond": "back.out(1.1)",
+      "doux": "sine.inOut"
+    },
+    "fluide": {
+      "entree": "expo.out",
+      "sortie": "sine.in",
+      "pop": "back.out(1.3)",
+      "rebond": "back.out(1.3)",
+      "doux": "sine.inOut"
+    }
+  }
 }

@@ -53,7 +53,7 @@
       sk.arrow(sx, sy, ex, ey, { color: RED, width: 10, bend: sx < cx ? -0.25 : 0.25, head: 40 });
     }
     const tl = gsap.timeline({ paused: true }).add(sk.draw, 0);
-    if (noteBox) tl.fromTo(note, { scale: 0.3, opacity: 0, rotate: -14 }, { scale: 1, opacity: 1, rotate: noteBox.x > 540 ? 3 : -4, duration: 0.4, ease: "back.out(1.7)" }, 0.45);
+    if (noteBox) tl.fromTo(note, { scale: 0.3, opacity: 0, rotate: -14 }, { scale: 1, opacity: 1, rotate: noteBox.x > 540 ? 3 : -4, duration: 0.4, ease: EASE.pop }, 0.45);
     tl.to({}, { duration: 3 }, 0);  // l'annotation reste affichee (le rendu couvre tout le clip)
     expose(tl);
     const layer = document.getElementById("layer"), baseSeek = window.seek;

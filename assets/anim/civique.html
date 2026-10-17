@@ -135,7 +135,7 @@
       m.className = "m" + (cle ? " cle" : ""); m.textContent = cle ? tok.replace(/\*/g, "") : tok; el.appendChild(m); mots.push(m); });
     if (mots.length > 10) el.style.fontSize = "86px";
     const g = gap ?? Math.min(0.3, Math.max(0.12, (DUR * 0.55 - t0) / Math.max(mots.length, 1)));
-    mots.forEach((m, i) => { const t = t0 + i * g; tl.from(m, { y: 40, opacity: 0, scale: 0.85, duration: 0.22, ease: "back.out(1.7)" }, t);
+    mots.forEach((m, i) => { const t = t0 + i * g; tl.from(m, { y: 40, opacity: 0, scale: 0.85, duration: 0.22, ease: EASE.pop }, t);
       if (m.classList.contains("cle")) tl.fromTo(m, { "--ul": 0 }, { "--ul": 1, duration: 0.3, ease: "power2.out", immediateRender: false }, t + 0.15);
       son(t, "click", { gain: 0.35 }); });
     return t0 + mots.length * g;
@@ -153,12 +153,12 @@
     const p = svgEl("path", { d: `M${cx - 160 * s} ${cy + 8 * s} L${cx - 42 * s} ${cy + 126 * s} L${cx + 188 * s} ${cy - 120 * s}`, fill: "none",
       stroke: couleur || "#FFF7EA", "stroke-width": 86 * s, "stroke-linecap": "round", "stroke-linejoin": "round" }, parent);
     const len = 520 * s; p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
-    tl.to(p, { strokeDashoffset: 0, duration: 0.35, ease: "power3.out" }, t); return p;
+    tl.to(p, { strokeDashoffset: 0, duration: 0.35, ease: EASE.entree }, t); return p;
   }
   function croix(cx, cy, s, t, parent) {
     const p = svgEl("path", { d: `M${cx - 110 * s} ${cy - 110 * s} L${cx + 110 * s} ${cy + 110 * s} M${cx + 110 * s} ${cy - 110 * s} L${cx - 110 * s} ${cy + 110 * s}`,
       fill: "none", stroke: "#FFF7EA", "stroke-width": 70 * s, "stroke-linecap": "round" }, parent);
-    tl.from(p, { scale: 0, svgOrigin: `${cx} ${cy}`, duration: 0.25, ease: "back.out(1.7)" }, t); return p;
+    tl.from(p, { scale: 0, svgOrigin: `${cx} ${cy}`, duration: 0.25, ease: EASE.pop }, t); return p;
   }
   function icon(cx, cy, size, t) {
     if (!icone || !(window.ICONES || {})[icone]) return null;
@@ -175,12 +175,12 @@
   function compte(cx, cy, debut, rev, r = 110, fs = 150) {
     const per = 6 * r, ring = svgEl("polygon", { points: hexPts(cx, cy, r), fill: "rgba(255,247,234,.08)", stroke: "url(#tri)", "stroke-width": 16, "stroke-linejoin": "round" });
     ring.style.strokeDasharray = per;
-    tl.from(ring, { opacity: 0, scale: 0.4, svgOrigin: `${cx} ${cy}`, duration: 0.3, ease: "back.out(1.7)" }, debut - 0.3)
+    tl.from(ring, { opacity: 0, scale: 0.4, svgOrigin: `${cx} ${cy}`, duration: 0.3, ease: EASE.pop }, debut - 0.3)
       .fromTo(ring, { strokeDashoffset: 0 }, { strokeDashoffset: per, duration: rev - debut, ease: "none", immediateRender: false }, debut);
     const pas = (rev - debut) / 3;
     [3, 2, 1].forEach((k, i) => { const d = svgEl("text", { x: cx, y: cy + fs * 0.32, "text-anchor": "middle", "font-family": "CVTitle", "font-size": fs, fill: "#FFF7EA", opacity: 0 });
       d.textContent = k; const t = debut + i * pas;
-      tl.to(d, { opacity: 1, duration: 0.05 }, t).from(d, { scale: 1.8, svgOrigin: `${cx} ${cy - fs * 0.3}`, duration: 0.25, ease: "power3.out" }, t).to(d, { opacity: 0, duration: 0.05 }, t + pas - 0.05);
+      tl.to(d, { opacity: 1, duration: 0.05 }, t).from(d, { scale: 1.8, svgOrigin: `${cx} ${cy - fs * 0.3}`, duration: 0.25, ease: EASE.entree }, t).to(d, { opacity: 0, duration: 0.05 }, t + pas - 0.05);
       son(t, "tick", { gain: 0.7 }); });
     tl.to(ring, { opacity: 0, duration: 0.2 }, rev);
   }
@@ -192,7 +192,7 @@
       const p = svgEl("polygon", { points: hexPts(cx, cy, r), fill: cols[i % 4] });
       const dx = Math.cos(a) * d, dy = Math.sin(a) * d - 60;
       tl.fromTo(p, { opacity: 0, scale: 0.2, x: 0, y: 0, rotation: 0, svgOrigin: `${cx} ${cy}` },
-        { opacity: 1, scale: 1, x: dx, y: dy, rotation: (i % 2 ? 1 : -1) * (90 + (i * 31) % 200), duration: 0.5, ease: "power3.out" }, t)
+        { opacity: 1, scale: 1, x: dx, y: dy, rotation: (i % 2 ? 1 : -1) * (90 + (i * 31) % 200), duration: 0.5, ease: EASE.entree }, t)
         .to(p, { opacity: 0, y: dy + 110, duration: 0.55, ease: "power1.in" }, t + 0.5);
     }
     son(t, "sparkle");
@@ -209,14 +209,14 @@
     tl.from("#fond", { opacity: 0, duration: 0.25 }, 0)
       .fromTo("#alveoles", { x: 0, y: 0 }, { x: -60, y: -104, duration: Math.max(DUR, 3), ease: "none" }, 0)
       .fromTo("#projo", { rotation: -10 }, { rotation: 10, duration: Math.max(DUR, 3), ease: "sine.inOut" }, 0)
-      .from("#haut", { y: -60, opacity: 0, duration: 0.3, ease: "back.out(1.7)" }, 0.05);
+      .from("#haut", { y: -60, opacity: 0, duration: 0.3, ease: EASE.pop }, 0.05);
     son(0.05, "pop", { gain: 0.6 });
     flottants();
 
     if (mode === "fait" || mode === "retenir") {
       if (mode === "retenir") {
         const pl = add("plaque", `<span class="tab" style="background:var(--rouge)">À RETENIR</span><div class="txt"></div>`, { top: "520px", fontSize: "88px" });
-        tl.from(pl, { y: 120, opacity: 0, rotation: -3, duration: 0.4, ease: "back.out(1.7)" }, 0.15);
+        tl.from(pl, { y: 120, opacity: 0, rotation: -3, duration: 0.4, ease: EASE.pop }, 0.15);
         fin = motAMot(pl.querySelector(".txt"), texte, FIRST_AT + 0.2);
         const g = svgEl("g", {}); const cy = 1330;
         hexagone(540, cy, 150, fin + 0.2, { fill: "#14204F", width: 18, parent: g }); coche(540, cy, 0.42, fin + 0.55, null, g);
@@ -229,10 +229,10 @@
         else if (/\?\s*$/.test(texte)) {   // une question : un « ? » qui attend la reponse, jamais une coche avant elle
           hexagone(540, 1060, 170, fin, { fill: "#14204F", width: 16 });
           const q = svgEl("text", { x: 540, y: 1125, "text-anchor": "middle", "font-family": "CVTitle", "font-size": 190, fill: "#FFC94A" });
-          q.textContent = "?"; tl.from(q, { opacity: 0, scale: 0.3, svgOrigin: "540 1060", duration: 0.3, ease: "back.out(1.7)" }, fin + 0.3); son(fin + 0.3, "pop");
+          q.textContent = "?"; tl.from(q, { opacity: 0, scale: 0.3, svgOrigin: "540 1060", duration: 0.3, ease: EASE.pop }, fin + 0.3); son(fin + 0.3, "pop");
         } else { const g = svgEl("g", {}); hexagone(540, 1060, 170, fin, { fill: "#14204F", width: 16, parent: g }); coche(540, 1060, 0.5, fin + 0.35, null, g); son(fin + 0.35, "ding", { gain: 0.6 }); }
         if (note) { const n = document.getElementById("note"); n.style.display = "block"; n.textContent = frTypo(note);
-          tl.from(n, { y: 60, opacity: 0, duration: 0.35, ease: "back.out(1.7)" }, fin + 0.2); son(fin + 0.2, "pop"); }
+          tl.from(n, { y: 60, opacity: 0, duration: 0.35, ease: EASE.pop }, fin + 0.2); son(fin + 0.2, "pop"); }
       }
     } else if (mode === "chiffre") {
       const grand = param("grand", "75%"), fs = Math.min(330, Math.floor(620 / (grand.length * 0.5)));
@@ -240,41 +240,41 @@
       const g = add("abs", esc(grand), { top: `${820 - fs * 0.55}px`, fontFamily: "CVTitle,sans-serif", fontSize: `${fs}px`, lineHeight: 1.1, textAlign: "center", whiteSpace: "nowrap" });
       tl.from(g, { scale: 2.4, opacity: 0, duration: 0.3, ease: "power4.in" }, FIRST_AT + 0.45); son(FIRST_AT + 0.7, "impact", { gain: 0.6 });
       const lg = add("abs", hl(param("legende", texte)), { top: "1250px", fontSize: "80px", lineHeight: 1.2, textAlign: "center" });
-      tl.from(lg, { y: 50, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT + 1.0); fin = FIRST_AT + 1.6;
+      tl.from(lg, { y: 50, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT + 1.0); fin = FIRST_AT + 1.6;
     } else if (mode === "quiz") {
       const q = add("abs", hl(texte), { top: "360px", fontSize: "84px", lineHeight: 1.2, right: "330px" });
-      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
+      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
       const bonne = Math.min(Math.max(Math.round(num("bonne", 1)), 1), points.length), box = add("abs", "", { top: "820px" }), pods = [];
       const gap = Math.min(0.6, Math.max(0.3, (DUR * 0.45) / points.length));
       points.forEach((pt, i) => { const p = add("pod", `<span class="hexb">${"ABC"[i]}</span><span>${hl(pt)}</span>`, {}, box); pods.push(p);
-        const t = FIRST_AT + 0.6 + i * gap; tl.from(p, { x: 160, opacity: 0, duration: 0.3, ease: "power3.out" }, t); son(t, "pop"); });
+        const t = FIRST_AT + 0.6 + i * gap; tl.from(p, { x: 160, opacity: 0, duration: 0.3, ease: EASE.entree }, t); son(t, "pop"); });
       const finOpts = FIRST_AT + 0.6 + points.length * gap, rev = Math.max(finOpts + 1.2, DUR - 0.8);
       compte(880, 470, finOpts, rev);
       pods.forEach((p, i) => { if (i === bonne - 1) {
-          tl.to(p, { backgroundColor: "rgba(34,181,115,.9)", borderColor: "#7dffb8", scale: 1.04, duration: 0.25, ease: "back.out(1.7)" }, rev)
+          tl.to(p, { backgroundColor: "rgba(34,181,115,.9)", borderColor: "#7dffb8", scale: 1.04, duration: 0.25, ease: EASE.pop }, rev)
             .to(p.querySelector(".hexb"), { backgroundColor: "#FFF7EA", color: "#22B573", duration: 0.2 }, rev);
         } else tl.to(p, { opacity: 0.25, x: i % 2 ? 12 : -12, duration: 0.2 }, rev).to(p, { x: 0, duration: 0.15 }, rev + 0.2); });
       son(rev, "ding"); confettis(540, 900 + (bonne - 1) * 216, rev + 0.1, 14); fin = rev + 0.5;
     } else if (mode === "duel") {
       const q = add("abs", hl(texte), { top: "330px", fontSize: "80px", lineHeight: 1.2, textAlign: "center" });
-      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
+      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
       const choix = [[param("gauche", "Choix A"), 290, "A"], [param("droite", "Choix B"), 790, "B"]], bonne = Math.round(num("bonne", 1)) === 2 ? 2 : 1;
       const tuiles = choix.map(([txt, cx, l], i) => { const t = add("tuile", `<div class="in"><span class="let">${l}</span>${hl(txt)}</div>`, { left: `${cx - 200}px`, top: "700px" });
-        const at = FIRST_AT + 0.5 + i * 0.3; tl.from(t, { scale: 0, rotation: i ? 25 : -25, duration: 0.45, ease: "back.out(1.7)" }, at); son(at + 0.05, "pop"); return t; });
-      const vs = add("vs", "VS", {}); tl.from(vs, { scale: 0, rotation: -90, duration: 0.4, ease: "back.out(1.7)" }, FIRST_AT + 1.0); son(FIRST_AT + 1.05, "impact", { gain: 0.5 });
+        const at = FIRST_AT + 0.5 + i * 0.3; tl.from(t, { scale: 0, rotation: i ? 25 : -25, duration: 0.45, ease: EASE.pop }, at); son(at + 0.05, "pop"); return t; });
+      const vs = add("vs", "VS", {}); tl.from(vs, { scale: 0, rotation: -90, duration: 0.4, ease: EASE.pop }, FIRST_AT + 1.0); son(FIRST_AT + 1.05, "impact", { gain: 0.5 });
       const finOpts = FIRST_AT + 1.4, rev = Math.max(finOpts + 1.2, DUR - 0.8);
       compte(540, 1370, finOpts, rev, 95, 125);
-      tuiles.forEach((t, i) => { if (i === bonne - 1) { tl.to(t.querySelector(".in"), { backgroundColor: "#22B573", duration: 0.2 }, rev).to(t, { scale: 1.1, duration: 0.3, ease: "back.out(1.7)" }, rev); }
+      tuiles.forEach((t, i) => { if (i === bonne - 1) { tl.to(t.querySelector(".in"), { backgroundColor: "#22B573", duration: 0.2 }, rev).to(t, { scale: 1.1, duration: 0.3, ease: EASE.pop }, rev); }
         else tl.to(t, { opacity: 0.22, scale: 0.88, duration: 0.3 }, rev); });
       tl.to(vs, { opacity: 0, scale: 0.4, duration: 0.2 }, rev);
       son(rev, "ding"); confettis(bonne === 1 ? 290 : 790, 931, rev + 0.1, 18); fin = rev + 0.5;
     } else if (mode === "intrus") {
       const q = add("abs", hl(texte), { top: "330px", fontSize: "76px", lineHeight: 1.2, textAlign: "center" });
-      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
+      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
       const els = points.slice(0, 4), intrus = Math.min(Math.max(Math.round(num("bonne", 1)), 1), els.length) - 1;
       const pos = [[290, 790], [790, 790], [290, 1270], [790, 1270]];
       const tuiles = els.map((txt, i) => { const t = add("tuile", `<div class="in" style="padding-top:20px;font-size:50px">${hl(txt)}</div>`, { left: `${pos[i][0] - 200}px`, top: `${pos[i][1] - 231}px` });
-        const at = FIRST_AT + 0.4 + i * 0.28; tl.from(t, { scale: 0, rotation: (i % 2 ? 1 : -1) * 30, duration: 0.4, ease: "back.out(1.7)" }, at); son(at + 0.05, "pop"); return t; });
+        const at = FIRST_AT + 0.4 + i * 0.28; tl.from(t, { scale: 0, rotation: (i % 2 ? 1 : -1) * 30, duration: 0.4, ease: EASE.pop }, at); son(at + 0.05, "pop"); return t; });
       const finOpts = FIRST_AT + 0.4 + els.length * 0.28 + 0.2, rev = Math.max(finOpts + 1.2, DUR - 0.9);
       compte(540, 1030, finOpts, rev, 90, 120);
       tuiles.forEach((t, i) => { const ins = t.querySelector(".in");
@@ -283,20 +283,20 @@
       son(rev, "buzz", { gain: 0.6 }); son(rev + 0.4, "ding"); fin = rev + 0.7;
     } else if (mode === "relier") {
       const q = add("abs", hl(texte), { top: "340px", fontSize: "80px", lineHeight: 1.2, textAlign: "center" });
-      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
+      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
       const G = param("gauche", "").split("|").filter(Boolean), D = param("droite", "").split("|").filter(Boolean), n = Math.max(Math.min(G.length, D.length, 4), 1);
       const top0 = 640, step = Math.min(270, 860 / n), cy = (i) => top0 + i * step + 95, place = (i) => (i + 1) % n;   // la colonne de droite est decalee d'un rang
       const droite = []; for (let i = 0; i < n; i++) droite[place(i)] = D[i];
       const cols = ["#2D5BE3", "#FFC94A", "#EF3E4A", "#22B573"];
       for (let i = 0; i < n; i++) {
         const l = add("cap", hl(G[i]), { left: "60px", top: `${top0 + i * step}px` }), r = add("cap", hl(droite[i]), { left: "640px", top: `${top0 + i * step}px` });
-        const t = FIRST_AT + 0.4 + i * 0.25; tl.from(l, { x: -160, opacity: 0, duration: 0.35, ease: "power3.out" }, t).from(r, { x: 160, opacity: 0, duration: 0.35, ease: "power3.out" }, t + 0.1); son(t + 0.1, "pop"); }
+        const t = FIRST_AT + 0.4 + i * 0.25; tl.from(l, { x: -160, opacity: 0, duration: 0.35, ease: EASE.entree }, t).from(r, { x: 160, opacity: 0, duration: 0.35, ease: EASE.entree }, t + 0.1); son(t + 0.1, "pop"); }
       const gap = Math.min(0.9, Math.max(0.4, (DUR * 0.7 - FIRST_AT - 1.2) / n));
       for (let i = 0; i < n; i++) { const t = FIRST_AT + 0.4 + n * 0.25 + 0.5 + i * gap, y1 = cy(i), y2 = cy(place(i));
         const ln = svgEl("path", { d: `M450 ${y1} C 540 ${y1}, 550 ${y2}, 640 ${y2}`, fill: "none", stroke: cols[i], "stroke-width": 16, "stroke-linecap": "round" });
         const len = 260; ln.style.strokeDasharray = len; ln.style.strokeDashoffset = len;
         tl.to(ln, { strokeDashoffset: 0, duration: Math.min(0.5, gap), ease: "power2.inOut" }, t);
-        const nd = svgEl("circle", { cx: 640, cy: y2, r: 18, fill: cols[i] }); tl.from(nd, { scale: 0, svgOrigin: `640 ${y2}`, duration: 0.2, ease: "back.out(1.7)" }, t + Math.min(0.5, gap) - 0.1);
+        const nd = svgEl("circle", { cx: 640, cy: y2, r: 18, fill: cols[i] }); tl.from(nd, { scale: 0, svgOrigin: `640 ${y2}`, duration: 0.2, ease: EASE.pop }, t + Math.min(0.5, gap) - 0.1);
         son(t, "feutre", { duration: Math.min(0.5, gap) }); son(t + Math.min(0.5, gap), "pop"); fin = t + gap; }
       son(fin, "ding"); fin += 0.5;
     } else if (mode === "definition") {
@@ -308,13 +308,13 @@
       const w = add("abs", "", { top: `${650 - fs * (lignes.length === 2 ? 1.0 : 0.58)}px`, fontFamily: "CVTitle,sans-serif", fontSize: `${fs}px`, lineHeight: 1.0, textAlign: "center", color: "#FFC94A", whiteSpace: "nowrap" });
       [...lignes.join("\n").toUpperCase()].forEach((c, i) => { if (c === "\n") { w.appendChild(document.createElement("br")); return; }
         const sp = document.createElement("span"); sp.style.display = "inline-block"; sp.innerHTML = c === " " ? "&nbsp;" : esc(c); w.appendChild(sp);
-        const t = FIRST_AT + 0.35 + i * 0.07; tl.from(sp, { y: -120, opacity: 0, rotation: (i % 2 ? 1 : -1) * 25, duration: 0.3, ease: "bounce.out" }, t); son(t, "click", { gain: 0.4 }); });
+        const t = FIRST_AT + 0.35 + i * 0.07; tl.from(sp, { y: -120, opacity: 0, rotation: (i % 2 ? 1 : -1) * 25, duration: 0.3, ease: EASE.rebond }, t); son(t, "click", { gain: 0.4 }); });
       const dt = FIRST_AT + 0.35 + mot.length * 0.07 + 0.35;
       const pl = add("plaque", `<span class="tab" style="background:var(--bleu)">DÉFINITION</span>${hl(param("sens", "Ce que le mot veut dire."))}`, { top: "1020px", fontSize: "60px" });
-      tl.from(pl, { y: 140, opacity: 0, duration: 0.4, ease: "back.out(1.7)" }, dt); son(dt, "pop"); confettis(540, 650, dt + 0.05, 12); fin = dt + 0.6;
+      tl.from(pl, { y: 140, opacity: 0, duration: 0.4, ease: EASE.pop }, dt); son(dt, "pop"); confettis(540, 650, dt + 0.05, 12); fin = dt + 0.6;
     } else if (mode === "frise") {
       const t0 = add("abs", hl(texte), { top: "330px", fontSize: "76px", lineHeight: 1.2 });
-      tl.from(t0, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
+      tl.from(t0, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
       const J = param("jalons", "").split("|").filter(Boolean).slice(0, 4).map((x) => { const [d, ...r] = x.split("~"); return { d, l: r.join("~") }; });
       const x0 = 190, y0 = 650, step = Math.min(300, 690 / Math.max(J.length - 1, 1)), yN = y0 + (J.length - 1) * step;
       const ln = svgEl("line", { x1: x0, y1: y0, x2: x0, y2: yN, stroke: "rgba(255,247,234,.55)", "stroke-width": 10, "stroke-linecap": "round" });
@@ -324,42 +324,42 @@
         const nd = add("hexb", i + 1 + "", { position: "absolute", left: `${x0 - 60}px`, top: `${y - 68}px`, width: "120px", height: "136px" });
         const d = add("abs", esc(j.d), { left: "320px", top: `${y - 90}px`, fontFamily: "CVTitle,sans-serif", fontSize: j.d.length > 6 ? "84px" : J.length > 3 ? "96px" : "120px", lineHeight: 1.1, color: "#FFC94A", right: "40px" });
         const l = add("abs", hl(j.l), { left: "320px", top: `${y + (j.d.length > 6 ? 14 : J.length > 3 ? 14 : 36)}px`, right: "60px", fontSize: J.length > 3 ? "38px" : "46px", lineHeight: 1.12 });
-        tl.from(nd, { scale: 0, rotation: -90, duration: 0.35, ease: "back.out(1.7)" }, t).from(d, { x: 90, opacity: 0, duration: 0.35, ease: "power3.out" }, t + 0.1)
+        tl.from(nd, { scale: 0, rotation: -90, duration: 0.35, ease: EASE.pop }, t).from(d, { x: 90, opacity: 0, duration: 0.35, ease: EASE.entree }, t + 0.1)
           .from(l, { y: 24, opacity: 0, duration: 0.3 }, t + 0.25); son(t, "pop"); son(t + 0.1, "impact", { gain: 0.35 }); fin = t + 0.6; });
       son(fin, "ding", { gain: 0.6 });
     } else if (mode === "indices") {
       const t0 = add("abs", hl(texte), { top: "330px", fontSize: "72px", lineHeight: 1.2, textAlign: "center" });
-      tl.from(t0, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
+      tl.from(t0, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
       const I = points.slice(0, 3), g = Math.min(1.1, Math.max(0.6, (DUR * 0.5 - FIRST_AT) / I.length));
       I.forEach((txt, i) => { const t = FIRST_AT + 0.5 + i * g;
         const c = add("indice", `<span class="tab">INDICE ${i + 1}</span>${hl(txt)}`, { top: `${470 + i * 260}px` });
-        tl.from(c, { x: i % 2 ? 200 : -200, opacity: 0, duration: 0.4, ease: "power3.out" }, t); son(t, "pop"); fin = t + 0.6; });
+        tl.from(c, { x: i % 2 ? 200 : -200, opacity: 0, duration: 0.4, ease: EASE.entree }, t); son(t, "pop"); fin = t + 0.6; });
       const rev = Math.max(fin + 0.9, DUR - 0.9), cy = 1390;
       const hx = svgEl("polygon", { points: hexPts(170, cy, 120), fill: "#14204F", stroke: "url(#tri)", "stroke-width": 16, "stroke-linejoin": "round" });
       const q = svgEl("text", { x: 170, y: cy + 58, "text-anchor": "middle", "font-family": "CVTitle", "font-size": 170, fill: "#FFC94A" }); q.textContent = "?";
-      tl.from([hx, q], { opacity: 0, scale: 0.3, svgOrigin: `170 ${cy}`, duration: 0.35, ease: "back.out(1.7)" }, fin).to(q, { scale: 1.12, svgOrigin: `170 ${cy}`, duration: 0.4, repeat: 3, yoyo: true, ease: "sine.inOut" }, fin + 0.3);
+      tl.from([hx, q], { opacity: 0, scale: 0.3, svgOrigin: `170 ${cy}`, duration: 0.35, ease: EASE.pop }, fin).to(q, { scale: 1.12, svgOrigin: `170 ${cy}`, duration: 0.4, repeat: 3, yoyo: true, ease: "sine.inOut" }, fin + 0.3);
       const rp = add("plaque", `<div>${hl(param("reponse", "La réponse"))}</div>`, { left: "330px", top: `${cy - 100}px`, padding: "36px 40px", fontSize: "62px", right: "70px", textAlign: "center" });
-      tl.fromTo(rp, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.7)" }, rev).to(q, { opacity: 0, duration: 0.15 }, rev);
+      tl.fromTo(rp, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: EASE.pop }, rev).to(q, { opacity: 0, duration: 0.15 }, rev);
       coche(170, cy, 0.3, rev + 0.15, "#22B573"); son(rev, "ding"); confettis(500, cy, rev + 0.1, 14); fin = rev + 0.6;
     } else if (mode === "liste" || mode === "etapes") {
       const t = add("abs", hl(texte), { top: "380px", fontSize: "92px", lineHeight: 1.15 });
-      tl.from(t, { y: 40, opacity: 0, duration: 0.35, ease: "power3.out" }, FIRST_AT);
+      tl.from(t, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
       const pts = mode === "etapes" ? points.slice(0, 3) : points.slice(0, 4), gap = Math.min(0.8, Math.max(0.35, (DUR * 0.7 - FIRST_AT) / pts.length));
       if (mode === "etapes" && pts.length > 1) { const l = svgEl("line", { x1: 150, y1: 820, x2: 150, y2: 820 + (pts.length - 1) * 300, stroke: "url(#tri)", "stroke-width": 12, "stroke-linecap": "round" });
         tl.from(l, { attr: { y2: 820 }, duration: gap * (pts.length - 1), ease: "none" }, FIRST_AT + 0.6); }
       pts.forEach((pt, i) => { const top = (mode === "etapes" ? 750 + i * 300 : 740 + i * Math.min(220, 700 / pts.length)), t = FIRST_AT + 0.5 + i * gap;
         const row = add("abs", `<span class="hexb" style="width:140px;height:158px">${mode === "etapes" ? i + 1 : "✓"}</span><span style="flex:1">${hl(pt)}</span>`,
           { top: top + "px", display: "flex", alignItems: "center", gap: "40px", fontSize: "66px", lineHeight: 1.12 });
-        tl.from(row, { x: -120, opacity: 0, duration: 0.3, ease: "power3.out" }, t)
-          .from(row.querySelector(".hexb"), { scale: 0, rotation: -60, duration: 0.3, ease: "back.out(1.7)" }, t + 0.1);
+        tl.from(row, { x: -120, opacity: 0, duration: 0.3, ease: EASE.entree }, t)
+          .from(row.querySelector(".hexb"), { scale: 0, rotation: -60, duration: 0.3, ease: EASE.pop }, t + 0.1);
         son(t + 0.1, "pop"); fin = t + 0.6; });
     } else if (mode === "avant_apres") {
       const c1 = add("plaque", `<span class="tab" style="background:var(--rouge)">${esc(param("titre_avant", "AVANT"))}</span>${hl(param("avant", "Une idée reçue"))}<span class="barre"></span>`, { top: "460px", transform: "rotate(-1.5deg)", fontSize: "68px" });
       const c2 = add("plaque", `<span class="tab" style="background:var(--vert)">${esc(param("titre_apres", "APRÈS"))}</span>${hl(param("apres", "La bonne réponse"))}`, { top: "1000px", transform: "rotate(1deg)", fontSize: "68px" });
-      tl.from(c1, { y: 120, opacity: 0, duration: 0.4, ease: "back.out(1.7)" }, FIRST_AT)
+      tl.from(c1, { y: 120, opacity: 0, duration: 0.4, ease: EASE.pop }, FIRST_AT)
         .fromTo(c1.querySelector(".barre"), { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "power2.inOut", immediateRender: false }, FIRST_AT + 1.0)
         .to(c1, { opacity: 0.5, duration: 0.2 }, FIRST_AT + 1.3)
-        .from(c2, { y: 160, opacity: 0, scale: 0.9, duration: 0.45, ease: "back.out(1.7)" }, FIRST_AT + 1.5);
+        .from(c2, { y: 160, opacity: 0, scale: 0.9, duration: 0.45, ease: EASE.pop }, FIRST_AT + 1.5);
       son(FIRST_AT + 1.0, "buzz", { gain: 0.6 }); son(FIRST_AT + 1.6, "ding"); fin = FIRST_AT + 2.2;
     } else if (mode === "accroche") {
       const titre = param("titre", "");
@@ -379,14 +379,14 @@
       const b = add("abs", "", { top: "800px" }); b.id = "brand";
       b.innerHTML = parts.length > 1 ? `${esc(parts.slice(0, -1).join(" ").toUpperCase())}<br><b>${esc(parts[parts.length - 1].toUpperCase())}</b>` : `<b>${esc(brand.toUpperCase())}</b>`;
       if (brand.length > 14) b.style.fontSize = "132px";
-      tl.from(b, { y: 80, opacity: 0, duration: 0.4, ease: "back.out(1.7)" }, 0.9);
+      tl.from(b, { y: 80, opacity: 0, duration: 0.4, ease: EASE.pop }, 0.9);
       // Titre, sous-titre et bouton empiles dans un bloc : un titre sur deux lignes ne chevauche plus le reste.
       const bloc = add("abs", "", { top: "1110px", display: "flex", flexDirection: "column", alignItems: "center", gap: "26px", textAlign: "center" });
       const ti = add("", hl(param("title", "Une question par jour")), { fontSize: "62px", lineHeight: 1.15 }, bloc);
       const sub = add("", hl(param("sub", "Abonne-toi pour réviser")), { fontSize: "44px", color: "#9fb0e8", lineHeight: 1.15 }, bloc);
       const bt = add("", `<span id="bouton">${esc(param("button", "S'abonner").toUpperCase())}</span>`, {}, bloc);
       tl.from(ti, { y: 40, opacity: 0, duration: 0.3 }, 1.2).from(sub, { opacity: 0, duration: 0.3 }, 1.35)
-        .from(bt, { scale: 0.4, opacity: 0, duration: 0.35, ease: "back.out(1.7)" }, 1.5)
+        .from(bt, { scale: 0.4, opacity: 0, duration: 0.35, ease: EASE.pop }, 1.5)
         .to(bt, { scale: 1.06, duration: 0.45, repeat: 5, yoyo: true, ease: "sine.inOut" }, 2.0);
       son(1.5, "sparkle"); fin = 2.0;
     }

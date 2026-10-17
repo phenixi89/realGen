@@ -32,6 +32,11 @@ on:
         type: boolean
         required: false
         default: true
+      flou:
+        description: "Flou de mouvement sur les animations (decocher = rendu 2 fois plus rapide, voir README)"
+        type: boolean
+        required: false
+        default: true
       force:
         description: "Ignorer toute reprise et tout regenerer depuis zero"
         type: boolean
@@ -231,6 +236,7 @@ jobs:
             ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
             ${{ github.event.inputs.sfx == 'false' && '--no-sfx' || '' }} \
             ${{ github.event.inputs.musique == 'false' && '--no-music' || '' }} \
+            ${{ github.event.inputs.flou == 'false' && '--sans-flou' || '' }} \
             ${{ github.event.inputs.sans_voix == 'true' && '--sans-voix' || '' }}
 
       # if: always() -- meme si le pipeline echoue en route (ex: etape 3),

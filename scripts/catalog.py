@@ -655,6 +655,24 @@ def hex_to_rgba(value: str, alpha: int = 255) -> tuple[int, int, int, int]:
     return int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16), alpha
 
 
+MOUVEMENT_DEFAUT = "dynamique"
+COURBES_MOUVEMENT = ("entree", "sortie", "pop", "rebond", "doux")
+
+
+def mouvements() -> dict[str, dict[str, str]]:
+    """Profils de mouvement (config.json « mouvements ») : courbes GSAP reprises par tous les gabarits d'animation."""
+    return config().get("mouvements") or {}
+
+
+def courbes_mouvement(profil: str | None = None) -> dict[str, str]:
+    """
+    Parametres d'URL ease_entree / ease_sortie / ease_pop / ease_rebond / ease_doux (assets/anim/common.js, window.EASE) du profil donne,
+    sinon de celui de la chaine active (chaine.json « mouvement », defaut dynamique).
+    """
+    courbes = mouvements()[profil or chaine().get("mouvement") or MOUVEMENT_DEFAUT]
+    return {f"ease_{k}": courbes[k] for k in COURBES_MOUVEMENT}
+
+
 def anim_params(theme: dict | None) -> dict[str, str]:
     """Parametres d'URL communs a tous les gabarits d'animation (cf. assets/anim/common.js)."""
     theme = theme or get_theme(None)
@@ -664,6 +682,8 @@ def anim_params(theme: dict | None) -> dict[str, str]:
         "ftitle": Path(font_path(theme, "titre")).as_uri(), "ftext": Path(font_path(theme, "texte")).as_uri(),
         # Dessin a la main (assets/anim/sketch.js) : support et police manuscrite.
         "dessin": theme.get("dessin", "papier"), "fhand": (FONTS_DIR / HAND_FONT).as_uri(),
+        # Identite de mouvement de la chaine (courbes de config.json « mouvements »).
+        **courbes_mouvement(),
     }
 
 
@@ -920,6 +940,24 @@ CHAMPS_CHAINE = ("nom", "watermark")
 CHAMPS_FACELESS = ("niche", "public", "expertise", "promesse")
 
 
+COURBE_GSAP = re.compile(r"[a-z0-9]+(\.[a-zA-Z]+)?(\([0-9., -]+\))?")
+
+
+def validate_mouvements(profil: str) -> list[str]:
+    """Profils de mouvement (config.json) : les cinq courbes de chacun, et celui que la chaine choisit existe."""
+    errors = []
+    profils = mouvements()
+    if MOUVEMENT_DEFAUT not in profils:
+        errors.append(f"config.json : mouvements doit contenir le profil '{MOUVEMENT_DEFAUT}'")
+    if profil not in profils:
+        errors.append(f"chaine.json : mouvement '{profil}' absent de config.json (choix : {sorted(profils)})")
+    for pid, courbes in profils.items():
+        for key in COURBES_MOUVEMENT:
+            if not COURBE_GSAP.fullmatch(str((courbes or {}).get(key, ""))):
+                errors.append(f"config.json : mouvements.{pid}.{key} absent ou pas une courbe GSAP (ex. power3.out, back.out(1.7))")
+    return errors
+
+
 def validate_chaine() -> list[str]:
     """chaine.json de la chaine active : champs obligatoires, personnages existants, sujets sources si verifies."""
     errors = []
@@ -940,6 +978,7 @@ def validate_chaine() -> list[str]:
             errors.append(f"chaine.json : personnage '{pid}' absent de dessins.json (choix : {sorted(dessines)})")
     if not isinstance(ch.get("regles") or [], list):
         errors.append("chaine.json : regles doit etre une liste de phrases")
+    errors += validate_mouvements(ch.get("mouvement") or MOUVEMENT_DEFAUT)
     if ch.get("verification"):
         for s in sujets():
             if not (s.get("faits") and s.get("source")):

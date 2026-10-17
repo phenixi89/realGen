@@ -101,7 +101,7 @@
     draw.timeScale(Math.max(1, natural / (DRAW_END - DRAW_START)));
     const tl = gsap.timeline({ paused: true })
       .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
-      .from("#sheet", { y: 60, opacity: 0, duration: 0.35, ease: "power3.out" }, 0)
+      .from("#sheet", { y: 60, opacity: 0, duration: 0.35, ease: EASE.entree }, 0)
       .add(draw, DRAW_START)
       .to("#stage", { scale: 1.02, duration: 3, ease: "sine.inOut" }, DRAW_END);
     addAmbient(tl, 8);

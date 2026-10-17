@@ -82,9 +82,9 @@
     const rowY = (r) => 44 + r * 58 + 23;  // centre de la ligne r dans la feuille
     const tl = gsap.timeline({ paused: true })
       .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
-      .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(1.7)" }, 0.05)
-      .from("#title", { y: 40, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.15)
-      .from("#sheet", { y: 80, opacity: 0, rotate: -2, duration: 0.45, ease: "power3.out" }, 0.1)
+      .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: EASE.pop }, 0.05)
+      .from("#title", { y: 40, opacity: 0, duration: 0.4, ease: EASE.entree }, 0.15)
+      .from("#sheet", { y: 80, opacity: 0, rotate: -2, duration: 0.45, ease: EASE.entree }, 0.1)
       .from(".k", { y: 30, opacity: 0, duration: 0.3, stagger: 0.05, ease: "power2.out" }, 0.3)
       .fromTo("#laser", { y: 0, opacity: 0 }, { y: sheetH - 6, opacity: 1, duration: scanDur, ease: "none" }, SCAN_AT)
       .fromTo("#trail", { height: 0 }, { height: sheetH, duration: scanDur, ease: "none" }, SCAN_AT)
@@ -93,17 +93,17 @@
     chips.forEach((ch) => {
       const t = SCAN_AT + (rowY(ch.row) / sheetH) * scanDur;
       tl.to(ch.c, { backgroundColor: "rgba(16,185,129,.22)", borderColor: "#10b981", color: "#047857", duration: 0.15 }, t)
-        .fromTo(ch.c, { scale: 1.25 }, { scale: 1, duration: 0.3, ease: "back.out(1.7)", immediateRender: false }, t);
+        .fromTo(ch.c, { scale: 1.25 }, { scale: 1, duration: 0.3, ease: EASE.pop, immediateRender: false }, t);
     });
     // Liste de l'offre : verdict de chaque mot-cle au fil du scan.
     all.forEach((a, i) => {
       const t = SCAN_AT + (scanDur * (i + 1)) / (all.length + 1);
       tl.call(() => a.el.classList.add(a.ok ? "ok" : "ko"), null, t)
         .to(a.el.querySelector("b"), { width: "1em", duration: 0.2 }, t)
-        .fromTo(a.el, { scale: 1.2 }, { scale: 1, duration: 0.3, ease: "back.out(1.7)", immediateRender: false }, t);
+        .fromTo(a.el, { scale: 1.2 }, { scale: 1, duration: 0.3, ease: EASE.pop, immediateRender: false }, t);
       if (!a.ok) tl.to(a.el, { keyframes: { x: [0, -10, 9, -6, 0] }, duration: 0.3 }, t + 0.1);
     });
-    tl.from("#result span", { scale: 0.4, opacity: 0, duration: 0.45, ease: "back.out(1.7)" }, RESULT_AT)
+    tl.from("#result span", { scale: 0.4, opacity: 0, duration: 0.45, ease: EASE.pop }, RESULT_AT)
       .to("#sheet", { y: -10, duration: 2, repeat: 3, yoyo: true, ease: "sine.inOut" }, RESULT_AT + 0.4);
     addAmbient(tl, 8);
     expose(tl, bgReady);

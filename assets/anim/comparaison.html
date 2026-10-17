@@ -37,9 +37,9 @@
     bgReady = new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = bg; }); }
   const tl = gsap.timeline({ paused: true })
     .fromTo("#bg", { scale: 1.15 }, { scale: 1, duration: 10, ease: "none" }, 0)
-    .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: "back.out(1.7)" }, 0.05)
-    .from("#pa", { x: -120, opacity: 0, duration: 0.45, ease: "power3.out" }, AVANT_AT)
-    .from("#pb", { x: 120, opacity: 0, duration: 0.45, ease: "power3.out" }, AVANT_AT + 0.3)
+    .from("#kicker", { y: -40, opacity: 0, scale: 0.7, duration: 0.4, ease: EASE.pop }, 0.05)
+    .from("#pa", { x: -120, opacity: 0, duration: 0.45, ease: EASE.entree }, AVANT_AT)
+    .from("#pb", { x: 120, opacity: 0, duration: 0.45, ease: EASE.entree }, AVANT_AT + 0.3)
     .to("#curtain", { scaleX: 0, duration: 0.55, ease: "power3.inOut" }, APRES_AT)
     .fromTo("#pb", { scale: 1 }, { scale: 1.04, duration: 0.18, yoyo: true, repeat: 1, immediateRender: false }, APRES_AT + 0.5)
     .to("#box", { y: -12, duration: 2.2, repeat: 4, yoyo: true, ease: "sine.inOut" }, 2.4);

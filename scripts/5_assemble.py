@@ -35,9 +35,14 @@ FADE_DURATION = 0.4
 VOICE_TARGET_RMS = 0.12
 PROGRESS_HEIGHT = 10
 LOOP_S = 0.45
+# Entree d'une phrase de sous-titres : fondu et petite montee (en fraction de la hauteur, ~23 px sur 1920) sur CAPTION_IN_S,
+# au premier mot seulement ; les mots suivants gardent la meme image, sans bouger.
+CAPTION_Y = 0.82
+CAPTION_RISE = 0.012
+CAPTION_IN_S = 0.14
 # Duree d'affichage de l'accroche par defaut (sinon : duree de la 1re scene).
 HOOK_DEFAULT_S = 2.6
-WATERMARK_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+WATERMARK_FONT = catalog.DEFAULT_FONT   # repli sans theme : Poppins Bold (assets/fonts/)
 WATERMARK_TEXT = catalog.chaine().get("watermark") or "opuscv.fr"   # chaine active (catalog/chaines/<id>/chaine.json)
 # Pattern interrupt : la video "claque" en zoom arriere sur la 1re image,
 # puis de petits coups de zoom a chaque mot-cle prononce (rythme visuel).
@@ -161,11 +166,14 @@ def make_caption_clips(cues: list[dict], theme: dict | None = None,
         for i, w in enumerate(cue["words"]):
             img = render_caption(words, active_index=i, emphasize=emphasize, theme=theme, keywords=keywords)
             dur = max(w["end"] - w["start"], 0.05)
-            clip = (
-                ImageClip(np.array(img), duration=dur)
-                .with_start(w["start"])
-                .with_position(("center", 0.82), relative=True)
-            )
+            clip = ImageClip(np.array(img), duration=dur).with_start(w["start"])
+            if i == 0:
+                # Montee en decelere ((1 - p)^3 : rapide puis posee) + fondu : la phrase arrive au lieu de surgir.
+                clip = clip.with_position(
+                    lambda t: ("center", CAPTION_Y + CAPTION_RISE * (1 - min(max(t / CAPTION_IN_S, 0.0), 1.0)) ** 3),
+                    relative=True).with_effects([CrossFadeIn(min(CAPTION_IN_S, dur))])
+            else:
+                clip = clip.with_position(("center", CAPTION_Y), relative=True)
             clips.append(clip)
     return clips
 
