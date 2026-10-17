@@ -300,10 +300,14 @@
         son(t, "feutre", { duration: Math.min(0.5, gap) }); son(t + Math.min(0.5, gap), "pop"); fin = t + gap; }
       son(fin, "ding"); fin += 0.5;
     } else if (mode === "definition") {
-      const mot = param("mot", "Laïcité"), fs = Math.min(200, Math.floor(880 / (mot.length * 0.5)));
+      // Un mot long ou une expression (« Suffrage direct ») passe sur deux lignes pour rester dans l'hexagone.
+      const mot = param("mot", "Laïcité"), cut = mot.length > 9 && mot.includes(" ") ? mot.indexOf(" ", Math.floor(mot.length / 2) - 2) : -1;
+      const lignes = cut > 0 ? [mot.slice(0, cut), mot.slice(cut + 1)] : [mot], longue = Math.max(...lignes.map((l) => l.length));
+      const fs = Math.min(200, Math.floor((lignes.length === 2 ? 400 : 480) / (longue * 0.4)));
       hexagone(540, 650, 300, FIRST_AT, { width: 18, dur: 0.7 });
-      const w = add("abs", "", { top: `${650 - fs * 0.58}px`, fontFamily: "CVTitle,sans-serif", fontSize: `${fs}px`, lineHeight: 1.1, textAlign: "center", color: "#FFC94A", whiteSpace: "nowrap" });
-      [...mot.toUpperCase()].forEach((c, i) => { const sp = document.createElement("span"); sp.style.display = "inline-block"; sp.innerHTML = c === " " ? "&nbsp;" : esc(c); w.appendChild(sp);
+      const w = add("abs", "", { top: `${650 - fs * (lignes.length === 2 ? 1.0 : 0.58)}px`, fontFamily: "CVTitle,sans-serif", fontSize: `${fs}px`, lineHeight: 1.0, textAlign: "center", color: "#FFC94A", whiteSpace: "nowrap" });
+      [...lignes.join("\n").toUpperCase()].forEach((c, i) => { if (c === "\n") { w.appendChild(document.createElement("br")); return; }
+        const sp = document.createElement("span"); sp.style.display = "inline-block"; sp.innerHTML = c === " " ? "&nbsp;" : esc(c); w.appendChild(sp);
         const t = FIRST_AT + 0.35 + i * 0.07; tl.from(sp, { y: -120, opacity: 0, rotation: (i % 2 ? 1 : -1) * 25, duration: 0.3, ease: "bounce.out" }, t); son(t, "click", { gain: 0.4 }); });
       const dt = FIRST_AT + 0.35 + mot.length * 0.07 + 0.35;
       const pl = add("plaque", `<span class="tab" style="background:var(--bleu)">DÉFINITION</span>${hl(param("sens", "Ce que le mot veut dire."))}`, { top: "1020px", fontSize: "60px" });
@@ -376,9 +380,11 @@
       b.innerHTML = parts.length > 1 ? `${esc(parts.slice(0, -1).join(" ").toUpperCase())}<br><b>${esc(parts[parts.length - 1].toUpperCase())}</b>` : `<b>${esc(brand.toUpperCase())}</b>`;
       if (brand.length > 14) b.style.fontSize = "132px";
       tl.from(b, { y: 80, opacity: 0, duration: 0.4, ease: "back.out(2)" }, 0.9);
-      const ti = add("abs", hl(param("title", "Une question par jour")), { top: "1130px", fontSize: "62px", textAlign: "center", lineHeight: 1.2 });
-      const sub = add("abs", hl(param("sub", "Abonne-toi pour réviser")), { top: "1225px", fontSize: "44px", textAlign: "center", color: "#9fb0e8" });
-      const bt = add("abs", `<span id="bouton">${esc(param("button", "S'abonner").toUpperCase())}</span>`, { top: "1310px", textAlign: "center" });
+      // Titre, sous-titre et bouton empiles dans un bloc : un titre sur deux lignes ne chevauche plus le reste.
+      const bloc = add("abs", "", { top: "1110px", display: "flex", flexDirection: "column", alignItems: "center", gap: "26px", textAlign: "center" });
+      const ti = add("", hl(param("title", "Une question par jour")), { fontSize: "62px", lineHeight: 1.15 }, bloc);
+      const sub = add("", hl(param("sub", "Abonne-toi pour réviser")), { fontSize: "44px", color: "#9fb0e8", lineHeight: 1.15 }, bloc);
+      const bt = add("", `<span id="bouton">${esc(param("button", "S'abonner").toUpperCase())}</span>`, {}, bloc);
       tl.from(ti, { y: 40, opacity: 0, duration: 0.3 }, 1.2).from(sub, { opacity: 0, duration: 0.3 }, 1.35)
         .from(bt, { scale: 0.4, opacity: 0, duration: 0.35, ease: "back.out(2.5)" }, 1.5)
         .to(bt, { scale: 1.06, duration: 0.45, repeat: 5, yoyo: true, ease: "sine.inOut" }, 2.0);

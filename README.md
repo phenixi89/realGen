@@ -540,7 +540,7 @@ balaie, bande tricolore en bas, onglet en forme d'hexagone étiré et progressio
 | `duel` | `duel` | deux grandes tuiles hexagonales A / B et un « VS » doré, compte à rebours, la bonne tuile passe au vert avec des confettis, l'autre s'efface |
 | `intrus` | `intrus` | quatre tuiles ; l'intrus devient rouge et tremble, les trois autres passent au vert |
 | `relier` | `relier` | deux colonnes de capsules (la droite est décalée), des traits de couleur se tracent un à un pour relier chaque paire |
-| `definition` | `definition` | le mot en grand dans un hexagone (les lettres rebondissent une à une), sa définition sur une plaque « DÉFINITION » |
+| `definition` | `definition` | le mot en grand dans un hexagone (les lettres rebondissent une à une ; une expression longue passe sur deux lignes), sa définition sur une plaque « DÉFINITION » |
 | `frise` | `frise` | une frise verticale : la ligne se trace, un nœud hexagonal numéroté et une date en grand par jalon |
 | `indices` | `indices` | trois indices qui arrivent un à un, un hexagone « ? » qui bat, puis la réponse en plaque avec la coche verte et des confettis |
 | scène 1 | `accroche` | l'icône dessinée (trait néon) dans l'hexagone, sous l'accroche |
@@ -560,7 +560,7 @@ l'illustration de l'accroche et l'écran d'appel à l'action par les planches `a
 `"cartes_gabarit": "civique"`. Les six cartes `duel`, `intrus`, `relier`, `definition`, `frise` et `indices` n'existent que pour
 les formats à `"cartes_civique": true` (le prompt les décrit alors, `CIVIQUE_CARDS_RULE` ; `catalog.py` impose la chaîne sans
 produit et le seul thème `civique_plateau`) ; leurs champs sont nettoyés par `clean_card`, leur texte compte pour le contrôle des
-nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA). Aperçu de la console : une planche quiz révélée (`apercus.py`).
+nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA) ; la réponse d'une carte `indices` doit être redite dans les scènes suivantes (`civique_problems`, run 84 : réponse « À toi ! »). `etiquette` d'un format peut être un dictionnaire : un texte par type de carte, `suite` pour la carte qui suit une carte à étiquette propre (« RÉPONSE »), `*` pour les autres (« À RETENIR »). Aperçu de la console : une planche quiz révélée (`apercus.py`).
 
 ### Format `cours_eclair` : mini-cours éducatif (thèmes `carnet_cours` et `pop_art`)
 

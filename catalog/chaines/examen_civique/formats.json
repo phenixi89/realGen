@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX. cartes_civique : true -> le prompt propose en plus les cartes duel, intrus, relier, definition, frise et indices (planches du plateau, assets/anim/civique.html) ; reserve aux formats de cette chaine et au theme civique_plateau. etiquette peut etre un dictionnaire {type de carte: texte, \"*\": texte par defaut}.",
+  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX. cartes_civique : true -> le prompt propose en plus les cartes duel, intrus, relier, definition, frise et indices (planches du plateau, assets/anim/civique.html) ; reserve aux formats de cette chaine et au theme civique_plateau. etiquette peut etre un dictionnaire {type de carte: texte, \"suite\": texte de la carte qui suit une carte a etiquette propre, \"*\": texte par defaut}.",
   "formats": [
     {
       "id": "question_revision",
@@ -94,7 +94,11 @@
       "themes": [
         "civique_plateau"
       ],
-      "etiquette": "A OU B ?",
+      "etiquette": {
+        "duel": "A OU B ?",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
       "structure": "Scène 1 (accroche, sans carte) : « A ou B ? » posé au spectateur, au « tu ». Scène 2 : carte duel (la question et DEUX choix tirés des FAITS, un seul est juste) ; la voix lit la question puis les deux choix, puis dit « Réfléchis. ». Scène 3 : la voix donne la bonne réponse et l'explique en une phrase simple (carte texte avec le fait exact). Scène 4 : un deuxième fait lié pour mieux retenir (carte texte ou liste). Dernière scène : CTA qui demande la réponse en commentaire.",
       "ton": "animateur de jeu bienveillant, articulation très nette, débit lent, petite pause avant la réponse",
       "cartes_civique": true
@@ -117,7 +121,11 @@
       "themes": [
         "civique_plateau"
       ],
-      "etiquette": "L'INTRUS",
+      "etiquette": {
+        "intrus": "L'INTRUS",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
       "structure": "Scène 1 (accroche, sans carte) : « Trouve l'intrus ! ». Scène 2 : carte intrus (4 éléments : trois viennent des FAITS et vont ensemble, un est évidemment étranger) ; la voix lit les quatre éléments puis dit « Lequel est l'intrus ? Réfléchis. ». Scène 3 : la voix donne l'intrus et dit pourquoi, avec le fait exact (carte texte). Scène 4 : un fait de plus sur les trois bons éléments (carte liste ou texte). Dernière scène : CTA.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
       "cartes_civique": true
@@ -140,7 +148,11 @@
       "themes": [
         "civique_plateau"
       ],
-      "etiquette": "RELIE",
+      "etiquette": {
+        "relier": "RELIE",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
       "structure": "Scène 1 (accroche, sans carte) : le défi, par exemple « Relie chaque date à son événement ». Scène 2 : carte relier (2 à 4 paires tirées des FAITS) ; la voix lit la consigne et les éléments de gauche et de droite sans donner les paires. Scène 3 : la voix dit chaque paire, une phrase courte par paire (carte liste des paires). Scène 4 : un fait de plus à retenir (carte texte ou impact). Dernière scène : CTA.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
       "cartes_civique": true
@@ -190,7 +202,11 @@
       "themes": [
         "civique_plateau"
       ],
-      "etiquette": "QUI SUIS-JE ?",
+      "etiquette": {
+        "indices": "QUI SUIS-JE ?",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
       "structure": "Scène 1 (accroche, sans carte) : « Qui suis-je ? Trois indices ! ». Scène 2 : carte indices (3 indices de plus en plus précis, chacun un fait, puis la réponse) ; la voix dit les trois indices un à un, avec une courte pause, puis « Tu as trouvé ? ». Scène 3 : la voix donne la réponse et la relie à l'article ou à la loi des FAITS (carte texte). Scène 4 : un fait de plus (carte liste ou texte). Dernière scène : CTA.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
       "cartes_civique": true
@@ -210,7 +226,12 @@
       "themes": [
         "civique_plateau"
       ],
-      "etiquette": "LA DATE",
+      "etiquette": {
+        "frise": "LA DATE",
+        "quiz": "À TOI",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
       "structure": "Scène 1 (accroche, sans carte) : « Retiens ces dates ! ». Scène 2 : carte frise (2 à 4 dates PRÉSENTES dans les FAITS, de la plus ancienne à la plus récente) ; la voix dit chaque date avec son événement. Scène 3 : carte quiz sur l'une des dates (3 réponses courtes dont une seule juste), la voix la lit puis donne la réponse. Scène 4 : la phrase à retenir (carte impact). Dernière scène : CTA.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
       "cartes_civique": true

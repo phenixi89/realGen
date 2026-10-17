@@ -1399,6 +1399,8 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
         else:
             problems.append('il manque la scène "preuve": true (conseil appliqué en direct dans OpusCV)')
     problems += promesses_problems(scenes)
+    if faceless():
+        problems += civique_problems(scenes)
     if educatif:
         problems += educatif_problems(scenes)
     problems += common_problems(scenes, data, duration, tone, recent_hooks, forced)
@@ -1422,6 +1424,26 @@ ORDINAL_RE = re.compile(r"\bla\s+(deuxi[èe]me|troisi[èe]me|quatri[èe]me|cinqu
                         r"(?:va te|te surprend|surprenant|[ée]tonn|choqu|plus (?:importante?|utile|grave|surprenante?))", re.I)
 NUM_MOTS = {"un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6}
 ELEMENT_RE = re.compile(r"\b(?:[ée]tapes?|le[çc]ons?|erreurs?|astuces?|conseils?|r[èe]gles?|raisons?|points?|signes?|id[ée]es?)\s+(\d|un|une|deux|trois|quatre|cinq|six)\b", re.I)
+
+
+def civique_problems(scenes: list[dict]) -> list[str]:
+    """
+    Cartes du plateau civique : la reponse d'une carte « indices » doit etre donnee dans les scenes suivantes (run 84 :
+    reponse « À toi ! » au lieu de la notion cherchee).
+    """
+    problems = []
+    for i, sc in enumerate(scenes):
+        carte = sc.get("carte") or {}
+        if carte.get("type") != "indices":
+            continue
+        suite = catalog._norm(" ".join(f"{x['texte']} {carte_texte(x['carte']) if x.get('carte') else ''}" for x in scenes[i + 1:]))
+        rep = carte["reponse"]
+        racines = {m[:5] for m in _mots_cles(rep)}
+        ok = any(r in suite for r in racines) if racines else catalog._norm(rep) in suite
+        if not ok:
+            problems.append(f"scène {i + 1} : la réponse de la carte indices (« {rep} ») n'est pas donnée dans les scènes suivantes : "
+                            "écris la vraie réponse (1 à 4 mots), celle que la voix dit juste après, jamais « À toi ! »")
+    return problems
 
 
 def promesses_problems(scenes: list[dict]) -> list[str]:
@@ -2120,14 +2142,20 @@ def etiqueter_cartes(scenes: list[dict], fmt: dict) -> None:
     """
     if not fmt.get("etiquette"):
         return
+    precedente = None
     for sc in scenes:
         carte = sc.get("carte")
         if not carte or carte.get("type") == "impact":
+            precedente = None
             continue
         m = VERDICT_RE.match(sc["texte"]) if fmt.get("verdicts") else None
         etiq = fmt["etiquette"]
-        if isinstance(etiq, dict):   # une etiquette par type de carte, "*" pour les autres (format mot_du_jour)
-            etiq = etiq.get(carte.get("type"), etiq.get("*", ""))
+        if isinstance(etiq, dict):   # une etiquette par type de carte ; « suite » : carte juste apres une carte a etiquette propre ; « * » : les autres
+            propre = carte.get("type") in etiq
+            etiq = etiq[carte["type"]] if propre else (etiq.get("suite") if precedente else None) or etiq.get("*", "")
+            precedente = propre or None
+        else:
+            precedente = None
         carte["etiquette"] = "RÉPONSE" if m else etiq
         if not carte["etiquette"]:
             del carte["etiquette"]
