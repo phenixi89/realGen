@@ -560,7 +560,7 @@ l'illustration de l'accroche et l'écran d'appel à l'action par les planches `a
 `"cartes_gabarit": "civique"`. Les six cartes `duel`, `intrus`, `relier`, `definition`, `frise` et `indices` n'existent que pour
 les formats à `"cartes_civique": true` (le prompt les décrit alors, `CIVIQUE_CARDS_RULE` ; `catalog.py` impose la chaîne sans
 produit et le seul thème `civique_plateau`) ; leurs champs sont nettoyés par `clean_card`, leur texte compte pour le contrôle des
-nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA) ; la réponse d'une carte `indices` doit être redite dans les scènes suivantes (`civique_problems`, run 84 : réponse « À toi ! »). `etiquette` d'un format peut être un dictionnaire : un texte par type de carte, `suite` pour la carte qui suit une carte à étiquette propre (« RÉPONSE »), `*` pour les autres (« À RETENIR »). Aperçu de la console : une planche quiz révélée (`apercus.py`).
+nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA) ; la réponse d'une carte `indices` doit être redite dans les scènes suivantes (`civique_problems`, run 84 : réponse « À toi ! », run 85 : « ? » refusé aussi). Un thème imposé (console, `--theme`) incompatible avec les `themes` du format est ignoré avec un avertissement : run 85, `ardoise_indigo` imposé à un format à planches civiques, qui sont alors sorties vides (« Titre de la carte »). `etiquette` d'un format peut être un dictionnaire : un texte par type de carte, `suite` pour la carte qui suit une carte à étiquette propre (« RÉPONSE »), `*` pour les autres (« À RETENIR »). Aperçu de la console : une planche quiz révélée (`apercus.py`).
 
 ### Format `cours_eclair` : mini-cours éducatif (thèmes `carnet_cours` et `pop_art`)
 

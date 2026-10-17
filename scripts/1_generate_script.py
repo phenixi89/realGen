@@ -292,6 +292,9 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
             sujet = choose_sujet(client, fmt, working, rng)
         hid, tid = ov.get("hook") or hook_id, ov.get("theme") or theme_id
         hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin") or fmt.get("jeu")), sujet.get("tags"))
+        if tid and fmt.get("themes") and tid not in fmt["themes"]:   # thème imposé incompatible (planches propres du format)
+            print(f"ATTENTION: thème « {tid} » ignoré, le format {fmt['id']} n'utilise que {fmt['themes']}")
+            tid = None
         theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre, fmt)
         voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng, fmt)
         cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
@@ -1439,7 +1442,8 @@ def civique_problems(scenes: list[dict]) -> list[str]:
         suite = catalog._norm(" ".join(f"{x['texte']} {carte_texte(x['carte']) if x.get('carte') else ''}" for x in scenes[i + 1:]))
         rep = carte["reponse"]
         racines = {m[:5] for m in _mots_cles(rep)}
-        ok = any(r in suite for r in racines) if racines else catalog._norm(rep) in suite
+        reel = len(catalog._norm(rep).replace(' ', '')) >= 3   # « ? » (run 85) n'est pas une réponse
+        ok = reel and (any(r in suite for r in racines) if racines else catalog._norm(rep) in suite)
         if not ok:
             problems.append(f"scène {i + 1} : la réponse de la carte indices (« {rep} ») n'est pas donnée dans les scènes suivantes : "
                             "écris la vraie réponse (1 à 4 mots), celle que la voix dit juste après, jamais « À toi ! »")
