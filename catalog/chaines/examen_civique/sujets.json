@@ -1,11 +1,12 @@
 {
-  "_doc": "Sujets de la chaine examen_civique (chaine verifiee) : chaque sujet porte 'faits' (phrases exactes, SEULE base autorisee pour l'IA) et 'source' (texte officiel, affichee dans la legende). tags / famille : valeurs, institutions, histoire, droits, vie_quotidienne. Ajouter un sujet = recopier les faits depuis la source officielle, jamais de memoire. Les modalites de l'examen (nombre de questions, seuil...) ne figurent volontairement pas ici tant qu'elles n'ont pas ete recopiees d'une source officielle. Tag 'dates' : le sujet a au moins deux dates dans ses faits (seuls sujets proposes au format frise_dates, carte frise).",
+  "_doc": "Sujets de la chaine examen_civique (chaine verifiee) : chaque sujet porte 'faits' (phrases exactes, SEULE base autorisee pour l'IA) et 'source' (texte officiel, affichee dans la legende). Familles = les cinq themes officiels de l'examen : valeurs (principes et valeurs), institutions (systeme institutionnel et politique), droits (droits et devoirs), histoire / geographie / culture (histoire, geographie et culture), vie_quotidienne (vivre dans la societe francaise) ; plus 'examen' (les modalites de l'examen, recopiees de la page officielle : seul sujet qui peut en parler). Ajouter un sujet = recopier les faits depuis la source officielle (Legifrance, service-public.fr, fiches de formation-civique.interieur.gouv.fr), jamais de memoire. Tags de format : 'dates' (au moins deux dates dans les faits : format frise_dates, carte frise), 'recit' (une histoire qui se raconte dans l'ordre : histoire_racontee), 'citation' (un fait cite un texte entre « guillemets » : citation_expliquee), 'situation' (une situation de la vie en France ou il faut savoir quoi faire : mise_en_situation, dessin anime), 'confusion' (deux notions que l'on confond : ne_confonds_plus), 'memoire' (sujet grave : Shoah ; formats sobres seulement, jamais vrai ou faux ni humour), 'examen' (format examen_mode_emploi).",
   "sujets": [
     {
       "id": "devise",
       "categorie": "conseil",
       "tags": [
-        "valeurs"
+        "valeurs",
+        "citation"
       ],
       "famille": "valeurs",
       "texte": "la devise de la République : Liberté, Égalité, Fraternité",
@@ -20,7 +21,8 @@
       "id": "symboles_article2",
       "categorie": "conseil",
       "tags": [
-        "valeurs"
+        "valeurs",
+        "confusion"
       ],
       "famille": "valeurs",
       "texte": "le drapeau, l'hymne et la langue de la République",
@@ -36,7 +38,8 @@
       "id": "laicite",
       "categorie": "conseil",
       "tags": [
-        "valeurs"
+        "valeurs",
+        "situation"
       ],
       "famille": "valeurs",
       "texte": "la laïcité : ce qu'elle veut dire, ce qu'elle protège",
@@ -68,7 +71,9 @@
       "categorie": "conseil",
       "tags": [
         "histoire",
-        "dates"
+        "dates",
+        "recit",
+        "confusion"
       ],
       "famille": "histoire",
       "texte": "le 14 juillet, fête nationale : ce qu'il rappelle",
@@ -76,9 +81,11 @@
         "Le 14 juillet est la fête nationale française.",
         "La loi du 6 juillet 1880 en a fait la fête nationale.",
         "Il rappelle la prise de la Bastille, le 14 juillet 1789.",
-        "Il rappelle aussi la fête de la Fédération, le 14 juillet 1790."
+        "Il rappelle aussi la fête de la Fédération, le 14 juillet 1790.",
+        "Le 14 juillet 1790, les représentants de toutes les provinces se réunissent à Paris, en présence du roi Louis XVI.",
+        "Aujourd'hui, un défilé militaire a lieu à Paris, sur les Champs-Élysées, en présence du président de la République."
       ],
-      "source": "loi du 6 juillet 1880 (legifrance.gouv.fr) ; elysee.fr, les symboles de la République"
+      "source": "loi du 6 juillet 1880 (legifrance.gouv.fr) ; elysee.fr, les symboles de la République ; formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La fête nationale »"
     },
     {
       "id": "marianne",
@@ -100,7 +107,9 @@
       "categorie": "conseil",
       "tags": [
         "droits",
-        "dates"
+        "dates",
+        "citation",
+        "recit"
       ],
       "famille": "droits",
       "texte": "la Déclaration des droits de l'homme et du citoyen de 1789",
@@ -115,7 +124,8 @@
       "id": "president",
       "categorie": "conseil",
       "tags": [
-        "institutions"
+        "institutions",
+        "confusion"
       ],
       "famille": "institutions",
       "texte": "le président de la République : comment il est élu",
@@ -131,7 +141,8 @@
       "id": "parlement",
       "categorie": "conseil",
       "tags": [
-        "institutions"
+        "institutions",
+        "confusion"
       ],
       "famille": "institutions",
       "texte": "le Parlement : l'Assemblée nationale et le Sénat",
@@ -147,7 +158,8 @@
       "id": "gouvernement",
       "categorie": "conseil",
       "tags": [
-        "institutions"
+        "institutions",
+        "confusion"
       ],
       "famille": "institutions",
       "texte": "le Gouvernement et le Premier ministre",
@@ -177,7 +189,8 @@
       "id": "droit_de_vote",
       "categorie": "conseil",
       "tags": [
-        "droits"
+        "droits",
+        "situation"
       ],
       "famille": "droits",
       "texte": "qui peut voter aux élections en France",
@@ -195,7 +208,8 @@
       "categorie": "conseil",
       "tags": [
         "histoire",
-        "dates"
+        "dates",
+        "recit"
       ],
       "famille": "histoire",
       "texte": "le droit de vote des femmes",
@@ -227,7 +241,9 @@
       "categorie": "conseil",
       "tags": [
         "droits",
-        "dates"
+        "dates",
+        "citation",
+        "recit"
       ],
       "famille": "droits",
       "texte": "l'abolition de la peine de mort",
@@ -241,7 +257,8 @@
       "id": "ecole",
       "categorie": "conseil",
       "tags": [
-        "droits"
+        "droits",
+        "situation"
       ],
       "famille": "droits",
       "texte": "l'école en France : obligatoire, gratuite et laïque",
@@ -271,7 +288,8 @@
       "id": "mariage",
       "categorie": "conseil",
       "tags": [
-        "droits"
+        "droits",
+        "situation"
       ],
       "famille": "droits",
       "texte": "le mariage civil en France",
@@ -286,7 +304,8 @@
       "categorie": "conseil",
       "tags": [
         "histoire",
-        "dates"
+        "dates",
+        "recit"
       ],
       "famille": "histoire",
       "texte": "la Révolution française et la Première République",
@@ -302,7 +321,8 @@
       "categorie": "conseil",
       "tags": [
         "histoire",
-        "dates"
+        "dates",
+        "recit"
       ],
       "famille": "histoire",
       "texte": "l'abolition de l'esclavage",
@@ -332,7 +352,9 @@
       "id": "numeros_urgence",
       "categorie": "conseil",
       "tags": [
-        "vie_quotidienne"
+        "vie_quotidienne",
+        "situation",
+        "confusion"
       ],
       "famille": "vie_quotidienne",
       "texte": "les numéros d'urgence à connaître",
@@ -357,6 +379,1076 @@
         "Elle protège contre les risques de la vie : maladie, accident du travail, vieillesse, famille."
       ],
       "source": "ordonnances d'octobre 1945 ; securite-sociale.fr"
+    },
+    {
+      "id": "liberte",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "situation"
+      ],
+      "famille": "valeurs",
+      "texte": "la liberté : ce qu'elle permet, où elle s'arrête",
+      "faits": [
+        "En France, chaque personne peut penser, s'exprimer et vivre comme elle le souhaite.",
+        "La seule limite est de ne pas empêcher une autre personne d'en faire autant.",
+        "Cette liberté est garantie par la Déclaration des droits de l'homme et du citoyen de 1789.",
+        "La liberté est un droit pour tous, sans faire de différence entre les pays d'origine, les parents ou la religion.",
+        "Exemples de libertés : avoir ou ne pas avoir une religion, exprimer une opinion, vivre avec la personne de son choix, adhérer à un syndicat."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La liberté »"
+    },
+    {
+      "id": "limites_libertes",
+      "categorie": "conseil",
+      "tags": [
+        "droits",
+        "citation",
+        "situation"
+      ],
+      "famille": "droits",
+      "texte": "les limites de nos libertés : ne pas nuire aux autres",
+      "faits": [
+        "La Déclaration de 1789 dit que nos droits sont « imprescriptibles » (article 2) : ils ne peuvent pas nous être retirés.",
+        "L'article 4 de la Déclaration de 1789 dit : « La liberté consiste à faire tout ce qui ne nuit pas à autrui ».",
+        "Nos droits et libertés sont limités par l'intérêt général, les libertés des autres, l'ordre public et le respect de la dignité humaine.",
+        "Exemple : il est interdit de circuler dans l'espace public avec une tenue qui vise à cacher son visage."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La limite des libertés individuelles »"
+    },
+    {
+      "id": "egalite_services",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "situation"
+      ],
+      "famille": "valeurs",
+      "texte": "l'égalité : la même loi et les mêmes services publics pour tous",
+      "faits": [
+        "L'égalité devant la loi veut dire que la loi est la même pour toutes les personnes.",
+        "Chaque personne peut, et doit, bénéficier des services publics dont elle a besoin : santé, éducation, sécurité.",
+        "La loi interdit de limiter l'accès à ces services selon certains critères : homme ou femme, origine, handicap, orientation sexuelle.",
+        "Exemple : toute personne malade doit être soignée.",
+        "L'égalité n'empêche pas des tarifs différents pour des situations différentes : personnes sans emploi, étudiants, personnes âgées."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « L'égalité (1/3) »"
+    },
+    {
+      "id": "discriminations",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "droits",
+        "situation"
+      ],
+      "famille": "valeurs",
+      "texte": "les discriminations interdites par la loi",
+      "faits": [
+        "Il y a discrimination quand une personne est moins bien traitée qu'une autre à cause d'un critère interdit par la loi.",
+        "La loi française reconnaît plus de 26 critères de discrimination : origine, sexe, apparence physique, âge, handicap, religion…",
+        "La discrimination peut exister dans l'emploi, le logement, l'éducation et l'accès aux services publics.",
+        "Exemple de discrimination directe : refuser un emploi à une personne en raison de son origine.",
+        "Les discriminations sont punies par des amendes et diverses sanctions."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « L'égalité (3/3) »"
+    },
+    {
+      "id": "parite",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "droits",
+        "dates"
+      ],
+      "famille": "valeurs",
+      "texte": "l'égalité femmes-hommes et la parité en politique",
+      "faits": [
+        "Le préambule de la Constitution de 1946 dit : « la loi garantit à la femme, dans tous les domaines, des droits égaux à ceux de l'homme ».",
+        "Les femmes et les hommes ont les mêmes droits et les mêmes devoirs : éducation, travail, santé, vie politique.",
+        "La parité, c'est l'égalité entre les femmes et les hommes dans les responsabilités politiques.",
+        "Une loi de 2000 oblige les partis politiques à présenter autant de femmes que d'hommes sur les listes de candidats.",
+        "Un parti qui ne respecte pas cette obligation doit payer une amende."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « L'égalité (2/3) »"
+    },
+    {
+      "id": "fraternite",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "dates"
+      ],
+      "famille": "valeurs",
+      "texte": "la fraternité : la solidarité entre les citoyens",
+      "faits": [
+        "La fraternité, c'est la solidarité entre les citoyens.",
+        "Elle n'est pas dans la Déclaration des droits de l'homme et du citoyen de 1789, alors que la liberté et l'égalité y sont inscrites.",
+        "Elle apparaît pour la première fois dans le préambule de la Constitution de la Deuxième République, en 1848.",
+        "Exemples de solidarité collective : la Sécurité sociale, le RSA, l'aide au logement.",
+        "Les retraites sont financées par les cotisations des personnes plus jeunes, celles qui travaillent : c'est la solidarité entre les générations."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La fraternité (1/2) »"
+    },
+    {
+      "id": "associations",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "droits",
+        "vie_quotidienne",
+        "situation"
+      ],
+      "famille": "valeurs",
+      "texte": "la liberté d'association et le bénévolat",
+      "faits": [
+        "En France, chaque personne, française ou étrangère, peut s'engager librement.",
+        "Ce droit s'appelle la liberté d'association ; il est inscrit dans une loi de 1901.",
+        "Le bénévolat, c'est mener une action pour les autres, sur son temps libre, sans être payé.",
+        "Pour créer une association, il faut réunir au moins deux personnes et choisir un objectif qui n'a pas pour but de gagner de l'argent.",
+        "On fait ensuite une déclaration à la préfecture ou sur internet."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La fraternité (2/2) »"
+    },
+    {
+      "id": "coq",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "confusion"
+      ],
+      "famille": "valeurs",
+      "texte": "le coq : un symbole très utilisé, mais pas officiel",
+      "faits": [
+        "Le coq n'est pas reconnu de manière officielle comme un symbole de la République française.",
+        "Les symboles officiels sont notamment le drapeau tricolore, Marianne et la devise nationale.",
+        "Chez les Romains, le mot latin « Gallus » voulait dire à la fois « Gaulois » et « coq ».",
+        "Comme il est très utilisé, le coq est devenu un symbole national fort.",
+        "On le voit sur les maillots des équipes nationales de sport."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Le coq »"
+    },
+    {
+      "id": "marseillaise",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "valeurs",
+      "texte": "La Marseillaise : l'histoire de l'hymne national",
+      "faits": [
+        "L'hymne national de la France est un chant qui s'appelle La Marseillaise.",
+        "En avril 1792, un officier compose le « Chant de guerre pour l'armée du Rhin ».",
+        "En août 1792, ce chant est repris à Paris par un bataillon d'habitants de Marseille.",
+        "Il est déclaré chant national le 14 juillet 1795 et s'appelle désormais La Marseillaise.",
+        "La Marseillaise devient l'hymne national en 1879, sous la IIIe République."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « L'hymne français »"
+    },
+    {
+      "id": "drapeau",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "valeurs",
+      "texte": "le drapeau bleu, blanc, rouge : d'où viennent ses couleurs",
+      "faits": [
+        "Le drapeau français est composé de trois bandes verticales : bleu, blanc et rouge.",
+        "Le bleu et le rouge étaient les couleurs de la ville de Paris ; le blanc était la couleur du roi.",
+        "En juillet 1789, le général Lafayette ajoute le blanc royal au bleu et au rouge de Paris : c'est la naissance des trois couleurs réunies.",
+        "Il est devenu le drapeau officiel de la France en 1794.",
+        "On le voit devant les bâtiments publics : mairies, écoles, préfectures.",
+        "Il est interdit de faire outrage au drapeau, c'est-à-dire de le détruire ou de l'utiliser de manière dégradante en public."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Le drapeau français »"
+    },
+    {
+      "id": "langue_francaise",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "histoire",
+        "dates",
+        "citation"
+      ],
+      "famille": "valeurs",
+      "texte": "le français, seule langue officielle",
+      "faits": [
+        "Le français est la seule langue officielle en France.",
+        "En 1539, la langue française a remplacé le latin dans les textes administratifs.",
+        "Depuis 1992, la Constitution dit : « la langue de la République est le français ».",
+        "Le breton, le corse, l'alsacien, le basque ou le créole sont des langues régionales : elles font partie du patrimoine, mais ne sont pas des langues officielles.",
+        "Le français prend des mots à d'autres langues : « banque » vient de l'italien, « week-end » de l'anglais, « chiffre » de l'arabe."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La langue française »"
+    },
+    {
+      "id": "laicite_ecole",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "situation"
+      ],
+      "famille": "valeurs",
+      "texte": "la laïcité à l'école publique",
+      "faits": [
+        "Les écoles publiques sont neutres vis-à-vis des religions.",
+        "Dans les écoles publiques, il est interdit aux élèves de porter un signe ou un vêtement qui montre leur religion de manière ostensible.",
+        "Les enseignants ne doivent pas manifester leurs convictions politiques ou religieuses.",
+        "Les élèves peuvent parler de religion entre eux, dans le respect des autres.",
+        "Il n'est pas possible de refuser de suivre un cours du programme (sport, sortie scolaire) pour des motifs religieux."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La laïcité à l'école (1/2) »"
+    },
+    {
+      "id": "laicite_services_publics",
+      "categorie": "conseil",
+      "tags": [
+        "valeurs",
+        "situation",
+        "confusion"
+      ],
+      "famille": "valeurs",
+      "texte": "la laïcité dans les services publics : agents et usagers",
+      "faits": [
+        "Les personnes qui travaillent dans les services publics ne peuvent pas exprimer ou montrer leurs convictions religieuses, politiques ou philosophiques.",
+        "Cette neutralité ne s'impose pas aux usagers : ils peuvent porter un signe d'appartenance religieuse.",
+        "Exemple : une personne qui porte un voile doit l'enlever un moment pour la vérification de son identité, lors de la remise d'un passeport.",
+        "Il n'est pas possible de demander une adaptation du service public au nom d'une religion.",
+        "Dans l'espace public (rues, magasins, transports), toute personne a le droit de manifester sa religion."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « La laïcité dans les services publics » ; « La laïcité dans l'espace public »"
+    },
+    {
+      "id": "separation_pouvoirs",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "confusion"
+      ],
+      "famille": "institutions",
+      "texte": "la séparation des trois pouvoirs",
+      "faits": [
+        "En France, il y a trois pouvoirs : le pouvoir législatif, le pouvoir exécutif et l'autorité judiciaire.",
+        "Le pouvoir législatif est exercé par le Parlement : il vote la loi.",
+        "Le pouvoir exécutif est exercé par le président de la République et le Gouvernement : ils appliquent et font respecter les lois.",
+        "L'autorité judiciaire est exercée par les juges et les magistrats : ils jugent et rendent la justice.",
+        "Ces trois pouvoirs ne sont pas entre les mains des mêmes personnes : ils se contrôlent mutuellement."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Présentation de l'État de droit et principe de la séparation des pouvoirs » ; « Présentation des 3 pouvoirs (1/2) »"
+    },
+    {
+      "id": "etat_de_droit",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "droits",
+        "situation"
+      ],
+      "famille": "institutions",
+      "texte": "l'État de droit : personne n'est au-dessus de la loi",
+      "faits": [
+        "Un État de droit est un système dans lequel la loi est la même pour tous, y compris pour l'État.",
+        "Des juges indépendants contrôlent les autorités publiques.",
+        "Exemple : un ministre qui ne respecte pas la loi peut être sanctionné comme tout citoyen.",
+        "La justice est indépendante : elle rend un jugement impartial et équitable.",
+        "Une aide juridictionnelle existe pour que chacun soit défendu, peu importe sa nationalité, son âge ou ses revenus."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Présentation de l'État de droit et principe de la séparation des pouvoirs » ; « Présentation des 3 pouvoirs (1/2) »"
+    },
+    {
+      "id": "elections",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "confusion"
+      ],
+      "famille": "institutions",
+      "texte": "les élections : qui on élit, et pour combien de temps",
+      "faits": [
+        "Le président de la République est élu tous les 5 ans.",
+        "Les députés sont élus tous les 5 ans, sauf s'il y a une dissolution.",
+        "Les conseillers municipaux sont élus tous les 6 ans.",
+        "Les députés européens sont élus tous les 5 ans.",
+        "Les sénateurs sont élus au suffrage universel indirect : seuls les grands électeurs votent (maires, conseillers municipaux, députés).",
+        "En France, le vote est personnel, libre et secret."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Les conditions pour voter en France (2/2) »"
+    },
+    {
+      "id": "parcours_loi",
+      "categorie": "conseil",
+      "tags": [
+        "institutions"
+      ],
+      "famille": "institutions",
+      "texte": "comment une loi est votée",
+      "faits": [
+        "Le Gouvernement peut présenter un projet de loi ; les députés ou les sénateurs peuvent présenter une proposition de loi.",
+        "Le texte est examiné en commission, puis discuté, amendé et voté à l'Assemblée nationale et au Sénat.",
+        "Le texte passe d'une chambre à l'autre : on parle de navette parlementaire.",
+        "En cas de désaccord, une commission de 7 députés et 7 sénateurs cherche un texte commun ; sans accord, l'Assemblée nationale a le dernier mot.",
+        "La loi est promulguée par le président de la République, puis publiée au Journal officiel."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Comment voter une loi (1/2) » ; « Comment voter une loi (2/2) »"
+    },
+    {
+      "id": "collectivites",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "geographie",
+        "confusion"
+      ],
+      "famille": "institutions",
+      "texte": "communes, départements, régions : qui fait quoi",
+      "faits": [
+        "La France compte 101 départements, dont 5 en outre-mer.",
+        "La France compte 18 régions : 13 en métropole et 5 en outre-mer.",
+        "Il y a environ 35 000 communes ; chaque commune est dirigée par des personnes élues, dont le maire.",
+        "Les communes gèrent les écoles maternelles et primaires, les départements gèrent les collèges, les régions gèrent les lycées.",
+        "Le préfet est le représentant de l'État dans le département."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Le découpage administratif de la France (1/3) » ; « (3/3) » ; « Le territoire de la France »"
+    },
+    {
+      "id": "prefet",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "vie_quotidienne"
+      ],
+      "famille": "institutions",
+      "texte": "le préfet et la préfecture",
+      "faits": [
+        "Le préfet est le représentant de l'État dans le département.",
+        "Il dirige les services de l'État dans le département.",
+        "La préfecture délivre les titres et autorisations administratives.",
+        "Le préfet organise la sécurité des personnes et des biens avec la police, la gendarmerie et les secours.",
+        "Il vérifie que les collectivités territoriales respectent les lois."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Le découpage administratif de la France (2/3) »"
+    },
+    {
+      "id": "partis_politiques",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "citation"
+      ],
+      "famille": "institutions",
+      "texte": "les partis politiques et le pluralisme",
+      "faits": [
+        "La pluralité des partis politiques est un principe fondamental de la démocratie française.",
+        "L'article 4 de la Constitution dit : « Les partis et groupements politiques concourent à l'expression du suffrage ».",
+        "Chaque citoyen peut librement rejoindre un parti politique qui correspond à ses convictions.",
+        "Les médias ont l'obligation d'être équitables entre les partis politiques.",
+        "Les partis proposent des programmes et sélectionnent des candidats pour les faire élire."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Le principe de pluralité des partis »"
+    },
+    {
+      "id": "construction_europeenne",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "institutions",
+      "texte": "la construction de l'Union européenne",
+      "faits": [
+        "En 1957, le traité de Rome crée la Communauté économique européenne (CEE).",
+        "En 1957, la CEE est créée avec 6 pays : l'Allemagne de l'Ouest, la Belgique, la France, l'Italie, le Luxembourg et les Pays-Bas.",
+        "En 1992, le traité de Maastricht crée l'Union européenne.",
+        "Dans l'Union européenne, les marchandises, les personnes et les capitaux circulent librement.",
+        "En 2020, pour la première fois, un pays quitte l'Union européenne : le Royaume-Uni."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Les étapes clés de la construction européenne »"
+    },
+    {
+      "id": "symboles_europe",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "valeurs",
+        "dates"
+      ],
+      "famille": "institutions",
+      "texte": "les symboles de l'Union européenne",
+      "faits": [
+        "Le drapeau européen : sur un fond bleu, douze étoiles jaunes forment un cercle.",
+        "Ce cercle d'étoiles symbolise l'unité, la solidarité et l'harmonie entre les peuples d'Europe.",
+        "L'hymne européen est l'« Ode à la joie », une mélodie du compositeur allemand Beethoven.",
+        "La devise de l'Union européenne est « Unie dans la diversité » depuis 2000.",
+        "Chaque année, le 9 mai, on fête la Journée de l'Europe : l'anniversaire de la déclaration Schuman du 9 mai 1950."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Les symboles européens (1/2) » ; « Les symboles européens (2/2) »"
+    },
+    {
+      "id": "elections_europeennes",
+      "categorie": "conseil",
+      "tags": [
+        "institutions",
+        "droits"
+      ],
+      "famille": "institutions",
+      "texte": "les élections européennes",
+      "faits": [
+        "Les élections européennes sont organisées tous les cinq ans.",
+        "On y élit les membres du Parlement européen : les députés européens, ou eurodéputés.",
+        "Depuis les élections de 2024, la France compte 81 eurodéputés.",
+        "Pour voter en France à ces élections, il faut avoir la nationalité d'un pays de l'Union européenne, habiter en France, avoir au moins 18 ans et être inscrit sur les listes électorales.",
+        "Les électeurs votent pour des listes de partis politiques, et non pour des candidats uniques."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Les élections européennes »"
+    },
+    {
+      "id": "infractions",
+      "categorie": "conseil",
+      "tags": [
+        "droits",
+        "confusion",
+        "situation"
+      ],
+      "famille": "droits",
+      "texte": "contravention, délit, crime : les trois infractions",
+      "faits": [
+        "La contravention est l'infraction la moins grave : par exemple un excès de vitesse ou du tapage nocturne.",
+        "La contravention est jugée par le tribunal de police.",
+        "Le délit est une infraction intermédiaire : par exemple le vol ou le harcèlement. Il est jugé par le tribunal correctionnel.",
+        "Le crime est l'infraction la plus grave : par exemple le meurtre ou le viol.",
+        "La cour d'assises et la cour criminelle jugent les accusés de crime.",
+        "Les sanctions sont prononcées par le juge selon la gravité."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Se conformer aux lois : les infractions »"
+    },
+    {
+      "id": "police_gendarmerie",
+      "categorie": "conseil",
+      "tags": [
+        "droits",
+        "vie_quotidienne",
+        "confusion"
+      ],
+      "famille": "droits",
+      "texte": "la police et la gendarmerie",
+      "faits": [
+        "La police et la gendarmerie sont des forces de l'ordre : elles assurent le respect des lois en France.",
+        "La police assure le respect des lois en ville.",
+        "La gendarmerie agit en zone rurale et périurbaine, et sur les axes de circulation.",
+        "Les gendarmes ont le statut de militaires.",
+        "Elles ont les mêmes missions : prévenir les infractions, maintenir l'ordre public, protéger les personnes et les biens, enquêter."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Se conformer aux lois : les acteurs »"
+    },
+    {
+      "id": "assistance_danger",
+      "categorie": "conseil",
+      "tags": [
+        "droits",
+        "vie_quotidienne",
+        "situation"
+      ],
+      "famille": "droits",
+      "texte": "témoin d'une personne en danger : ce que dit la loi",
+      "faits": [
+        "Si une personne voit quelqu'un en danger, elle doit l'aider.",
+        "Si elle n'aide pas, elle peut être condamnée pour « non-assistance à personne en danger ».",
+        "Témoin de violences, il faut agir sans se mettre en danger : d'abord se protéger, puis aider la victime.",
+        "Le témoin peut appeler les forces de l'ordre ou chercher de l'aide autour de lui.",
+        "Le 3919 est le numéro pour les violences conjugales ; le 119, pour l'enfance maltraitée."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Les obligations en tant que résident français » ; « Le rôle des témoins en cas de violences »"
+    },
+    {
+      "id": "couple_libertes",
+      "categorie": "conseil",
+      "tags": [
+        "droits",
+        "situation"
+      ],
+      "famille": "droits",
+      "texte": "les libertés dans le couple : choisir, se marier, se séparer",
+      "faits": [
+        "En France, chacun est libre de choisir son conjoint, quel que soit son sexe.",
+        "Le consentement libre est une condition essentielle de la validité du mariage.",
+        "Le mariage civil est le seul mariage reconnu en France.",
+        "Le divorce met fin au mariage, sans avoir besoin d'une faute.",
+        "Le mariage entre cousins germains est interdit."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Les libertés au sein du couple » ; « La déclaration de mariage »"
+    },
+    {
+      "id": "droit_corps",
+      "categorie": "conseil",
+      "tags": [
+        "droits",
+        "histoire",
+        "dates"
+      ],
+      "famille": "droits",
+      "texte": "le droit de disposer de son corps",
+      "faits": [
+        "Le droit de disposer de son corps, c'est la liberté pour chaque personne de faire elle-même ses choix concernant son corps.",
+        "La loi du 17 janvier 1975 autorise l'interruption volontaire de grossesse (IVG).",
+        "La contraception et l'IVG sont accessibles sans autorisation du partenaire.",
+        "Les mineures n'ont pas besoin de l'autorisation de leurs parents pour avorter, mais elles doivent être accompagnées d'une personne majeure de leur choix."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Un droit fondamental : le droit de disposer de son corps » ; « Les libertés au sein du couple »"
+    },
+    {
+      "id": "environnement",
+      "categorie": "conseil",
+      "tags": [
+        "droits",
+        "vie_quotidienne",
+        "dates",
+        "citation"
+      ],
+      "famille": "droits",
+      "texte": "la Charte de l'environnement : un droit et un devoir",
+      "faits": [
+        "La Charte de l'environnement de 2004 est ajoutée à la Constitution de 1958 en 2005.",
+        "Son article 1 dit : « Chacun a le droit de vivre dans un environnement équilibré et respectueux de la santé. »",
+        "Son article 2 dit : « Toute personne a le devoir de prendre part à la préservation et à l'amélioration de l'environnement. »",
+        "Au quotidien, chacun a l'obligation d'agir pour protéger l'environnement : économies d'eau et d'énergie, réutilisation, recyclage."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Présentation des principaux textes (3/3) : la Charte de l'environnement » ; « Les obligations en tant que résident français »"
+    },
+    {
+      "id": "citoyennete",
+      "categorie": "conseil",
+      "tags": [
+        "droits"
+      ],
+      "famille": "droits",
+      "texte": "être citoyen : des droits et des devoirs",
+      "faits": [
+        "Le citoyen français a la nationalité française.",
+        "Il a des droits civiques et politiques, comme le droit de vote.",
+        "Il a aussi des devoirs : respecter les lois, payer les impôts.",
+        "Les personnes étrangères qui vivent dans un pays dont elles n'ont pas la nationalité n'ont pas tous ces droits et devoirs.",
+        "Toute personne qui habite en France, française ou non, doit respecter les obligations légales envers l'État."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Un droit fondamental : la citoyenneté » ; « Les obligations en tant que résident français »"
+    },
+    {
+      "id": "cinq_republiques",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "les cinq Républiques de la France",
+      "faits": [
+        "La Ire République dure de 1792 à 1799.",
+        "La IIe République dure de 1848 à 1851.",
+        "La IIIe République dure de 1870 à 1940.",
+        "La IVe République dure de 1946 à 1958.",
+        "Depuis 1958, le régime politique de la France est celui de la Ve République."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Les régimes politiques »"
+    },
+    {
+      "id": "ancien_regime",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "l'Ancien Régime : la France avant 1789",
+      "faits": [
+        "Avant la Révolution de 1789, la France est une monarchie absolue de droit divin : on appelle cette période l'Ancien Régime.",
+        "« Absolue » parce que le roi a tous les pouvoirs ; « de droit divin » parce qu'on considère que son pouvoir vient de la volonté de Dieu.",
+        "La société est organisée en trois ordres : le clergé, la noblesse et le tiers état.",
+        "Le tiers état représente 90 % de la population, n'a aucun privilège et paie la majeure partie des impôts.",
+        "Le roi Louis XIV, surnommé le Roi-Soleil, incarne la monarchie absolue."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « L'Ancien Régime (jusqu'en 1789) »"
+    },
+    {
+      "id": "napoleon",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "Napoléon Ier et le Code civil",
+      "faits": [
+        "Le 18 mai 1804, Napoléon Bonaparte est nommé empereur : il devient Napoléon Ier.",
+        "Le Code civil de 1804 fixe des règles communes à tous, notamment sur la famille, la propriété et les contrats.",
+        "Le Code civil garantit encore aujourd'hui l'égalité devant la loi.",
+        "Napoléon Ier crée le lycée et le baccalauréat.",
+        "Sous l'Empire, les libertés politiques sont limitées : Napoléon contrôle la presse.",
+        "Il abdique définitivement le 7 juillet 1815, après la bataille de Waterloo."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Le 1er Empire (1804-1815) »"
+    },
+    {
+      "id": "deuxieme_republique",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "droits",
+        "dates",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "1848 : la IIe République et le suffrage universel",
+      "faits": [
+        "La IIe République est proclamée le 24 février 1848.",
+        "Elle instaure le suffrage universel masculin : tous les hommes d'au moins 21 ans peuvent voter.",
+        "L'esclavage est définitivement aboli dans les colonies françaises par le décret du 27 avril 1848, rédigé par Victor Schœlcher.",
+        "Elle supprime la peine de mort pour les délits politiques.",
+        "Le 2 décembre 1851, un coup d'État de Louis-Napoléon Bonaparte met fin à la IIe République."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La IIème République (1848-1851) »"
+    },
+    {
+      "id": "troisieme_republique",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "droits",
+        "dates",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "la IIIe République : l'école de Jules Ferry et la laïcité",
+      "faits": [
+        "La IIIe République est proclamée le 4 septembre 1870 par Léon Gambetta.",
+        "Grâce aux lois de Jules Ferry, l'école publique devient gratuite en 1881, puis laïque et obligatoire en 1882.",
+        "La loi de 1905 sur la séparation des Églises et de l'État fonde la laïcité.",
+        "Avec la loi du 5 avril 1884, les citoyens masculins peuvent élire le conseil municipal de leur commune.",
+        "La IIIe République s'achève le 10 juillet 1940, pendant la guerre, quand le régime de Vichy s'installe."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La IIIème République (1870-1940) »"
+    },
+    {
+      "id": "premiere_guerre",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "la Première Guerre mondiale (1914-1918)",
+      "faits": [
+        "La Première Guerre mondiale a lieu de 1914 à 1918.",
+        "Le 28 juin 1914, l'assassinat de l'archiduc François-Ferdinand à Sarajevo déclenche le conflit.",
+        "Les soldats s'enterrent dans les tranchées ; on les appelle les « Poilus ».",
+        "Les États-Unis entrent en guerre en 1917.",
+        "L'armistice est signé le 11 novembre 1918.",
+        "Le 11 novembre est un jour férié : on commémore l'armistice de 1918."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « La Première Guerre mondiale (1914-1918) : le contexte » ; « Patrimoine français : les jours fériés »"
+    },
+    {
+      "id": "seconde_guerre",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "la Seconde Guerre mondiale (1939-1945)",
+      "faits": [
+        "La Seconde Guerre mondiale a lieu de 1939 à 1945.",
+        "Le 1er septembre 1939, l'armée allemande envahit la Pologne.",
+        "Le 22 juin 1940, la France vaincue signe un armistice avec l'Allemagne.",
+        "Le 6 juin 1944, les Alliés débarquent en Normandie.",
+        "Le 8 mai 1945, l'Allemagne nazie capitule.",
+        "Le 8 mai est un jour férié : on commémore la victoire de 1945."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « La Seconde Guerre mondiale (1939-1945) : le contexte » ; « Patrimoine français : les jours fériés »"
+    },
+    {
+      "id": "resistance",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "l'appel du 18 juin, la Résistance et la Libération",
+      "faits": [
+        "Le 18 juin 1940, depuis Londres, le général Charles de Gaulle lance un appel à la radio.",
+        "Il encourage les Français à poursuivre le combat et à refuser la capitulation.",
+        "En France et à l'étranger, des réseaux clandestins se forment : tracts, sabotages, renseignements pour les Alliés.",
+        "En 1943, Jean Moulin unifie les mouvements de la Résistance en créant le Conseil national de la Résistance.",
+        "Paris est libérée en août 1944."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Focus sur la Seconde Guerre mondiale : la Résistance et la Libération »"
+    },
+    {
+      "id": "shoah",
+      "categorie": "conseil",
+      "tags": [
+        "memoire"
+      ],
+      "famille": "histoire",
+      "texte": "la Shoah et le devoir de mémoire",
+      "faits": [
+        "La Shoah désigne le génocide des Juifs organisé par l'Allemagne nazie pendant la Seconde Guerre mondiale.",
+        "Environ 6 millions de Juifs ont été assassinés par le régime nazi et ses collaborateurs.",
+        "En France, le régime de Vichy, dirigé par le maréchal Pétain, collabore avec l'Allemagne nazie.",
+        "À Paris, la rafle du Vel d'Hiv, les 16 et 17 juillet 1942, entraîne l'arrestation d'environ 13 000 Juifs, dont 4 000 enfants.",
+        "En 1995, la France a reconnu officiellement la responsabilité de l'État français dans la déportation des Juifs.",
+        "On étudie la Shoah à l'école pour comprendre les conséquences de la haine, du racisme et de l'antisémitisme."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Focus sur la Seconde Guerre mondiale : la Shoah »"
+    },
+    {
+      "id": "cinquieme_republique",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "institutions",
+        "dates",
+        "recit"
+      ],
+      "famille": "histoire",
+      "texte": "1958 : naissance de la Ve République",
+      "faits": [
+        "La Ve République est instaurée le 4 octobre 1958.",
+        "Charles de Gaulle propose une nouvelle Constitution, adoptée par référendum en septembre 1958.",
+        "Charles de Gaulle est le fondateur et le premier président de la Ve République.",
+        "En 1974, les jeunes peuvent voter dès l'âge de 18 ans, contre 21 ans auparavant.",
+        "La Ve République crée le Conseil constitutionnel, qui contrôle que les lois respectent la Constitution."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La Vème République »"
+    },
+    {
+      "id": "presidents",
+      "categorie": "conseil",
+      "tags": [
+        "histoire",
+        "institutions",
+        "dates"
+      ],
+      "famille": "histoire",
+      "texte": "les présidents de la Ve République et leurs grandes lois",
+      "faits": [
+        "Charles de Gaulle (1958-1969) : fondation de la Ve République.",
+        "Valéry Giscard d'Estaing (1974-1981) : abaissement de la majorité à 18 ans.",
+        "François Mitterrand (1981-1995) : abolition de la peine de mort.",
+        "Jacques Chirac (1995-2007) : passage au quinquennat, un mandat de 5 ans contre 7 ans auparavant.",
+        "François Hollande (2012-2017) : légalisation du mariage pour tous."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Les présidents de la Vème République »"
+    },
+    {
+      "id": "josephine_baker",
+      "categorie": "conseil",
+      "tags": [
+        "culture",
+        "histoire",
+        "dates",
+        "recit"
+      ],
+      "famille": "culture",
+      "texte": "Joséphine Baker : artiste, résistante, Française",
+      "faits": [
+        "Joséphine Baker, née dans le Missouri, aux États-Unis, s'installe à Paris en 1925.",
+        "Elle devient vedette de spectacle, puis se lance dans la chanson et le cinéma.",
+        "En 1937, elle obtient la nationalité française.",
+        "Pendant la Seconde Guerre mondiale, elle rejoint la Résistance comme agent des services secrets de la France libre.",
+        "Elle cache des informations secrètes dans des partitions de musique.",
+        "Elle entre au Panthéon le 30 novembre 2021."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Patrimoine français : des artistes emblématiques devenus français »"
+    },
+    {
+      "id": "territoire",
+      "categorie": "conseil",
+      "tags": [
+        "geographie"
+      ],
+      "famille": "geographie",
+      "texte": "le territoire français : métropole et outre-mer",
+      "faits": [
+        "La France hexagonale, aussi nommée « la métropole », est située en Europe.",
+        "La France a aussi plusieurs territoires d'outre-mer, dans différents océans.",
+        "Les cinq départements et régions d'outre-mer sont la Guadeloupe, la Guyane, la Martinique, La Réunion et Mayotte.",
+        "La Corse est une île située dans la mer Méditerranée, au sud-est de la France continentale.",
+        "La France compte 68,6 millions d'habitants au 1er janvier 2025."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Le territoire de la France » ; « Corse »"
+    },
+    {
+      "id": "fleuves",
+      "categorie": "conseil",
+      "tags": [
+        "geographie"
+      ],
+      "famille": "geographie",
+      "texte": "les cinq fleuves de la France",
+      "faits": [
+        "La France métropolitaine compte cinq fleuves : la Seine, la Loire, la Garonne, le Rhône et le Rhin.",
+        "La Loire est le plus long fleuve de France : 1 020 kilomètres.",
+        "La Seine traverse Paris et se jette dans la Manche.",
+        "Le Rhône traverse Lyon et se jette dans la Méditerranée.",
+        "La Garonne traverse Toulouse et Bordeaux, et se jette dans l'océan Atlantique.",
+        "Le Rhin longe une partie de la frontière franco-allemande et traverse Strasbourg."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Les fleuves français »"
+    },
+    {
+      "id": "frontieres",
+      "categorie": "conseil",
+      "tags": [
+        "geographie"
+      ],
+      "famille": "geographie",
+      "texte": "les frontières, les montagnes et les mers de la France",
+      "faits": [
+        "En Europe, la France a des frontières terrestres avec 8 pays : la Belgique, le Luxembourg, l'Allemagne, la Suisse, l'Italie, l'Espagne, Andorre et Monaco.",
+        "Grâce à la Guyane, la France a aussi des frontières avec le Brésil et le Suriname.",
+        "Les Pyrénées forment une barrière de montagnes entre la France et l'Espagne.",
+        "Les Alpes marquent la limite entre la France et l'Italie.",
+        "À l'ouest, la France est bordée par l'océan Atlantique ; au sud, par la mer Méditerranée ; au nord-ouest, par la mer du Nord et la Manche."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Les frontières de la France »"
+    },
+    {
+      "id": "auteurs_classiques",
+      "categorie": "conseil",
+      "tags": [
+        "culture",
+        "confusion"
+      ],
+      "famille": "culture",
+      "texte": "La Fontaine, Molière, Victor Hugo : les grands auteurs",
+      "faits": [
+        "Jean de La Fontaine (1621-1695) est connu pour ses fables, comme « Le Corbeau et le Renard » ou « La Cigale et la Fourmi ».",
+        "Molière (1622-1673) est une figure majeure du théâtre classique : « Le Malade imaginaire », « Tartuffe », « L'Avare ».",
+        "Victor Hugo (1802-1885) est un écrivain engagé : « Les Misérables », « Notre-Dame de Paris ».",
+        "Baudelaire (1821-1867) est un grand poète : « Les Fleurs du Mal ».",
+        "George Sand (1804-1876) est une écrivaine connue pour sa défense des droits des femmes."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Patrimoine français : des artistes emblématiques parmi les auteurs (1/3) » ; « (2/3) »"
+    },
+    {
+      "id": "auteurs_xxe",
+      "categorie": "conseil",
+      "tags": [
+        "culture",
+        "citation"
+      ],
+      "famille": "culture",
+      "texte": "Simone de Beauvoir, Albert Camus : les auteurs du XXe siècle",
+      "faits": [
+        "Simone de Beauvoir (1908-1986) est une écrivaine et une figure majeure du féminisme.",
+        "Dans « Le Deuxième Sexe », Simone de Beauvoir écrit : « On ne naît pas femme, on le devient ».",
+        "Albert Camus (1913-1960) est écrivain, philosophe et journaliste : « L'Étranger », « La Peste ».",
+        "Marguerite Yourcenar devient en 1980 la première femme élue à l'Académie française."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Patrimoine français : des artistes emblématiques parmi les auteurs (3/3) »"
+    },
+    {
+      "id": "artistes",
+      "categorie": "conseil",
+      "tags": [
+        "culture",
+        "confusion"
+      ],
+      "famille": "culture",
+      "texte": "Monet, Cézanne, Piaf, Debussy : peinture et musique",
+      "faits": [
+        "Le courant « impressionniste » est nommé d'après le tableau de Claude Monet « Impression, soleil levant ».",
+        "Paul Cézanne (1839-1906) est un précurseur de l'art moderne.",
+        "Eugène Delacroix a peint « La Liberté guidant le peuple », en 1830.",
+        "Édith Piaf (1915-1963), surnommée « la Môme Piaf », est une icône de la chanson française : « La vie en rose ».",
+        "Claude Debussy (1862-1918) est considéré comme le père de la musique moderne."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Patrimoine français : des artistes emblématiques parmi les peintres » ; « dans l'univers de la musique » ; « La liberté »"
+    },
+    {
+      "id": "tour_eiffel",
+      "categorie": "conseil",
+      "tags": [
+        "culture",
+        "histoire",
+        "dates"
+      ],
+      "famille": "culture",
+      "texte": "la tour Eiffel, symbole de Paris",
+      "faits": [
+        "La tour Eiffel se trouve à Paris.",
+        "Elle a été construite en 2 ans par l'ingénieur Gustave Eiffel pour l'Exposition universelle de 1889.",
+        "Cette exposition fêtait les 100 ans de la Révolution française.",
+        "Elle est haute de 312 mètres, 330 avec les antennes.",
+        "D'abord critiquée, la tour Eiffel est aujourd'hui un symbole de la France."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Patrimoine français : sites emblématiques et gastronomie d'Île-de-France »"
+    },
+    {
+      "id": "jours_feries",
+      "categorie": "conseil",
+      "tags": [
+        "culture",
+        "vie_quotidienne",
+        "dates"
+      ],
+      "famille": "culture",
+      "texte": "les 11 jours fériés et ce qu'ils célèbrent",
+      "faits": [
+        "La liste des jours fériés est fixée par le Code du travail : il y a 11 jours fériés nationaux.",
+        "Le 1er mai est la fête du Travail ; son symbole est le muguet.",
+        "Le 8 mai commémore la victoire de 1945 ; le 11 novembre, l'armistice de 1918.",
+        "Le 14 juillet est la fête nationale française.",
+        "Le 25 décembre, Noël, est une fête religieuse chrétienne devenue une fête célébrée par tous."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Patrimoine français : les jours fériés »"
+    },
+    {
+      "id": "sante_urgence",
+      "categorie": "conseil",
+      "tags": [
+        "vie_quotidienne",
+        "situation",
+        "confusion"
+      ],
+      "famille": "vie_quotidienne",
+      "texte": "malade : médecin traitant, urgences ou SAMU ?",
+      "faits": [
+        "Le médecin traitant est celui qu'il faut consulter en premier pour un avis sur sa santé.",
+        "Les urgences de l'hôpital sont destinées uniquement aux détresses et urgences les plus graves.",
+        "En cas de danger vital (blessure grave, détresse respiratoire, perte de connaissance), il faut appeler le SAMU au 15.",
+        "Sans danger vital immédiat (forte fièvre, douleurs importantes, malaise), on peut contacter SOS Médecins au 3624.",
+        "Le 114 est l'appel d'urgence pour les personnes sourdes et malentendantes."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Accès aux soins : services et numéros d'urgence » ; « Accès aux soins : le médecin généraliste »"
+    },
+    {
+      "id": "carte_vitale",
+      "categorie": "conseil",
+      "tags": [
+        "vie_quotidienne",
+        "situation"
+      ],
+      "famille": "vie_quotidienne",
+      "texte": "la carte Vitale et le remboursement des soins",
+      "faits": [
+        "L'inscription à l'Assurance maladie est obligatoire.",
+        "Le numéro de sécurité sociale a 15 chiffres ; il est inscrit sur la carte Vitale.",
+        "La carte Vitale prouve que l'on bénéficie des droits à l'Assurance maladie.",
+        "Lors d'une consultation, on remet sa carte Vitale au professionnel de santé.",
+        "La carte Vitale n'est pas une carte de paiement.",
+        "Le remboursement des frais de santé se demande à la caisse primaire d'Assurance maladie."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Santé : la prise en charge, les démarches pour être remboursé »"
+    },
+    {
+      "id": "droit_travail",
+      "categorie": "conseil",
+      "tags": [
+        "vie_quotidienne",
+        "droits",
+        "situation"
+      ],
+      "famille": "vie_quotidienne",
+      "texte": "le travail en France : 35 heures, congés, syndicats",
+      "faits": [
+        "La durée de référence du travail à temps complet est de 35 heures par semaine.",
+        "Au-delà de 35 heures, ce sont des heures supplémentaires : l'employeur doit les payer ou permettre de les rattraper.",
+        "Il est possible de travailler dès l'âge de 16 ans ; un mineur doit y être autorisé par son représentant légal.",
+        "Il est interdit de verser un salaire inférieur au salaire minimum, le SMIC.",
+        "Chaque salarié a le droit de se syndiquer ; personne ne peut l'y obliger ni le punir s'il le fait."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiches « Le droit du travail (1/5) » ; « Le droit du travail (2/5) »"
+    },
+    {
+      "id": "travail_non_declare",
+      "categorie": "conseil",
+      "tags": [
+        "vie_quotidienne",
+        "droits",
+        "situation"
+      ],
+      "famille": "vie_quotidienne",
+      "texte": "le travail non déclaré : interdit et risqué",
+      "faits": [
+        "Le travail non déclaré est interdit par la loi.",
+        "Un salarié non déclaré ne cotise ni à l'assurance chômage ni pour sa retraite.",
+        "Il n'a pas droit à la Sécurité sociale en cas de maladie ou d'accident du travail.",
+        "Il n'a pas de congé payé et peut être licencié du jour au lendemain.",
+        "Un employeur qui ne déclare pas un salarié peut être puni jusqu'à 3 ans de prison et 45 000 euros d'amende."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Le droit du travail (5/5) »"
+    },
+    {
+      "id": "systeme_scolaire",
+      "categorie": "conseil",
+      "tags": [
+        "vie_quotidienne",
+        "situation"
+      ],
+      "famille": "vie_quotidienne",
+      "texte": "maternelle, collège, lycée : l'école en France",
+      "faits": [
+        "Français ou étrangers, tous les enfants de 3 à 16 ans qui habitent en France doivent aller à l'école.",
+        "Après l'école élémentaire, les élèves vont au collège, de 11 à 15 ans, puis au lycée, de 15 à 18 ans.",
+        "À la fin du collège, on passe le brevet ; à la fin du lycée, le baccalauréat.",
+        "À l'école maternelle, les enfants apprennent la langue française s'ils ne la parlent pas encore.",
+        "Une cantine est accessible à tous les enfants qui le souhaitent."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « Le système éducatif »"
+    },
+    {
+      "id": "declaration_naissance",
+      "categorie": "conseil",
+      "tags": [
+        "vie_quotidienne",
+        "situation"
+      ],
+      "famille": "vie_quotidienne",
+      "texte": "déclarer la naissance d'un enfant",
+      "faits": [
+        "La déclaration de naissance est obligatoire.",
+        "Elle doit être faite dans les 5 jours qui suivent la naissance, à la mairie du lieu de naissance.",
+        "Elle peut être faite par le père, la mère ou une personne qui a assisté à l'accouchement.",
+        "Elle permet d'établir l'acte de naissance de l'enfant.",
+        "L'acte de naissance permet d'obtenir des droits sociaux, de demander des documents d'identité et d'inscrire l'enfant à l'école."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), fiche « La déclaration de naissance »"
+    },
+    {
+      "id": "examen_modalites",
+      "categorie": "conseil",
+      "tags": [
+        "examen"
+      ],
+      "famille": "examen",
+      "texte": "comment se passe l'examen civique",
+      "faits": [
+        "À partir du 1er janvier 2026, l'examen civique est exigé pour obtenir une première carte de séjour pluriannuelle ou une première carte de résident.",
+        "C'est un examen de 40 questions en français, sous forme de questions à choix multiples : une seule bonne réponse parmi 4.",
+        "Il y a 28 questions de connaissance et 12 mises en situation.",
+        "Les questions portent sur cinq thèmes : les principes et valeurs de la République ; le système institutionnel et politique ; les droits et devoirs ; l'histoire, la géographie et la culture ; vivre dans la société française.",
+        "L'examen dure 45 minutes au maximum, sur tablette ou ordinateur.",
+        "Pour réussir, il faut au moins 32 bonnes réponses, soit 80 % de bonnes réponses.",
+        "On peut passer l'examen à tout moment et autant de fois que nécessaire.",
+        "La préparation peut se faire gratuitement : il n'est pas nécessaire de payer pour s'entraîner."
+      ],
+      "source": "formation-civique.interieur.gouv.fr (ministère de l'Intérieur), « Informations générales sur l'examen civique »"
     }
   ]
 }

@@ -2,7 +2,8 @@
 // Le decor de fond est trace plus fin et plus transparent que les personnages
 // (profondeur), avec quelques touches de couleur legeres (lavis).
 //   vide, bureau, cafe, salle_attente, salle_entretien, salon, metro, visio,
-//   ascenseur, open_space, bureau_manager, salon_emploi.
+//   ascenseur, open_space, bureau_manager, salon_emploi ;
+//   reserves a la chaine examen_civique (dessins.json "chaines") : mairie, bureau_vote, salle_cours.
 (() => {
   const { g } = Dessin;
   const reg = (nom, def) => Dessin.enregistrer("fond_" + nom, { categorie: "fond", ...def });
@@ -422,6 +423,137 @@
       P.lavisRond(grp, 1006, m - 140, 26, 32, "#ff8fb1", 0.5); P.rond(grp, 1006, m - 140, 26, 32, { w: 2.2, passes: 1, alpha: 0.7 });
       sol(grp, P, y, xs, { cailloux: false });
       return { guirlande };
+    },
+  });
+
+  // --- Decors de la vie civique (chaine examen_civique) : rien n'y bouge, seule la lumiere vit.
+  // Drapeau tricolore sur sa hampe (immobile : le decor ne bouge jamais).
+  function drapeau(grp, P, x, y0, h) {
+    P.trace(grp, [[x, y0 + h], [x, y0 - 8]], { w: 3.2, passes: 1, alpha: 0.75 });
+    P.rond(grp, x, y0 - 14, 7, 7, { w: 2.2, passes: 1, alpha: 0.7 });
+    const w = 150, hh = 96;
+    P.lavis(grp, [[x, y0], [x + w / 3, y0], [x + w / 3, y0 + hh], [x, y0 + hh]], "#4f6fff", 0.45);
+    P.lavis(grp, [[x + 2 * w / 3, y0], [x + w, y0], [x + w, y0 + hh], [x + 2 * w / 3, y0 + hh]], "#ff5b5b", 0.45);
+    P.rect(grp, x, y0, w, hh, { w: 2.6, passes: 1, alpha: 0.8 });
+    for (const k of [1, 2]) P.trace(grp, [[x + k * w / 3, y0], [x + k * w / 3, y0 + hh]], { w: 1.6, passes: 1, alpha: 0.55 });
+  }
+  // Lumiere douce d'un plafonnier (halo qui respire a peine).
+  function plafonnier(grp, P, parent, x) {
+    const svg = parent.ownerSVGElement;
+    if (svg && !svg.querySelector("#halo-froid")) {
+      const defs = svg.querySelector("defs") || Dessin.el("defs", {}, svg);
+      const rg = Dessin.el("radialGradient", { id: "halo-froid" }, defs);
+      Dessin.el("stop", { offset: "0", "stop-color": "#fff4c2", "stop-opacity": "0.45" }, rg);
+      Dessin.el("stop", { offset: "1", "stop-color": "#fff4c2", "stop-opacity": "0" }, rg);
+    }
+    const halo = Dessin.el("ellipse", { cx: x, cy: 470, rx: 230, ry: 170, fill: "url(#halo-froid)", class: "lavis", opacity: 1 }, grp);
+    P.trace(grp, [[x, -10], [x, 380]], { w: 1.8, passes: 1, alpha: 0.55 });
+    P.trace(grp, [[x - 70, 380], [x + 70, 380], [x + 50, 410], [x - 50, 410], [x - 70, 380]], { ...FOND, w: 3, ferme: true });
+    return halo;
+  }
+  const respire = (tl, halos, t0, t1) => tl.fromTo(halos, { opacity: 0.75 }, { opacity: 1, duration: 1.6, yoyo: true,
+    repeat: Math.ceil((t1 - t0) / 1.6), ease: "sine.inOut", immediateRender: false }, t0);
+
+  reg("mairie", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      mur(grp, P, m);
+      const halo = plafonnier(grp, P, parent, 540);
+      // Devise gravee au-dessus du hall.
+      P.lavis(grp, [[256, 520], [824, 520], [824, 586], [256, 586]], "#ffe08a", 0.2);
+      P.rect(grp, 250, 514, 580, 78, { ...FOND, w: 3 });
+      P.texte(grp, 540, 566, "LIBERTÉ · ÉGALITÉ · FRATERNITÉ", { taille: 30, alpha: 0.85 });
+      drapeau(grp, P, 70, 640, 600);
+      // Guichet de l'etat civil, a droite : vitre, hygiaphone, comptoir.
+      P.lavis(grp, [[724, 700], [1016, 700], [1016, 756], [724, 756]], "#8fb8ff", 0.3);
+      P.rect(grp, 720, 696, 300, 64, { ...FOND, w: 3 });
+      P.texte(grp, 870, 742, "ÉTAT CIVIL", { taille: 34, alpha: 0.9 });
+      P.lavis(grp, [[744, 790], [996, 790], [996, m - 160], [744, m - 160]], "#bfe3ff", 0.14);
+      P.rect(grp, 740, 786, 260, m - 160 - 786, FOND);
+      P.rond(grp, 870, m - 230, 22, 22, { w: 2, passes: 1, alpha: 0.6 });
+      P.lavis(grp, [[706, m - 160], [1034, m - 160], [1034, m], [706, m]], "#d9b38c", 0.22);
+      P.rect(grp, 700, m - 160, 340, 160, { w: 3, passes: 2, alpha: 0.8 });
+      // Panneau d'affichage municipal (feuilles epinglees).
+      P.lavis(grp, [[334, 704], [576, 704], [576, 930], [334, 930]], "#ffe066", 0.18);
+      P.rect(grp, 330, 700, 250, 234, FOND);
+      P.texte(grp, 455, 744, "Affichage", { taille: 30, alpha: 0.75 });
+      for (const [fx, fy, c] of [[352, 768, "#ffffff"], [462, 772, "#ffd0d0"], [360, 852, "#d6f5e3"], [466, 856, "#ffffff"]]) {
+        P.lavis(grp, [[fx, fy], [fx + 92, fy], [fx + 92, fy + 64], [fx, fy + 64]], c, 0.35);
+        P.rect(grp, fx, fy, 92, 64, { w: 1.6, passes: 1, alpha: 0.55 });
+        P.trace(grp, [[fx + 12, fy + 22], [fx + 78, fy + 22]], { w: 1.2, passes: 1, alpha: 0.45 });
+        P.trace(grp, [[fx + 12, fy + 40], [fx + 66, fy + 40]], { w: 1.2, passes: 1, alpha: 0.45 });
+      }
+      for (const yy of [y + 60, y + 150]) P.trace(grp, [[-20, yy], [1100, yy]], { w: 1.4, passes: 1, alpha: 0.3 });
+      sol(grp, P, y, xs, { cailloux: false });
+      return { halos: [halo] };
+    },
+    vie(tl, f, t0, t1) { respire(tl, f.halos, t0, t1); },
+  });
+
+  reg("bureau_vote", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      mur(grp, P, m);
+      const halo = plafonnier(grp, P, parent, 540);
+      // Panneau « Bureau de vote ».
+      P.lavis(grp, [[396, 556], [684, 556], [684, 626], [396, 626]], "#8fb8ff", 0.28);
+      P.rect(grp, 390, 550, 300, 82, { ...FOND, w: 3.2 });
+      P.texte(grp, 540, 604, "BUREAU DE VOTE", { taille: 34, alpha: 0.9 });
+      // Deux isoloirs a gauche : cadre, rideau plisse.
+      for (const bx of [40, 210]) {
+        P.lavis(grp, [[bx, 700], [bx + 150, 700], [bx + 150, m], [bx, m]], "#9aa8c8", 0.16);
+        P.rect(grp, bx, 690, 150, m - 690, { ...FOND, w: 3 });
+        P.trace(grp, [[bx - 6, 690], [bx + 156, 690]], { w: 3.4, passes: 1, alpha: 0.7 });
+        for (let k = 1; k < 6; k++) P.trace(grp, [[bx + k * 25, 702], [bx + k * 25 + 4, (702 + m) / 2], [bx + k * 25 - 3, m - 30]], { w: 1.4, passes: 1, alpha: 0.4 });
+      }
+      // Table, urne transparente et enveloppes.
+      P.lavis(grp, [[380, m - 140], [700, m - 140], [700, m - 118], [380, m - 118]], "#d9b38c", 0.3);
+      P.rect(grp, 376, m - 142, 328, 26, { w: 3, passes: 2, alpha: 0.85 });
+      for (const lx of [400, 680]) P.trace(grp, [[lx, m - 116], [lx, m]], { w: 3, passes: 1, alpha: 0.7 });
+      P.lavis(grp, [[476, m - 330], [636, m - 330], [636, m - 142], [476, m - 142]], "#bfe3ff", 0.25);
+      P.rect(grp, 472, m - 334, 168, 192, { w: 3, passes: 2 });
+      P.trace(grp, [[526, m - 334], [586, m - 334]], { w: 6, passes: 1, alpha: 0.6 });
+      for (const [ex, ey, r] of [[506, m - 176, -8], [546, m - 166, 6], [592, m - 180, -4]]) {
+        const e = g(grp); P.lavis(e, [[ex, ey], [ex + 40, ey], [ex + 40, ey + 26], [ex, ey + 26]], "#ffe08a", 0.6);
+        P.rect(e, ex, ey, 40, 26, { w: 1.6, passes: 1, alpha: 0.6 }); e.setAttribute("transform", `rotate(${r} ${ex + 20} ${ey + 13})`);
+      }
+      for (const k of [0, 1, 2]) {   // piles de bulletins
+        P.lavis(grp, [[392 + k * 8, m - 168 - k * 6], [452 + k * 8, m - 168 - k * 6], [452 + k * 8, m - 146], [392 + k * 8, m - 146]], "#ffffff", 0.3);
+        P.rect(grp, 392 + k * 8, m - 168 - k * 6, 60, 22 + k * 6, { w: 1.4, passes: 1, alpha: 0.5 });
+      }
+      drapeau(grp, P, 900, 700, 120);
+      sol(grp, P, y, xs, { cailloux: false });
+      return { halos: [halo] };
+    },
+    vie(tl, f, t0, t1) { respire(tl, f.halos, t0, t1); },
+  });
+
+  reg("salle_cours", {
+    dessiner(parent, P, { sol: y, xs }) {
+      const grp = g(parent), m = y - 170;
+      mur(grp, P, m);
+      // Tableau vert, devise a la craie.
+      P.lavis(grp, [[294, 584], [786, 584], [786, 900], [294, 900]], "#3f8f6b", 0.32);
+      P.rect(grp, 288, 578, 504, 328, { ...FOND, w: 3.4 });
+      P.trace(grp, [[280, 914], [800, 914]], { w: 3, passes: 1, alpha: 0.7 });
+      P.texte(grp, 540, 668, "Liberté", { taille: 46, alpha: 0.85 });
+      P.texte(grp, 540, 752, "Égalité", { taille: 46, alpha: 0.85 });
+      P.texte(grp, 540, 836, "Fraternité", { taille: 46, alpha: 0.85 });
+      // Affiche : l'Hexagone (carte stylisee), a gauche.
+      P.lavis(grp, [[64, 650], [224, 650], [224, 870], [64, 870]], "#8fb8ff", 0.2);
+      P.rect(grp, 60, 646, 168, 228, FOND);
+      P.trace(grp, [[144, 690], [194, 718], [194, 778], [144, 806], [94, 778], [94, 718], [144, 690]], { w: 2.6, passes: 2, alpha: 0.8, ferme: true });
+      P.texte(grp, 144, 850, "France", { taille: 28, alpha: 0.75 });
+      // Fenetre lumineuse, a droite.
+      P.lavis(grp, [[856, 624], [1016, 624], [1016, 880], [856, 880]], "#8fd3ff", 0.22);
+      P.rect(grp, 850, 618, 172, 268, FOND);
+      P.trace(grp, [[936, 618], [936, 886]], { ...FOND, w: 2.4 }); P.trace(grp, [[850, 752], [1022, 752]], { ...FOND, w: 2.4 });
+      const rayon = Dessin.el("polygon", { points: `856,624 1016,624 1060,${m} 760,${m}`, fill: "#fff4c2", opacity: 0.12, class: "lavis" }, grp);
+      sol(grp, P, y, xs, { cailloux: false });
+      return { rayon };
+    },
+    vie(tl, f, t0, t1) {
+      tl.fromTo(f.rayon, { opacity: 0.08 }, { opacity: 0.16, duration: 2, yoyo: true, repeat: Math.ceil((t1 - t0) / 2), ease: "sine.inOut", immediateRender: false }, t0);
     },
   });
 })();

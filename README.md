@@ -209,6 +209,8 @@ timeline GSAP en pause et appelle `expose(tl)` (voir `common.js` pour le contrat
   quelques centaines de pixels de bord (texte qui bouge) diffèrent d'un demi-pixel ; repli automatique sur `page.screenshot()`.
 - **Contrôle des gabarits** : `python scripts/verif_gabarits.py [gabarit…]` charge chaque gabarit avec chaque profil de mouvement, avance
   l'animation à plusieurs instants et échoue sur toute erreur JavaScript (ce que `py_compile` ne voit pas ; 26 × 3 en ≈ 12 s).
+  Un gabarit à planches (`civique`) est chargé une fois par planche (`PLANCHES`, avec des paramètres d'exemple) : une erreur dans
+  une planche autre que celle par défaut ne passe plus inaperçue.
 
 ### Dessin à la main (`sketch.js`)
 
@@ -227,7 +229,10 @@ Le dessin est accéléré (effet « timelapse ») pour être fini à 80 % de la 
 déterministe (bruit SVG à graine fixe) : deux rendus donnent les mêmes images. Les 33 icônes
 dessinables (CV, robot ATS, poubelle, loupe, cible, horloge, ampoule, recruteur, entonnoir,
 trophée, fantôme, tasse de café, lune, visage qui rit…) sont dans `assets/anim/icones.js` : ajouter une icône = ajouter une entrée (traits SVG
-dans une boîte 100×100 ; JSON strict, validé par `python scripts/catalog.py` et listé à Gemini).
+dans une boîte 100×100 ; JSON strict, validé par `python scripts/catalog.py` et listé à Gemini). Une icône à `"chaines"` est
+réservée à ces chaînes (`catalog.icons()` ne la donne qu'à elles, le prompt d'OpusCV reste identique) : les 20 icônes civiques
+d'Objectif Civique (drapeau, urne, balance de la justice, mairie, livre ouvert, couronne, plume, mains serrées, école, euro,
+croix médicale, bouclier, Hexagone, montagnes, vagues, colombe, alliances, landau, étoiles de l'Europe, bonnet phrygien).
 
 **Annotations au feutre sur les captures** (`assets/anim/annotation.html`, `--annotate` de 3b) :
 sur la scène preuve, et sur une autre scène au plus quand le scénario le demande
@@ -266,7 +271,7 @@ sans prénom du personnage, texte et titres manuscrits (Kalam). Déterministe (p
 | `dessin/personnages.js` | **Léa** (`lea` : queue de cheval qui se balance avec un chouchou corail, veste cintrée, jupe, cil), **Karim** (`karim` : cheveux courts avec un épi, chemise, cravate bleue, pantalon) et **le recruteur** (`recruteur` : crâne dégarni aux cheveux gris, lunettes rondes, moustache, veste, cravate verte ; voix Charon) |
 | `dessin/animaux.js` | `chat` roux (queue qui bouge ; `marcher`/`traverser`, `miauler`, `dormir`) |
 | `dessin/objets.js` | `tasse` (orange, qui fume), `telephone` (`vibrer`, `notifier`), `cv` (`corriger`), `ordinateur` (`taper`, `afficher`), `table` (bureau), `table_ronde`, `chaise`, `canape` (deux places), `plante`, `corbeille`, `tampon` (`tamponner`), `horloge`, `cadre` et `calendrier` (`defiler`) (muraux) |
-| `dessin/fonds.js` | `vide` (sol, cailloux, herbe, une fleur rose), `bureau` (fenêtre bleutée, livres colorés), `cafe` (suspensions à la lumière chaude, ardoise du menu), `salle_attente` (porte des RH à la plaque orange, affiche « On recrute ! », chaises, horloge qui tourne), `salle_entretien` (fenêtre à stores, tableau blanc, porte-manteau), `salon` (rideaux corail, lampadaire, tableau, tapis), `metro` (la ville défile derrière les vitres, poignées qui se balancent), `visio` (appel vidéo : deux vignettes, point d'enregistrement, boutons), `ascenseur` (portes coulissantes, afficheur d'étage qui monte avec un « ding » à chaque étage, boutons), `open_space` (bureaux et écrans au fond, baie vitrée, suspensions), `bureau_manager` (baie sur la ville au crépuscule, diplômes, bibliothèque, « Direction »), `salon_emploi` (banderole, fanions qui bougent, stands RH / Tech / Vente) |
+| `dessin/fonds.js` | `vide` (sol, cailloux, herbe, une fleur rose), `bureau` (fenêtre bleutée, livres colorés), `cafe` (suspensions à la lumière chaude, ardoise du menu), `salle_attente` (porte des RH à la plaque orange, affiche « On recrute ! », chaises, horloge qui tourne), `salle_entretien` (fenêtre à stores, tableau blanc, porte-manteau), `salon` (rideaux corail, lampadaire, tableau, tapis), `metro` (la ville défile derrière les vitres, poignées qui se balancent), `visio` (appel vidéo : deux vignettes, point d'enregistrement, boutons), `ascenseur` (portes coulissantes, afficheur d'étage qui monte avec un « ding » à chaque étage, boutons), `open_space` (bureaux et écrans au fond, baie vitrée, suspensions), `bureau_manager` (baie sur la ville au crépuscule, diplômes, bibliothèque, « Direction »), `salon_emploi` (banderole, fanions qui bougent, stands RH / Tech / Vente) ; réservés à Objectif Civique (`"chaines"` dans `dessins.json`) : `mairie` (devise au-dessus du hall, drapeau tricolore, guichet « État civil », panneau d'affichage, plafonnier qui respire), `bureau_vote` (panneau « Bureau de vote », isoloirs à rideau, urne transparente au centre, enveloppes et bulletins), `salle_cours` (tableau vert avec la devise à la craie, affiche de l'Hexagone, rayon de lumière de la fenêtre) |
 | `dessin/moteur.js` | assemble les scènes : place les objets, joue les actions, caméra, inserts, bulles, titres, cartons d'ellipse, enchaînement |
 | `catalog/dessins.json` | la liste des fonds, objets (ancres, actions), expressions, gestes et actions des personnages |
 
@@ -583,6 +588,10 @@ balaie, bande tricolore en bas, onglet en forme d'hexagone étiré et progressio
 | `definition` | `definition` | le mot en grand dans un hexagone (les lettres rebondissent une à une ; une expression longue passe sur deux lignes), sa définition sur une plaque « DÉFINITION » |
 | `frise` | `frise` | une frise verticale : la ligne se trace, un nœud hexagonal numéroté et une date en grand par jalon |
 | `indices` | `indices` | trois indices qui arrivent un à un, un hexagone « ? » qui bat, puis la réponse en plaque avec la coche verte et des confettis |
+| `qcm` | `quiz` (4 réponses) | **comme à l'examen** : quatre capsules A / B / C / D plus serrées, compte à rebours, une seule bonne réponse s'allume |
+| `citation` | `citation` | une phrase d'un texte officiel **mot pour mot** : plaque crème « MOT POUR MOT », guillemets dorés et grand « en filigrane, lettres à empattement (Playfair Display), la source qui se signe sous un trait tricolore, puis un sceau hexagonal doré tamponné |
+| `chapitre` | `chapitre` | un **chapitre de récit** : bandes de cinéma, lumière de projecteur qui vacille, le jour et le mois au-dessus, l'année qui défile comme un compteur puis s'arrête (tic-tac, impact), la phrase mot à mot, l'icône (ou le chiffre romain du chapitre) dessinée dans un hexagone |
+| `situation` | `situation` | une **mise en situation** : un viseur de caméra qui se trace avec un point rouge qui clignote, une onde d'alerte rouge qui pulse autour de l'icône, la situation mot à mot sur une plaque, puis « Que fais-tu ? » qui rebondit |
 | scène 1 | `accroche` | l'icône dessinée (trait néon) dans l'hexagone, sous l'accroche |
 | dernière scène | `fin` | le logo se trace, « OBJECTIF / CIVIQUE » (dégradé tricolore), titre, sous-titre, bouton « S'ABONNER » |
 
@@ -599,10 +608,10 @@ Tampon de réponse (`verdict`) : badge hexagonal vert avec coche (VRAI) ou rouge
 (clics des mots, pop, tic-tac du compte à rebours, ding, buzz, coup du tampon) sont **publiés par la page** (`window.SONS`,
 lus par `render_js_anim.render_clip`) : rien à recopier dans `sound_design.py`. `run_pipeline.plan_montage` remplace
 l'illustration de l'accroche et l'écran d'appel à l'action par les planches `accroche` et `fin` quand le thème du reel a
-`"cartes_gabarit": "civique"`. Les six cartes `duel`, `intrus`, `relier`, `definition`, `frise` et `indices` n'existent que pour
+`"cartes_gabarit": "civique"`. Les dix cartes `duel`, `intrus`, `relier`, `definition`, `frise`, `indices`, `qcm`, `citation`, `chapitre` et `situation` n'existent que pour
 les formats à `"cartes_civique": true` (le prompt les décrit alors, `CIVIQUE_CARDS_RULE` ; `catalog.py` impose la chaîne sans
 produit et le seul thème `civique_plateau`) ; leurs champs sont nettoyés par `clean_card`, leur texte compte pour le contrôle des
-nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA) ; la réponse d'une carte `indices` doit être redite dans les scènes suivantes (`civique_problems`, run 84 : réponse « À toi ! », run 85 : « ? » refusé aussi ; run 86 : une carte dont la phrase fait moins de 6 mots, affichée 1 s, fait recommencer l'IA ; run 90 : la scène d'une carte `intrus` doit contenir la question « Lequel est l'intrus ? Réfléchis. », sinon l'IA l'avait dite dans la scène suivante, sur un schéma « Réponse » qui donnait déjà la solution, après la révélation vert/rouge). Un thème imposé (console, `--theme`) incompatible avec les `themes` du format est ignoré avec un avertissement : run 85, `ardoise_indigo` imposé à un format à planches civiques, qui sont alors sorties vides (« Titre de la carte »). `etiquette` d'un format peut être un dictionnaire : un texte par type de carte, `suite` pour la carte qui suit une carte à étiquette propre (« RÉPONSE »), `*` pour les autres (« À RETENIR »). Aperçu de la console : une planche quiz révélée (`apercus.py`).
+nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA) ; la réponse d'une carte `indices` doit être redite dans les scènes suivantes (`civique_problems`, run 84 : réponse « À toi ! », run 85 : « ? » refusé aussi ; run 86 : une carte dont la phrase fait moins de 6 mots, affichée 1 s, fait recommencer l'IA ; run 90 : la scène d'une carte `intrus` doit contenir la question « Lequel est l'intrus ? Réfléchis. », sinon l'IA l'avait dite dans la scène suivante, sur un schéma « Réponse » qui donnait déjà la solution, après la révélation vert/rouge). Un thème imposé (console, `--theme`) incompatible avec les `themes` du format est ignoré avec un avertissement : run 85, `ardoise_indigo` imposé à un format à planches civiques, qui sont alors sorties vides (« Titre de la carte »). `etiquette` d'un format peut être un dictionnaire : un texte par type de carte, `suite` pour la carte qui suit une carte à étiquette propre (« RÉPONSE »), `*` pour les autres (« À RETENIR ») ; `{k}` y est remplacé par le rang de la carte parmi celles de son type (« CHAPITRE {k} » : chapitre 1, 2, 3 ; `etiqueter_cartes`). Carte `citation` : la phrase doit se retrouver telle quelle dans les faits du sujet (`faits_problems`, sinon l'IA recommence) ; carte `qcm` : une mauvaise réponse qui est une date reprend une autre date des faits (le contrôle des nombres s'applique aux quatre réponses). Aperçu de la console : une planche quiz révélée (`apercus.py`).
 
 ### Format `cours_eclair` : mini-cours éducatif (thèmes `carnet_cours` et `pop_art`)
 
@@ -706,12 +715,54 @@ affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), 
 | Chaîne | Nom | Formats | Particularités |
 |---|---|---|---|
 | `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
-| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | 10 formats, thème propre `civique_plateau` (voir « Plateau civique ») : `question_revision` (quiz 3 réponses), `vrai_ou_faux`, `cours_eclair`, `duel_ab` (« A ou B ? »), `trouve_intrus`, `relie_paires`, `mot_du_jour` (définition, exemple, quiz), `qui_suis_je` (3 indices), `frise_dates` (sujets à tag `dates` seulement), `serie_flash` (3 questions éclair, 35 s conseillées) | vérifiée : 23 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr) en 5 familles (valeurs, institutions, histoire, droits, vie quotidienne) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les modalités de l'examen (nombre de questions, seuil) ne sont pas dans les sujets tant qu'elles n'ont pas été recopiées d'une source officielle |
+| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | 17 formats, thème propre `civique_plateau` (voir « Plateau civique » et « Objectif Civique : apprendre par les histoires » ci-dessous) : `question_revision` (quiz 3 réponses), `vrai_ou_faux`, `cours_eclair`, `duel_ab` (« A ou B ? »), `trouve_intrus`, `relie_paires`, `mot_du_jour` (définition, exemple, quiz), `qui_suis_je` (3 indices), `frise_dates` (sujets à tag `dates` seulement), `serie_flash` (3 questions éclair), `histoire_racontee` (« Il était une fois… », récit en chapitres), `citation_expliquee`, `mise_en_situation` (« Que fais-tu ? », QCM à 4 réponses), `ne_confonds_plus`, `rappel_revision` (« Tu te souviens ? », révision espacée), `examen_mode_emploi`, `dessin_anime` (série « Sami prépare son examen ») | vérifiée : 80 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr, et surtout les fiches officielles de la formation civique, `formation-civique.interieur.gouv.fr`, ministère de l'Intérieur) rangés selon les cinq thèmes officiels de l'examen (familles valeurs, institutions, droits, histoire, géographie, culture, vie quotidienne) + le sujet `examen_modalites` (40 questions dont 28 de connaissance et 12 mises en situation, 4 réponses dont une bonne, 45 minutes, 32 bonnes réponses pour réussir, recopiés de la page officielle) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les règles de l'examen ne se citent que depuis le sujet `examen_modalites` |
 | `psycho` | Dans ta tête (provisoire, `@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
+
+### Objectif Civique : apprendre par les histoires
+
+La chaîne `examen_civique` apprend comme un bon formateur : le spectateur **cherche avant d'avoir la réponse** (question,
+situation ou énigme d'abord), un seul fait par scène, un exemple de la vie en France, la phrase à retenir redite à la fin avec les
+mots des faits, et une **astuce pour retenir** permise si elle n'ajoute aucun fait (règles de `chaine.json`). Les sujets suivent les
+cinq thèmes officiels de l'examen (fiches de `formation-civique.interieur.gouv.fr`, recopiées, jamais de mémoire ; tags de format :
+`recit`, `citation`, `situation`, `confusion`, `memoire`, `examen` — voir le `_doc` de `sujets.json`).
+
+| Format | Durée min. | Ce que voit le spectateur |
+|---|---|---|
+| `histoire_racontee` « Il était une fois… » | 40 s | « Imagine : … », puis 2 ou 3 **chapitres** (planche `chapitre`, « CHAPITRE 1, 2, 3 »), la voix raconte au présent comme un conteur, chaque chapitre répond à la question laissée par le précédent ; un QCM à 4 réponses sur l'histoire, la réponse, le CTA. Le récit n'ajoute rien aux faits (ni foule, ni météo, ni parole inventée) |
+| `citation_expliquee` « Une phrase, une explication » | 35 s | une phrase célèbre (DDHC, Constitution, Charte de l'environnement, Simone de Beauvoir…) en planche `citation`, **mot pour mot** (contrôlé), le mot difficile en définition, ce que ça change au quotidien, un quiz |
+| `mise_en_situation` « Que fais-tu ? » | 35 s | une situation au « tu » (planche `situation`), un **QCM à 4 réponses comme à l'examen** (qui compte 12 mises en situation sur 40 questions), la bonne réponse et le fait qui la justifie, ce qu'il ne faut pas faire |
+| `ne_confonds_plus` « Ne confonds plus ! » | 35 s | deux notions qu'on mélange (police / gendarmerie, contravention / délit / crime, Assemblée / Sénat…) reliées à ce qui les distingue, l'astuce pour ne plus confondre, un duel pour vérifier |
+| `rappel_revision` « Tu te souviens ? » | 35 s | **révision espacée** : les faits viennent des 3 derniers sujets publiés par la chaîne (`catalog.sujet_rappel`, format à `"rappel": true` ; sujet ordinaire tant que l'historique n'en a pas 3, ou si ces 3 sujets viennent d'être révisés), une question par sujet, le score en commentaire |
+| `examen_mode_emploi` « L'examen en 30 secondes » | — | les chiffres clés de l'examen (cartes chiffre), les cinq thèmes (liste), « autant de fois que nécessaire », la préparation peut être gratuite — tout vient du sujet `examen_modalites` |
+| `dessin_anime` « Sami prépare son examen » | — | la série dessinée de la chaîne (voir ci-dessous) |
+
+`duree_min` d'un format (`formats.json`) : une durée demandée plus courte est relevée à ce minimum pour l'écriture (le scénario
+garde la durée demandée dans `duree_cible_s`, la reprise du pipeline ne le croit pas périmé). `sans_relance` (récit, citation, mise en situation) : pas de
+relance « enregistre » au début de la scène 2, elle casserait l'immersion.
+
+**Série dessinée « Sami prépare son examen »** (`chaine.json` : `personnages`, `caracteres`, `serie`, `trames`, `lieux` ; noms
+**provisoires**) : mêmes dessins qu'OpusCV, autre identité — **Sami** (dessin de Karim) prépare son examen civique et découvre la
+France, **Claire** (dessin de Léa), sa voisine bénévole dans une association, connaît les faits et les fait chercher, **M. Bernard**
+(dessin du recruteur, secondaire), le voisin retraité qui croit tout savoir, lance l'idée reçue que l'épisode corrige. Huit trames :
+`situation_vraie`, `faux_conseil` (le voisin qui sait tout), `quiz_du_soir`, `dans_sa_tete`, `le_mot_bizarre`, `la_veille`
+(l'astuce pour retenir), `le_prof_c_est_lui` (Sami explique à M. Bernard), `le_chat_juge`. Chaque épisode apprend **un fait des
+FAITS VÉRIFIÉS**, dit entre « guillemets » par Claire (contrôle des nombres et relecture comme les autres formats). `lieux` : décors
+proposés en priorité (`catalog.pick_lieu`) — les décors civiques `mairie`, `bureau_vote`, `salle_cours`, puis salon, café, salle
+d'attente. Sujet de mémoire (Shoah) : ton grave, jamais en vrai ou faux, en dessin animé ni avec une blague (tag `memoire`, formats
+`cours_eclair` et `histoire_racontee` seulement).
+
+Accroches ajoutées (`hooks.json`, `tags` = sujets visés) : `imagine` (récit, jamais en dessin animé), `situation_tu`, `on_confond`,
+`phrase_celebre`, `idee_recue`, `detail_surprenant`.
+
+```bash
+python scripts/run_pipeline.py --chaine examen_civique --n 1 --format histoire_racontee --duration 40
+python scripts/run_pipeline.py --chaine examen_civique --n 1 --format mise_en_situation --duration 35
+python scripts/run_pipeline.py --chaine examen_civique --n 1 --format dessin_anime --duration 30
+```
 
 **Mouvement** : `opuscv` = `dynamique` (rebonds francs, entrées vives), `examen_civique` = `pose` (sobre, rebond à peine marqué : une chaîne qui doit inspirer confiance), `psycho` = `fluide` (arrivées longues et soyeuses). Les profils sont dans `catalog/config.json` (« mouvements »).
 
-Changer un nom (celui de `psycho` est provisoire) : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,
+Changer un nom (celui de `psycho` est provisoire, comme les prénoms de la série d'Objectif Civique : Sami, Claire, M. Bernard) : `nom`, `marque`, `watermark`, `pied` (et les prénoms dans `personnages`, `caracteres`,
 `serie`) dans `chaine.json`, rien d'autre. **Ajouter une chaîne** : copier le dossier d'une chaîne faceless, adapter
 `chaine.json`, les formats, sujets, accroches et la config, ajouter son id aux options `chaine` de
 `.github/workflows/generate-reels.yml`, puis `python scripts/catalog.py` et `python scripts/verif_prompts.py`. Ses phrases

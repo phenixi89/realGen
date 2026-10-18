@@ -24,6 +24,14 @@
     definition  mot, sens : le mot en grand (lettres qui sautent), sa définition sur une plaque
     frise       texte = titre, jalons "date~légende|date~légende" (2 à 4) : une frise verticale, un nœud hexagonal par date
     indices     texte = titre, points = 3 indices (apparaissent un à un), reponse : l'hexagone « ? » se retourne sur la réponse
+    quiz à 4    quiz avec points a|b|c|d (carte « qcm », comme à l'examen : 4 réponses, une seule bonne) : capsules plus serrées
+    citation    texte = la phrase citée (sans guillemets), source : de grands guillemets dorés, la phrase mot à mot en lettres
+                à empattement sur une plaque, la source qui se signe sous un trait tricolore, puis un sceau hexagonal tamponné
+    chapitre    quand (date ou moment), texte = la phrase du récit, icone, chapitre (rang) : bandes de cinéma, lumière de
+                projecteur qui vacille, la date qui défile comme un compteur, la phrase mot à mot, l'icône (ou le chiffre
+                romain du chapitre) dessinée dans un hexagone
+    situation   texte = la situation (au « tu »), question (« Que fais-tu ? »), icone : un viseur qui se trace autour de l'icône,
+                une onde d'alerte qui pulse, la situation mot à mot, puis la question qui rebondit
     accroche    icone dessinée dans l'hexagone (sous l'accroche affichée en haut par le montage) ; titre optionnel
     fin         appel à l'action : le logo se trace, brand (nom), title, sub, button
   Sons : publiés par la page (window.SONS, lus par render_js_anim.render_clip) -- rien a recopier dans sound_design.py.
@@ -32,6 +40,7 @@
 <style>
   @font-face{font-family:CVTitle;src:url("../fonts/Anton-Regular.ttf")}
   @font-face{font-family:CVText;src:url("../fonts/Poppins-ExtraBold.ttf")}
+  @font-face{font-family:CVSerif;src:url("../fonts/PlayfairDisplay-ExtraBold.ttf")}
   :root{--marine:#14204F;--nuit:#0c1538;--bleu:#2D5BE3;--rouge:#EF3E4A;--creme:#FFF7EA;--or:#FFC94A;--vert:#22B573;
     --ink-ink:#FFF7EA;--ink-a1:#2D5BE3;--ink-a2:#EF3E4A}
   html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:var(--nuit);color:var(--creme);font-family:CVText,sans-serif}
@@ -77,6 +86,17 @@
   .indice{position:absolute;left:90px;right:90px;height:230px;padding:56px 50px 0;box-sizing:border-box;border-radius:28px;background:rgba(255,247,234,.09);
     border:5px solid rgba(255,247,234,.35);font-size:56px;line-height:1.15;box-shadow:0 18px 40px rgba(0,0,0,.35)}
   .indice .tab{position:absolute;left:36px;top:-34px;font-family:CVTitle,sans-serif;font-size:44px;letter-spacing:.06em;color:var(--marine);background:var(--or);padding:4px 26px 0;border-radius:12px}
+  .plaque .m.cle{color:var(--bleu)}
+  .citation{font-family:CVSerif,serif;font-size:66px;line-height:1.26;letter-spacing:0}
+  .guil{position:absolute;font-family:CVSerif,serif;font-size:300px;line-height:1;color:var(--or);text-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .signe{margin-top:44px;display:flex;align-items:center;gap:26px;font-size:42px;line-height:1.15;color:#3b4675}
+  .signe i{flex:none;display:block;width:120px;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--bleu),#fff 50%,var(--rouge));transform-origin:0 50%}
+  .bande{position:absolute;left:0;right:0;height:120px;background:#04081c;z-index:2}
+  #lumiere{position:absolute;inset:0;background:radial-gradient(ellipse 80% 55% at 50% 40%,rgba(255,201,74,.20),transparent 70%);display:none}
+  .roule{display:inline-block;overflow:hidden;height:1.12em;vertical-align:top}
+  .roule b{display:block;font-weight:400;line-height:1.12em}
+  .viseur{position:absolute;left:190px;top:330px;width:700px;height:560px}
+  .question{position:absolute;left:90px;right:90px;text-align:center;font-family:CVTitle,sans-serif;font-size:120px;line-height:1.05;color:var(--or);letter-spacing:.02em}
   #verdict{position:absolute;left:760px;top:250px;width:260px;height:300px;display:none}
   #note{position:absolute;left:150px;right:150px;top:1330px;padding:26px 40px;border-radius:24px;background:rgba(255,247,234,.12);
     border:4px solid rgba(255,247,234,.4);font-size:48px;line-height:1.25;text-align:center;display:none}
@@ -86,6 +106,7 @@
     background:linear-gradient(90deg,var(--bleu),var(--rouge));clip-path:polygon(40px 0,calc(100% - 40px) 0,100% 50%,calc(100% - 40px) 100%,40px 100%,0 50%)}
 </style></head><body>
 <div id="fond"></div>
+<div id="lumiere"></div>
 <svg id="alveoles" width="1480" height="2320"></svg>
 <div id="projo"></div>
 <div id="bande"></div>
@@ -133,7 +154,7 @@
     const mots = [];
     (txt.match(/\*[^*]+\*[^\s*]*|[^\s*]+/g) || []).forEach((tok) => { const cle = tok.startsWith("*"), m = document.createElement("span");
       m.className = "m" + (cle ? " cle" : ""); m.textContent = cle ? tok.replace(/\*/g, "") : tok; el.appendChild(m); mots.push(m); });
-    if (mots.length > 10) el.style.fontSize = "86px";
+    if (mots.length > 10 && parseFloat(getComputedStyle(el).fontSize) > 86) el.style.fontSize = "86px";   // ne fait que reduire
     const g = gap ?? Math.min(0.3, Math.max(0.12, (DUR * 0.55 - t0) / Math.max(mots.length, 1)));
     mots.forEach((m, i) => { const t = t0 + i * g; tl.from(m, { y: 40, opacity: 0, scale: 0.85, duration: 0.22, ease: EASE.pop }, t);
       if (m.classList.contains("cle")) tl.fromTo(m, { "--ul": 0 }, { "--ul": 1, duration: 0.3, ease: "power2.out", immediateRender: false }, t + 0.15);
@@ -244,9 +265,13 @@
     } else if (mode === "quiz") {
       const q = add("abs", hl(texte), { top: "360px", fontSize: "84px", lineHeight: 1.2, right: "330px" });
       tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
-      const bonne = Math.min(Math.max(Math.round(num("bonne", 1)), 1), points.length), box = add("abs", "", { top: "820px" }), pods = [];
+      // 4 reponses (carte « qcm », comme a l'examen) : capsules plus serrees, toujours au-dessus des sous-titres (y < 1500).
+      const quatre = points.length >= 4, pas = quatre ? 166 : 216, haut = quatre ? 770 : 820;
+      const bonne = Math.min(Math.max(Math.round(num("bonne", 1)), 1), points.length), box = add("abs", "", { top: `${haut}px` }), pods = [];
       const gap = Math.min(0.6, Math.max(0.3, (DUR * 0.45) / points.length));
-      points.forEach((pt, i) => { const p = add("pod", `<span class="hexb">${"ABC"[i]}</span><span>${hl(pt)}</span>`, {}, box); pods.push(p);
+      points.slice(0, 4).forEach((pt, i) => { const p = add("pod", `<span class="hexb">${"ABCD"[i]}</span><span>${hl(pt)}</span>`,
+          quatre ? { height: "140px", marginBottom: "26px", fontSize: "56px" } : {}, box); pods.push(p);
+        if (quatre) Object.assign(p.querySelector(".hexb").style, { width: "100px", height: "114px", fontSize: "60px" });
         const t = FIRST_AT + 0.6 + i * gap; tl.from(p, { x: 160, opacity: 0, duration: 0.3, ease: EASE.entree }, t); son(t, "pop"); });
       const finOpts = FIRST_AT + 0.6 + points.length * gap, rev = Math.max(finOpts + 1.2, DUR - 0.8);
       compte(880, 470, finOpts, rev);
@@ -254,7 +279,7 @@
           tl.to(p, { backgroundColor: "rgba(34,181,115,.9)", borderColor: "#7dffb8", scale: 1.04, duration: 0.25, ease: EASE.pop }, rev)
             .to(p.querySelector(".hexb"), { backgroundColor: "#FFF7EA", color: "#22B573", duration: 0.2 }, rev);
         } else tl.to(p, { opacity: 0.25, x: i % 2 ? 12 : -12, duration: 0.2 }, rev).to(p, { x: 0, duration: 0.15 }, rev + 0.2); });
-      son(rev, "ding"); confettis(540, 900 + (bonne - 1) * 216, rev + 0.1, 14); fin = rev + 0.5;
+      son(rev, "ding"); confettis(540, haut + (quatre ? 70 : 85) + (bonne - 1) * pas, rev + 0.1, 14); fin = rev + 0.5;
     } else if (mode === "duel") {
       const q = add("abs", hl(texte), { top: "330px", fontSize: "80px", lineHeight: 1.2, textAlign: "center" });
       tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
@@ -341,6 +366,102 @@
       const rp = add("plaque", `<div>${hl(param("reponse", "La réponse"))}</div>`, { left: "330px", top: `${cy - 100}px`, padding: "36px 40px", fontSize: "62px", right: "70px", textAlign: "center" });
       tl.fromTo(rp, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: EASE.pop }, rev).to(q, { opacity: 0, duration: 0.15 }, rev);
       coche(170, cy, 0.3, rev + 0.15, "#22B573"); son(rev, "ding"); confettis(500, cy, rev + 0.1, 14); fin = rev + 0.6;
+    } else if (mode === "citation") {
+      // Un texte officiel cite mot pour mot : guillemets dores, lettres a empattement, source signee, sceau tamponne.
+      const mots = (texte.match(/\S+/g) || []).length;
+      const pl = add("plaque", `<span class="tab" style="background:var(--marine)">MOT POUR MOT</span>`
+        + `<div class="citation"></div><div class="signe"><i></i><span>${hl(param("source", ""))}</span></div>`,
+        { top: "520px", padding: "100px 64px 64px" });
+      const cit = pl.querySelector(".citation"); cit.style.fontSize = mots > 20 ? "58px" : mots > 12 ? "70px" : "84px";
+      const o = document.createElement("span"); o.className = "m"; o.textContent = "«"; o.style.color = "#FFC94A"; cit.appendChild(o);
+      const filigrane = add("guil", "«", { right: "40px", top: "300px", fontSize: "520px", opacity: 0.16 });
+      tl.from(pl, { y: 120, opacity: 0, rotation: -2, duration: 0.45, ease: EASE.pop }, 0.15)
+        .from(o, { scale: 0, rotation: -40, opacity: 0, duration: 0.45, ease: EASE.rebond }, 0.3)
+        .from(filigrane, { x: 120, opacity: 0, duration: 0.8, ease: EASE.doux }, 0.1);
+      son(0.3, "pop");
+      fin = motAMot(cit, texte, FIRST_AT + 0.45, Math.min(0.28, Math.max(0.12, (DUR * 0.6 - FIRST_AT - 0.45) / Math.max(mots, 1))));
+      const top = Math.round(Math.max(380, Math.min(560, (1420 - pl.offsetHeight) / 2 + 100)));   // plaque centree dans la zone libre
+      pl.style.top = `${top}px`; filigrane.style.top = `${top - 220}px`;
+      const f = document.createElement("span"); f.className = "m"; f.textContent = "»"; f.style.color = "#FFC94A"; cit.appendChild(f);
+      tl.from(f, { scale: 0, rotation: 40, opacity: 0, duration: 0.35, ease: EASE.rebond }, fin);
+      const sg = pl.querySelector(".signe");
+      tl.fromTo(sg.querySelector("i"), { scaleX: 0 }, { scaleX: 1, duration: 0.35, ease: "power2.inOut", immediateRender: false }, fin + 0.15)
+        .from(sg.querySelector("span"), { x: -40, opacity: 0, duration: 0.35, ease: EASE.entree }, fin + 0.35);
+      son(fin + 0.15, "feutre", { duration: 0.35 });
+      const cy = Math.min(top + pl.offsetHeight + 40, 1390), g = svgEl("g", {});
+      hexagone(900, cy, 95, fin + 0.7, { fill: "#FFC94A", stroke: "#FFF7EA", width: 12, parent: g, dur: 0.3 }); coche(900, cy, 0.26, fin + 0.85, "#14204F", g);
+      tl.fromTo(g, { scale: 2.6, opacity: 0, rotation: -14, svgOrigin: `900 ${cy}` }, { scale: 1, opacity: 1, rotation: -8, duration: 0.22, ease: "power4.in", immediateRender: false }, fin + 0.7);
+      son(fin + 0.9, "tampon", { gain: 0.7 }); fin += 1.3;
+    } else if (mode === "chapitre") {
+      // Recit en chapitres : bandes de cinema, lumiere de projecteur qui vacille, date qui defile comme un compteur.
+      const lum = document.getElementById("lumiere"); lum.style.display = "block";
+      tl.fromTo(lum, { opacity: 0.55 }, { opacity: 1, duration: 0.11, repeat: Math.ceil(DUR / 0.22), yoyo: true, ease: "steps(1)" }, 0);
+      const b1 = add("bande", "", { top: "0px" }), b2 = add("bande", "", { top: "1800px" });
+      tl.from(b1, { y: -120, duration: 0.35, ease: EASE.entree }, 0).from(b2, { y: 120, duration: 0.35, ease: EASE.entree }, 0);
+      son(0.05, "whoosh", { gain: 0.5 });
+      const k = Math.max(Math.round(num("chapitre", N)), 1), quand = frTypo(param("quand", ""));
+      if (!ETIQ) lab.textContent = `CHAPITRE ${k}`;
+      let t = FIRST_AT + 0.2;
+      if (quand) {
+        // « 14 juillet 1789 » : le jour et le mois au-dessus, l'annee en tres grand (compteur).
+        const m = quand.match(/^(.*\S)\s+(\d{3,4})$/), avant = m ? m[1] : "", annee = m ? m[2] : quand;
+        if (avant) { const a = add("abs", esc(avant).toUpperCase(), { top: "330px", fontFamily: "CVTitle,sans-serif", fontSize: avant.length > 14 ? "70px" : "92px", letterSpacing: ".08em", textAlign: "center", color: "#FFF7EA" });
+          tl.from(a, { y: -30, opacity: 0, duration: 0.4, ease: EASE.entree }, t); son(t, "pop"); t += 0.25; }
+        const fs = Math.min(avant ? 300 : 250, Math.floor(980 / Math.max(annee.length * 0.52, 1)));
+        const d = add("abs", "", { top: avant ? "430px" : "390px", fontFamily: "CVTitle,sans-serif", fontSize: `${fs}px`, lineHeight: 1.12, textAlign: "center", color: "#FFC94A", whiteSpace: "nowrap" });
+        [...annee].forEach((c, i) => {
+          if (/\d/.test(c)) {   // un chiffre : une colonne 0-9 qui defile (deux tours) et s'arrete sur le bon
+            const r = document.createElement("span"); r.className = "roule"; const n = 10 + (+c) + (i % 2) * 10;
+            r.innerHTML = [...Array(n + 1)].map((_, j) => `<b>${j % 10}</b>`).join(""); d.appendChild(r);
+            tl.fromTo(r.children, { y: 0 }, { y: -n * fs * 1.12, duration: 0.7 + i * 0.12, ease: "power3.out", immediateRender: false }, t);
+            son(t + 0.1 + i * 0.06, "tick", { gain: 0.35 });
+          } else { const sp = document.createElement("span"); sp.style.display = "inline-block"; sp.innerHTML = c === " " ? "&nbsp;" : esc(c); d.appendChild(sp);
+            tl.from(sp, { opacity: 0, y: 30, duration: 0.3 }, t + 0.1 + i * 0.03); }
+        });
+        tl.from(d, { scale: 1.12, duration: 0.9, ease: "power2.out" }, t);
+        t += 0.75 + annee.length * 0.12; son(t, "impact", { gain: 0.5 });
+        const yr = (avant ? 440 : 400) + fs * 1.18, regle = svgEl("line", { x1: 340, y1: yr, x2: 740, y2: yr, stroke: "url(#tri)", "stroke-width": 10, "stroke-linecap": "round" });
+        tl.from(regle, { attr: { x2: 340 }, duration: 0.35, ease: "power2.inOut" }, t);
+      }
+      const ph = add("abs", "", { top: quand ? "850px" : "460px", fontSize: "80px", lineHeight: 1.2, textAlign: "center" });
+      fin = motAMot(ph, texte, t + 0.2);
+      // L'hexagone prend la place qui reste sous la phrase, sans descendre dans la zone des sous-titres (y < 1500).
+      const haut = ph.offsetTop + ph.offsetHeight + 40, r = Math.min(180, (1490 - haut) / 2);
+      const cy = haut + r, th = Math.min(fin, DUR * 0.6);
+      if (r >= 80) { hexagone(540, cy, r, th, { fill: "rgba(20,32,79,.85)", width: 14 }); croquis = icon(540, cy, r * 1.28, th + 0.3); }
+      if (r >= 80 && !croquis) {   // sans icone : le chiffre romain du chapitre
+        const rn = svgEl("text", { x: 540, y: cy + r * 0.28, "text-anchor": "middle", "font-family": "CVSerif", "font-size": r * 0.83, fill: "#FFC94A" });
+        rn.textContent = ["I", "II", "III", "IV", "V", "VI"][Math.min(k, 6) - 1];
+        tl.from(rn, { opacity: 0, scale: 0.4, svgOrigin: `540 ${cy}`, duration: 0.35, ease: EASE.pop }, th + 0.3); son(th + 0.3, "pop");
+      }
+      fin += 0.4;
+    } else if (mode === "situation") {
+      // Mise en situation : un viseur se trace autour de l'icone, une onde d'alerte pulse, la question rebondit.
+      if (!ETIQ) lab.textContent = "MISE EN SITUATION";
+      const v = svgEl("g", {}), L = 90, [x0, y0, x1, y1] = [190, 330, 890, 890];
+      [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]].forEach(([x, y, sx, sy], i) => {
+        const p = svgEl("path", { d: `M${x} ${y + sy * L} L${x} ${y} L${x + sx * L} ${y}`, fill: "none", stroke: "#FFF7EA", "stroke-width": 12, "stroke-linecap": "round", "stroke-linejoin": "round" }, v);
+        p.style.strokeDasharray = 2 * L; p.style.strokeDashoffset = 2 * L; tl.to(p, { strokeDashoffset: 0, duration: 0.3, ease: EASE.entree }, 0.15 + i * 0.06); });
+      son(0.15, "zoom", { gain: 0.5 });
+      const cx = 540, cy = 610;
+      for (let i = 0; i < 2; i++) { const o = svgEl("circle", { cx, cy, r: 190, fill: "none", stroke: "#EF3E4A", "stroke-width": 10 });
+        tl.fromTo(o, { scale: 0.8, opacity: 0.9, svgOrigin: `${cx} ${cy}` }, { scale: 1.35, opacity: 0, duration: 1.1, repeat: Math.ceil(DUR / 1.1), ease: "power1.out", immediateRender: false }, 0.5 + i * 0.55); }
+      son(0.5, "vibreur", { gain: 0.4, duration: 0.5 });
+      const rec = svgEl("circle", { cx: 236, cy: 376, r: 16, fill: "#EF3E4A" });
+      tl.fromTo(rec, { opacity: 1 }, { opacity: 0.15, duration: 0.4, repeat: Math.ceil(DUR / 0.4), yoyo: true, ease: "steps(1)", immediateRender: false }, 0.3);
+      hexagone(cx, cy, 175, 0.3, { fill: "#14204F", width: 14 });
+      croquis = icon(cx, cy, 230, 0.55);
+      if (!croquis) { const q = svgEl("text", { x: cx, y: cy + 62, "text-anchor": "middle", "font-family": "CVTitle", "font-size": 180, fill: "#FFC94A" }); q.textContent = "!";
+        tl.from(q, { opacity: 0, scale: 0.3, svgOrigin: `${cx} ${cy}`, duration: 0.3, ease: EASE.pop }, 0.6); son(0.6, "pop"); }
+      const pl = add("plaque", "", { top: "960px", padding: "50px 56px", fontSize: "60px", lineHeight: 1.22, background: "rgba(255,247,234,.12)", color: "#FFF7EA", border: "5px solid rgba(255,247,234,.4)" });
+      tl.from(pl, { y: 80, opacity: 0, duration: 0.35, ease: EASE.pop }, 0.7);
+      if ((texte.match(/\S+/g) || []).length > 14) pl.style.fontSize = "52px";
+      fin = motAMot(pl, texte, 0.9);
+      // La question sous la plaque, au-dessus des sous-titres : plus petite si la situation est longue.
+      const qTop = 960 + pl.offsetHeight + 40, qt = add("question", hl(param("question", "Que fais-tu ?")), { top: `${Math.min(qTop, 1380)}px` });
+      if (qTop > 1340) qt.style.fontSize = "90px";
+      tl.from(qt, { scale: 0, rotation: -8, duration: 0.45, ease: EASE.rebond }, fin + 0.2).to(qt, { scale: 1.06, duration: 0.4, repeat: 3, yoyo: true, ease: "sine.inOut" }, fin + 0.7);
+      son(fin + 0.25, "pop"); fin += 0.9;
     } else if (mode === "liste" || mode === "etapes") {
       const t = add("abs", hl(texte), { top: "380px", fontSize: "92px", lineHeight: 1.15 });
       tl.from(t, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
@@ -420,7 +541,7 @@
     });
   }
 
-  Promise.all([FONTS_READY, window.HAND_READY, document.fonts.load("100px CVTitle"), document.fonts.load("60px CVText")]).then(() => {
+  Promise.all([FONTS_READY, window.HAND_READY, document.fonts.load("100px CVTitle"), document.fonts.load("60px CVText"), document.fonts.load("60px CVSerif")]).then(() => {
     construire();
     ajusterTuiles();
     tl.to({}, { duration: 0.01 }, Math.max(DUR, fin + 0.6));

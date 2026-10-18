@@ -93,7 +93,7 @@ def cartes_jobs() -> list:
 
 def decors_jobs() -> list:
     duo = [{"id": "lea", "type": "lea", "x": 250, "regard": "droite"}, {"id": "karim", "type": "karim", "x": 820, "regard": "gauche"}]
-    return [("scene", _scene(f["id"], duo), OUT / "decors" / f"{f['id']}.jpg") for f in catalog.dessins()["fonds"]]
+    return [("scene", _scene(f["id"], duo), OUT / "decors" / f"{f['id']}.jpg") for f in catalog.dessins(toutes=True)["fonds"]]
 
 
 def personnages_jobs() -> list:

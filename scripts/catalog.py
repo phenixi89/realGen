@@ -171,6 +171,16 @@ def _gabarit_civique(card: dict, n: int, total: int) -> tuple[str, dict] | None:
     if kind == "frise":
         return "civique", {**base, "mode": "frise", "texte": _marque(g("titre")),
                            "jalons": "|".join(f"{x.get('date', '')}~{x.get('label', '')}" for x in card.get("jalons") or [])}
+    if kind == "qcm":   # quiz a 4 reponses, comme a l'examen
+        return "civique", {**base, "mode": "quiz", "texte": _marque(g("question")),
+                           "points": "|".join(str(x) for x in card.get("reponses") or []), "bonne": card.get("bonne", 1)}
+    if kind == "citation":
+        return "civique", {**base, "mode": "citation", "texte": _marque(g("texte")), "source": g("source")}
+    if kind == "chapitre":
+        return "civique", {**base, "mode": "chapitre", "quand": g("quand"), "texte": _marque(g("titre")), "icone": g("icone"),
+                           "chapitre": card.get("rang") or n}
+    if kind == "situation":
+        return "civique", {**base, "mode": "situation", "texte": _marque(g("texte")), "question": g("question"), "icone": g("icone")}
     if kind == "indices":
         return "civique", {**base, "mode": "indices", "texte": _marque(g("titre")),
                            "points": "|".join(str(x) for x in card.get("indices") or []), "reponse": g("reponse")}
@@ -278,24 +288,36 @@ def themes() -> list[dict]:
 
 
 @lru_cache(maxsize=None)
-def icons() -> dict[str, dict]:
-    """Icones dessinables des cartes schema : assets/anim/icones.js (JSON apres "window.ICONES = ")."""
+def _icones_js() -> dict[str, dict]:
     text = ICONS_JS.read_text(encoding="utf-8")
     start = re.search(r"^window\.ICONES = ", text, re.M).end()  # en debut de ligne (pas celui du commentaire)
-    body = text[start:].strip().removesuffix(";")
-    return json.loads(body)
+    return json.loads(text[start:].strip().removesuffix(";"))
 
 
-def dessins() -> dict:
+def icons(toutes: bool = False) -> dict[str, dict]:
+    """
+    Icones dessinables des cartes schema : assets/anim/icones.js (JSON apres "window.ICONES = "). Une icone a "chaines"
+    est reservee a ces chaines (icones civiques d'Objectif Civique) : absente du prompt et des choix des autres
+    (toutes=True : toutes, pour la validation).
+    """
+    body = _icones_js()
+    return body if toutes else {k: v for k, v in body.items() if not v.get("chaines") or chaine_id() in v["chaines"]}
+
+
+def dessins(toutes: bool = False) -> dict:
     """
     Dessin anime (catalog/dessins.json) complete par la chaine active (chaine.json) : sa serie, ses trames et ses
     personnages (nom, description, role, voix : memes dessins, une autre identite d'une chaine a l'autre).
+    Un fond ou un objet a "chaines" n'existe que pour ces chaines (decors civiques d'Objectif Civique) ; toutes=True :
+    tout le catalogue (validation du code).
     """
     base, ch = _load("dessins"), chaine()
+    a_moi = lambda x: toutes or not x.get("chaines") or ch["id"] in x["chaines"]
     persos = ch.get("personnages") or {}
     objets = [{**o, **persos[o["id"]]} if o.get("categorie") == "personnage" and o["id"] in persos else o
-              for o in base["objets"]]
-    return {**base, "objets": objets, "serie": ch.get("serie") or {}, "trames": ch.get("trames") or []}
+              for o in base["objets"] if a_moi(o)]
+    return {**base, "fonds": [f for f in base["fonds"] if a_moi(f)], "objets": objets,
+            "serie": ch.get("serie") or {}, "trames": ch.get("trames") or []}
 
 
 def _types_dessin_js() -> dict[str, set[str]]:
@@ -854,7 +876,8 @@ def pick_ambiance(theme: dict, history: list[dict], rng: random.Random, fmt: dic
 def pick_lieu(history: list[dict], rng: random.Random) -> dict | None:
     """Decor (dessins.json "fonds", hors « vide ») le moins recemment utilise par un dessin anime
     (history "fonds"), au hasard entre les jamais utilises : propose a l'IA comme lieu de l'episode."""
-    pool = [f for f in dessins()["fonds"] if f["id"] != "vide"]
+    lieux = chaine().get("lieux") or []   # decors preferes de la chaine (chaine.json « lieux »)
+    pool = [f for f in dessins()["fonds"] if f["id"] != "vide" and (not lieux or f["id"] in lieux)]
     if not pool:
         return None
     vus = [f for h in history for f in (h.get("fonds") or [])]
@@ -884,6 +907,35 @@ def famille_rotation(sujets_: list[dict], history: list[dict]) -> list[dict]:
 
 def recent_sujets(history: list[dict], n: int = 15) -> list[str]:
     return _recent(history, "sujet", n)
+
+
+RAPPEL_SUJETS = 3   # revision espacee : nombre de sujets deja publies repris par un reel « Tu te souviens ? »
+
+
+def sujet_rappel(history: list[dict], n: int = RAPPEL_SUJETS) -> dict | None:
+    """
+    Revision espacee (format a "rappel") : un sujet compose des n derniers sujets publies par la chaine (les plus
+    recents d'abord, sans doublon, ni un sujet de memoire ni l'examen lui-meme), deux faits de chacun, sources
+    reunies. None tant que l'historique n'en a pas n (le format prend alors un sujet ordinaire).
+    """
+    par_id = {s["id"]: s for s in sujets() if s.get("faits")}
+    vus = []
+    for h in reversed(history):
+        s = par_id.get(h.get("sujet"))
+        if s and s["id"] not in vus and not {"memoire", "examen"} & set(s["tags"]):
+            vus.append(s["id"])
+        if len(vus) == n:
+            break
+    if len(vus) < n:
+        return None
+    sid = "rappel:" + "+".join(vus)
+    if any(h.get("sujet") == sid for h in history[-10:]):   # memes sujets deja revises recemment : un sujet ordinaire
+        return None
+    choisis = [par_id[i] for i in vus]
+    sources = list(dict.fromkeys(s["source"] for s in choisis))
+    return {"id": sid, "categorie": "conseil", "tags": ["rappel"], "famille": "rappel",
+            "texte": "révision de " + ", ".join(s["texte"] for s in choisis),
+            "faits": [f for s in choisis for f in s["faits"][:2]], "source": " ; ".join(sources), "rappel_de": vus}
 
 
 def recent_accroches(history: list[dict]) -> list[str]:
@@ -976,6 +1028,10 @@ def validate_chaine() -> list[str]:
     for pid, perso in (ch.get("personnages") or {}).items():
         if pid not in dessines:
             errors.append(f"chaine.json : personnage '{pid}' absent de dessins.json (choix : {sorted(dessines)})")
+    fonds_chaine = {f["id"] for f in dessins()["fonds"]}
+    for lieu in ch.get("lieux") or []:
+        if lieu not in fonds_chaine:
+            errors.append(f"chaine.json : lieu '{lieu}' absent des fonds de dessins.json (ou reserve a une autre chaine)")
     if not isinstance(ch.get("regles") or [], list):
         errors.append("chaine.json : regles doit etre une liste de phrases")
     errors += validate_mouvements(ch.get("mouvement") or MOUVEMENT_DEFAUT)
@@ -1050,13 +1106,14 @@ def validate_catalog() -> list[str]:
     if not voices():
         errors.append("voix.json : aucune voix")
     try:
-        bad = [k for k, v in icons().items() if not v.get("nom") or not v.get("d")]
+        bad = [k for k, v in icons(toutes=True).items() if not v.get("nom") or not v.get("d")
+               or not set(v.get("chaines") or []) <= set(chaines())]
         if bad:
             errors.append(f"icones.js : nom ou traits manquants pour {bad}")
     except (ValueError, OSError) as e:
         errors.append(f"icones.js illisible (JSON strict attendu apres 'window.ICONES = ') : {e}")
     try:
-        cat, js = dessins(), _types_dessin_js()
+        cat, js = dessins(toutes=True), _types_dessin_js()
         declares = {"fonds": {f["id"] for f in cat["fonds"]}, "objets": {o["id"] for o in cat["objets"]}}
         for kind in ("fonds", "objets"):
             for missing in sorted(declares[kind] - js[kind]):

@@ -2,7 +2,8 @@
 // est une liste de traits SVG (attribut "d") dans une boite 100x100, traces
 // dans l'ordre. Le contenu entre "window.ICONES = " et le ";" final est du
 // JSON strict : scripts/catalog.py le lit pour valider les cartes et lister
-// les icones dans le prompt. Ajouter une icone = ajouter une entree ici.
+// les icones dans le prompt. Ajouter une icone = ajouter une entree ici. "chaines" : icone reservee a ces
+// chaines (jamais listee dans le prompt des autres, celui d'OpusCV reste identique).
 window.ICONES = {
   "cv": {"nom": "un CV / document", "d": ["M22 8 H62 L78 24 V92 H22 Z", "M62 8 V24 H78", "M32 34 a8 8 0 1 0 16 0 a8 8 0 1 0 -16 0", "M54 30 H70", "M54 38 H66", "M30 54 H70", "M30 64 H70", "M30 74 H58"]},
   "robot": {"nom": "le logiciel ATS / un robot", "d": ["M24 34 H76 V78 H24 Z", "M50 34 V20", "M45 14 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0", "M33 50 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0", "M57 50 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0", "M36 66 H64", "M24 50 H16 V62 H24", "M76 50 H84 V62 H76"]},
@@ -36,5 +37,25 @@ window.ICONES = {
   "fantome": {"nom": "un fantôme (ghosting, plus de nouvelles)", "d": ["M28 88 V46 C28 18 72 18 72 46 V88 L64 80 L57 88 L50 80 L43 88 L36 80 Z", "M39 44 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0", "M53 44 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0", "M45 60 a5 7 0 1 0 10 0 a5 7 0 1 0 -10 0"]},
   "cafe": {"nom": "une tasse de café (nuit blanche, pause)", "d": ["M20 40 H68 V68 C68 80 60 88 50 88 H38 C28 88 20 80 20 68 Z", "M68 48 C80 48 80 68 68 68", "M34 30 C28 24 40 18 34 10", "M48 30 C42 24 54 18 48 10", "M14 94 H74"]},
   "lune": {"nom": "une lune (la nuit, 2 h du matin)", "d": ["M60 12 C30 16 18 50 34 74 C48 94 76 90 88 70 C66 76 44 62 46 38 C48 26 54 18 60 12 Z", "M20 18 V30", "M14 24 H26", "M80 30 V38", "M76 34 H84"]},
-  "rire": {"nom": "un visage qui rit (humour, soulagement)", "d": ["M14 50 C14 4 86 4 86 50 C86 96 14 96 14 50 Z", "M30 40 C34 32 42 32 46 40", "M54 40 C58 32 66 32 70 40", "M30 56 H70 C68 80 32 80 30 56 Z"]}
+  "rire": {"nom": "un visage qui rit (humour, soulagement)", "d": ["M14 50 C14 4 86 4 86 50 C86 96 14 96 14 50 Z", "M30 40 C34 32 42 32 46 40", "M54 40 C58 32 66 32 70 40", "M30 56 H70 C68 80 32 80 30 56 Z"]},
+  "drapeau": {"nom": "un drapeau tricolore (la France, un symbole)", "d": ["M22 92 V10", "M22 14 H82 V54 H22", "M42 14 V54", "M62 14 V54"], "chaines": ["examen_civique"]},
+  "urne": {"nom": "une urne de vote (élection, voter)", "d": ["M18 44 H82 V90 H18 Z", "M18 44 L28 30 H72 L82 44", "M40 37 H60", "M44 37 L50 8 L66 12 L60 37", "M36 66 H64"], "chaines": ["examen_civique"]},
+  "balance": {"nom": "la balance de la justice (juge, loi, égalité)", "d": ["M50 12 V86", "M30 86 H70", "M18 26 H82", "M18 26 L8 52 H28 Z", "M82 26 L72 52 H92 Z", "M44 12 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0"], "chaines": ["examen_civique"]},
+  "mairie": {"nom": "une mairie / un bâtiment public", "d": ["M10 34 L50 10 L90 34 Z", "M14 34 H86", "M22 40 V80", "M40 40 V80", "M60 40 V80", "M78 40 V80", "M8 88 H92", "M12 80 H88", "M50 20 V28"], "chaines": ["examen_civique"]},
+  "livre": {"nom": "un livre ouvert (la Constitution, une loi, un texte)", "d": ["M50 24 C38 14 22 14 10 20 V84 C22 78 38 78 50 88 Z", "M50 24 C62 14 78 14 90 20 V84 C78 78 62 78 50 88 Z", "M20 34 H40", "M20 46 H40", "M60 34 H80", "M60 46 H80"], "chaines": ["examen_civique"]},
+  "couronne": {"nom": "une couronne (le roi, la monarchie)", "d": ["M14 76 L10 30 L32 50 L50 20 L68 50 L90 30 L86 76 Z", "M14 88 H86", "M46 62 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0"], "chaines": ["examen_civique"]},
+  "plume": {"nom": "une plume (écrire, signer, un texte historique)", "d": ["M84 10 C50 14 26 40 22 78 C48 70 74 46 84 10 Z", "M76 22 L16 92", "M40 52 H58", "M30 64 H46"], "chaines": ["examen_civique"]},
+  "mains": {"nom": "deux mains qui se serrent (solidarité, fraternité)", "d": ["M8 46 L28 34 L48 42 L64 34 L92 46", "M28 34 L40 62 C44 70 52 70 56 64 L66 54", "M48 42 L60 58", "M8 46 V70 L20 74", "M92 46 V70 L78 76", "M40 62 L50 72 C54 76 60 74 62 70"], "chaines": ["examen_civique"]},
+  "ecole": {"nom": "une école (enfants, instruction, cartable)", "d": ["M24 30 H76 V88 H24 Z", "M38 30 V20 H62 V30", "M24 52 H76", "M44 52 V62 H56 V52", "M34 72 a6 6 0 1 0 12 0", "M54 72 a6 6 0 1 0 12 0"], "chaines": ["examen_civique"]},
+  "euro": {"nom": "le symbole euro (argent, impôt, salaire)", "d": ["M74 24 C52 8 22 22 22 50 C22 78 52 92 74 76", "M12 42 H56", "M12 58 H52"], "chaines": ["examen_civique"]},
+  "sante": {"nom": "une croix médicale (santé, SAMU, hôpital)", "d": ["M38 10 H62 V38 H90 V62 H62 V90 H38 V62 H10 V38 H38 Z"], "chaines": ["examen_civique"]},
+  "bouclier": {"nom": "un bouclier (police, gendarmerie, protection)", "d": ["M50 8 L86 22 V48 C86 72 68 86 50 94 C32 86 14 72 14 48 V22 Z", "M36 50 L46 60 L66 38"], "chaines": ["examen_civique"]},
+  "hexagone": {"nom": "l'Hexagone (la France métropolitaine, le territoire)", "d": ["M50 8 L88 28 L88 72 L50 92 L12 72 L12 28 Z", "M50 40 a6 6 0 1 0 0.1 0"], "chaines": ["examen_civique"]},
+  "montagne": {"nom": "des montagnes (Alpes, Pyrénées, frontière)", "d": ["M6 86 L36 30 L54 62 L68 42 L94 86 Z", "M28 46 L36 52 L44 44", "M62 52 L68 56 L74 50"], "chaines": ["examen_civique"]},
+  "vague": {"nom": "des vagues (mer, océan, fleuve)", "d": ["M8 40 C18 30 28 30 38 40 C48 50 58 50 68 40 C78 30 88 30 94 38", "M8 60 C18 50 28 50 38 60 C48 70 58 70 68 60 C78 50 88 50 94 58", "M8 80 C18 70 28 70 38 80 C48 90 58 90 68 80 C78 70 88 70 94 78"], "chaines": ["examen_civique"]},
+  "colombe": {"nom": "une colombe (paix, mémoire, fin d'une guerre)", "d": ["M14 52 C30 50 40 40 46 26 C52 40 58 46 70 46 L88 34 L80 52 C72 70 48 76 30 68 Z", "M46 26 C40 14 28 10 18 12 C26 22 30 34 34 44", "M78 40 a2 2 0 1 0 4 0", "M30 68 L22 84", "M42 72 L38 88"], "chaines": ["examen_civique"]},
+  "anneaux": {"nom": "deux alliances (mariage, couple)", "d": ["M10 56 a22 22 0 1 0 44 0 a22 22 0 1 0 -44 0", "M46 56 a22 22 0 1 0 44 0 a22 22 0 1 0 -44 0", "M24 22 L32 14 L40 22"], "chaines": ["examen_civique"]},
+  "bebe": {"nom": "un landau (naissance, enfant)", "d": ["M14 40 H78 C78 64 64 74 46 74 C28 74 14 64 14 40 Z", "M14 40 C14 22 34 12 50 16 V40", "M78 40 L90 28", "M28 86 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0", "M58 86 a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0"], "chaines": ["examen_civique"]},
+  "etoiles": {"nom": "le cercle d'étoiles (l'Union européenne)", "d": ["M50 10 L53 18 L61 18 L55 23 L57 31 L50 26 L43 31 L45 23 L39 18 L47 18 Z", "M50 69 L53 77 L61 77 L55 82 L57 90 L50 85 L43 90 L45 82 L39 77 L47 77 Z", "M20 40 L23 48 L31 48 L25 53 L27 61 L20 56 L13 61 L15 53 L9 48 L17 48 Z", "M80 40 L83 48 L91 48 L85 53 L87 61 L80 56 L73 61 L75 53 L69 48 L77 48 Z"], "chaines": ["examen_civique"]},
+  "bonnet": {"nom": "le bonnet phrygien (la Révolution, Marianne)", "d": ["M18 82 C14 54 26 26 56 20 C76 16 90 30 82 44 C76 34 64 34 62 46 C72 56 74 70 72 82 Z", "M14 82 H76 V92 H14 Z", "M40 56 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0"], "chaines": ["examen_civique"]}
 };

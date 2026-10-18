@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX. cartes_civique : true -> le prompt propose en plus les cartes duel, intrus, relier, definition, frise et indices (planches du plateau, assets/anim/civique.html) ; reserve aux formats de cette chaine et au theme civique_plateau. etiquette peut etre un dictionnaire {type de carte: texte, \"suite\": texte de la carte qui suit une carte a etiquette propre, \"*\": texte par defaut}.",
+  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX. cartes_civique : true -> le prompt propose en plus les cartes duel, intrus, relier, definition, frise et indices (planches du plateau, assets/anim/civique.html) ; reserve aux formats de cette chaine et au theme civique_plateau. etiquette peut etre un dictionnaire {type de carte: texte, \"suite\": texte de la carte qui suit une carte a etiquette propre, \"*\": texte par defaut}. rappel : true -> revision espacee : le sujet du reel est compose des faits des derniers sujets publies par la chaine (catalog.sujet_rappel ; sujet ordinaire tant que l'historique n'en a pas assez). etiquette « {k} » : rang de la carte parmi les cartes de son type (« CHAPITRE {k} »). Cartes en plus du plateau (cartes_civique) : qcm (4 reponses, comme a l'examen), citation (phrase recopiee mot pour mot d'un fait), chapitre (moment d'un recit) et situation (mise en situation). duree_min : duree (s) en dessous de laquelle le format n'est jamais ecrit (une duree demandee plus courte est relevee). sans_relance : true -> pas de relance « enregistre » en scene 2 (elle casserait le recit ou la mise en situation).",
   "formats": [
     {
       "id": "question_revision",
@@ -17,7 +17,9 @@
         "institutions",
         "histoire",
         "droits",
-        "vie_quotidienne"
+        "vie_quotidienne",
+        "geographie",
+        "culture"
       ],
       "themes": [
         "civique_plateau"
@@ -40,7 +42,9 @@
         "institutions",
         "histoire",
         "droits",
-        "vie_quotidienne"
+        "vie_quotidienne",
+        "geographie",
+        "culture"
       ],
       "themes": [
         "civique_plateau"
@@ -66,7 +70,10 @@
         "institutions",
         "histoire",
         "droits",
-        "vie_quotidienne"
+        "vie_quotidienne",
+        "geographie",
+        "culture",
+        "memoire"
       ],
       "themes": [
         "civique_plateau"
@@ -89,7 +96,9 @@
         "institutions",
         "histoire",
         "droits",
-        "vie_quotidienne"
+        "vie_quotidienne",
+        "geographie",
+        "culture"
       ],
       "themes": [
         "civique_plateau"
@@ -116,7 +125,9 @@
         "valeurs",
         "institutions",
         "vie_quotidienne",
-        "droits"
+        "droits",
+        "geographie",
+        "culture"
       ],
       "themes": [
         "civique_plateau"
@@ -143,7 +154,9 @@
         "histoire",
         "institutions",
         "valeurs",
-        "droits"
+        "droits",
+        "geographie",
+        "culture"
       ],
       "themes": [
         "civique_plateau"
@@ -197,7 +210,9 @@
         "valeurs",
         "institutions",
         "histoire",
-        "vie_quotidienne"
+        "vie_quotidienne",
+        "geographie",
+        "culture"
       ],
       "themes": [
         "civique_plateau"
@@ -250,14 +265,214 @@
         "institutions",
         "histoire",
         "droits",
-        "vie_quotidienne"
+        "vie_quotidienne",
+        "geographie",
+        "culture"
       ],
       "themes": [
         "civique_plateau"
       ],
       "etiquette": "QUESTION {n}/{total}",
       "structure": "Scène 1 (accroche, sans carte) : « 3 questions éclair, ton score en commentaire ! ». Scènes 2, 3 et 4 : chacune une carte quiz (question de 4 à 9 mots, 3 réponses courtes dont une seule juste, tirée des FAITS) ; pour chaque question la voix lit la question et les réponses, dit « Réfléchis. » puis donne la bonne réponse en une phrase. Les trois questions portent sur le même sujet. Dernière scène : CTA qui demande le score en commentaire.",
-      "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse"
+      "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse",
+      "duree_min": 35
+    },
+    {
+      "id": "histoire_racontee",
+      "nom": "Il était une fois…",
+      "categorie": "conseil",
+      "poids": 3,
+      "cartes": "majoritaires",
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "recit",
+        "memoire"
+      ],
+      "themes": [
+        "civique_plateau"
+      ],
+      "cartes_civique": true,
+      "etiquette": {
+        "chapitre": "CHAPITRE {k}",
+        "qcm": "À TOI",
+        "quiz": "À TOI",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
+      "structure": "Une histoire vraie racontée comme un conteur, pour apprendre en la vivant. Scène 1 (accroche, sans carte) : on plonge dans le moment, au présent (« Imagine : … ») avec une date ou un lieu des FAITS, et une question qui donne envie de connaître la suite. Scènes 2, 3 (et 4) : un CHAPITRE chacune (carte chapitre, dans l'ordre des dates, « quand » = la date du fait), la voix raconte au présent ce qui se passe, un fait par chapitre, en mots simples ; chaque chapitre répond à la question laissée par le précédent (« Et ensuite ? » / « Mais… »). Scène suivante : carte qcm (4 réponses) sur l'histoire, la voix lit la question et les quatre réponses puis « Réfléchis. ». Scène suivante : la voix donne la bonne réponse avec le fait exact (carte texte). Dernière scène : CTA. Le récit n'ajoute RIEN aux faits : ni foule, ni météo, ni sentiment, ni personnage, ni parole inventés ; le suspense vient de l'ordre des faits.",
+      "ton": "conteur captivant et chaleureux, voix posée, articulation très nette, débit lent, petites pauses dramatiques entre les chapitres",
+      "duree_min": 40,
+      "sans_relance": true
+    },
+    {
+      "id": "citation_expliquee",
+      "nom": "Une phrase, une explication",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "citation"
+      ],
+      "themes": [
+        "civique_plateau"
+      ],
+      "cartes_civique": true,
+      "etiquette": {
+        "citation": "LA PHRASE",
+        "definition": "LE MOT",
+        "qcm": "À TOI",
+        "quiz": "À TOI",
+        "suite": "RÉPONSE",
+        "*": "EN CLAIR"
+      },
+      "structure": "Scène 1 (accroche, sans carte) : une phrase célèbre d'un texte de la France est annoncée comme une énigme (« Cette phrase est dans la Constitution. Tu la comprends ? »). Scène 2 : carte citation (la phrase recopiée MOT POUR MOT d'un fait, et sa source) ; la voix la lit lentement, en entier. Scène 3 : le mot le plus difficile de la phrase expliqué simplement (carte définition). Scène 4 : ce que la phrase veut dire dans la vie de tous les jours, avec un fait (carte texte). Scène 5 : carte quiz (3 réponses) sur la phrase, la voix la lit puis donne la réponse. Dernière scène : CTA.",
+      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
+      "duree_min": 35,
+      "sans_relance": true
+    },
+    {
+      "id": "mise_en_situation",
+      "nom": "Que fais-tu ?",
+      "categorie": "conseil",
+      "poids": 3,
+      "cartes": "majoritaires",
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "situation"
+      ],
+      "themes": [
+        "civique_plateau"
+      ],
+      "cartes_civique": true,
+      "etiquette": {
+        "situation": "MISE EN SITUATION",
+        "qcm": "TA RÉPONSE ?",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
+      "structure": "Une situation de la vie en France où il faut savoir quoi faire. Scène 1 (accroche, sans carte) : la situation posée au « tu », vive et concrète (« Ton voisin tombe dans l'escalier. ») sans donner la réponse. Scène 2 : carte situation (la situation au « tu », 8 à 18 mots, tirée des faits) ; la voix la décrit comme si le spectateur y était. Scène 3 : carte qcm (4 réponses courtes et plausibles, une seule juste d'après les faits) ; la voix lit les quatre réponses puis dit « Réfléchis. ». Scène 4 : la voix donne la bonne réponse et le fait qui la justifie (carte texte). Scène 5 : ce qu'il ne faut pas faire, ou un deuxième fait utile (carte liste ou texte). Dernière scène : CTA qui demande la réponse en commentaire.",
+      "ton": "animateur bienveillant qui met en situation, articulation très nette, débit lent, petite pause avant la réponse",
+      "duree_min": 35,
+      "sans_relance": true
+    },
+    {
+      "id": "ne_confonds_plus",
+      "nom": "Ne confonds plus !",
+      "categorie": "conseil",
+      "poids": 2,
+      "cartes": "majoritaires",
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "confusion"
+      ],
+      "themes": [
+        "civique_plateau"
+      ],
+      "cartes_civique": true,
+      "etiquette": {
+        "relier": "NE CONFONDS PLUS",
+        "duel": "LE TEST",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
+      "structure": "Deux (ou trois) notions du sujet qu'on mélange facilement. Scène 1 (accroche, sans carte) : les deux notions face à face (« Assemblée nationale ou Sénat ? On les mélange souvent. »), sans chiffre ni statistique. Scène 2 : carte relier (2 ou 3 paires : chaque notion et ce qui la distingue, tirées des faits) ; la voix dit chaque paire. Scène 3 : l'astuce pour ne plus confondre (carte impact) : une image ou un moyen mnémotechnique qui N'AJOUTE AUCUN FAIT (il s'appuie sur les mots des faits). Scène 4 : carte duel pour vérifier (une question, les deux notions), la voix lit puis « Réfléchis. ». Scène 5 : la réponse avec le fait exact (carte texte). Dernière scène : CTA.",
+      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
+      "duree_min": 35
+    },
+    {
+      "id": "rappel_revision",
+      "nom": "Tu te souviens ?",
+      "categorie": "conseil",
+      "poids": 1,
+      "cartes": "majoritaires",
+      "rappel": true,
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "valeurs",
+        "institutions",
+        "histoire",
+        "droits",
+        "vie_quotidienne",
+        "geographie",
+        "culture"
+      ],
+      "themes": [
+        "civique_plateau"
+      ],
+      "cartes_civique": true,
+      "etiquette": "RAPPEL {n}/{total}",
+      "structure": "Révision espacée : le reel reprend les sujets des dernières vidéos de la chaîne (les FAITS en viennent), pour ancrer ce qui a été appris. Scène 1 (accroche, sans carte) : « Tu te souviens ? 3 questions sur nos dernières révisions. ». Scènes 2, 3 et 4 : une question par sujet révisé, chacune sur un fait différent (carte quiz, duel ou qcm, varie-les) ; la voix lit la question et les réponses, dit « Réfléchis. » puis donne la bonne réponse en une phrase. Avant-dernière scène : la phrase à retenir (carte impact). Dernière scène : CTA qui demande le score en commentaire.",
+      "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse",
+      "duree_min": 35
+    },
+    {
+      "id": "examen_mode_emploi",
+      "nom": "L'examen en 30 secondes",
+      "categorie": "conseil",
+      "poids": 1,
+      "cartes": "majoritaires",
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "examen"
+      ],
+      "themes": [
+        "civique_plateau"
+      ],
+      "cartes_civique": true,
+      "etiquette": {
+        "chiffre": "L'EXAMEN",
+        "liste": "LES 5 THÈMES",
+        "*": "À SAVOIR"
+      },
+      "structure": "Comment se passe l'examen civique, d'après la page officielle (FAITS). Scène 1 (accroche, sans carte) : une question que se posent tous ceux qui le préparent (« L'examen civique, comment ça marche ? »). Scènes 2 et 3 : les chiffres clés des faits (cartes chiffre : le nombre de questions, le nombre de bonnes réponses pour réussir, la durée), un chiffre par carte. Scène 4 : les cinq thèmes des questions (carte liste). Scène 5 : une bonne nouvelle des faits (on peut le repasser autant de fois que nécessaire, la préparation peut être gratuite) en carte impact. Dernière scène : CTA. Jamais de promesse de réussite ni de conseil sur un dossier personnel.",
+      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse"
+    },
+    {
+      "id": "dessin_anime",
+      "nom": "Dessin animé : Sami prépare son examen",
+      "categorie": "conseil",
+      "poids": 3,
+      "cartes": "autorisees",
+      "dessin": true,
+      "serie": true,
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "situation",
+        "valeurs",
+        "institutions",
+        "droits",
+        "vie_quotidienne"
+      ],
+      "themes": [
+        "civique_plateau"
+      ],
+      "structure": "Mini-série dessinée : Sami (qui prépare son examen civique) et Claire, sa voisine bénévole (et parfois M. Bernard, le voisin qui croit tout savoir), vivent une VRAIE situation de la vie en France en 1 à 4 scènes dessinées, une par lieu ou moment (mairie, bureau de vote, salle de formation, salon, café...). Le reel est un mini-scénario en 3 actes : (1) l'accroche, dite par un personnage, pose la situation et la question ; (2) Sami hésite ou se trompe de façon plausible, Claire donne LE fait exact des FAITS VÉRIFIÉS, dit entre « guillemets » ; (3) Sami l'applique ou le redit, et on voit que c'est juste, puis une chute-réaction. Le reel apprend un fait vérifié, jamais un produit. Épisode d'une série : « Sami prépare son examen » ; l'histoire suit la trame imposée.",
+      "ton": "dialogue vivant et chaleureux entre deux voisins, articulation très nette, débit posé (le public apprend le français), répliques enchaînées, une très courte pause avant la chute",
+      "ambiances": [
+        "piano_minimal",
+        "ambient_matin",
+        "acoustique",
+        "boite_a_musique",
+        "cinema_doux",
+        "bossa_douce",
+        "ukulele_bonne_humeur",
+        "lofi_chill"
+      ]
     }
   ]
 }

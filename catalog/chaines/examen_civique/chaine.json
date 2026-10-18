@@ -1,5 +1,5 @@
 {
-  "_doc": "Chaine faceless de revision de l'examen civique (titre de sejour, carte de resident, naturalisation). Nom « Objectif Civique » et compte TikTok @objectif.civique : definitifs (choisis par l'utilisateur) ; a changer ici seulement. Champs : voir catalog/chaines/opuscv/chaine.json et README « Chaînes ». Faceless : niche, public, expertise, promesse, appel_action et regles sont donnes a l'IA ; verification : true -> chaque sujet porte des 'faits' et une 'source', seule base autorisee (un nombre absent des faits fait recommencer l'IA) ; mention : ligne ajoutee a toutes les legendes ; pied : bas des planches pop art. logo : icone de la chaine (assets/marques/<chaine>/ : logo.svg, profil.png pour la photo de profil, logo_nom.png).",
+  "_doc": "Chaine faceless de revision de l'examen civique (titre de sejour, carte de resident, naturalisation). Nom « Objectif Civique » et compte TikTok @objectif.civique : definitifs (choisis par l'utilisateur) ; a changer ici seulement. Champs : voir catalog/chaines/opuscv/chaine.json et README « Chaînes ». Faceless : niche, public, expertise, promesse, appel_action et regles sont donnes a l'IA ; verification : true -> chaque sujet porte des 'faits' et une 'source', seule base autorisee (un nombre absent des faits fait recommencer l'IA) ; mention : ligne ajoutee a toutes les legendes ; pied : bas des planches pop art. logo : icone de la chaine (assets/marques/<chaine>/ : logo.svg, profil.png pour la photo de profil, logo_nom.png). Dessin anime (serie « Sami prepare son examen ») : personnages (Sami, Claire, M. Bernard : noms PROVISOIRES, memes dessins qu'OpusCV), caracteres, serie, trames ; lieux : decors proposes en priorite (catalog.pick_lieu), dont les decors civiques mairie, bureau_vote et salle_cours (dessins.json, reserves a la chaine).",
   "nom": "Objectif Civique",
   "marque": "Objectif Civique",
   "marque_accent": 7,
@@ -17,14 +17,90 @@
     "Français très simple (niveau A2-B1) : phrases courtes sujet-verbe-complément, un mot difficile est expliqué tout de suite.",
     "Exactitude absolue : rien d'autre que les FAITS VÉRIFIÉS du sujet ; jamais de date, de chiffre ou de règle en plus.",
     "Un fait ne se généralise jamais au-delà de ce qu'il dit : « seuls », « jamais », « tous », « aucun » ne s'écrivent que si un fait le dit (run 82 : « seuls les Français peuvent voter », faux pour les élections municipales et européennes).",
-    "Ce sont des questions de RÉVISION : ne présente jamais une question comme « la question officielle de l'examen », et ne cite aucun barème ni aucune règle de l'examen.",
+    "Ce sont des questions de RÉVISION : ne présente jamais une question comme « la question officielle de l'examen ». Les règles de l'examen (nombre de questions, seuil, durée) ne se citent que si elles sont dans les FAITS du sujet (sujet « comment se passe l'examen civique », recopié de la page officielle) ; sinon, aucune règle ni aucun barème.",
     "Neutre et respectueux : aucune opinion politique, aucun jugement sur l'immigration, une religion ou un pays d'origine.",
     "Jamais de promesse de réussite (« examen garanti ») ni de conseil sur un dossier personnel : pour son dossier, on renvoie aux sites officiels.",
     "La chaîne n'est pas officielle : jamais « nous, l'administration », jamais un ministère présenté comme l'auteur.",
     "Aucune scène de transition : chaque scène donne un fait des FAITS (jamais « reste attentif », « le deuxième événement arrive juste après », « attention au piège ») ; une carte ne montre jamais un mot de remplissage.",
-    "Carte « comparaison » : « avant » = une erreur fréquente et plausible (jamais absurde), « apres » = le fait exact des faits."
+    "Carte « comparaison » : « avant » = une erreur fréquente et plausible (jamais absurde), « apres » = le fait exact des faits.",
+    "Pédagogie : le spectateur cherche AVANT d'avoir la réponse (question, situation ou énigme d'abord), un seul fait par scène, un exemple concret de la vie en France, et la phrase à retenir redite à la fin avec les mêmes mots que les faits.",
+    "Astuce pour retenir (image, rime, moyen mnémotechnique) : permise si elle n'ajoute AUCUN fait et s'appuie sur les mots des faits ; elle aide à se souvenir, elle ne remplace jamais la réponse exacte.",
+    "Récit, mise en situation ou dessin animé : l'histoire porte les faits sans rien y ajouter (ni date, ni foule, ni parole historique, ni conséquence inventées). Une idée reçue dite par un personnage est corrigée dans la même scène ou la suivante, avec le fait exact.",
+    "Sujet de mémoire (Shoah, déportation, guerres) : ton grave et sobre, aucune exclamation, aucun jeu, aucune blague ; on transmet, on ne divertit pas."
   ],
   "verification": true,
   "mention": "Chaîne non officielle, pour réviser. Pour ton dossier, vérifie toujours sur service-public.fr.",
-  "hashtags_exemple": "#examencivique, #naturalisation, #titredesejour"
+  "hashtags_exemple": "#examencivique, #naturalisation, #titredesejour",
+  "exemple_accroche": "Tu sais qui nomme le Premier ministre ?",
+  "exemple_replique": "Attends… c'est qui, qui nomme le Premier ministre ?",
+  "caracteres": "Sami est curieux, appliqué et un peu stressé par son examen, il pose les questions que tout le monde se pose ; Claire est patiente, précise et pince-sans-rire, elle ne donne jamais la réponse sans la faire chercher ; M. Bernard, le voisin retraité, est sûr de tout savoir et se trompe souvent avec aplomb, mais il est bienveillant",
+  "personnages": {
+    "karim": {
+      "nom": "Sami",
+      "description": "Sami : cheveux courts avec un épi, chemise, cravate bleue, pantalon. Il vit en France depuis peu et prépare son examen civique ; il découvre la France avec curiosité."
+    },
+    "lea": {
+      "nom": "Claire",
+      "description": "Claire : queue de cheval (chouchou corail), veste cintrée, jupe. Sa voisine, bénévole dans une association qui aide à préparer l'examen civique : elle connaît les faits et les explique avec des mots simples."
+    },
+    "recruteur": {
+      "nom": "M. Bernard",
+      "role": "secondaire",
+      "description": "M. Bernard : crâne dégarni, cheveux gris sur les côtés, lunettes rondes, moustache, veste et cravate verte. Le voisin du dessus, retraité, qui croit tout savoir (ou, selon l'histoire, l'agent de la mairie)."
+    }
+  },
+  "serie": {
+    "titre": "Sami prépare son examen",
+    "consigne": "Sami prépare son examen civique, épisode après épisode, en vivant la France au quotidien (mairie, bureau de vote, école des enfants, voisinage, formation). Claire, sa voisine bénévole, l'aide à comprendre ; M. Bernard, le voisin qui croit tout savoir, lance souvent une idée reçue que l'épisode corrige. Chaque épisode apprend UN fait des FAITS VÉRIFIÉS, montré dans une situation, jamais récité comme un cours ; il se comprend seul. Sami progresse et gagne en assurance d'épisode en épisode ; le chat reste imperturbable."
+  },
+  "trames": [
+    {
+      "id": "situation_vraie",
+      "nom": "La vraie vie",
+      "consigne": "Sami vit une situation concrète en France (une démarche à la mairie, le jour d'une élection, un voisin en danger, l'école des enfants) et ne sait pas quoi faire ; Claire lui donne le fait exact qui répond, il agit, et on voit que ça marche."
+    },
+    {
+      "id": "faux_conseil",
+      "nom": "Le voisin qui sait tout",
+      "consigne": "M. Bernard affirme avec aplomb une idée reçue sur le sujet ; Sami, impressionné, la répète ; Claire la corrige avec le fait exact entre « guillemets ». Chute : M. Bernard fait mine de l'avoir toujours su."
+    },
+    {
+      "id": "quiz_du_soir",
+      "nom": "Le quiz du soir",
+      "consigne": "Le soir, Claire fait réviser Sami : elle pose une question des faits, il répond une erreur plausible, elle donne un indice, il trouve le fait exact. Chute : le chat avait l'air de connaître la réponse depuis le début."
+    },
+    {
+      "id": "dans_sa_tete",
+      "nom": "Ce qu'il imagine",
+      "consigne": "Sami imagine (nuage de pensée, « imaginer ») une version fausse et absurde de la notion ; Claire le ramène au fait exact, en une phrase simple."
+    },
+    {
+      "id": "le_mot_bizarre",
+      "nom": "Le mot bizarre",
+      "consigne": "Sami bute sur un mot officiel lu sur un document ou une affiche (« laïque », « suffrage », « préfet »…) ; Claire l'explique avec un exemple de la vie de tous les jours, tiré des faits ; Sami le réutilise tout de suite, correctement."
+    },
+    {
+      "id": "la_veille",
+      "nom": "La veille de l'examen",
+      "consigne": "La veille de l'examen, Sami panique sur une notion ; Claire lui donne une astuce pour retenir le fait (une image ou un moyen mnémotechnique qui n'ajoute aucun fait). Il la redit, rassuré. Chute courte."
+    },
+    {
+      "id": "le_prof_c_est_lui",
+      "nom": "C'est lui le prof",
+      "consigne": "Les rôles s'inversent : c'est Sami qui explique la notion à M. Bernard, qui croyait savoir. Preuve qu'il a compris ; Claire approuve d'un signe."
+    },
+    {
+      "id": "le_chat_juge",
+      "nom": "Le chat juge",
+      "consigne": "Le chat est le juge silencieux : il réagit à chaque réponse de Sami (dort, s'en va, miaule) jusqu'à la bonne, tirée des faits, qu'il approuve enfin. Running gag."
+    }
+  ],
+  "lieux": [
+    "mairie",
+    "bureau_vote",
+    "salle_cours",
+    "salon",
+    "cafe",
+    "salle_attente"
+  ]
 }

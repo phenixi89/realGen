@@ -1,5 +1,5 @@
 {
-  "_doc": "Accroches de la chaine examen_civique : memes champs que catalog/chaines/opuscv/hooks.json (voir son _doc). Jamais de chiffre inventé : un nombre de l'accroche vient des FAITS du sujet.",
+  "_doc": "Accroches de la chaine examen_civique : memes champs que catalog/chaines/opuscv/hooks.json (voir son _doc). Jamais de chiffre inventé : un nombre de l'accroche vient des FAITS du sujet. tags : l'accroche n'est tiree que pour un sujet qui porte un de ces tags (recit, situation, confusion, citation : voir sujets.json). dessin : false -> jamais pour le dessin anime (« Imagine : 1789 » ne se dit pas entre deux voisins).",
   "hooks": [
     {
       "id": "question_directe",
@@ -33,6 +33,51 @@
       "id": "a_retenir",
       "consigne": "Promettre une seule chose simple à retenir pour l'examen.",
       "exemple": "Une seule phrase à retenir pour ton examen."
+    },
+    {
+      "id": "imagine",
+      "poids": 2,
+      "tags": [
+        "recit"
+      ],
+      "dessin": false,
+      "consigne": "Plonger le spectateur dans un moment de l'histoire, au présent, avec une date ou un lieu des FAITS (rien d'inventé).",
+      "exemple": "Imagine : Paris, juillet 1789."
+    },
+    {
+      "id": "situation_tu",
+      "poids": 2,
+      "tags": [
+        "situation"
+      ],
+      "consigne": "Une situation concrète de la vie en France, au « tu », qui met le spectateur au pied du mur.",
+      "exemple": "Ton voisin tombe dans l'escalier. Tu fais quoi ?"
+    },
+    {
+      "id": "on_confond",
+      "tags": [
+        "confusion"
+      ],
+      "consigne": "Deux mots ou deux notions qu'on mélange, posés face à face, sans chiffre ni statistique.",
+      "exemple": "Police ou gendarmerie : tu sais la différence ?"
+    },
+    {
+      "id": "phrase_celebre",
+      "tags": [
+        "citation"
+      ],
+      "consigne": "Une phrase célèbre d'un texte de la France (tirée des faits), et un défi : la comprendre vraiment.",
+      "exemple": "Cette phrase est dans la Constitution. Tu la comprends ?"
+    },
+    {
+      "id": "idee_recue",
+      "consigne": "Une idée reçue que beaucoup répètent, dite telle quelle, que le reel corrige ensuite avec un fait exact.",
+      "exemple": "« Le coq est un symbole officiel. » Vraiment ?"
+    },
+    {
+      "id": "detail_surprenant",
+      "consigne": "Un détail vrai et surprenant, tiré des faits, dit en premier pour piquer la curiosité.",
+      "exemple": "La Marseillaise a d'abord porté un autre nom."
     }
   ]
 }

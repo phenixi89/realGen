@@ -211,6 +211,10 @@ def choose_sujet(client, fmt: dict, history: list[dict], rng: random.Random) -> 
     le catalogue, il reprenait toujours les themes "viraux" (ATS, chiffres).
     Echec -> tirage aleatoire.
     """
+    if fmt.get("rappel"):   # revision espacee : les derniers sujets publies (catalog.sujet_rappel)
+        rappel = catalog.sujet_rappel(history)
+        if rappel:
+            return rappel
     avoid = catalog.recent_sujets(history)
     candidates = catalog.compatible_sujets(fmt)
     fresh = [s for s in candidates if s["id"] not in avoid] or candidates
@@ -660,6 +664,15 @@ CARTES DU PLATEAU (en plus des cartes ci-dessus, utilise celles que demande la s
     "carte": {"type": "frise", "titre": "3 à 7 mots", "jalons": [{"date": "1789", "label": "4 à 9 mots"}, ...]}
   - carte indices (3 indices de plus en plus précis, dits un à un, puis la réponse ; chaque indice est un fait) :
     "carte": {"type": "indices", "titre": "Qui suis-je ?" ou « Quelle est cette notion ? », "indices": ["...", "...", "..."] (12 mots au plus), "reponse": "1 à 4 mots"}
+  - carte qcm (comme à l'examen : 4 réponses courtes, UNE seule juste, les trois autres plausibles mais fausses d'après les faits ;
+    une mauvaise réponse qui est une date ou un nombre reprend une AUTRE date ou un autre nombre des faits, jamais un nombre inventé) :
+    "carte": {"type": "qcm", "question": "4 à 10 mots", "reponses": ["...", "...", "...", "..."] (1 à 5 mots chacune), "bonne": 1 à 4}
+  - carte citation (une phrase d'un texte officiel, recopiée MOT POUR MOT d'un fait entre « guillemets », sans rien changer) :
+    "carte": {"type": "citation", "texte": "la phrase exacte, sans les guillemets", "source": "d'où elle vient, 2 à 7 mots (ex : Article 1, Déclaration de 1789)"}
+  - carte chapitre (un moment d'une histoire racontée ; la date est celle d'un fait, sinon "quand" reste vide) :
+    "carte": {"type": "chapitre", "quand": "date des faits (ex : 14 juillet 1789) ou \"\"", "titre": "ce qui se passe, 5 à 12 mots", "icone": "<id d'icône>"}
+  - carte situation (une scène de la vie en France, au « tu », où il faut savoir quoi faire ; la réponse vient des faits) :
+    "carte": {"type": "situation", "texte": "la situation, 8 à 18 mots", "question": "Que fais-tu ?" ou une question de 2 à 6 mots, "icone": "<id d'icône>"}
 La voix dit ce que la carte montre (les deux choix, les paires, les dates, les indices) ; la réponse est donnée par la voix de la scène
 suivante, avec la même phrase que celle des faits."""
 
@@ -1238,6 +1251,32 @@ def clean_card(raw) -> dict | None:
         if not txt("titre") or len(jalons) < 2:
             return None
         return {"type": "frise", "titre": txt("titre"), "jalons": jalons}
+    if kind == "qcm":   # comme a l'examen : 4 reponses, une seule bonne
+        reponses = [str(r).strip() for r in raw.get("reponses") or [] if str(r).strip()][:4]
+        if not txt("question") or len(reponses) != 4:
+            return None
+        try:
+            bonne = min(max(int(raw.get("bonne")), 1), 4)
+        except (TypeError, ValueError):
+            bonne = 1
+        return {"type": "qcm", "question": txt("question"), "reponses": reponses, "bonne": bonne}
+    if kind == "citation":   # phrase d'un texte, recopiee mot pour mot d'un fait (faits_problems)
+        texte = txt("texte").strip("«»\"“” ").strip()
+        if not texte:
+            return None
+        return {"type": "citation", "texte": texte, "source": txt("source")}
+    if kind == "chapitre":
+        if not txt("titre"):
+            return None
+        icone = txt("icone")
+        return {"type": "chapitre", "quand": txt("quand"), "titre": txt("titre"),
+                **({"icone": icone if icone in catalog.icons() else closest_icon(icone)} if icone else {})}
+    if kind == "situation":
+        if not txt("texte"):
+            return None
+        icone = txt("icone")
+        return {"type": "situation", "texte": txt("texte"), "question": txt("question") or "Que fais-tu ?",
+                **({"icone": icone if icone in catalog.icons() else closest_icon(icone)} if icone else {})}
     if kind == "indices":
         indices = [str(i).strip() for i in raw.get("indices") or [] if str(i).strip()][:3]
         if not txt("titre") or len(indices) != 3 or not txt("reponse"):
@@ -1287,8 +1326,9 @@ def wants_proof(fmt: dict) -> bool:
 
 
 def wants_save_nudge(fmt: dict, humour: bool) -> bool:
-    """Reels conseil serieux : relance "enregistre" juste apres l'accroche (config relance_enregistrer)."""
-    return (fmt.get("categorie") == "conseil" and not humour and not fmt.get("educatif")
+    """Reels conseil serieux : relance "enregistre" juste apres l'accroche (config relance_enregistrer). Format a
+    "sans_relance" (recit, mise en situation) : la scene 2 continue l'immersion, la relance la casserait."""
+    return (fmt.get("categorie") == "conseil" and not humour and not fmt.get("educatif") and not fmt.get("sans_relance")
             and bool(catalog.config().get("relance_enregistrer", True)))
 
 
@@ -1510,16 +1550,24 @@ def faits_problems(scenes: list[dict], data: dict, sujet: dict) -> list[str]:
             textes.append(f"{sc['carte'].get('surtitre', '')} {carte_texte(sc['carte'])}")
     inventes = sorted({n for t in textes for n in NOMBRE_RE.findall(t.replace("\u202f", "").replace("\xa0", ""))
                        if n not in permis and float(n.replace(",", ".")) > 10}, key=lambda n: float(n.replace(",", ".")))
+    problems = []
     if inventes:
-        return [f"nombre(s) absent(s) des FAITS VÉRIFIÉS : {', '.join(inventes)} -- n'utilise que les dates et chiffres des faits fournis"]
-    return []
+        problems.append(f"nombre(s) absent(s) des FAITS VÉRIFIÉS : {', '.join(inventes)} -- n'utilise que les dates et chiffres des faits fournis")
+    # Carte citation : la phrase d'un texte officiel est recopiee mot pour mot d'un fait, jamais reformulee ni inventee.
+    faits = catalog._norm(" ".join(map(str, sujet["faits"])))
+    for i, sc in enumerate(scenes, 1):
+        carte = sc.get("carte") or {}
+        if carte.get("type") == "citation" and catalog._norm(carte["texte"]) not in faits:
+            problems.append(f"scène {i} : la carte citation (« {carte['texte'][:60]} ») n'est pas recopiée mot pour mot d'un fait : "
+                            "reprends exactement la phrase entre guillemets des FAITS VÉRIFIÉS")
+    return problems
 
 
 def carte_texte(card: dict) -> str:
     """Tout le texte lisible d'une carte (titre, points, avant / apres, etapes, question...)."""
     morceaux: list[str] = []
     for cle, val in card.items():
-        if cle in ("type", "style", "effet", "surtitre", "bonne", "icone", "marque", "intrus", "etiquette", "verdict") or (cle == "mot" and card.get("type") != "definition"):
+        if cle in ("type", "style", "effet", "surtitre", "bonne", "icone", "marque", "intrus", "etiquette", "verdict", "rang") or (cle == "mot" and card.get("type") != "definition"):
             continue
         if isinstance(val, list):
             morceaux += [(f"{v['date']} {v.get('label', '')}" if v.get("date") else f"{v['a']} {v.get('b', '')}" if "a" in v
@@ -2072,6 +2120,10 @@ def fusionner_meme_lieu(scenes: list[dict]) -> list[dict]:
 def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str],
                       forced: list[dict] | None = None) -> dict:
     fmt = plan["format"]
+    demande = duration
+    # Format a « duree_min » (recit en chapitres, mise en situation...) : il lui faut ce temps pour etre compris ; la duree
+    # demandee reste celle du scenario (duree_cible_s : la reprise du pipeline ne le croit pas perime).
+    duration = max(duration, int(fmt.get("duree_min") or 0))
     if not plan.get("cta"):  # meme phrase pour le prompt et pour fixer_cta
         plan["cta"] = catalog.pick_cta(fmt["categorie"], random.Random())[0]
     feedback = None
@@ -2126,7 +2178,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         dessin_fields = {"jeu": True, "voix_personnages": {q: persos[q]["voix"] for q in list(parleurs)[:2]}}
     hashtags = best_data.get("hashtags") or []
     return finalize({
-        "angle": plan["sujet"]["texte"], "titre": best_data.get("titre", ""), "duree_cible_s": duration,
+        "angle": plan["sujet"]["texte"], "titre": best_data.get("titre", ""), "duree_cible_s": demande,
         "scenes": best,
         "accroche_ecran": str(best_data.get("accroche_ecran") or "").strip(),
         "legende": str(best_data.get("legende") or "").strip(),
@@ -2168,7 +2220,9 @@ def etiqueter_cartes(scenes: list[dict], fmt: dict) -> None:
             precedente = propre or None
         else:
             precedente = None
-        carte["etiquette"] = "RÉPONSE" if m else etiq
+        if carte.get("type") == "chapitre":   # « CHAPITRE {k} » : rang du chapitre parmi les cartes chapitre
+            carte["rang"] = sum(1 for x in scenes[:scenes.index(sc) + 1] if (x.get("carte") or {}).get("type") == "chapitre")
+        carte["etiquette"] = "RÉPONSE" if m else str(etiq).replace("{k}", str(carte.get("rang", "")))
         if not carte["etiquette"]:
             del carte["etiquette"]
         if m:

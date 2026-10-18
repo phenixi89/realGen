@@ -27,8 +27,10 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   et sans trace d'OpusCV ceux des chaînes faceless (`verif_prompts.py`). Une nouvelle chaîne s'ajoute aussi aux options
   `chaine` de `generate-reels.yml` (`catalog.py` vérifie).
 - Chaîne vérifiée (`examen_civique`, `"verification": true`) : un sujet = des `faits` recopiés d'une source officielle
-  (jamais de mémoire) + `source` ; aucune date ni chiffre hors des faits. Neutre, « non officielle », jamais de
-  promesse de réussite. Chaîne `psycho` : notions reconnues seulement, jamais de diagnostic ni d'étude inventée.
+  (jamais de mémoire : Légifrance, service-public.fr, fiches de `formation-civique.interieur.gouv.fr`) + `source` ; aucune date
+  ni chiffre hors des faits ; une carte `citation` est recopiée mot pour mot d'un fait. Les règles de l'examen ne viennent que du
+  sujet `examen_modalites`. Neutre, « non officielle », jamais de promesse de réussite ; sujet `memoire` (Shoah) : ton grave,
+  jamais de jeu ni d'humour. Chaîne `psycho` : notions reconnues seulement, jamais de diagnostic ni d'étude inventée.
 - Enrichir le catalogue = éditer `catalog/*.json` ou `catalog/chaines/<id>/*.json` (aucun code) ; documenter les champs dans le
   `_doc` du fichier et dans le README. Un nouveau thème, décor, personnage, voix ou ambiance a un aperçu
   dans la console : relancer `python scripts/apercus.py` et committer `docs/apercus/`.
@@ -41,7 +43,8 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   Les sous-titres commencent à y = 1574 : le contenu des gabarits reste au-dessus. Après avoir touché un gabarit :
   `python scripts/verif_gabarits.py` (aussi dans `test.yml`).
 - Icônes dessinables : `assets/anim/icones.js` (JSON strict après `window.ICONES = `, lu aussi par
-  `catalog.py`). Nouveau gabarit dessiné : s'appuyer sur `assets/anim/sketch.js`. Tout instant
+  `catalog.py`) ; une icône, un décor ou un objet propre à une chaîne porte `"chaines"` (`icones.js`, `dessins.json`) : les autres
+  ne le voient pas, le prompt d'OpusCV reste identique. Nouveau gabarit dessiné : s'appuyer sur `assets/anim/sketch.js`. Tout instant
   d'animation repris par `scripts/sound_design.py` doit rester identique des deux côtés.
 - Dessin animé (`assets/anim/scene.html`) : un type (personnage, animal, objet, décor, fond) = un
   `Dessin.enregistrer` dans `assets/anim/dessin/*.js` **et** une entrée dans `catalog/dessins.json` (série, trames et
@@ -106,7 +109,7 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 ## Points ouverts (décisions utilisateur en attente)
 
 - Nom définitif de la chaîne `psycho` (`Dans ta tête`, provisoire) et des personnages (Théo, Jade).
-- Examen civique : recopier les modalités officielles de l'examen (nombre de questions, seuil) dans un sujet sourcé.
+- Noms de la série dessinée d'Objectif Civique (« Sami prépare son examen » : Sami, Claire, M. Bernard), provisoires.
 
 - Format `temoignage_produit` : ajouter la mention « histoire illustrative » ou le retirer.
 - Publication automatique après validation, reportée par l'utilisateur : workflow « TikTok : autoriser »
@@ -129,5 +132,9 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   (`assets/marques/examen_civique/`, sans Marianne ni bloc-marque de l'État) ; habillage propre, jamais celui d'OpusCV :
   thème `civique_plateau` réservé à la chaîne (`"chaines"`), gabarit `assets/anim/civique.html` (plateau de quiz en hexagones,
   sons publiés par la page dans `window.SONS`). Une nouvelle planche = le `mode` dans `civique.html` **et** sa carte (`clean_card`,
-  `catalog._gabarit_civique`, `carte_texte`, `instagram.slide_from_card`, `CIVIQUE_CARDS_RULE`) ; les formats qui l'utilisent ont
-  `"cartes_civique": true` (jamais un format d'OpusCV : ses prompts doivent rester identiques).
+  `catalog._gabarit_civique`, `carte_texte`, `instagram.slide_from_card`, `CIVIQUE_CARDS_RULE`) **et** son exemple dans `PLANCHES`
+  (`verif_gabarits.py`) ; les formats qui l'utilisent ont
+  `"cartes_civique": true` (jamais un format d'OpusCV : ses prompts doivent rester identiques). Apprendre par les histoires :
+  récit en chapitres, citation expliquée, mise en situation (QCM à 4 réponses comme l'examen), « ne confonds plus », révision
+  espacée (`"rappel": true`), série dessinée « Sami prépare son examen » (décors civiques `mairie`, `bureau_vote`, `salle_cours`).
+  Modalités de l'examen recopiées de la page officielle (sujet `examen_modalites`).

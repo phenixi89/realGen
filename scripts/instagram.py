@@ -108,7 +108,13 @@ def slide_from_card(card: dict) -> dict | None:
         return {"titre": card.get("titre", ""), "texte": " · ".join(f"{j.get('date', '')} {j.get('label', '')}" for j in card.get("jalons") or [])}
     if kind == "indices":
         return {"titre": card.get("titre", ""), "texte": f"Réponse : {card.get('reponse', '')}"}
-    if kind == "quiz":
+    if kind == "citation":
+        return {"titre": f"« {card.get('texte', '')} »", "texte": card.get("source", "")}
+    if kind == "chapitre":
+        return {"titre": card.get("titre", ""), "texte": card.get("quand", "")}
+    if kind == "situation":
+        return {"titre": card.get("texte", ""), "texte": card.get("question", "")}
+    if kind in ("quiz", "qcm"):
         reponses = card.get("reponses") or []
         bonne = min(max(int(card.get("bonne") or 1), 1), max(len(reponses), 1)) - 1
         return {"titre": card.get("question", ""), "texte": f"Réponse : {reponses[bonne]}" if reponses else ""}
