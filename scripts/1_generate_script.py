@@ -1439,6 +1439,10 @@ def civique_problems(scenes: list[dict]) -> list[str]:
         if sc.get("carte") and len(sc["texte"].split()) < 6:
             problems.append(f"scène {i + 1} : une carte demande une phrase d'au moins 6 mots (celle-ci en a {len(sc['texte'].split())}) : "
                             "fusionne-la avec la phrase voisine, la carte reste affichée le temps de la dire")
+    for i, sc in enumerate(scenes):   # run 90 : « Lequel est l'intrus ? » dit dans la scène d'après, sur une carte « Réponse »
+        if (sc.get("carte") or {}).get("type") == "intrus" and "?" not in sc["texte"]:
+            problems.append(f"scène {i + 1} : la carte intrus révèle l'intrus à la FIN de sa scène : la voix de cette même scène lit les quatre "
+                            "éléments puis dit « Lequel est l'intrus ? Réfléchis. » (pas dans la scène suivante, la réponse serait déjà à l'écran)")
     for i, sc in enumerate(scenes):
         carte = sc.get("carte") or {}
         if carte.get("type") != "indices":

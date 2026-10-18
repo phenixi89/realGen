@@ -578,7 +578,7 @@ balaie, bande tricolore en bas, onglet en forme d'hexagone étiré et progressio
 | `comparaison` | `avant_apres` | « IDÉE REÇUE » barrée, puis « EN VRAI » |
 | `impact` | `retenir` | « À RETENIR » sur une plaque, tampon hexagone + coche |
 | `duel` | `duel` | deux grandes tuiles hexagonales A / B et un « VS » doré, compte à rebours, la bonne tuile passe au vert avec des confettis, l'autre s'efface |
-| `intrus` | `intrus` | quatre tuiles ; l'intrus devient rouge et tremble, les trois autres passent au vert |
+| `intrus` | `intrus` | quatre tuiles ; l'intrus devient rouge et tremble, les trois autres passent au vert (révélation à `DUR - 0,9` s : la voix de la même scène lit les éléments puis pose la question) |
 | `relier` | `relier` | deux colonnes de capsules (la droite est décalée), des traits de couleur se tracent un à un pour relier chaque paire |
 | `definition` | `definition` | le mot en grand dans un hexagone (les lettres rebondissent une à une ; une expression longue passe sur deux lignes), sa définition sur une plaque « DÉFINITION » |
 | `frise` | `frise` | une frise verticale : la ligne se trace, un nœud hexagonal numéroté et une date en grand par jalon |
@@ -591,6 +591,8 @@ qui se vide (quiz, duel, intrus), **confettis hexagonaux** (tricolores et or) à
 coup de projecteur qui balaie la scène. **Transitions** du thème entre les plans : ouverture en cercle, radial, glissements
 doux, pixels, compression (`circleopen`, `radial`, `smoothleft`, `smoothup`, `pixelize`, `squeezeh`).
 
+**Mots longs** : les tuiles hexagonales (`quiz`, `duel`, `intrus`) réduisent leur taille de texte jusqu'à ce que leur mot le plus long tienne dans 80 % de leur largeur (`ajusterTuiles`, `civique.html` ; run 90 : « Gouvernement » touchait les deux bords).
+
 **Zone libre** : les sous-titres incrustés occupent le bas de l'écran (à partir de y = 1574 sur 1920) : toutes les planches du plateau gardent leur contenu au-dessus de y ≈ 1500 (note, hexagone, définition, frise, indices, appel à l'action).
 
 Tampon de réponse (`verdict`) : badge hexagonal vert avec coche (VRAI) ou rouge avec croix (FAUX), à 0,45 s. Les sons
@@ -600,7 +602,7 @@ l'illustration de l'accroche et l'écran d'appel à l'action par les planches `a
 `"cartes_gabarit": "civique"`. Les six cartes `duel`, `intrus`, `relier`, `definition`, `frise` et `indices` n'existent que pour
 les formats à `"cartes_civique": true` (le prompt les décrit alors, `CIVIQUE_CARDS_RULE` ; `catalog.py` impose la chaîne sans
 produit et le seul thème `civique_plateau`) ; leurs champs sont nettoyés par `clean_card`, leur texte compte pour le contrôle des
-nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA) ; la réponse d'une carte `indices` doit être redite dans les scènes suivantes (`civique_problems`, run 84 : réponse « À toi ! », run 85 : « ? » refusé aussi ; run 86 : une carte dont la phrase fait moins de 6 mots, affichée 1 s, fait recommencer l'IA). Un thème imposé (console, `--theme`) incompatible avec les `themes` du format est ignoré avec un avertissement : run 85, `ardoise_indigo` imposé à un format à planches civiques, qui sont alors sorties vides (« Titre de la carte »). `etiquette` d'un format peut être un dictionnaire : un texte par type de carte, `suite` pour la carte qui suit une carte à étiquette propre (« RÉPONSE »), `*` pour les autres (« À RETENIR »). Aperçu de la console : une planche quiz révélée (`apercus.py`).
+nombres (`faits_problems` : une date de frise absente des faits fait recommencer l'IA) ; la réponse d'une carte `indices` doit être redite dans les scènes suivantes (`civique_problems`, run 84 : réponse « À toi ! », run 85 : « ? » refusé aussi ; run 86 : une carte dont la phrase fait moins de 6 mots, affichée 1 s, fait recommencer l'IA ; run 90 : la scène d'une carte `intrus` doit contenir la question « Lequel est l'intrus ? Réfléchis. », sinon l'IA l'avait dite dans la scène suivante, sur un schéma « Réponse » qui donnait déjà la solution, après la révélation vert/rouge). Un thème imposé (console, `--theme`) incompatible avec les `themes` du format est ignoré avec un avertissement : run 85, `ardoise_indigo` imposé à un format à planches civiques, qui sont alors sorties vides (« Titre de la carte »). `etiquette` d'un format peut être un dictionnaire : un texte par type de carte, `suite` pour la carte qui suit une carte à étiquette propre (« RÉPONSE »), `*` pour les autres (« À RETENIR »). Aperçu de la console : une planche quiz révélée (`apercus.py`).
 
 ### Format `cours_eclair` : mini-cours éducatif (thèmes `carnet_cours` et `pop_art`)
 

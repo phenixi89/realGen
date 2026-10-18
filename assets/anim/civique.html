@@ -404,8 +404,25 @@
     }
   }
 
+  // Un mot long (« Gouvernement ») ne doit pas toucher les bords de l'hexagone (run 90) : la taille des tuiles baisse
+  // jusqu'à ce que leur mot le plus long tienne dans 80 % de leur largeur. Polices chargées : les mesures sont justes.
+  function ajusterTuiles() {
+    document.querySelectorAll(".tuile .in").forEach((el) => {
+      const cs = getComputedStyle(el), dispo = el.clientWidth * 0.8, copie = el.cloneNode(true);
+      copie.querySelectorAll(".let").forEach((x) => x.remove());   // la lettre A / B / C n'est pas dans le mot
+      const m = document.createElement("span");
+      m.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-family:${cs.fontFamily};font-weight:${cs.fontWeight};font-size:${cs.fontSize};letter-spacing:${cs.letterSpacing}`;
+      document.body.appendChild(m);
+      let plus = 0;
+      copie.textContent.split(/\s+/).filter(Boolean).forEach((w) => { m.textContent = w; plus = Math.max(plus, m.offsetWidth); });
+      m.remove();
+      if (plus > dispo) el.style.fontSize = Math.floor(parseFloat(cs.fontSize) * dispo / plus) + "px";
+    });
+  }
+
   Promise.all([FONTS_READY, window.HAND_READY, document.fonts.load("100px CVTitle"), document.fonts.load("60px CVText")]).then(() => {
     construire();
+    ajusterTuiles();
     tl.to({}, { duration: 0.01 }, Math.max(DUR, fin + 0.6));
     expose(tl);
     window.SONS = SONS.filter((s) => s.t < Math.max(DUR, 0.5)).sort((a, b) => a.t - b.t);   // lus par render_js_anim.py
