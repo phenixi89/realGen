@@ -606,7 +606,8 @@ doux, pixels, compression (`circleopen`, `radial`, `smoothleft`, `smoothup`, `pi
 
 **Temps de réflexion** (`pause_reflexion_s` du `config.json` de la chaîne : 3 s pour Objectif Civique, absent ailleurs) : après une
 scène qui pose une question (carte `quiz`, `qcm`, `duel`, `intrus`, `indices`, `relier`, ou scène suivie d'un verdict VRAI / FAUX),
-`4_generate_subtitles.py` insère un silence dans la voix, entre le dernier mot de la scène et le suivant, et décale les sous-titres ;
+`4_generate_subtitles.py` insère un silence dans la voix (une seule prise TTS, coupée à l'instant le plus calme du blanc entre le
+dernier mot de la scène et le suivant, mesuré par fenêtres de 20 ms : jamais dans un mot, `instant_le_plus_calme`) et décale les sous-titres ;
 la timeline le note (`reflexion`), `run_pipeline.plan_montage` le passe à la planche, qui y fait son **compte à rebours 3-2-1** et ne
 révèle la réponse qu'à la fin de la scène (les traits de `relier` se tracent pendant le silence). Une trace
 (`audio/reel_XX.reflexion.json`, datée de l'audio) évite de rallonger deux fois le même audio quand l'étape est refaite. Côté écriture

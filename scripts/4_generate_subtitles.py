@@ -205,8 +205,8 @@ def scenes_a_reflexion(scenes: list[dict]) -> list[int]:
             if (scenes[k].get("carte") or {}).get("type") in CARTES_QUESTION or (scenes[k + 1].get("carte") or {}).get("verdict")]
 
 
-def inserer_silences(audio: Path, points: list[tuple[float, float]]):
-    """Insere dans l'audio (mp3 mono ou stereo) un silence de duree d a chaque instant t ((t, d) croissants), sur place."""
+def lire_pcm(audio: Path):
+    """-> (echantillons int16 [n, canaux], frequence) de l'audio."""
     import numpy as np
     info = json.loads(subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries",
                                       "stream=sample_rate,channels", "-of", "json", str(audio)],
@@ -214,7 +214,32 @@ def inserer_silences(audio: Path, points: list[tuple[float, float]]):
     sr, ch = int(info["sample_rate"]), int(info["channels"])
     pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", str(audio), "-f", "s16le", "-ac", str(ch), "-ar", str(sr), "-"],
                          capture_output=True, check=True).stdout
-    x = np.frombuffer(pcm, dtype=np.int16).reshape(-1, ch)
+    return np.frombuffer(pcm, dtype=np.int16).reshape(-1, ch), sr
+
+
+def instant_le_plus_calme(x, sr: int, a: float, b: float, marge: float = 0.12) -> float:
+    """
+    Garde-fou de la coupure : l'instant le plus silencieux (fenetres de 20 ms) entre la fin du dernier mot (a) et le
+    debut du suivant (b), elargi de « marge » de chaque cote (Whisper se trompe de quelques centiemes) : on ne coupe
+    jamais dans un mot.
+    """
+    import numpy as np
+    pas = int(0.02 * sr)
+    i0, i1 = max(int((min(a, b) - marge) * sr), 0), min(int((max(a, b) + marge) * sr), len(x))
+    if i1 - i0 < 2 * pas:
+        return (a + b) / 2
+    m = x[i0:i1].astype(np.float32).mean(axis=1)
+    n = (len(m) - pas) // (pas // 2) + 1
+    energie = [float(np.sqrt(np.mean(m[k * (pas // 2):k * (pas // 2) + pas] ** 2))) for k in range(n)]
+    k = int(np.argmin(energie))
+    return (i0 + k * (pas // 2) + pas / 2) / sr
+
+
+def inserer_silences(audio: Path, points: list[tuple[float, float]], pcm=None):
+    """Insere dans l'audio (mp3 mono ou stereo) un silence de duree d a chaque instant t ((t, d) croissants), sur place."""
+    import numpy as np
+    x, sr = pcm or lire_pcm(audio)
+    ch = x.shape[1]
     morceaux, prec = [], 0
     for t, d in points:
         i = min(max(int(t * sr), prec), len(x))
@@ -250,12 +275,14 @@ def appliquer_reflexion(audio: Path, aligned: list[dict], scenes: list[dict], pa
     if not rangs or pause_s <= 0:
         return {}
     ranges = scene_ranges([len(sc["texte"].split()) for sc in scenes])
-    points, decalage = [], 0.0
+    pcm = None if dans_audio else lire_pcm(audio)
+    points = []
     for k in rangs:
         fin = ranges[k][1]
         if not 0 < fin < len(aligned):
             continue
-        t = (aligned[fin - 1]["end"] + aligned[fin]["start"]) / 2   # entre le dernier mot et le suivant
+        a, b = aligned[fin - 1]["end"], aligned[fin]["start"]   # entre le dernier mot de la scene et le suivant
+        t = (a + b) / 2 if pcm is None else instant_le_plus_calme(*pcm, a, b)
         points.append((t, pause_s))
     for t, d in points:   # decale les mots qui suivent chaque silence
         for w in aligned:
@@ -266,7 +293,7 @@ def appliquer_reflexion(audio: Path, aligned: list[dict], scenes: list[dict], pa
         return {}
     if dans_audio:
         return {k: pause_s for k in rangs[:len(points)]}
-    inserer_silences(audio, points)
+    inserer_silences(audio, points, pcm)
     pauses = {k: pause_s for k in rangs[:len(points)]}
     trace.write_text(json.dumps({"mtime": audio.stat().st_mtime, "pauses": pauses}), encoding="utf-8")
     print(f"Temps de reflexion : {len(points)} silence(s) de {pause_s} s apres les scenes {[k + 1 for k in pauses]}")
