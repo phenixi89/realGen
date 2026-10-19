@@ -1,5 +1,5 @@
 {
-  "_doc": "Reglages de la chaine examen_civique (fusionnes par-dessus catalog/config.json) : voir catalog/chaines/opuscv/config.json pour le sens de chaque cle. Registre serieux seulement (exactitude d'abord).",
+  "_doc": "Reglages de la chaine examen_civique (fusionnes par-dessus catalog/config.json) : voir catalog/chaines/opuscv/config.json pour le sens de chaque cle. Registre serieux seulement (exactitude d'abord). pause_reflexion_s : silence (s) insere dans la voix apres une scene qui pose une question (carte quiz, qcm, duel, intrus, indices, relier, ou scene suivie d'un verdict VRAI / FAUX) : la carte y fait son compte a rebours 3-2-1 et ne revele la reponse qu'ensuite (4_generate_subtitles.py) ; 0 ou absent = aucun (OpusCV, psycho).",
   "mix": {
     "conseil": 1.0
   },
@@ -54,5 +54,6 @@
         "texte": "Écris ta réponse en commentaire et abonne-toi."
       }
     ]
-  }
+  },
+  "pause_reflexion_s": 3.0
 }

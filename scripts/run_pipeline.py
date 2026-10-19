@@ -121,6 +121,9 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     scene_anims = {i: card_spec(scenes[i]["carte"], t_scenes[i]["end"] - t_scenes[i]["start"],
                                 theme, (rang[i], len(lecons)))
                    for i in card_scenes}
+    for i, spec in scene_anims.items():   # temps de reflexion (4_generate_subtitles) : le compte a rebours le remplit
+        if t_scenes[i].get("reflexion") and spec.startswith("civique?"):
+            scene_anims[i] = spec + f"&reflexion={float(t_scenes[i]['reflexion']):.2f}"
     last = len(t_scenes) - 1
     chosen = {i: anim_spec(s["anim"], DEFAULT_SCENE_ANIM) for i, s in enumerate(scenes) if s.get("anim")}
     # Fin de reel "conseil" : toujours un CTA anime plein cadre (une capture

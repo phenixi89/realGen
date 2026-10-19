@@ -1483,6 +1483,8 @@ def civique_problems(scenes: list[dict]) -> list[str]:
         if (sc.get("carte") or {}).get("type") == "intrus" and "?" not in sc["texte"]:
             problems.append(f"scène {i + 1} : la carte intrus révèle l'intrus à la FIN de sa scène : la voix de cette même scène lit les quatre "
                             "éléments puis dit « Lequel est l'intrus ? Réfléchis. » (pas dans la scène suivante, la réponse serait déjà à l'écran)")
+    if catalog.config().get("pause_reflexion_s"):   # chaine a temps de reflexion (Objectif Civique)
+        problems += question_problems(scenes)
     for i, sc in enumerate(scenes):
         carte = sc.get("carte") or {}
         if carte.get("type") != "indices":
@@ -1495,6 +1497,34 @@ def civique_problems(scenes: list[dict]) -> list[str]:
         if not ok:
             problems.append(f"scène {i + 1} : la réponse de la carte indices (« {rep} ») n'est pas donnée dans les scènes suivantes : "
                             "écris la vraie réponse (1 à 4 mots), celle que la voix dit juste après, jamais « À toi ! »")
+    return problems
+
+
+CARTES_QUESTION = ("quiz", "qcm", "duel")   # cartes qui revelent leur reponse a la fin de leur scene
+
+
+def question_problems(scenes: list[dict]) -> list[str]:
+    """
+    Carte quiz / qcm / duel : la carte revele la bonne reponse a la fin de SA scene, apres le temps de reflexion
+    (4_generate_subtitles). Sa voix doit donc tout dire : la question, les reponses, puis « Réfléchis » ; la scene
+    suivante donne la reponse. Run 93 : la question seule, puis « 1792, 1795 ou 1879 ? Réfléchis. » dans la scene
+    d'apres, sur une liste qui cochait les trois dates, alors que 1879 etait deja en vert.
+    """
+    problems = []
+    for i, sc in enumerate(scenes):
+        carte = sc.get("carte") or {}
+        if carte.get("type") not in CARTES_QUESTION:
+            continue
+        voix = catalog._norm(sc["texte"])
+        choix = [carte["gauche"], carte["droite"]] if carte["type"] == "duel" else carte.get("reponses") or []
+        lus = sum(1 for c in choix if any(r in voix for r in {m[:5] for m in _mots_cles(c)} or {catalog._norm(c)}))
+        if "reflechis" not in voix or lus < len(choix) - 1:
+            problems.append(f"scène {i + 1} : la carte {carte['type']} révèle la réponse à la fin de SA scène : sa voix dit la question, "
+                            f"lit les {len(choix)} réponses, puis « Réfléchis. » (tout dans cette scène, jamais dans la suivante)")
+        suite = scenes[i + 1] if i + 1 < len(scenes) else None
+        if suite and "reflechis" in catalog._norm(suite["texte"]):
+            problems.append(f"scène {i + 2} : « Réfléchis » arrive après la carte {carte['type']}, qui a déjà montré la réponse : "
+                            "la scène suivante donne la bonne réponse et l'explique")
     return problems
 
 
@@ -2198,6 +2228,9 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
 VERDICT_RE = re.compile(r"\s*(vrai|faux)\b", re.I)
 
 
+ETIQUETTE_QUESTIONS = ("quiz", "qcm", "duel", "intrus", "relier", "indices", "frise")   # cartes suivies d'une « RÉPONSE »
+
+
 def etiqueter_cartes(scenes: list[dict], fmt: dict) -> None:
     """
     Format a "etiquette" (chaine examen_civique) : l'onglet / le bandeau des planches educatives dit ce qu'est la carte
@@ -2214,10 +2247,11 @@ def etiqueter_cartes(scenes: list[dict], fmt: dict) -> None:
             continue
         m = VERDICT_RE.match(sc["texte"]) if fmt.get("verdicts") else None
         etiq = fmt["etiquette"]
-        if isinstance(etiq, dict):   # une etiquette par type de carte ; « suite » : carte juste apres une carte a etiquette propre ; « * » : les autres
+        if isinstance(etiq, dict):   # une etiquette par type de carte ; « suite » : carte juste apres une carte question a etiquette propre ; « * » : les autres
             propre = carte.get("type") in etiq
             etiq = etiq[carte["type"]] if propre else (etiq.get("suite") if precedente else None) or etiq.get("*", "")
-            precedente = propre or None
+            # Run 93 : le texte qui suivait un CHAPITRE portait « RÉPONSE » : seule une question appelle une reponse.
+            precedente = (propre and carte.get("type") in ETIQUETTE_QUESTIONS) or None
         else:
             precedente = None
         if carte.get("type") == "chapitre":   # « CHAPITRE {k} » : rang du chapitre parmi les cartes chapitre

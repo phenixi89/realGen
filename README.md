@@ -604,6 +604,18 @@ doux, pixels, compression (`circleopen`, `radial`, `smoothleft`, `smoothup`, `pi
 
 **Zone libre** : les sous-titres incrustés occupent le bas de l'écran (à partir de y = 1574 sur 1920) : toutes les planches du plateau gardent leur contenu au-dessus de y ≈ 1500 (note, hexagone, définition, frise, indices, appel à l'action).
 
+**Temps de réflexion** (`pause_reflexion_s` du `config.json` de la chaîne : 3 s pour Objectif Civique, absent ailleurs) : après une
+scène qui pose une question (carte `quiz`, `qcm`, `duel`, `intrus`, `indices`, `relier`, ou scène suivie d'un verdict VRAI / FAUX),
+`4_generate_subtitles.py` insère un silence dans la voix, entre le dernier mot de la scène et le suivant, et décale les sous-titres ;
+la timeline le note (`reflexion`), `run_pipeline.plan_montage` le passe à la planche, qui y fait son **compte à rebours 3-2-1** et ne
+révèle la réponse qu'à la fin de la scène (les traits de `relier` se tracent pendant le silence). Une trace
+(`audio/reel_XX.reflexion.json`, datée de l'audio) évite de rallonger deux fois le même audio quand l'étape est refaite. Côté écriture
+(`question_problems`, chaîne à temps de réflexion seulement) : la scène d'une carte `quiz`, `qcm` ou `duel` dit la question, **lit
+les réponses** et finit par « Réfléchis. » ; un « Réfléchis » dans la scène suivante fait recommencer l'IA. Run 93 : la question
+seule, puis « Avril 1792, 1795 ou 1879 ? Réfléchis. » dans la scène d'après, alors que la carte avait déjà allumé 1879 en vert (la
+voix n'avait pas encore lu les choix). L'onglet « RÉPONSE » (`suite` d'une `etiquette`) ne suit plus qu'une carte question (il
+s'affichait sur le texte qui suivait un chapitre).
+
 Tampon de réponse (`verdict`) : badge hexagonal vert avec coche (VRAI) ou rouge avec croix (FAUX), à 0,45 s. Les sons
 (clics des mots, pop, tic-tac du compte à rebours, ding, buzz, coup du tampon) sont **publiés par la page** (`window.SONS`,
 lus par `render_js_anim.render_clip`) : rien à recopier dans `sound_design.py`. `run_pipeline.plan_montage` remplace

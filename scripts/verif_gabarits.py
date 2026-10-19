@@ -28,6 +28,8 @@ PLANCHES: dict[str, list[dict]] = {
     "civique": [
         {"mode": "quiz", "texte": "Qui nomme le Premier ministre ?", "points": "Le Sénat|Le président|Le maire", "bonne": "2"},
         {"mode": "quiz", "texte": "Qui nomme le Premier ministre ?", "points": "Le Sénat|Le président|Le maire|Le juge", "bonne": "2"},
+        {"mode": "quiz", "texte": "Qui vote la loi ?", "points": "Le Parlement|Le préfet|Le maire", "bonne": "1", "dur": "9", "reflexion": "3"},
+        {"mode": "relier", "texte": "Relie", "gauche": "1789|1958", "droite": "Révolution|Ve République", "dur": "8", "reflexion": "3"},
         {"mode": "duel", "texte": "Qui vote la loi ?", "gauche": "Le Parlement", "droite": "Le préfet", "bonne": "1"},
         {"mode": "intrus", "texte": "Trouve l'intrus", "points": "Liberté|Égalité|Fraternité|Vitesse", "bonne": "4"},
         {"mode": "relier", "texte": "Relie", "gauche": "1789|1958", "droite": "Révolution|Ve République"},

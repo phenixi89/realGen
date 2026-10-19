@@ -23,9 +23,17 @@ import argparse
 import difflib
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 from script_text import scene_texts, script_to_text
+
+# Temps de reflexion (config de la chaine « pause_reflexion_s », Objectif Civique) : apres une scene qui pose une
+# question (carte de ces types, ou scene suivie d'un verdict VRAI / FAUX), un silence est insere dans la voix ; la carte
+# y fait son compte a rebours et ne revele la reponse qu'a la fin (run 93 : la reponse s'allumait avant meme que la
+# voix ait lu les choix, le spectateur n'avait pas le temps de chercher).
+CARTES_QUESTION = ("quiz", "qcm", "duel", "intrus", "indices", "relier")
 
 MAX_WORDS_PER_CUE = 4
 DEFAULT_WORD_DURATION = 0.32
@@ -191,6 +199,80 @@ def replique_times(aligned: list[dict], first: int, repliques: list[dict]) -> li
     return out
 
 
+def scenes_a_reflexion(scenes: list[dict]) -> list[int]:
+    """Rangs des scenes suivies d'un temps de reflexion : carte question, ou scene suivante qui tranche (verdict)."""
+    return [k for k in range(len(scenes) - 1)
+            if (scenes[k].get("carte") or {}).get("type") in CARTES_QUESTION or (scenes[k + 1].get("carte") or {}).get("verdict")]
+
+
+def inserer_silences(audio: Path, points: list[tuple[float, float]]):
+    """Insere dans l'audio (mp3 mono ou stereo) un silence de duree d a chaque instant t ((t, d) croissants), sur place."""
+    import numpy as np
+    info = json.loads(subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries",
+                                      "stream=sample_rate,channels", "-of", "json", str(audio)],
+                                     capture_output=True, text=True, check=True).stdout)["streams"][0]
+    sr, ch = int(info["sample_rate"]), int(info["channels"])
+    pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", str(audio), "-f", "s16le", "-ac", str(ch), "-ar", str(sr), "-"],
+                         capture_output=True, check=True).stdout
+    x = np.frombuffer(pcm, dtype=np.int16).reshape(-1, ch)
+    morceaux, prec = [], 0
+    for t, d in points:
+        i = min(max(int(t * sr), prec), len(x))
+        morceaux += [x[prec:i], np.zeros((int(d * sr), ch), dtype=np.int16)]
+        prec = i
+    morceaux.append(x[prec:])
+    tmp = audio.with_name(audio.stem + ".pause" + audio.suffix)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "s16le", "-ac", str(ch), "-ar", str(sr), "-i", "-",
+                    "-codec:a", "libmp3lame", "-qscale:a", "2", str(tmp)], input=np.concatenate(morceaux).tobytes(), check=True)
+    tmp.replace(audio)
+
+
+def reflexion_deja_faite(audio: Path) -> dict[int, float] | None:
+    """Silences deja inseres dans CET audio (trace reel_XX.reflexion.json a la date de l'audio), sinon None."""
+    trace = audio.with_name(audio.stem + ".reflexion.json")
+    if not trace.exists():
+        return None
+    deja = json.loads(trace.read_text(encoding="utf-8"))
+    return {int(k): v for k, v in deja["pauses"].items()} if abs(deja.get("mtime", 0) - audio.stat().st_mtime) < 1e-3 else None
+
+
+def appliquer_reflexion(audio: Path, aligned: list[dict], scenes: list[dict], pause_s: float,
+                        dans_audio: bool = False) -> dict[int, float]:
+    """
+    Temps de reflexion : silence insere apres le dernier mot de chaque scene a question (entre lui et le mot suivant),
+    timings des mots suivants decales d'autant. Fait une seule fois par synthese : la trace (reel_XX.reflexion.json, a
+    cote de l'audio, avec la date de l'audio) evite de rallonger deux fois le meme audio quand l'etape est refaite.
+    dans_audio : silences deja dans l'audio, seuls les timings sont decales (timing calcule, mode sans voix).
+    -> {rang de scene: duree du silence}.
+    """
+    rangs = scenes_a_reflexion(scenes)
+    trace = audio.with_name(audio.stem + ".reflexion.json")
+    if not rangs or pause_s <= 0:
+        return {}
+    ranges = scene_ranges([len(sc["texte"].split()) for sc in scenes])
+    points, decalage = [], 0.0
+    for k in rangs:
+        fin = ranges[k][1]
+        if not 0 < fin < len(aligned):
+            continue
+        t = (aligned[fin - 1]["end"] + aligned[fin]["start"]) / 2   # entre le dernier mot et le suivant
+        points.append((t, pause_s))
+    for t, d in points:   # decale les mots qui suivent chaque silence
+        for w in aligned:
+            if w["start"] >= t:
+                w["start"] += d
+                w["end"] += d
+    if not points:
+        return {}
+    if dans_audio:
+        return {k: pause_s for k in rangs[:len(points)]}
+    inserer_silences(audio, points)
+    pauses = {k: pause_s for k in rangs[:len(points)]}
+    trace.write_text(json.dumps({"mtime": audio.stat().st_mtime, "pauses": pauses}), encoding="utf-8")
+    print(f"Temps de reflexion : {len(points)} silence(s) de {pause_s} s apres les scenes {[k + 1 for k in pauses]}")
+    return pauses
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--audio", type=str, required=True)
@@ -216,17 +298,19 @@ def main():
 
     scripts = json.loads(Path(args.scripts).read_text(encoding="utf-8"))
     script = scripts[args.index - 1]
-    scenes = [{"feature": s.get("feature"), "texte": s["texte"],
+    scenes = [{"feature": s.get("feature"), "texte": s["texte"], "carte": s.get("carte"),
                **({"repliques": s["repliques"]} if s.get("repliques") else {})} for s in script.get("scenes", [])
               if s.get("texte", "").strip()] or [{"feature": None, "texte": t} for t in scene_texts(script)]
     reference_words = script_to_text(script).split()
 
+    deja = reflexion_deja_faite(Path(args.audio))   # silences de reflexion deja inseres dans cet audio
     if args.synthetic:
         from moviepy import AudioFileClip
         clip = AudioFileClip(args.audio)
         audio_duration = clip.duration
         clip.close()
-        aligned = synthetic_timing(reference_words, audio_duration)
+        # Audio deja rallonge : le timing calcule l'est sur la voix seule, les silences sont decales ensuite.
+        aligned = synthetic_timing(reference_words, audio_duration - sum((deja or {}).values()))
     else:
         import whisper
 
@@ -241,6 +325,21 @@ def main():
 
         aligned = align_to_reference(whisper_words, reference_words)
 
+    # Temps de reflexion apres les questions (chaine a « pause_reflexion_s ») : l'audio est rallonge, la timeline le sait.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import catalog
+    if script.get("chaine") in catalog.chaines():
+        catalog.set_chaine(script["chaine"])
+    pause_s = float(catalog.config().get("pause_reflexion_s") or 0)
+    if deja is not None and not args.synthetic:
+        pauses = deja   # Whisper a mesure l'audio rallonge : les silences sont deja dans ses timings
+    elif pause_s or deja:
+        pauses = appliquer_reflexion(Path(args.audio), aligned, scenes, pause_s or max(deja.values()), dans_audio=deja is not None)
+        if deja is None:
+            audio_duration += sum(pauses.values())
+    else:
+        pauses = {}
+
     # Cues decoupees scene par scene : un sous-titre ne chevauche jamais une
     # coupe d'image, il change en meme temps que la fonctionnalite montree.
     cues = []
@@ -253,6 +352,8 @@ def main():
 
     if timeline_path:
         timeline = build_timeline(aligned, scenes, audio_duration)
+        for k, d in pauses.items():   # la carte de cette scene fait son compte a rebours pendant le silence
+            timeline["scenes"][k]["reflexion"] = d
         timeline_path.parent.mkdir(parents=True, exist_ok=True)
         timeline_path.write_text(json.dumps(timeline, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"OK -> {timeline_path} ({len(timeline['scenes'])} scenes, {timeline['duration']}s)")

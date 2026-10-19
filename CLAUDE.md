@@ -137,4 +137,6 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   `"cartes_civique": true` (jamais un format d'OpusCV : ses prompts doivent rester identiques). Apprendre par les histoires :
   récit en chapitres, citation expliquée, mise en situation (QCM à 4 réponses comme l'examen), « ne confonds plus », révision
   espacée (`"rappel": true`), série dessinée « Sami prépare son examen » (décors civiques `mairie`, `bureau_vote`, `salle_cours`).
-  Modalités de l'examen recopiées de la page officielle (sujet `examen_modalites`).
+  Modalités de l'examen recopiées de la page officielle (sujet `examen_modalites`). Le spectateur a le temps de chercher :
+  silence de réflexion après chaque question (`pause_reflexion_s`, inséré par `4_generate_subtitles.py`), la carte révèle la
+  réponse à la fin de sa scène, dont la voix dit la question, les réponses et « Réfléchis. » (`question_problems`).
