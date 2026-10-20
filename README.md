@@ -617,6 +617,20 @@ seule, puis « Avril 1792, 1795 ou 1879 ? Réfléchis. » dans la scène d'aprè
 voix n'avait pas encore lu les choix). L'onglet « RÉPONSE » (`suite` d'une `etiquette`) ne suit plus qu'une carte question (il
 s'affichait sur le texte qui suivait un chapitre).
 
+**Compter les questions, pas les cartes** (run 96, `serie_flash` : 3 questions, mais « QUESTION 1/5 » et cinq hexagones, parce que les
+6 cartes — questions et réponses — étaient comptées, et « QUESTION 2/5 » s'affichait sur la réponse de la question 1). Un format à
+`"progression": "questions"` (`serie_flash`, `rappel_revision`) compte seulement les cartes question (`quiz`, `qcm`, `duel`) : le numéro
+et les hexagones de progression valent « question k sur K », et la réponse garde la progression de sa question avec l'onglet « RÉPONSE »
+(`etiqueter_cartes`, champ `progression` de la carte, lu par `catalog._gabarit_civique`). `question_problems` vérifie aussi que le
+nombre annoncé en scène 1 (« 3 questions éclair ») est le nombre de cartes question du reel (réponses purement numériques : dites en
+lettres ou en chiffres, pas exigées mot à mot).
+
+**Drapeau `quiz`** : une carte quiz n'est proposée à l'IA que si le format a `"quiz": true`. Run 96 : `serie_flash` demandait des « cartes
+quiz » sans ce drapeau, l'IA a écrit des cartes liste (ni A / B / C, ni compte à rebours, ni révélation). Corrigé pour `serie_flash`,
+`rappel_revision`, `mot_du_jour`, `frise_dates` et `citation_expliquee` ; `serie_flash` écrit maintenant chaque question en deux scènes
+(la carte quiz dont la voix lit les réponses puis « Réfléchis. », puis la réponse), sans relance « enregistre » (`sans_relance`) et dure
+40 s au moins (`duree_min`).
+
 Tampon de réponse (`verdict`) : badge hexagonal vert avec coche (VRAI) ou rouge avec croix (FAUX), à 0,45 s. Les sons
 (clics des mots, pop, tic-tac du compte à rebours, ding, buzz, coup du tampon) sont **publiés par la page** (`window.SONS`,
 lus par `render_js_anim.render_clip`) : rien à recopier dans `sound_design.py`. `run_pipeline.plan_montage` remplace

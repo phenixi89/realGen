@@ -129,6 +129,8 @@ def gabarit_carte(theme: dict | None, card: dict, n: int = 1, total: int = 1) ->
 def _gabarit_civique(card: dict, n: int, total: int) -> tuple[str, dict] | None:
     """Plateau de l'examen civique (assets/anim/civique.html, theme civique_plateau) : une planche par type de carte."""
     g = lambda k: str(card.get(k) or "").strip()
+    if card.get("progression"):   # format a progression par questions (etiqueter_cartes) : « QUESTION 2/3 », 3 hexagones
+        n, total = card["progression"]
     base = {"n": min(n, 6), "total": min(max(total, n), 6), **{k: str(card[k]) for k in ("etiquette", "verdict") if card.get(k)}}
     kind = card.get("type", "texte")
     if kind == "texte":

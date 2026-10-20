@@ -139,4 +139,6 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   espacée (`"rappel": true`), série dessinée « Sami prépare son examen » (décors civiques `mairie`, `bureau_vote`, `salle_cours`).
   Modalités de l'examen recopiées de la page officielle (sujet `examen_modalites`). Le spectateur a le temps de chercher :
   silence de réflexion après chaque question (`pause_reflexion_s`, inséré par `4_generate_subtitles.py`), la carte révèle la
-  réponse à la fin de sa scène, dont la voix dit la question, les réponses et « Réfléchis. » (`question_problems`).
+  réponse à la fin de sa scène, dont la voix dit la question, les réponses et « Réfléchis. » (`question_problems`). Un format dont la
+  structure demande une carte quiz a `"quiz": true` ; un format à questions compte les questions, pas les cartes
+  (`"progression": "questions"`).

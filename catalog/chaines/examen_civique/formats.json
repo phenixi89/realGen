@@ -1,5 +1,5 @@
 {
-  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX. cartes_civique : true -> le prompt propose en plus les cartes duel, intrus, relier, definition, frise et indices (planches du plateau, assets/anim/civique.html) ; reserve aux formats de cette chaine et au theme civique_plateau. etiquette peut etre un dictionnaire {type de carte: texte, \"suite\": texte de la carte qui suit une carte a etiquette propre, \"*\": texte par defaut}. rappel : true -> revision espacee : le sujet du reel est compose des faits des derniers sujets publies par la chaine (catalog.sujet_rappel ; sujet ordinaire tant que l'historique n'en a pas assez). etiquette « {k} » : rang de la carte parmi les cartes de son type (« CHAPITRE {k} »). Cartes en plus du plateau (cartes_civique) : qcm (4 reponses, comme a l'examen), citation (phrase recopiee mot pour mot d'un fait), chapitre (moment d'un recit) et situation (mise en situation). duree_min : duree (s) en dessous de laquelle le format n'est jamais ecrit (une duree demandee plus courte est relevee). sans_relance : true -> pas de relance « enregistre » en scene 2 (elle casserait le recit ou la mise en situation).",
+  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX. cartes_civique : true -> le prompt propose en plus les cartes duel, intrus, relier, definition, frise et indices (planches du plateau, assets/anim/civique.html) ; reserve aux formats de cette chaine et au theme civique_plateau. etiquette peut etre un dictionnaire {type de carte: texte, \"suite\": texte de la carte qui suit une carte a etiquette propre, \"*\": texte par defaut}. rappel : true -> revision espacee : le sujet du reel est compose des faits des derniers sujets publies par la chaine (catalog.sujet_rappel ; sujet ordinaire tant que l'historique n'en a pas assez). etiquette « {k} » : rang de la carte parmi les cartes de son type (« CHAPITRE {k} »). Cartes en plus du plateau (cartes_civique) : qcm (4 reponses, comme a l'examen), citation (phrase recopiee mot pour mot d'un fait), chapitre (moment d'un recit) et situation (mise en situation). duree_min : duree (s) en dessous de laquelle le format n'est jamais ecrit (une duree demandee plus courte est relevee). sans_relance : true -> pas de relance « enregistre » en scene 2 (elle casserait le recit ou la mise en situation). quiz : true -> l'IA peut ecrire une carte quiz (obligatoire pour un format dont la structure en demande une : sans lui, la consigne reste lettre morte et l'IA ecrit une liste). progression : \"questions\" -> le numero (« QUESTION 2/3 ») et les hexagones de progression comptent les questions (cartes quiz, qcm, duel), la reponse garde le rang de sa question.",
   "formats": [
     {
       "id": "question_revision",
@@ -195,7 +195,8 @@
       },
       "structure": "Scène 1 (accroche, sans carte) : « Tu connais ce mot ? ». Scène 2 : carte définition (un mot du sujet, sa définition simple tirée des FAITS) ; la voix dit le mot et sa définition. Scène 3 : un exemple de la vie en France tiré des FAITS (carte texte). Scène 4 : carte quiz (une question sur le mot, 3 réponses courtes dont une seule juste), la voix la lit puis donne la réponse. Dernière scène : CTA.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
-      "cartes_civique": true
+      "cartes_civique": true,
+      "quiz": true
     },
     {
       "id": "qui_suis_je",
@@ -249,7 +250,8 @@
       },
       "structure": "Scène 1 (accroche, sans carte) : « Retiens ces dates ! ». Scène 2 : carte frise (2 à 4 dates PRÉSENTES dans les FAITS, de la plus ancienne à la plus récente) ; la voix dit chaque date avec son événement. Scène 3 : carte quiz sur l'une des dates (3 réponses courtes dont une seule juste), la voix la lit puis donne la réponse. Scène 4 : la phrase à retenir (carte impact). Dernière scène : CTA.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
-      "cartes_civique": true
+      "cartes_civique": true,
+      "quiz": true
     },
     {
       "id": "serie_flash",
@@ -272,10 +274,19 @@
       "themes": [
         "civique_plateau"
       ],
-      "etiquette": "QUESTION {n}/{total}",
-      "structure": "Scène 1 (accroche, sans carte) : « 3 questions éclair, ton score en commentaire ! ». Scènes 2, 3 et 4 : chacune une carte quiz (question de 4 à 9 mots, 3 réponses courtes dont une seule juste, tirée des FAITS) ; pour chaque question la voix lit la question et les réponses, dit « Réfléchis. » puis donne la bonne réponse en une phrase. Les trois questions portent sur le même sujet. Dernière scène : CTA qui demande le score en commentaire.",
+      "etiquette": {
+        "quiz": "QUESTION {n}/{total}",
+        "qcm": "QUESTION {n}/{total}",
+        "duel": "QUESTION {n}/{total}",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
+      "structure": "Trois questions éclair sur le MÊME sujet, chacune en DEUX scènes. Scène 1 (accroche, sans carte) : « 3 questions éclair, ton score en commentaire ! ». Pour chaque question : (a) une scène avec une carte quiz (question de 4 à 9 mots, 3 réponses courtes dont une seule juste, tirée des FAITS) dont la voix lit la question, les trois réponses, puis dit « Réfléchis. » ; (b) une scène avec une carte texte (la bonne réponse en 2 à 6 mots) dont la voix donne la bonne réponse en une phrase des faits. Exactement trois cartes quiz, donc six scènes pour les trois questions, puis la dernière scène : CTA qui demande le score en commentaire.",
       "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse",
-      "duree_min": 35
+      "duree_min": 40,
+      "quiz": true,
+      "sans_relance": true,
+      "progression": "questions"
     },
     {
       "id": "histoire_racontee",
@@ -333,7 +344,8 @@
       "structure": "Scène 1 (accroche, sans carte) : une phrase célèbre d'un texte de la France est annoncée comme une énigme (« Cette phrase est dans la Constitution. Tu la comprends ? »). Scène 2 : carte citation (la phrase recopiée MOT POUR MOT d'un fait, et sa source) ; la voix la lit lentement, en entier. Scène 3 : le mot le plus difficile de la phrase expliqué simplement (carte définition). Scène 4 : ce que la phrase veut dire dans la vie de tous les jours, avec un fait (carte texte). Scène 5 : carte quiz (3 réponses) sur la phrase, la voix la lit puis donne la réponse. Dernière scène : CTA.",
       "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
       "duree_min": 35,
-      "sans_relance": true
+      "sans_relance": true,
+      "quiz": true
     },
     {
       "id": "mise_en_situation",
@@ -411,10 +423,19 @@
         "civique_plateau"
       ],
       "cartes_civique": true,
-      "etiquette": "RAPPEL {n}/{total}",
-      "structure": "Révision espacée : le reel reprend les sujets des dernières vidéos de la chaîne (les FAITS en viennent), pour ancrer ce qui a été appris. Scène 1 (accroche, sans carte) : « Tu te souviens ? 3 questions sur nos dernières révisions. ». Scènes 2, 3 et 4 : une question par sujet révisé, chacune sur un fait différent (carte quiz, duel ou qcm, varie-les) ; la voix lit la question et les réponses, dit « Réfléchis. » puis donne la bonne réponse en une phrase. Avant-dernière scène : la phrase à retenir (carte impact). Dernière scène : CTA qui demande le score en commentaire.",
+      "etiquette": {
+        "quiz": "RAPPEL {n}/{total}",
+        "qcm": "RAPPEL {n}/{total}",
+        "duel": "RAPPEL {n}/{total}",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
+      "structure": "Révision espacée : le reel reprend les sujets des dernières vidéos de la chaîne (les FAITS en viennent), pour ancrer ce qui a été appris. Scène 1 (accroche, sans carte) : « Tu te souviens ? 3 questions sur nos dernières révisions. ». Scènes 2, 3 et 4 : une question par sujet révisé, chacune sur un fait différent, en DEUX scènes : (a) une carte quiz, duel ou qcm (varie-les) dont la voix lit la question et les réponses puis dit « Réfléchis. » ; (b) une carte texte dont la voix donne la bonne réponse en une phrase. Avant-dernière scène : la phrase à retenir (carte impact). Dernière scène : CTA qui demande le score en commentaire.",
       "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse",
-      "duree_min": 35
+      "duree_min": 35,
+      "quiz": true,
+      "sans_relance": true,
+      "progression": "questions"
     },
     {
       "id": "examen_mode_emploi",

@@ -1511,14 +1511,24 @@ def question_problems(scenes: list[dict]) -> list[str]:
     d'apres, sur une liste qui cochait les trois dates, alors que 1879 etait deja en vert.
     """
     problems = []
+    # Le nombre de questions annonce (« 3 questions éclair ») est le nombre de cartes question du reel (run 96).
+    annonce = re.search(r"\b(\d|un|une|deux|trois|quatre|cinq|six)\s+questions?\b", catalog._norm(scenes[0]["texte"])) if scenes else None
+    if annonce:
+        n_annonce = NUM_MOTS.get(annonce.group(1), int(annonce.group(1)) if annonce.group(1).isdigit() else 0)
+        n_cartes = sum(1 for sc in scenes if (sc.get("carte") or {}).get("type") in CARTES_QUESTION)
+        if n_annonce > 1 and n_cartes != n_annonce:
+            problems.append(f"scène 1 annonce {n_annonce} questions mais le reel a {n_cartes} carte(s) question (quiz, qcm ou duel) : "
+                            f"écris exactement {n_annonce} cartes question, chacune suivie de sa réponse, ou change le nombre annoncé")
     for i, sc in enumerate(scenes):
         carte = sc.get("carte") or {}
         if carte.get("type") not in CARTES_QUESTION:
             continue
         voix = catalog._norm(sc["texte"])
         choix = [carte["gauche"], carte["droite"]] if carte["type"] == "duel" else carte.get("reponses") or []
-        lus = sum(1 for c in choix if any(r in voix for r in {m[:5] for m in _mots_cles(c)} or {catalog._norm(c)}))
-        if "reflechis" not in voix or lus < len(choix) - 1:
+        # Une reponse purement numerique (« 18 ») peut etre dite en lettres (« dix-huit ») : elle n'est pas exigee mot a mot.
+        texte_choix = [c for c in choix if re.search(r"[A-Za-zÀ-ÿ]", str(c))]
+        lus = sum(1 for c in texte_choix if any(r in voix for r in {m[:5] for m in _mots_cles(c)} or {catalog._norm(c)}))
+        if "reflechis" not in voix or lus < len(texte_choix) - 1:
             problems.append(f"scène {i + 1} : la carte {carte['type']} révèle la réponse à la fin de SA scène : sa voix dit la question, "
                             f"lit les {len(choix)} réponses, puis « Réfléchis. » (tout dans cette scène, jamais dans la suivante)")
         suite = scenes[i + 1] if i + 1 < len(scenes) else None
@@ -1597,7 +1607,7 @@ def carte_texte(card: dict) -> str:
     """Tout le texte lisible d'une carte (titre, points, avant / apres, etapes, question...)."""
     morceaux: list[str] = []
     for cle, val in card.items():
-        if cle in ("type", "style", "effet", "surtitre", "bonne", "icone", "marque", "intrus", "etiquette", "verdict", "rang") or (cle == "mot" and card.get("type") != "definition"):
+        if cle in ("type", "style", "effet", "surtitre", "bonne", "icone", "marque", "intrus", "etiquette", "verdict", "rang", "progression") or (cle == "mot" and card.get("type") != "definition"):
             continue
         if isinstance(val, list):
             morceaux += [(f"{v['date']} {v.get('label', '')}" if v.get("date") else f"{v['a']} {v.get('b', '')}" if "a" in v
@@ -2236,9 +2246,18 @@ def etiqueter_cartes(scenes: list[dict], fmt: dict) -> None:
     Format a "etiquette" (chaine examen_civique) : l'onglet / le bandeau des planches educatives dit ce qu'est la carte
     (« RÉVISION 1/3 », « VRAI OU FAUX ? ») au lieu de « LEÇON n/N ». Format a "verdicts" : la scene dont la voix
     commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX (run 82 : la reponse n'etait jamais affichee).
+    Format a "progression": "questions" : le numero et les hexagones de progression comptent les QUESTIONS (cartes quiz,
+    qcm, duel), pas les cartes : la reponse d'une question garde le rang de sa question (« QUESTION 2/3 » puis « RÉPONSE »
+    sur la meme progression). Run 96 : 3 questions, « QUESTION 1/5 » et cinq hexagones (6 cartes, question et reponse comptees).
     """
     if not fmt.get("etiquette"):
         return
+    if fmt.get("progression") == "questions":
+        questions = [k for k, sc in enumerate(scenes) if (sc.get("carte") or {}).get("type") in CARTES_QUESTION]
+        for k, sc in enumerate(scenes):
+            rang = sum(1 for q in questions if q <= k)
+            if sc.get("carte") and rang:
+                sc["carte"]["progression"] = [rang, len(questions)]
     precedente = None
     for sc in scenes:
         carte = sc.get("carte")
