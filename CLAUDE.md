@@ -81,6 +81,11 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
     seulement (`ambiances` du format dans `formats.json`) ;
   - rien ne cache la scène : les bulles passent au-dessus des têtes, les gros plans (inserts) sous la
     zone des bulles, le nuage de pensée du côté libre ; aucun son au changement de scène.
+  - chaque mouvement de personnage doit se comprendre sans le son et paraître humain : avant de publier, le vérifier
+    sur une planche d'images successives de l'action (pose de départ → anticipation → action → impact → résultat)
+    et corriger tant qu'un spectateur ne comprendrait pas ce que fait le personnage. Jamais de main ou de bras qui
+    apparaît d'un coup (il sort de quelque part), un objet important assez grand pour se lire (sinon un insert), le
+    geste motivé par l'état psychologique du moment, la tête fixe quand le personnage parle sans marcher.
 - Reels à cartes et à captures (hors dessin animé et jeu) : un teaser est permis **s'il est tenu** (ce qui est annoncé est livré plus
   loin, le rang annoncé existe) ; le reel doit être vrai et cohérent avec ce qu'on voit (titre / légende fidèles, voix collée à
   l'écran, rien d'inventé sur OpusCV, chiffres d'exemple signalés) : `promesses_problems` et `relecture_coherence` dans

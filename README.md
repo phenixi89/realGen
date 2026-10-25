@@ -250,6 +250,13 @@ récentes : sur des captures plus anciennes, relance avec `--from-step video`.
 
 ### Dessin animé : scènes, fonds et objets (`scene`, `assets/anim/dessin/`)
 
+**Vérification des mouvements (règle permanente)** : toute action d'un personnage est contrôlée, avant publication,
+sur une planche d'images successives (pose de départ, anticipation, action, impact, résultat). L'action doit se
+comprendre sans le son et paraître humaine : un bras ou une main ne surgit jamais de nulle part, un objet décisif est
+assez grand pour se lire (sinon un insert plein écran), le geste découle de l'état psychologique du personnage, et la
+tête reste fixe quand il parle sans marcher. Tant qu'un spectateur ne comprendrait pas ce que fait le personnage, on
+corrige.
+
 Moteur de dessin animé **pensé par objet, pas par scène** : tout ce qui apparaît est un *objet*
 (personnage, animal, objet, élément de décor, fond), et une **scène = un fond + des objets placés + des
 actions**. Plusieurs scènes s'enchaînent dans un même rendu (fondu, puis le nouveau décor se dessine,
