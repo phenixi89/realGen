@@ -131,7 +131,7 @@ def _gabarit_civique(card: dict, n: int, total: int) -> tuple[str, dict] | None:
     g = lambda k: str(card.get(k) or "").strip()
     if card.get("progression"):   # format a progression par questions (etiqueter_cartes) : « QUESTION 2/3 », 3 hexagones
         n, total = card["progression"]
-    base = {"n": min(n, 6), "total": min(max(total, n), 6), **{k: str(card[k]) for k in ("etiquette", "verdict") if card.get(k)}}
+    base = {"n": min(n, 6), "total": min(max(total, n), 6), **{k: str(card[k]) for k in ("etiquette", "verdict", "entete") if card.get(k)}}
     kind = card.get("type", "texte")
     if kind == "texte":
         phrase = g("texte")
@@ -766,7 +766,8 @@ def pick_format(history: list[dict], rng: random.Random, registre: str | None = 
     sans_captures (--capture-mode aucune) : formats compatibles seulement
     (sans_captures_ok), une demo du produit sans image du produit ne dit rien.
     """
-    pool = [f for f in formats() if registre is None or registre in registres_of(f)] or formats()
+    actifs = [f for f in formats() if f.get("actif", True)] or formats()   # "actif": false = en sommeil (--format seulement)
+    pool = [f for f in actifs if registre is None or registre in registres_of(f)] or actifs
     if sans_captures:
         pool = [f for f in pool if sans_captures_ok(f)] or [f for f in formats() if sans_captures_ok(f)]
     else:  # dessin anime : plans dessines, aucune capture -> --capture-mode aucune seulement
@@ -782,7 +783,10 @@ def pick_format(history: list[dict], rng: random.Random, registre: str | None = 
         # (poids double) : un format serieux "joue en humour" fait nettement moins sourire.
         candidates = [{**f, "poids": float(f.get("poids", 1)) * (2 if registres_of(f) == ["humour"] else 1)}
                       for f in candidates]
-    return get_format(weighted_pick(candidates, _recent(history, "format", config()["historique_formats"]), rng)["id"])
+    # Format « phare » (rendez-vous de la chaine) : jamais ecarte parce qu'il vient de passer, son poids decide seul.
+    phares = {f["id"] for f in candidates if f.get("phare")}
+    avoid = [i for i in _recent(history, "format", config()["historique_formats"]) if i not in phares]
+    return get_format(weighted_pick(candidates, avoid, rng)["id"])
 
 
 def sans_captures_ok(fmt: dict) -> bool:
@@ -796,10 +800,14 @@ def hook_ok_dessin(h: dict) -> bool:
 
 
 def pick_hook(history: list[dict], rng: random.Random, registre: str | None = None, dessin: bool = False,
-              tags: list[str] | None = None) -> dict:
-    """Accroche tiree (registre, dessin anime, tags du sujet : une accroche a "tags" exige un tag commun avec le sujet)."""
+              tags: list[str] | None = None, format_id: str | None = None) -> dict:
+    """Accroche tiree (registre, dessin anime, tags du sujet : une accroche a "tags" exige un tag commun avec le sujet).
+    Une accroche a "formats" est reservee a ces formats, et un format qui en a de reservees ne prend qu'elles."""
+    propres = [h for h in hooks() if format_id and format_id in (h.get("formats") or [])]
     def ok_tags(h):
-        return tags is None or not h.get("tags") or bool(set(h["tags"]) & set(tags))
+        if propres:
+            return h in propres
+        return not h.get("formats") and (tags is None or not h.get("tags") or bool(set(h["tags"]) & set(tags)))
     pool = [h for h in hooks() if (registre is None or registre in registres_of(h)) and (not dessin or hook_ok_dessin(h)) and ok_tags(h)] \
         or [h for h in hooks() if (not dessin or hook_ok_dessin(h)) and ok_tags(h)]
     return weighted_pick(pool, _recent(history, "hook", config()["historique_hooks"]), rng)
@@ -815,11 +823,12 @@ def pick_theme(history: list[dict], rng: random.Random, registre: str | None = N
     return weighted_pick(pool, _recent(history, "theme", config()["historique_themes"]), rng)
 
 
-def pick_cta(categorie: str, rng: random.Random) -> tuple[str, dict]:
-    """(phrase de CTA dite en fin de reel, textes du CTA anime) -- variantes de config.json."""
-    cfg = config()
-    phrases = cfg.get(f"ctas_{categorie}") or cfg.get("ctas_produit") or ["Lien en bio."]
-    anims = cfg.get("cta_anim") or [{}]
+def pick_cta(categorie: str, rng: random.Random, fmt: dict | None = None) -> tuple[str, dict]:
+    """(phrase de CTA dite en fin de reel, textes du CTA anime) -- variantes de config.json, ou celles du format
+    ("ctas", "cta_anim" dans formats.json : « ton score en commentaire » n'a de sens qu'apres des questions)."""
+    cfg, fmt = config(), fmt or {}
+    phrases = fmt.get("ctas") or cfg.get(f"ctas_{categorie}") or cfg.get("ctas_produit") or ["Lien en bio."]
+    anims = fmt.get("cta_anim") or cfg.get("cta_anim") or [{}]
     return rng.choice(phrases), dict(rng.choice(anims))
 
 
@@ -938,6 +947,32 @@ def sujet_rappel(history: list[dict], n: int = RAPPEL_SUJETS) -> dict | None:
     return {"id": sid, "categorie": "conseil", "tags": ["rappel"], "famille": "rappel",
             "texte": "révision de " + ", ".join(s["texte"] for s in choisis),
             "faits": [f for s in choisis for f in s["faits"][:2]], "source": " ; ".join(sources), "rappel_de": vus}
+
+
+def sujet_melange(history: list[dict], rng: random.Random, fmt: dict) -> dict | None:
+    """
+    Format a "melange" (entrainement a l'examen) : un sujet compose de n sujets de familles DIFFERENTES (comme les
+    questions de l'examen, qui couvrent les cinq themes), compatibles avec le format, ni de memoire ni sur l'examen
+    lui-meme ; les sujets vus le moins recemment d'abord (un sujet d'un melange compte comme vu). Faits de chacun (3 au
+    plus), sources reunies. None s'il n'y a pas assez de familles.
+    """
+    n = int(fmt.get("melange") or 0)
+    vus = [i for h in history for i in str(h.get("sujet") or "").split(":", 1)[-1].split("+") if i]
+    def age(s):
+        return len(vus) - max(k for k, v in enumerate(vus) if v == s["id"]) if s["id"] in vus else 10 ** 6
+    pool = [s for s in compatible_sujets(fmt) if s.get("faits") and not {"memoire", "examen"} & set(s["tags"])]
+    familles = {}
+    for s in sorted(pool, key=lambda s: (-age(s), rng.random())):
+        familles.setdefault(s.get("famille", s["id"]), s)
+    if n < 2 or len(familles) < n:
+        return None
+    choisis = sorted(familles.values(), key=lambda s: (-age(s), rng.random()))[:n]
+    rng.shuffle(choisis)
+    sources = list(dict.fromkeys(s["source"] for s in choisis))
+    return {"id": "melange:" + "+".join(s["id"] for s in choisis), "categorie": fmt["categorie"], "tags": ["melange"],
+            "famille": "melange", "texte": "entraînement : " + " ; ".join(s["texte"] for s in choisis),
+            "faits": [f for s in choisis for f in s["faits"][:3]], "source": " ; ".join(sources),
+            "melange_de": [s["id"] for s in choisis]}
 
 
 def recent_accroches(history: list[dict]) -> list[str]:
@@ -1062,10 +1097,21 @@ def validate_catalog() -> list[str]:
     for s in sujets():
         if not s.get("famille"):
             errors.append(f"sujet {s['id']} : famille manquante")
+    format_ids = {f["id"] for f in formats()}
+    for h in hooks():   # accroche reservee a des formats ("formats" dans hooks.json)
+        for fid in h.get("formats") or []:
+            if fid not in format_ids:
+                errors.append(f"accroche {h['id']} : format '{fid}' inconnu")
+    if formats() and not any(f.get("actif", True) for f in formats()):
+        errors.append("formats.json : tous les formats sont en sommeil (\"actif\": false)")
     for f in formats():
         for key in ("nom", "categorie", "structure", "sujets", "cartes"):
             if key not in f:
                 errors.append(f"format {f['id']} : champ '{key}' manquant")
+        if f.get("carte_accroche") and f.get("cartes") == "aucune":
+            errors.append(f"format {f['id']} : carte_accroche demande des cartes")
+        if f.get("melange") and (not isinstance(f["melange"], int) or f["melange"] < 2):
+            errors.append(f"format {f['id']} : melange = nombre de sujets melanges (2 ou plus)")
         if f.get("cartes") not in CARD_MODES:
             errors.append(f"format {f['id']} : cartes doit valoir {CARD_MODES}")
         if not compatible_sujets(f):

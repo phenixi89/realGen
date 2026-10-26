@@ -215,6 +215,10 @@ def choose_sujet(client, fmt: dict, history: list[dict], rng: random.Random) -> 
         rappel = catalog.sujet_rappel(history)
         if rappel:
             return rappel
+    if fmt.get("melange"):   # entrainement a l'examen : un sujet par question, familles differentes (catalog.sujet_melange)
+        melange = catalog.sujet_melange(history, rng, fmt)
+        if melange:
+            return melange
     avoid = catalog.recent_sujets(history)
     candidates = catalog.compatible_sujets(fmt)
     fresh = [s for s in candidates if s["id"] not in avoid] or candidates
@@ -284,6 +288,7 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         elif forced_sujet:  # sujet impose : format tire parmi ceux qui l'acceptent
             ok = [f for f in catalog.formats() if forced_sujet in catalog.compatible_sujets(f)
                   and (not sans_captures or catalog.sans_captures_ok(f)) and (sans_captures or not catalog.sans_capture_seul(f))]
+            ok = [f for f in ok if f.get("actif", True)] or ok   # formats en sommeil : seulement s'il n'y a qu'eux
             pool = [f for f in ok if registre in catalog.registres_of(f)] or ok
             fmt = catalog.weighted_pick(pool, [], rng) if pool else catalog.pick_format(working, rng, registre, sans_captures)
         else:
@@ -295,13 +300,14 @@ def plan_reels(client, n: int, history: list[dict], rng: random.Random, format_i
         else:
             sujet = choose_sujet(client, fmt, working, rng)
         hid, tid = ov.get("hook") or hook_id, ov.get("theme") or theme_id
-        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin") or fmt.get("jeu")), sujet.get("tags"))
+        hook = catalog.get_hook(hid) if hid else catalog.pick_hook(working, rng, registre, bool(fmt.get("dessin") or fmt.get("jeu")),
+                                                                   sujet.get("tags"), fmt["id"])
         if tid and fmt.get("themes") and tid not in fmt["themes"]:   # thème imposé incompatible (planches propres du format)
             print(f"ATTENTION: thème « {tid} » ignoré, le format {fmt['id']} n'utilise que {fmt['themes']}")
             tid = None
         theme = catalog.get_theme(tid) if tid else catalog.pick_theme(working, rng, registre, fmt)
         voice = catalog.get_voice(ov["voix"]) if ov.get("voix") else catalog.pick_voice(working, rng, fmt)
-        cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng)
+        cta, cta_anim = catalog.pick_cta(fmt["categorie"], rng, fmt)
         ambiance = ov.get("ambiance") or catalog.pick_ambiance(theme, working, rng, fmt)
         plan = {"format": fmt, "sujet": sujet, "hook": hook, "theme": theme, "voix": voice, "registre": registre,
                 "cta": cta, "cta_anim": cta_anim, "ambiance": ambiance,
@@ -585,7 +591,7 @@ def build_prompt_jeu(plan: dict, duration: int, feedback: str | None, recent_hoo
     humour = plan.get("registre") == "humour"
     target, lo_w, hi_w = word_budget(duration, catalog.tone_for(fmt, plan.get("registre")), True)
     lo_s, hi_s = dessin_bounds(duration)
-    cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
+    cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random(), fmt)[0]
     cta_rule = (f"dernière scène = EXACTEMENT cette phrase, recopiée mot pour mot (elle est déjà enregistrée) : "
                 f"{{\"cta\": true, \"qui\": \"lea\", \"texte\": \"{cta}\"}}"
                 if cta_enregistre() else f"dernière scène = CTA court : {{\"cta\": true, \"qui\": \"lea\", \"texte\": \"...\"}}")
@@ -848,7 +854,7 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
     catalog_features = "\n".join(f'- "{fid}" : {f.description}' for fid, f in available_features().items())
     target, lo_w, hi_w = word_budget(duration, catalog.tone_for(fmt, plan.get("registre")), bool(fmt.get("dessin")))
     lo_s, hi_s = scene_bounds(duration)
-    cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random())[0]
+    cta = plan.get("cta") or catalog.pick_cta(fmt["categorie"], random.Random(), fmt)[0]
     # CTA enregistre (config.json cta_enregistre) : phrase recopiee telle quelle, sa voix est deja enregistree.
     cta_fixe = cta_enregistre()
     cta_rule = (f"dernière scène = EXACTEMENT cette phrase, recopiée mot pour mot (elle est déjà enregistrée) : « {cta} »"
@@ -876,10 +882,16 @@ def build_prompt(plan: dict, duration: int, forced: list[dict] | None, feedback:
     se révèle à la fin ; 1 par reel au plus, jamais une réponse piège inventée sur OpusCV) :
     "carte": {{"type": "quiz", "question": "4 à 9 mots", "reponses": ["...", "...", "..."], "bonne": 1 à 3}}""" if fmt.get("quiz") else ""
     sans_captures = bool(plan.get("sans_captures"))
+    carte_accroche = bool(fmt.get("carte_accroche"))   # le jeu commence a la 1re image : la scene 1 a sa carte
+    scene1_carte = ("La scène 1 A SA CARTE (celle que demande la structure) : elle s'affiche dès la première image, sans titre "
+                    "par-dessus, et c'est elle qui arrête le scroll. Jamais de carte sur la dernière scène (CTA)."
+                    if carte_accroche else
+                    "Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus) ni sur la dernière (CTA).")
     if fmt["cartes"] == "aucune" and not sans_captures:
         cards_rule = "Aucune scène n'a de carte : chaque scène montre uniquement la fonctionnalité."
     else:
-        need = ("CHAQUE scène sauf la première et la dernière" if sans_captures
+        need = ("CHAQUE scène sauf la dernière" if sans_captures and carte_accroche
+                else "CHAQUE scène sauf la première et la dernière" if sans_captures
                 else "la MAJORITÉ des scènes" if fmt["cartes"] == "majoritaires" else "les scènes où c'est utile")
         cards_rule = f"""Pour {need}, ajoute une "carte" : un écran texte animé affiché à la place de la
 capture, qui résume visuellement ce que dit la voix :
@@ -915,7 +927,7 @@ Varie les types de cartes dans un même reel quand le contenu s'y prête.
 Effets d'apparition du titre (cartes texte) : "frappe" (tapé au clavier, idéal pour une citation, une formulation
 de CV ou une phrase d'offre), "suspense" (titre caché puis révélé avec un impact : UNE SEULE fois
 par reel, pour la révélation la plus forte, jamais sur deux cartes), sinon "standard". Varie-les.
-Jamais de carte sur la scène 1 (l'accroche s'affiche déjà en grand par-dessus) ni sur la dernière (CTA).
+{scene1_carte}
 Le texte de la carte ne recopie PAS la voix : il la résume.""" + (EDUCATIF_RULE if fmt.get("educatif") else "") + ("" if sans_captures else """ Une scène avec carte garde un champ "feature"
 (la fonctionnalité la plus proche du sujet, montrée si la carte ne peut pas être affichée).""")
 
@@ -974,10 +986,13 @@ Ton de lecture de la voix : {catalog.tone_for(fmt, "humour")}.
         scene1_rule = ""
         variety_rule = "chaque scène fait avancer l'histoire (pas deux scènes qui disent la même chose) ;"
     elif sans_captures:
+        scene1_ecran = ("Scène 1 : SA CARTE s'affiche dès la première image (aucune accroche affichée par-dessus) : le spectateur "
+                        "joue tout de suite." if carte_accroche else
+                        f"""Scène 1 : pas de carte, mais un champ "illustration" = l'id d'une icône dessinée à la main sous l'accroche,
+en rapport avec le sujet (icônes disponibles : {", ".join(catalog.icons())}).""")
         screen_rule = f"""Le reel est une suite de SCÈNES, SANS AUCUNE IMAGE DE L'APPLICATION : l'écran de chaque scène est
 une carte animée (ci-dessous) pendant que la voix off dit le texte de la scène. Pas de champ "feature".
-Scène 1 : pas de carte, mais un champ "illustration" = l'id d'une icône dessinée à la main sous l'accroche,
-en rapport avec le sujet (icônes disponibles : {", ".join(catalog.icons())}).
+{scene1_ecran}
 Dernière scène : pas de carte (l'appel à l'action animé s'affiche automatiquement).
 Tu peux citer OpusCV à la fin comme l'outil qui aide, sans décrire d'écran que le spectateur ne voit pas.
 """
@@ -1057,6 +1072,10 @@ Appel à l'action (fin) : incite à tester gratuitement l'outil (ex : « Lien en
         hashtags_ex = ch.get("hashtags_exemple") or "#apprendre, #savoir"
         demo_fields = demo_json = ""
         niche = niche_rule(plan)
+    scene1_contrainte = ("scène 1 = l'accroche ET la carte de la structure (sa voix dit ce que la structure demande)"
+                         if carte_accroche else "scène 1 = l'accroche (12 mots max)")
+    accroche_ecran_role = ("le titre de la couverture et de la vidéo (YouTube), qui n'est PAS affiché pendant le reel" if carte_accroche
+                           else "le texte de la couverture / hook visuel, affiché en GRAND dès la première image")
     prompt = f"""{intro}
 Tu écris le SCÉNARIO d'un reel vertical de {duration} secondes, en français.
 
@@ -1077,7 +1096,7 @@ SUJET : {plan['sujet']['texte']}
 Contraintes :
 - entre {lo_s} et {hi_s} scènes ;
 - texte total entre {lo_w} et {hi_w} mots (environ {target}) : c'est ce qui fait durer le reel {duration} s ;
-- scène 1 = l'accroche (12 mots max){scene1_rule} ; {cta_rule} ;
+- {scene1_contrainte}{scene1_rule} ; {cta_rule} ;
 - {"des répliques courtes et vivantes, comme un vrai dialogue" if dessin else "1 à 2 phrases par scène"}, ton oral et naturel, tutoiement, pas publicitaire{"" if not humour else ", drôle"} ;
 - {variety_rule}
 - français impeccable AVEC TOUS LES ACCENTS (é, è, à, ç, ê...) et la ponctuation : le texte est
@@ -1096,7 +1115,7 @@ Contraintes :
   naturellement si elle recommence.
 
 Fournis aussi :
-- "accroche_ecran" : le texte de la couverture / hook visuel, affiché en GRAND dès la première image
+- "accroche_ecran" : {accroche_ecran_role}
   ({ACCROCHE_MAX_WORDS} mots max), complémentaire de la voix (pas forcément identique), avec un chiffre si
   possible, qui donne envie de rester ;
 - "mots_cles" : 3 à 6 mots-clés du texte dit (mots isolés, tels qu'écrits dans les textes des scènes),
@@ -1131,6 +1150,8 @@ Recopie à l'identique les textes imposés ; écris uniquement les textes manqua
 
     scene_json = ('{"fond": "...", "titre": "...", "objets": [...], "actions": [...]}, ..., {"cta": true, "qui": "...", "texte": "..."}]'
                   if dessin else
+                  '{"texte": "...", "carte": {...}}, {"texte": "...", "carte": {...}}, ..., {"texte": "..."}]'
+                  if sans_captures and carte_accroche else
                   '{"illustration": "<id d\'icône>", "texte": "..."}, {"texte": "...", "carte": {...}}, ..., {"texte": "..."}]'
                   if sans_captures else
                   '{"feature": "<id>", "texte": "...", "carte": {...} (optionnel), "preuve": true (optionnel),\n'
@@ -1340,11 +1361,12 @@ def banned_phrases(text: str) -> list[str]:
 def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: str = "aucune",
              recent_hooks: list[str] | None = None, proof: bool = False,
              tone: str = "", sans_captures: bool = False, dessin: bool = False,
-             jeu: bool = False, educatif: bool = False) -> tuple[list[dict], list[str]]:
+             jeu: bool = False, educatif: bool = False, carte_accroche: bool = False) -> tuple[list[dict], list[str]]:
     """
     Nettoie le scenario et liste ce qui ne respecte pas les contraintes (pour relancer l'IA).
     sans_captures : pas de feature (""), une carte sur chaque scene sauf la 1re (icone
     "illustration") et la derniere (CTA anime), ni preuve ni annotation.
+    carte_accroche (format a "carte_accroche") : la 1re scene a aussi sa carte, affichee des la 1re image.
     dessin : scenes dessinees (dessin_scenes), le texte = les repliques des personnages.
     """
     if jeu:
@@ -1372,15 +1394,15 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
                 problems.append(f'feature inconnue "{raw.get("feature")}" (remplacée par apercu_cv)')
             fid = "apercu_cv"
         scene = {"feature": fid, "texte": texte}
-        # Scene 1 = accroche : jamais de carte, l'accroche_ecran s'y affiche deja en grand.
-        card = clean_card(raw.get("carte")) if (card_mode != "aucune" or sans_captures) and scenes else None
+        # Scene 1 = accroche : jamais de carte, l'accroche_ecran s'y affiche deja en grand (sauf carte_accroche).
+        card = clean_card(raw.get("carte")) if (card_mode != "aucune" or sans_captures) and (scenes or carte_accroche) else None
         if card:
             scene["carte"] = card
         # Animations demandees par le scenario (run_pipeline.py --anims) :
         # conservees telles quelles, interpretees au montage.
         scene.update({k: raw[k] for k in ANIM_KEYS if raw.get(k)})
         if sans_captures:
-            if not scenes:
+            if not scenes and "carte" not in scene:
                 icone = str(raw.get("illustration") or "").strip().lower()
                 scene["illustration"] = icone if icone in catalog.icons() else "cv"
             scenes.append(scene)
@@ -1407,9 +1429,9 @@ def validate(data: dict, duration: int, forced: list[dict] | None, card_mode: st
 
     if sans_captures and scenes:
         scenes[-1].pop("carte", None)  # CTA anime
-        bare = [i for i in range(1, len(scenes) - 1) if "carte" not in scenes[i]]
+        bare = [i for i in range(0 if carte_accroche else 1, len(scenes) - 1) if "carte" not in scenes[i]]
         if bare:
-            problems.append(f"sans capture de l'application, chaque scène sauf la 1re et la dernière a une carte "
+            problems.append(f"sans capture de l'application, chaque scène sauf {'' if carte_accroche else 'la 1re et '}la dernière a une carte "
                             f"(manquante aux scènes {', '.join(str(i + 1) for i in bare)})")
     # Carte impact = LA phrase a retenir : une seule par reel (les suivantes -> cartes texte).
     impacts = [s for s in scenes if s.get("carte", {}).get("type") == "impact"]
@@ -1607,7 +1629,7 @@ def carte_texte(card: dict) -> str:
     """Tout le texte lisible d'une carte (titre, points, avant / apres, etapes, question...)."""
     morceaux: list[str] = []
     for cle, val in card.items():
-        if cle in ("type", "style", "effet", "surtitre", "bonne", "icone", "marque", "intrus", "etiquette", "verdict", "rang", "progression") or (cle == "mot" and card.get("type") != "definition"):
+        if cle in ("type", "style", "effet", "surtitre", "bonne", "icone", "marque", "intrus", "etiquette", "verdict", "rang", "progression", "entete") or (cle == "mot" and card.get("type") != "definition"):
             continue
         if isinstance(val, list):
             morceaux += [(f"{v['date']} {v.get('label', '')}" if v.get("date") else f"{v['a']} {v.get('b', '')}" if "a" in v
@@ -2165,7 +2187,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
     # demandee reste celle du scenario (duree_cible_s : la reprise du pipeline ne le croit pas perime).
     duration = max(duration, int(fmt.get("duree_min") or 0))
     if not plan.get("cta"):  # meme phrase pour le prompt et pour fixer_cta
-        plan["cta"] = catalog.pick_cta(fmt["categorie"], random.Random())[0]
+        plan["cta"] = catalog.pick_cta(fmt["categorie"], random.Random(), fmt)[0]
     feedback = None
     best: list[dict] = []
     best_data: dict = {}
@@ -2180,7 +2202,7 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
         scenes, problems = validate(data, duration, forced, fmt["cartes"], recent_hooks,
                                     wants_proof(fmt) and not sans_captures and not fmt.get("dessin"),
                                     catalog.tone_for(fmt, plan.get("registre")), sans_captures, bool(fmt.get("dessin")),
-                                    bool(fmt.get("jeu")), bool(fmt.get("educatif")))
+                                    bool(fmt.get("jeu")), bool(fmt.get("educatif")), bool(fmt.get("carte_accroche")))
         if scenes and faceless():
             problems += faits_problems(scenes, data, plan["sujet"])
         if scenes and not problems and (fmt.get("dessin") or fmt.get("jeu")):
@@ -2199,9 +2221,13 @@ def generate_scenario(client, plan: dict, duration: int, recent_hooks: list[str]
     if not best:
         raise RuntimeError(f"Scénario inexploitable après {MAX_ATTEMPTS} tentatives (sujet : {plan['sujet']['texte']})")
     if plan.get("sans_captures") and not catalog.sans_capture_seul(fmt):
-        for scene in best[1:-1]:
+        for scene in best[0 if fmt.get("carte_accroche") else 1:-1]:
             scene.setdefault("carte", fallback_card(scene["texte"]))
     etiqueter_cartes(best, fmt)
+    if fmt.get("entete"):   # bandeau de la serie au-dessus de chaque carte (« EXAMEN CIVIQUE · ENTRAÎNEMENT N°12 »)
+        for scene in best:
+            if scene.get("carte"):
+                scene["carte"]["entete"] = fmt["entete"].replace("{episode}", str(plan.get("episode") or 1))
     if cta_enregistre() and not forced:
         fixer_cta(best, plan["cta"])
     dessin_fields = {}
@@ -2327,7 +2353,8 @@ def plan_fields(plan: dict) -> dict:
             **({"trame": plan["trame"]["id"]} if plan.get("trame") else {}),
             **({"source": plan["sujet"]["source"]} if plan["sujet"].get("source") else {}),
             **({"serie_titre": (catalog.dessins().get("serie") or {}).get("titre")}
-               if plan["format"].get("dessin") and plan.get("episode") else {}),
+               if plan["format"].get("dessin") and plan.get("episode") else
+               {"serie_titre": plan["format"]["serie_titre"]} if plan["format"].get("serie_titre") and plan.get("episode") else {}),
             **({"sans_captures": True} if plan.get("sans_captures") else {}),
             **({"titre_seul": True} if catalog.sans_capture_seul(plan["format"]) else {}),
             **({"habillage": plan["format"]["habillage"], "habillage_params": plan["format"].get("habillage_params", {})}

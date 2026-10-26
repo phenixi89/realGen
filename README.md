@@ -599,7 +599,7 @@ balaie, bande tricolore en bas, onglet en forme d'hexagone étiré et progressio
 | `citation` | `citation` | une phrase d'un texte officiel **mot pour mot** : plaque crème « MOT POUR MOT », guillemets dorés et grand « en filigrane, lettres à empattement (Playfair Display), la source qui se signe sous un trait tricolore, puis un sceau hexagonal doré tamponné |
 | `chapitre` | `chapitre` | un **chapitre de récit** : bandes de cinéma, lumière de projecteur qui vacille, le jour et le mois au-dessus, l'année qui défile comme un compteur puis s'arrête (tic-tac, impact), la phrase mot à mot, l'icône (ou le chiffre romain du chapitre) dessinée dans un hexagone |
 | `situation` | `situation` | une **mise en situation** : un viseur de caméra qui se trace avec un point rouge qui clignote, une onde d'alerte rouge qui pulse autour de l'icône, la situation mot à mot sur une plaque, puis « Que fais-tu ? » qui rebondit |
-| scène 1 | `accroche` | l'icône dessinée (trait néon) dans l'hexagone, sous l'accroche |
+| scène 1 | `accroche` | l'icône dessinée (trait néon) dans l'hexagone, sous l'accroche ; format à `carte_accroche` : la carte de la scène 1 à la place, avec `immediat=1` (pas de fondu d'entrée, la question est là dès la 1re image, les réponses arrivent en moins d'une seconde) |
 | dernière scène | `fin` | le logo se trace, « OBJECTIF / CIVIQUE » (dégradé tricolore), titre, sous-titre, bouton « S'ABONNER » |
 
 **Animations communes** : hexagones qui flottent doucement derrière le contenu, **compte à rebours 3-2-1** dans un hexagone
@@ -607,11 +607,15 @@ qui se vide (quiz, duel, intrus), **confettis hexagonaux** (tricolores et or) à
 coup de projecteur qui balaie la scène. **Transitions** du thème entre les plans : ouverture en cercle, radial, glissements
 doux, pixels, compression (`circleopen`, `radial`, `smoothleft`, `smoothup`, `pixelize`, `squeezeh`).
 
+**Bandeau de série** (`entete`, format à `"entete"`) : une ligne dorée sous l'onglet de chaque carte, précédée d'un trait tricolore
+(« EXAMEN CIVIQUE · ENTRAÎNEMENT N°12 ») ; sa taille baisse pour tenir sur une ligne. Le rendez-vous se reconnaît dès la 1re image.
+
 **Mots longs** : les tuiles hexagonales (`quiz`, `duel`, `intrus`) réduisent leur taille de texte jusqu'à ce que leur mot le plus long tienne dans 80 % de leur largeur (`ajusterTuiles`, `civique.html` ; run 90 : « Gouvernement » touchait les deux bords).
 
 **Zone libre** : les sous-titres incrustés occupent le bas de l'écran (à partir de y = 1574 sur 1920) : toutes les planches du plateau gardent leur contenu au-dessus de y ≈ 1500 (note, hexagone, définition, frise, indices, appel à l'action).
 
-**Temps de réflexion** (`pause_reflexion_s` du `config.json` de la chaîne : 3 s pour Objectif Civique, absent ailleurs) : après une
+**Temps de réflexion** (`pause_reflexion_s` du `config.json` de la chaîne : 2 s pour Objectif Civique depuis la rénovation, 3 s
+avant, absent ailleurs) : après une
 scène qui pose une question (carte `quiz`, `qcm`, `duel`, `intrus`, `indices`, `relier`, ou scène suivie d'un verdict VRAI / FAUX),
 `4_generate_subtitles.py` insère un silence dans la voix (une seule prise TTS, coupée à l'instant le plus calme du blanc entre le
 dernier mot de la scène et le suivant, mesuré par fenêtres de 20 ms : jamais dans un mot, `instant_le_plus_calme`) et décale les sous-titres ;
@@ -749,8 +753,38 @@ affiché qui n'est pas dans les faits fait recommencer l'IA (`faits_problems`), 
 | Chaîne | Nom | Formats | Particularités |
 |---|---|---|---|
 | `opuscv` | OpusCV | les 37 capsules (voir « Ligne éditoriale ») | produit montré, chaîne par défaut, rien ne change pour elle |
-| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | 17 formats, thème propre `civique_plateau` (voir « Plateau civique » et « Objectif Civique : apprendre par les histoires » ci-dessous) : `question_revision` (quiz 3 réponses), `vrai_ou_faux`, `cours_eclair`, `duel_ab` (« A ou B ? »), `trouve_intrus`, `relie_paires`, `mot_du_jour` (définition, exemple, quiz), `qui_suis_je` (3 indices), `frise_dates` (sujets à tag `dates` seulement), `serie_flash` (3 questions éclair), `histoire_racontee` (« Il était une fois… », récit en chapitres), `citation_expliquee`, `mise_en_situation` (« Que fais-tu ? », QCM à 4 réponses), `ne_confonds_plus`, `rappel_revision` (« Tu te souviens ? », révision espacée), `examen_mode_emploi`, `dessin_anime` (série « Sami prépare son examen ») | vérifiée : 80 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr, et surtout les fiches officielles de la formation civique, `formation-civique.interieur.gouv.fr`, ministère de l'Intérieur) rangés selon les cinq thèmes officiels de l'examen (familles valeurs, institutions, droits, histoire, géographie, culture, vie quotidienne) + le sujet `examen_modalites` (40 questions dont 28 de connaissance et 12 mises en situation, 4 réponses dont une bonne, 45 minutes, 32 bonnes réponses pour réussir, recopiés de la page officielle) ; français simple (A2-B1), débit lent, un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les règles de l'examen ne se citent que depuis le sujet `examen_modalites` |
+| `examen_civique` | Objectif Civique (TikTok `@objectif.civique`, logo « L'Hexagone validé » : `assets/marques/examen_civique/`) | 18 formats, thème propre `civique_plateau` (voir « Plateau civique », « Objectif Civique : la rénovation » et « Objectif Civique : apprendre par les histoires » ci-dessous). **Tirés automatiquement** : `examen_blanc` (format phare « Réussirais-tu l'examen civique ? »), `mise_en_situation`, `vrai_ou_faux`, `dessin_anime` ; **en sommeil** (`"actif": false`, avec `--format` seulement) : `question_revision` (quiz 3 réponses), `vrai_ou_faux`, `cours_eclair`, `duel_ab` (« A ou B ? »), `trouve_intrus`, `relie_paires`, `mot_du_jour` (définition, exemple, quiz), `qui_suis_je` (3 indices), `frise_dates` (sujets à tag `dates` seulement), `serie_flash` (3 questions éclair), `histoire_racontee` (« Il était une fois… », récit en chapitres), `citation_expliquee`, `mise_en_situation` (« Que fais-tu ? », QCM à 4 réponses), `ne_confonds_plus`, `rappel_revision` (« Tu te souviens ? », révision espacée), `examen_mode_emploi`, `dessin_anime` (série « Sami prépare son examen ») | vérifiée : 80 sujets sourcés (Constitution, DDHC, lois sur Légifrance, service-public.fr, et surtout les fiches officielles de la formation civique, `formation-civique.interieur.gouv.fr`, ministère de l'Intérieur) rangés selon les cinq thèmes officiels de l'examen (familles valeurs, institutions, droits, histoire, géographie, culture, vie quotidienne) + le sujet `examen_modalites` (40 questions dont 28 de connaissance et 12 mises en situation, 4 réponses dont une bonne, 45 minutes, 32 bonnes réponses pour réussir, recopiés de la page officielle) ; français simple (A2-B1), débit naturel (lent avant la rénovation), un fait ne se généralise jamais (règle ajoutée après le run 82 : « seuls les Français peuvent voter » oubliait les citoyens européens aux municipales et européennes, désormais dans les faits du sujet `droit_de_vote`), registre sérieux seul, neutre, « chaîne non officielle » dans les légendes et le bas des planches. Les règles de l'examen ne se citent que depuis le sujet `examen_modalites` |
 | `psycho` | Dans ta tête (provisoire, `@danstatete`) | `dessin_anime` (série « Dans la tête de Théo », 9 trames), `cours_eclair`, `mythe_realite` | 24 notions reconnues (pensée, habitudes, relations, émotions, travail) ; Karim devient Théo, Léa devient Jade, le recruteur devient « le chef » (mêmes dessins et voix) ; jamais de diagnostic ni d'étude inventée ; 40 % humour |
+
+### Objectif Civique : la rénovation (format phare `examen_blanc`)
+
+Constat de l'utilisateur : vues bloquées très bas. Diagnostic sur le reel du run 98 (`relie_paires`, 33 s) : rien à jouer pendant
+les 3 premières secondes (une plume néon et un titre, la question n'arrive qu'à 4,5 s), « en six secondes » sans chrono, 2 paires
+seulement et les traits de réponse tracés pendant la consigne, « Enregistre la vidéo » à 4 s, un fait hors sujet puis une phrase
+de remplissage, 6 s de fin, voix lente au ton de professeur, sujet loin de ce que le public cherche (« examen civique » absent de
+l'écran), et 17 formats : aucun rendez-vous reconnaissable. Ce qui change :
+
+- **Format phare `examen_blanc`** « Réussirais-tu l'examen civique ? » (`"phare": true`, poids 6 : environ 7 reels sur 10) :
+  3 questions QCM à 4 réponses comme à l'examen, chacune d'un sujet d'une famille différente (`"melange": 3`), de la plus facile à
+  la plus piégeuse (« La plus difficile : »). **Pas de scène d'accroche** (`"carte_accroche": true`) : la 1re image montre déjà le
+  bandeau « EXAMEN CIVIQUE · ENTRAÎNEMENT N°X » (`entete`, série numérotée), « QUESTION 1/3 » et la question ; les 4 réponses sont
+  là avant 1 s. La voix pose le défi en 4 à 7 mots (accroches réservées `defi_examen`, `sans_faute`, `pret_examen`), lit la
+  question et les réponses, « Réfléchis. », 2 s de compte à rebours, la réponse s'allume, puis une phrase des faits. Fin en une
+  phrase : « Ton score sur trois ? Écris-le en commentaire, et abonne-toi. » (`ctas` du format). Environ 45 s (`duree_min` 38 :
+  le budget de mots, les silences s'y ajoutent). Le titre (couverture, YouTube) et la légende contiennent « examen civique ».
+  Pourquoi 3 questions et pas 5 : avec les 4 réponses lues à voix haute, une question coûte environ 13 s (5 questions = plus de
+  70 s) ; pour en changer, `melange` et la structure du format.
+- **En complément** : `mise_en_situation` et `vrai_ou_faux` (poids 2, la situation ou la 1re affirmation s'affiche aussi dès la
+  1re image : `carte_accroche`), `dessin_anime` (poids 2). Les 14 autres formats sont **en sommeil** (`"actif": false`) : rien n'est
+  supprimé, `--format` ou la console les lancent toujours.
+- **Rythme** : ton « débit naturel et dynamique » (2,6 mots/s au lieu de 1,9), temps de réflexion 2 s au lieu de 3, plus de relance
+  « enregistre » (`relance_enregistrer: false`), plus de scène de résumé ni de transition dans le format phare.
+- **Règles inchangées** : faits sourcés seulement (contrôle des nombres, citation mot pour mot), jamais « question officielle »,
+  aucune promesse de réussite, « chaîne non officielle » dans les légendes.
+
+```bash
+python scripts/run_pipeline.py --chaine examen_civique --n 1 --format examen_blanc
+```
 
 ### Objectif Civique : apprendre par les histoires
 
@@ -764,7 +798,7 @@ cinq thèmes officiels de l'examen (fiches de `formation-civique.interieur.gouv.
 |---|---|---|
 | `histoire_racontee` « Il était une fois… » | 40 s | « Imagine : … », puis 2 ou 3 **chapitres** (planche `chapitre`, « CHAPITRE 1, 2, 3 »), la voix raconte au présent comme un conteur, chaque chapitre répond à la question laissée par le précédent ; un QCM à 4 réponses sur l'histoire, la réponse, le CTA. Le récit n'ajoute rien aux faits (ni foule, ni météo, ni parole inventée) |
 | `citation_expliquee` « Une phrase, une explication » | 35 s | une phrase célèbre (DDHC, Constitution, Charte de l'environnement, Simone de Beauvoir…) en planche `citation`, **mot pour mot** (contrôlé), le mot difficile en définition, ce que ça change au quotidien, un quiz |
-| `mise_en_situation` « Que fais-tu ? » | 35 s | une situation au « tu » (planche `situation`), un **QCM à 4 réponses comme à l'examen** (qui compte 12 mises en situation sur 40 questions), la bonne réponse et le fait qui la justifie, ce qu'il ne faut pas faire |
+| `mise_en_situation` « Que fais-tu ? » | 35 s | une situation au « tu » (planche `situation`, dès la 1re image), un **QCM à 4 réponses comme à l'examen** (qui compte 12 mises en situation sur 40 questions), la bonne réponse et le fait qui la justifie, ce qu'il ne faut pas faire |
 | `ne_confonds_plus` « Ne confonds plus ! » | 35 s | deux notions qu'on mélange (police / gendarmerie, contravention / délit / crime, Assemblée / Sénat…) reliées à ce qui les distingue, l'astuce pour ne plus confondre, un duel pour vérifier |
 | `rappel_revision` « Tu te souviens ? » | 35 s | **révision espacée** : les faits viennent des 3 derniers sujets publiés par la chaîne (`catalog.sujet_rappel`, format à `"rappel": true` ; sujet ordinaire tant que l'historique n'en a pas 3, ou si ces 3 sujets viennent d'être révisés), une question par sujet, le score en commentaire |
 | `examen_mode_emploi` « L'examen en 30 secondes » | — | les chiffres clés de l'examen (cartes chiffre), les cinq thèmes (liste), « autant de fois que nécessaire », la préparation peut être gratuite — tout vient du sujet `examen_modalites` |
@@ -870,7 +904,9 @@ Sélection automatique (`1_generate_script.py`, via `scripts/catalog.py`) :
 - le **registre** (sérieux / humour) est le plus en retard sur `config.json` `registres` (mesuré sur les
   10 derniers reels) ; il filtre ensuite formats, accroches et thèmes ;
 - le **format** est pris dans la catégorie la plus en retard sur le mix cible (mesuré au sein du registre),
-  en évitant les derniers utilisés ;
+  en évitant les derniers utilisés ; un format à `"actif": false` est **en sommeil** (jamais tiré, toujours possible avec
+  `--format` ou la console) et un format à `"phare": true` n'est jamais écarté parce qu'il vient de passer (son poids en fait le
+  rendez-vous de la chaîne : `examen_blanc` d'Objectif Civique) ;
 - la **famille** du sujet (`famille` dans `sujets.json`) tourne : la moins récemment traitée passe en
   premier, celles des `historique_familles` (5) derniers reels sont écartées — l'ATS ou le chiffrage des
   résultats ne reviennent donc plus reel après reel ;
@@ -904,13 +940,15 @@ gardée) :
   est vrai d'après `PRODUCT_CONTEXT`, et que les chiffres pris en exemple sont présentés comme des exemples.
 (Runs 76 et 79 : « la troisième leçon va te surprendre » pour deux leçons, « reste pour la formule finale » sans formule.)
 
-**Relance « enregistre »** (`relance_enregistrer` dans `config.json`, activée par défaut) : sur les reels
+**Relance « enregistre »** (`relance_enregistrer` dans `config.json`, activée par défaut, désactivée pour Objectif Civique depuis
+la rénovation : au run 98 elle arrivait à 4 s, avant même le jeu) : sur les reels
 `conseil` en registre sérieux (sauf `cours_eclair`, dont la scène 2 est déjà une leçon), la 1re phrase de la scène 2 invite en 5 à 7 mots à enregistrer la vidéo
 (« Enregistre-la, tu vas en avoir besoin. »), puis le contenu enchaîne. L'abonnement n'est demandé qu'à
 la fin : les CTA `ctas_conseil` associent « abonne-toi » et le test gratuit en bio.
 
 Chaque scénario contient aussi l'**accroche affichée** en grand dès la première image (pas de fondu
-depuis le noir), une **légende** et des **hashtags** (écrits dans `output/final/reel_XX.txt`), leurs
+depuis le noir ; format à `carte_accroche` : elle ne sert que de titre à la couverture et à YouTube, la carte de la scène 1
+occupe l'écran), une **légende** et des **hashtags** (écrits dans `output/final/reel_XX.txt`), leurs
 équivalents Instagram et le texte du carrousel (voir « Instagram »), une
 offre d'emploi fictive et un style de CV pour la démo. Les textes sont en français accentué (vérifié :
 un script sans accents est renvoyé à Gemini), car les sous-titres affichent le texte exact.
@@ -981,7 +1019,13 @@ Ajouter par exemple un format : une entrée dans `formats.json` avec `id`, `nom`
 donnée à Gemini ; `{episode}` est remplacé par le numéro d'épisode si `"serie": true`). Option
 `habillage` : surimpression sur tout le reel, ex. `"chrono"` (chronomètre, `habillage_params` :
 `label`, `from`, `down`). Options `registres` (`["serieux"]` par défaut, `["humour"]` ou les deux) et
-`ton_humour` (ton de lecture quand un format des deux registres est joué en humour).
+`ton_humour` (ton de lecture quand un format des deux registres est joué en humour). Options d'Objectif Civique (utilisables
+par toute chaîne, aucun format d'OpusCV ne les a : ses prompts restent identiques) : `actif` / `phare` (ci-dessus),
+`carte_accroche` (la scène 1 a sa carte, affichée dès la première image sans titre par-dessus, `immediat=1` sur la planche),
+`melange` (sujet composé de n sujets de familles différentes, `catalog.sujet_melange`), `entete` (bandeau de la série sur chaque
+carte, `{episode}`), `serie_titre` (surtitre de la couverture), `ctas` / `cta_anim` (fin propre au format, à la place de ceux du
+`config.json` ; `2_generate_voice.py --precompute-cta` les enregistre aussi). Une accroche à `"formats"` (`hooks.json`) est réservée
+à ces formats, et un format qui en a de réservées ne prend qu'elles.
 
 ### Registre humour
 

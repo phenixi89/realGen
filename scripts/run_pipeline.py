@@ -91,7 +91,7 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
       (champs "anim"/"overlay" d'une scene, cf. scenarios/exemple.json) ;
       sinon placement par defaut : CTA anime sur la derniere scene, points a
       corriger sur la scene checklist/optimisation ;
-    - hook : accroche_ecran en grand des la 1re image, pendant la 1re scene ;
+    - hook : accroche_ecran en grand des la 1re image, pendant la 1re scene (sauf si elle a une carte) ;
     - sans_captures (--capture-mode aucune) : toute scene sans carte ni CTA
       devient un plan illustre (assets/anim/illustration.html, icone
       "illustration" de la scene, "cv" par defaut) -- aucune capture a montrer ;
@@ -108,7 +108,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
         video_args += ["--theme", script["theme"]]
         assemble_args += ["--theme", script["theme"]]
 
-    show_hook = bool(hook and script.get("accroche_ecran") and t_scenes)
+    # Scene 1 a carte (format a "carte_accroche" : le jeu commence a la 1re image) : aucun titre par-dessus, il cacherait la question.
+    show_hook = bool(hook and script.get("accroche_ecran") and t_scenes and not (cards and scenes and scenes[0].get("carte")))
     titre_seul = show_hook and bool(script.get("titre_seul") or script.get("dessin") or script.get("jeu"))
     card_scenes = {i for i, s in enumerate(scenes) if s.get("carte")} if cards else set()
     # dur = duree de la scene : cadence de la frappe au clavier (carte.html),
@@ -121,6 +122,8 @@ def plan_montage(script: dict, timeline: dict, kinds: list[str], cards: bool,
     scene_anims = {i: card_spec(scenes[i]["carte"], t_scenes[i]["end"] - t_scenes[i]["start"],
                                 theme, (rang[i], len(lecons)))
                    for i in card_scenes}
+    if 0 in scene_anims and scene_anims[0].startswith("civique?"):   # carte des la 1re image (carte_accroche) : sans fondu d'entree
+        scene_anims[0] += "&immediat=1"
     for i, spec in scene_anims.items():   # temps de reflexion (4_generate_subtitles) : le compte a rebours le remplit
         if t_scenes[i].get("reflexion") and spec.startswith("civique?"):
             scene_anims[i] = spec + f"&reflexion={float(t_scenes[i]['reflexion']):.2f}"

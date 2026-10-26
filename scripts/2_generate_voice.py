@@ -279,7 +279,8 @@ def precompute_cta(client, force: bool = False):
     for cid in catalog.chaines():
         catalog.set_chaine(cid)
         cfg = catalog.config()
-        phrases = list(dict.fromkeys(p for k in ("ctas_conseil", "ctas_produit") for p in cfg.get(k) or []))
+        phrases = list(dict.fromkeys([p for k in ("ctas_conseil", "ctas_produit") for p in cfg.get(k) or []]
+                                     + [p for f in catalog.formats() for p in f.get("ctas") or []]))   # CTA propres a un format
         voices = list(dict.fromkeys([v["id"] for v in catalog.voices()] + [p["voix"] for p in catalog.personnages().values()]))
         paires += [(voice, phrase) for voice in voices for phrase in phrases]
     for voice, phrase in dict.fromkeys(paires):

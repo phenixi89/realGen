@@ -1,5 +1,5 @@
 {
-  "_doc": "Reglages de la chaine examen_civique (fusionnes par-dessus catalog/config.json) : voir catalog/chaines/opuscv/config.json pour le sens de chaque cle. Registre serieux seulement (exactitude d'abord). pause_reflexion_s : silence (s) insere dans la voix apres une scene qui pose une question (carte quiz, qcm, duel, intrus, indices, relier, ou scene suivie d'un verdict VRAI / FAUX) : la carte y fait son compte a rebours 3-2-1 et ne revele la reponse qu'ensuite (4_generate_subtitles.py) ; 0 ou absent = aucun (OpusCV, psycho).",
+  "_doc": "Reglages de la chaine examen_civique (fusionnes par-dessus catalog/config.json) : voir catalog/chaines/opuscv/config.json pour le sens de chaque cle. Registre serieux seulement (exactitude d'abord). pause_reflexion_s : silence (s) insere dans la voix apres une scene qui pose une question (carte quiz, qcm, duel, intrus, indices, relier, ou scene suivie d'un verdict VRAI / FAUX) : la carte y fait son compte a rebours 3-2-1 et ne revele la reponse qu'ensuite (4_generate_subtitles.py) ; 0 ou absent = aucun (OpusCV, psycho). 2 s depuis la rénovation (3 s avant : avec la voix lente, le reel avait un rythme de cours). relance_enregistrer : false -> jamais de « Enregistre la vidéo » en scène 2 (run 98 : la demande arrivait avant même le jeu).",
   "mix": {
     "conseil": 1.0
   },
@@ -30,7 +30,7 @@
     }
   ],
   "preuve_produit": false,
-  "relance_enregistrer": true,
+  "relance_enregistrer": false,
   "phrases_bannies": [
     "examen garanti",
     "réussite garantie",
@@ -55,5 +55,5 @@
       }
     ]
   },
-  "pause_reflexion_s": 3.0
+  "pause_reflexion_s": 2.0
 }

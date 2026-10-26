@@ -1,6 +1,63 @@
 {
-  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX. cartes_civique : true -> le prompt propose en plus les cartes duel, intrus, relier, definition, frise et indices (planches du plateau, assets/anim/civique.html) ; reserve aux formats de cette chaine et au theme civique_plateau. etiquette peut etre un dictionnaire {type de carte: texte, \"suite\": texte de la carte qui suit une carte a etiquette propre, \"*\": texte par defaut}. rappel : true -> revision espacee : le sujet du reel est compose des faits des derniers sujets publies par la chaine (catalog.sujet_rappel ; sujet ordinaire tant que l'historique n'en a pas assez). etiquette « {k} » : rang de la carte parmi les cartes de son type (« CHAPITRE {k} »). Cartes en plus du plateau (cartes_civique) : qcm (4 reponses, comme a l'examen), citation (phrase recopiee mot pour mot d'un fait), chapitre (moment d'un recit) et situation (mise en situation). duree_min : duree (s) en dessous de laquelle le format n'est jamais ecrit (une duree demandee plus courte est relevee). sans_relance : true -> pas de relance « enregistre » en scene 2 (elle casserait le recit ou la mise en situation). quiz : true -> l'IA peut ecrire une carte quiz (obligatoire pour un format dont la structure en demande une : sans lui, la consigne reste lettre morte et l'IA ecrit une liste). progression : \"questions\" -> le numero (« QUESTION 2/3 ») et les hexagones de progression comptent les questions (cartes quiz, qcm, duel), la reponse garde le rang de sa question.",
+  "_doc": "Formats de la chaine examen_civique : memes champs que catalog/chaines/opuscv/formats.json (voir son _doc). Tous sans capture (cartes animees), theme civique_plateau (assets/anim/civique.html : plateau de quiz, propre a la chaine). etiquette : texte de l'onglet (carnet) ou du bandeau (pop art) des cartes a la place de « LEÇON n/N » ({n}, {total}). verdicts : true -> une scene dont la voix commence par « Vrai » ou « Faux » recoit le tampon VRAI / FAUX. cartes_civique : true -> le prompt propose en plus les cartes duel, intrus, relier, definition, frise et indices (planches du plateau, assets/anim/civique.html) ; reserve aux formats de cette chaine et au theme civique_plateau. etiquette peut etre un dictionnaire {type de carte: texte, \"suite\": texte de la carte qui suit une carte a etiquette propre, \"*\": texte par defaut}. rappel : true -> revision espacee : le sujet du reel est compose des faits des derniers sujets publies par la chaine (catalog.sujet_rappel ; sujet ordinaire tant que l'historique n'en a pas assez). etiquette « {k} » : rang de la carte parmi les cartes de son type (« CHAPITRE {k} »). Cartes en plus du plateau (cartes_civique) : qcm (4 reponses, comme a l'examen), citation (phrase recopiee mot pour mot d'un fait), chapitre (moment d'un recit) et situation (mise en situation). duree_min : duree (s) en dessous de laquelle le format n'est jamais ecrit (une duree demandee plus courte est relevee). sans_relance : true -> pas de relance « enregistre » en scene 2 (elle casserait le recit ou la mise en situation). quiz : true -> l'IA peut ecrire une carte quiz (obligatoire pour un format dont la structure en demande une : sans lui, la consigne reste lettre morte et l'IA ecrit une liste). progression : \"questions\" -> le numero (« QUESTION 2/3 ») et les hexagones de progression comptent les questions (cartes quiz, qcm, duel), la reponse garde le rang de sa question. RÉNOVATION (vues bloquées très bas) : un format phare, examen_blanc « Réussirais-tu l'examen civique ? », et trois formats en complément (mise_en_situation, vrai_ou_faux, dessin_anime) ; les autres sont en sommeil. actif : false -> format en sommeil, jamais tiré automatiquement (toujours possible avec --format / la console). phare : true -> jamais écarté parce qu'il vient de passer (historique_formats) : son poids fait de lui le rendez-vous de la chaîne. carte_accroche : true -> la scène 1 a sa carte, affichée dès la première image, sans titre par-dessus (le jeu commence tout de suite). melange : n -> le sujet du reel réunit n sujets de familles différentes, comme les thèmes de l'examen (catalog.sujet_melange). entete : bandeau de la série sous l'onglet de chaque carte ({episode} = numéro de l'épisode, format à \"serie\": true). serie_titre : surtitre de la couverture (« … · ép. n »). ctas / cta_anim : phrases et écran de fin propres au format, à la place de ceux du config.json.",
   "formats": [
+    {
+      "id": "examen_blanc",
+      "nom": "Réussirais-tu l'examen civique ?",
+      "categorie": "conseil",
+      "poids": 6,
+      "phare": true,
+      "cartes": "majoritaires",
+      "cartes_civique": true,
+      "quiz": true,
+      "carte_accroche": true,
+      "melange": 3,
+      "serie": true,
+      "serie_titre": "Entraînement examen civique",
+      "entete": "EXAMEN CIVIQUE · ENTRAÎNEMENT N°{episode}",
+      "registres": [
+        "serieux"
+      ],
+      "sujets": [
+        "valeurs",
+        "institutions",
+        "histoire",
+        "droits",
+        "vie_quotidienne",
+        "geographie",
+        "culture"
+      ],
+      "themes": [
+        "civique_plateau"
+      ],
+      "duree_min": 38,
+      "sans_relance": true,
+      "progression": "questions",
+      "etiquette": {
+        "qcm": "QUESTION {n}/{total}",
+        "suite": "RÉPONSE",
+        "*": "À RETENIR"
+      },
+      "ctas": [
+        "Ton score sur trois ? Écris-le en commentaire, et abonne-toi.",
+        "Combien sur trois ? Dis-le en commentaire, et abonne-toi.",
+        "Envoie ce test à quelqu'un qui prépare l'examen civique."
+      ],
+      "cta_anim": [
+        {
+          "title": "Ton score sur 3 ?",
+          "sub": "Écris-le en commentaire",
+          "button": "S'abonner"
+        },
+        {
+          "title": "Un entraînement par jour",
+          "sub": "Pour réviser ton examen civique",
+          "button": "S'abonner"
+        }
+      ],
+      "structure": "Entraînement à l'examen civique en 3 questions : chaque question vient d'un sujet différent des FAITS (comme les thèmes de l'examen), de la plus facile à la plus piégeuse. AUCUNE scène d'accroche séparée : le jeu commence à la première image. Scène 1 : carte qcm de la question 1 (4 à 10 mots, 4 réponses de 1 à 5 mots, une seule juste d'après les faits, les trois autres plausibles) ; sa voix pose d'abord le défi en 4 à 7 mots (« 3 questions pour réviser l'examen civique. »), puis la question, lit les quatre réponses et finit par « Réfléchis. ». Scène 2 : la bonne réponse et pourquoi, en UNE phrase de 6 à 10 mots reprise des faits (carte texte, la bonne réponse en 2 à 6 mots en titre). Puis, pour les questions 2 et 3, les mêmes DEUX scènes : (a) carte qcm, la voix dit la question, les quatre réponses, « Réfléchis. » (pas « Question 2 » : l'onglet de la carte l'affiche) ; (b) la réponse en une phrase de 6 à 10 mots des faits (carte texte). La question 3 est la plus piégeuse : sa voix l'annonce en 2 à 3 mots (« La plus difficile : ») et la mauvaise réponse la plus tentante est une erreur fréquente et plausible. Exactement trois cartes qcm, donc six scènes, puis la dernière scène : CTA (le score sur 3 en commentaire). Aucune scène de transition ni de résumé, aucun fait en plus, rien à « enregistrer ». « accroche_ecran » (titre de la vidéo et de la couverture) contient les mots « examen civique » (ce que le public cherche sur TikTok et YouTube) et change d'un épisode à l'autre en citant le thème de la question la plus piégeuse ; la légende aussi contient « examen civique ».",
+      "ton": "animateur de quiz bienveillant et vif, débit naturel et dynamique, articulation nette, une courte pause avant chaque réponse"
+    },
     {
       "id": "question_revision",
       "nom": "Question de révision",
@@ -25,8 +82,9 @@
         "civique_plateau"
       ],
       "structure": "Scène 1 (accroche, sans carte) : la question posée au spectateur, au « tu ». Scène 2 : carte quiz (la question en 4 à 9 mots, 3 réponses courtes dont une seule juste, tirée des FAITS) ; la voix lit la question et les trois réponses, puis dit « Réfléchis… ». Scène 3 : la voix donne la bonne réponse et l'explique en une phrase simple (carte texte, ou chiffre si la réponse est une date ou un nombre des FAITS). Scène 4 : un deuxième fait lié pour mieux retenir (carte texte, liste ou schéma). Dernière scène : CTA qui demande d'écrire sa réponse en commentaire.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
-      "etiquette": "RÉVISION"
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
+      "etiquette": "RÉVISION",
+      "actif": false
     },
     {
       "id": "vrai_ou_faux",
@@ -49,10 +107,11 @@
       "themes": [
         "civique_plateau"
       ],
-      "structure": "Accroche qui lance le quiz (« Vrai ou faux : ... »). 2 ou 3 affirmations tirées des FAITS (une fausse au moins, fausse de façon évidente une fois corrigée) : pour chacune, une carte texte (surtitre 'Vrai ou faux ?', titre = l'affirmation, effet 'suspense' sur une seule) laisse une seconde au spectateur, puis la scène suivante COMMENCE par « Vrai ! » ou « Faux ! » (un tampon VRAI / FAUX s'affiche) et la voix l'explique simplement, sa carte montrant le fait exact. Dernière scène : CTA qui demande son score en commentaire.",
-      "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse",
+      "structure": "AUCUNE scène d'accroche séparée : la première affirmation s'affiche dès la première image. 3 affirmations tirées des FAITS (une fausse au moins, fausse de façon évidente une fois corrigée, la dernière la plus piégeuse) : pour chacune, une scène avec une carte texte (surtitre 'Vrai ou faux ?', titre = l'affirmation, effet 'suspense' sur une seule) dont la voix dit « Vrai ou faux : » puis l'affirmation, puis la scène suivante COMMENCE par « Vrai ! » ou « Faux ! » (un tampon VRAI / FAUX s'affiche) et l'explique en une phrase des faits, sa carte montrant le fait exact. La scène 1 est donc la carte de la 1re affirmation. Dernière scène : CTA qui demande son score en commentaire.",
+      "ton": "animateur de quiz bienveillant, articulation très nette, débit naturel et dynamique, petite pause avant chaque réponse",
       "etiquette": "VRAI OU FAUX ?",
-      "verdicts": true
+      "verdicts": true,
+      "carte_accroche": true
     },
     {
       "id": "cours_eclair",
@@ -79,8 +138,9 @@
         "civique_plateau"
       ],
       "structure": "Mini-cours de révision de 30 à 35 secondes, une seule notion. Scène 1 (accroche, sans carte) : la promesse (« Retiens ça pour ton examen civique »). Puis 2 ou 3 LEÇONS courtes tirées des FAITS, chacune une scène-carte d'UNE phrase de 10 mots au plus (mots simples) : varie les cartes (texte, chiffre pour une date des faits, schéma, liste ; un quiz possible à la place d'une leçon, sa réponse donnée par la voix) ; la voix dit la leçon, la carte la résume en mots clés. Avant-dernière scène (carte impact) : la phrase à retenir, en 4 à 9 mots. Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les leçons",
-      "etiquette": "LEÇON {n}/{total}"
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les leçons",
+      "etiquette": "LEÇON {n}/{total}",
+      "actif": false
     },
     {
       "id": "duel_ab",
@@ -109,8 +169,9 @@
         "*": "À RETENIR"
       },
       "structure": "Scène 1 (accroche, sans carte) : « A ou B ? » posé au spectateur, au « tu ». Scène 2 : carte duel (la question et DEUX choix tirés des FAITS, un seul est juste) ; la voix lit la question puis les deux choix, puis dit « Réfléchis. ». Scène 3 : la voix donne la bonne réponse et l'explique en une phrase simple (carte texte avec le fait exact). Scène 4 : un deuxième fait lié pour mieux retenir (carte texte ou liste). Dernière scène : CTA qui demande la réponse en commentaire.",
-      "ton": "animateur de jeu bienveillant, articulation très nette, débit lent, petite pause avant la réponse",
-      "cartes_civique": true
+      "ton": "animateur de jeu bienveillant, articulation très nette, débit naturel et dynamique, petite pause avant la réponse",
+      "cartes_civique": true,
+      "actif": false
     },
     {
       "id": "trouve_intrus",
@@ -138,8 +199,9 @@
         "*": "À RETENIR"
       },
       "structure": "Scène 1 (accroche, sans carte) : « Trouve l'intrus ! ». Scène 2 : carte intrus (4 éléments : trois viennent des FAITS et vont ensemble, un est évidemment étranger) ; la voix lit les quatre éléments puis dit « Lequel est l'intrus ? Réfléchis. ». Scène 3 : la voix donne l'intrus et dit pourquoi, avec le fait exact (carte texte). Scène 4 : un fait de plus sur les trois bons éléments (carte liste ou texte). Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
-      "cartes_civique": true
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
+      "cartes_civique": true,
+      "actif": false
     },
     {
       "id": "relie_paires",
@@ -167,8 +229,9 @@
         "*": "À RETENIR"
       },
       "structure": "Scène 1 (accroche, sans carte) : le défi, par exemple « Relie chaque date à son événement ». Scène 2 : carte relier (2 à 4 paires tirées des FAITS) ; la voix lit la consigne et les éléments de gauche et de droite sans donner les paires. Scène 3 : la voix dit chaque paire, une phrase courte par paire (carte liste des paires). Scène 4 : un fait de plus à retenir (carte texte ou impact). Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
-      "cartes_civique": true
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
+      "cartes_civique": true,
+      "actif": false
     },
     {
       "id": "mot_du_jour",
@@ -194,9 +257,10 @@
         "*": "À RETENIR"
       },
       "structure": "Scène 1 (accroche, sans carte) : « Tu connais ce mot ? ». Scène 2 : carte définition (un mot du sujet, sa définition simple tirée des FAITS) ; la voix dit le mot et sa définition. Scène 3 : un exemple de la vie en France tiré des FAITS (carte texte). Scène 4 : carte quiz (une question sur le mot, 3 réponses courtes dont une seule juste), la voix la lit puis donne la réponse. Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
       "cartes_civique": true,
-      "quiz": true
+      "quiz": true,
+      "actif": false
     },
     {
       "id": "qui_suis_je",
@@ -224,8 +288,9 @@
         "*": "À RETENIR"
       },
       "structure": "Scène 1 (accroche, sans carte) : « Qui suis-je ? Trois indices ! ». Scène 2 : carte indices (3 indices de plus en plus précis, chacun un fait, puis la réponse) ; la voix dit les trois indices un à un, avec une courte pause, puis « Tu as trouvé ? ». Scène 3 : la voix donne la réponse et la relie à l'article ou à la loi des FAITS (carte texte). Scène 4 : un fait de plus (carte liste ou texte). Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
-      "cartes_civique": true
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
+      "cartes_civique": true,
+      "actif": false
     },
     {
       "id": "frise_dates",
@@ -249,9 +314,10 @@
         "*": "À RETENIR"
       },
       "structure": "Scène 1 (accroche, sans carte) : « Retiens ces dates ! ». Scène 2 : carte frise (2 à 4 dates PRÉSENTES dans les FAITS, de la plus ancienne à la plus récente) ; la voix dit chaque date avec son événement. Scène 3 : carte quiz sur l'une des dates (3 réponses courtes dont une seule juste), la voix la lit puis donne la réponse. Scène 4 : la phrase à retenir (carte impact). Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
       "cartes_civique": true,
-      "quiz": true
+      "quiz": true,
+      "actif": false
     },
     {
       "id": "serie_flash",
@@ -282,11 +348,12 @@
         "*": "À RETENIR"
       },
       "structure": "Trois questions éclair sur le MÊME sujet, chacune en DEUX scènes. Scène 1 (accroche, sans carte) : « 3 questions éclair, ton score en commentaire ! ». Pour chaque question : (a) une scène avec une carte quiz (question de 4 à 9 mots, 3 réponses courtes dont une seule juste, tirée des FAITS) dont la voix lit la question, les trois réponses, puis dit « Réfléchis. » ; (b) une scène avec une carte texte (la bonne réponse en 2 à 6 mots) dont la voix donne la bonne réponse en une phrase des faits. Exactement trois cartes quiz, donc six scènes pour les trois questions, puis la dernière scène : CTA qui demande le score en commentaire.",
-      "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse",
+      "ton": "animateur de quiz bienveillant, articulation très nette, débit naturel et dynamique, petite pause avant chaque réponse",
       "duree_min": 40,
       "quiz": true,
       "sans_relance": true,
-      "progression": "questions"
+      "progression": "questions",
+      "actif": false
     },
     {
       "id": "histoire_racontee",
@@ -313,9 +380,10 @@
         "*": "À RETENIR"
       },
       "structure": "Une histoire vraie racontée comme un conteur, pour apprendre en la vivant. Scène 1 (accroche, sans carte) : on plonge dans le moment, au présent (« Imagine : … ») avec une date ou un lieu des FAITS, et une question qui donne envie de connaître la suite. Scènes 2, 3 (et 4) : un CHAPITRE chacune (carte chapitre, dans l'ordre des dates, « quand » = la date du fait), la voix raconte au présent ce qui se passe, un fait par chapitre, en mots simples ; chaque chapitre répond à la question laissée par le précédent (« Et ensuite ? » / « Mais… »). Scène suivante : carte qcm (4 réponses) sur l'histoire, la voix lit la question et les quatre réponses puis « Réfléchis. ». Scène suivante : la voix donne la bonne réponse avec le fait exact (carte texte). Dernière scène : CTA. Le récit n'ajoute RIEN aux faits : ni foule, ni météo, ni sentiment, ni personnage, ni parole inventés ; le suspense vient de l'ordre des faits.",
-      "ton": "conteur captivant et chaleureux, voix posée, articulation très nette, débit lent, petites pauses dramatiques entre les chapitres",
+      "ton": "conteur captivant et chaleureux, voix posée, articulation très nette, débit naturel et dynamique, petites pauses dramatiques entre les chapitres",
       "duree_min": 40,
-      "sans_relance": true
+      "sans_relance": true,
+      "actif": false
     },
     {
       "id": "citation_expliquee",
@@ -342,16 +410,17 @@
         "*": "EN CLAIR"
       },
       "structure": "Scène 1 (accroche, sans carte) : une phrase célèbre d'un texte de la France est annoncée comme une énigme (« Cette phrase est dans la Constitution. Tu la comprends ? »). Scène 2 : carte citation (la phrase recopiée MOT POUR MOT d'un fait, et sa source) ; la voix la lit lentement, en entier. Scène 3 : le mot le plus difficile de la phrase expliqué simplement (carte définition). Scène 4 : ce que la phrase veut dire dans la vie de tous les jours, avec un fait (carte texte). Scène 5 : carte quiz (3 réponses) sur la phrase, la voix la lit puis donne la réponse. Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
       "duree_min": 35,
       "sans_relance": true,
-      "quiz": true
+      "quiz": true,
+      "actif": false
     },
     {
       "id": "mise_en_situation",
       "nom": "Que fais-tu ?",
       "categorie": "conseil",
-      "poids": 3,
+      "poids": 2,
       "cartes": "majoritaires",
       "registres": [
         "serieux"
@@ -369,10 +438,11 @@
         "suite": "RÉPONSE",
         "*": "À RETENIR"
       },
-      "structure": "Une situation de la vie en France où il faut savoir quoi faire. Scène 1 (accroche, sans carte) : la situation posée au « tu », vive et concrète (« Ton voisin tombe dans l'escalier. ») sans donner la réponse. Scène 2 : carte situation (la situation au « tu », 8 à 18 mots, tirée des faits) ; la voix la décrit comme si le spectateur y était. Scène 3 : carte qcm (4 réponses courtes et plausibles, une seule juste d'après les faits) ; la voix lit les quatre réponses puis dit « Réfléchis. ». Scène 4 : la voix donne la bonne réponse et le fait qui la justifie (carte texte). Scène 5 : ce qu'il ne faut pas faire, ou un deuxième fait utile (carte liste ou texte). Dernière scène : CTA qui demande la réponse en commentaire.",
-      "ton": "animateur bienveillant qui met en situation, articulation très nette, débit lent, petite pause avant la réponse",
+      "structure": "Une situation de la vie en France où il faut savoir quoi faire (l'examen compte des mises en situation). AUCUNE scène d'accroche séparée : la situation s'affiche dès la première image. Scène 1 : carte situation (la situation au « tu », 8 à 18 mots, tirée des faits) ; la voix la décrit vivement, comme si le spectateur y était (« Ton voisin tombe dans l'escalier. »), sans donner la réponse. Scène 2 : carte qcm (4 réponses courtes et plausibles, une seule juste d'après les faits) ; la voix lit les quatre réponses puis dit « Réfléchis. ». Scène 3 : la voix donne la bonne réponse et le fait qui la justifie (carte texte). Scène 4 : ce qu'il ne faut pas faire, ou un deuxième fait utile (carte liste ou texte). Dernière scène : CTA qui demande la réponse en commentaire.",
+      "ton": "animateur bienveillant qui met en situation, articulation très nette, débit naturel et dynamique, petite pause avant la réponse",
       "duree_min": 35,
-      "sans_relance": true
+      "sans_relance": true,
+      "carte_accroche": true
     },
     {
       "id": "ne_confonds_plus",
@@ -397,8 +467,9 @@
         "*": "À RETENIR"
       },
       "structure": "Deux (ou trois) notions du sujet qu'on mélange facilement. Scène 1 (accroche, sans carte) : les deux notions face à face (« Assemblée nationale ou Sénat ? On les mélange souvent. »), sans chiffre ni statistique. Scène 2 : carte relier (2 ou 3 paires : chaque notion et ce qui la distingue, tirées des faits) ; la voix dit chaque paire. Scène 3 : l'astuce pour ne plus confondre (carte impact) : une image ou un moyen mnémotechnique qui N'AJOUTE AUCUN FAIT (il s'appuie sur les mots des faits). Scène 4 : carte duel pour vérifier (une question, les deux notions), la voix lit puis « Réfléchis. ». Scène 5 : la réponse avec le fait exact (carte texte). Dernière scène : CTA.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse",
-      "duree_min": 35
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
+      "duree_min": 35,
+      "actif": false
     },
     {
       "id": "rappel_revision",
@@ -431,11 +502,12 @@
         "*": "À RETENIR"
       },
       "structure": "Révision espacée : le reel reprend les sujets des dernières vidéos de la chaîne (les FAITS en viennent), pour ancrer ce qui a été appris. Scène 1 (accroche, sans carte) : « Tu te souviens ? 3 questions sur nos dernières révisions. ». Scènes 2, 3 et 4 : une question par sujet révisé, chacune sur un fait différent, en DEUX scènes : (a) une carte quiz, duel ou qcm (varie-les) dont la voix lit la question et les réponses puis dit « Réfléchis. » ; (b) une carte texte dont la voix donne la bonne réponse en une phrase. Avant-dernière scène : la phrase à retenir (carte impact). Dernière scène : CTA qui demande le score en commentaire.",
-      "ton": "animateur de quiz bienveillant, articulation très nette, débit lent, petite pause avant chaque réponse",
+      "ton": "animateur de quiz bienveillant, articulation très nette, débit naturel et dynamique, petite pause avant chaque réponse",
       "duree_min": 35,
       "quiz": true,
       "sans_relance": true,
-      "progression": "questions"
+      "progression": "questions",
+      "actif": false
     },
     {
       "id": "examen_mode_emploi",
@@ -459,13 +531,14 @@
         "*": "À SAVOIR"
       },
       "structure": "Comment se passe l'examen civique, d'après la page officielle (FAITS). Scène 1 (accroche, sans carte) : une question que se posent tous ceux qui le préparent (« L'examen civique, comment ça marche ? »). Scènes 2 et 3 : les chiffres clés des faits (cartes chiffre : le nombre de questions, le nombre de bonnes réponses pour réussir, la durée), un chiffre par carte. Scène 4 : les cinq thèmes des questions (carte liste). Scène 5 : une bonne nouvelle des faits (on peut le repasser autant de fois que nécessaire, la préparation peut être gratuite) en carte impact. Dernière scène : CTA. Jamais de promesse de réussite ni de conseil sur un dossier personnel.",
-      "ton": "professeur patient et chaleureux, articulation très nette, débit lent, courtes pauses entre les phrases et avant la réponse"
+      "ton": "professeur patient et chaleureux, articulation très nette, débit naturel et dynamique, courtes pauses entre les phrases et avant la réponse",
+      "actif": false
     },
     {
       "id": "dessin_anime",
       "nom": "Dessin animé : Sami prépare son examen",
       "categorie": "conseil",
-      "poids": 3,
+      "poids": 2,
       "cartes": "autorisees",
       "dessin": true,
       "serie": true,

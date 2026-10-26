@@ -1,5 +1,5 @@
 {
-  "_doc": "Accroches de la chaine examen_civique : memes champs que catalog/chaines/opuscv/hooks.json (voir son _doc). Jamais de chiffre inventé : un nombre de l'accroche vient des FAITS du sujet. tags : l'accroche n'est tiree que pour un sujet qui porte un de ces tags (recit, situation, confusion, citation : voir sujets.json). dessin : false -> jamais pour le dessin anime (« Imagine : 1789 » ne se dit pas entre deux voisins).",
+  "_doc": "Accroches de la chaine examen_civique : memes champs que catalog/chaines/opuscv/hooks.json (voir son _doc). Jamais de chiffre inventé : un nombre de l'accroche vient des FAITS du sujet. tags : l'accroche n'est tiree que pour un sujet qui porte un de ces tags (recit, situation, confusion, citation : voir sujets.json). dessin : false -> jamais pour le dessin anime (« Imagine : 1789 » ne se dit pas entre deux voisins). formats : l'accroche est réservée à ces formats, et un format qui a des accroches réservées ne prend qu'elles (examen_blanc : sa scène 1 est déjà la question 1, l'accroche n'est que le défi de 4 à 7 mots qui la précède).",
   "hooks": [
     {
       "id": "question_directe",
@@ -78,6 +78,33 @@
       "id": "detail_surprenant",
       "consigne": "Un détail vrai et surprenant, tiré des faits, dit en premier pour piquer la curiosité.",
       "exemple": "La Marseillaise a d'abord porté un autre nom."
+    },
+    {
+      "id": "defi_examen",
+      "poids": 3,
+      "formats": [
+        "examen_blanc"
+      ],
+      "consigne": "Lancer le défi au « tu », en 4 à 7 mots, juste avant la question 1 : c'est un entraînement pour l'examen civique.",
+      "exemple": "3 questions pour réviser l'examen civique."
+    },
+    {
+      "id": "sans_faute",
+      "poids": 2,
+      "formats": [
+        "examen_blanc"
+      ],
+      "consigne": "Défier le spectateur de tout trouver, en 4 à 7 mots, juste avant la question 1.",
+      "exemple": "Examen civique : vise le sans-faute."
+    },
+    {
+      "id": "pret_examen",
+      "poids": 2,
+      "formats": [
+        "examen_blanc"
+      ],
+      "consigne": "Demander au spectateur s'il est prêt, en 4 à 7 mots, juste avant la question 1 (jamais de promesse de réussite).",
+      "exemple": "Tu es prêt pour l'examen civique ?"
     }
   ]
 }

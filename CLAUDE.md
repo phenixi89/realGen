@@ -147,3 +147,9 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
   réponse à la fin de sa scène, dont la voix dit la question, les réponses et « Réfléchis. » (`question_problems`). Un format dont la
   structure demande une carte quiz a `"quiz": true` ; un format à questions compte les questions, pas les cartes
   (`"progression": "questions"`).
+- Objectif Civique, rénovation (vues bloquées très bas) : un format phare `examen_blanc` « Réussirais-tu l'examen civique ? »
+  (`"phare": true`, environ 7 reels sur 10) — 3 questions QCM de familles différentes (`"melange"`), la question dès la 1re image
+  (`"carte_accroche"`, planche `immediat=1`, aucun titre par-dessus), bandeau de série « EXAMEN CIVIQUE · ENTRAÎNEMENT N°X »
+  (`"entete"`), score en commentaire ; en complément `mise_en_situation`, `vrai_ou_faux` (eux aussi `carte_accroche`) et
+  `dessin_anime` ; les autres formats sont en sommeil (`"actif": false`, jamais supprimés). Débit naturel (plus de « débit lent »),
+  temps de réflexion 2 s, pas de relance « enregistre ». La 1re image d'un reel de la chaîne doit déjà montrer le jeu.

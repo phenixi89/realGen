@@ -5,6 +5,9 @@
   Toutes les cartes du reel y sont dessinées (catalog.gabarit_carte, famille "civique"), ainsi que l'accroche
   (scène 1) et l'écran d'appel à l'action (run_pipeline.plan_montage).
   Parametres : mode, texte (mots clés entre *...*), n, total, etiquette ({n}, {total} remplacés ; sinon « QUESTION n/N »),
+  entete (bandeau de la série sous l'onglet, ex. « EXAMEN CIVIQUE · ENTRAÎNEMENT N°12 » : format à "entete"),
+  immediat=1 (carte de la scène 1, format à "carte_accroche") : pas d'entrée en fondu, la question est là dès la 1re image,
+  les réponses et les mots arrivent en moins d'une seconde (c'est la carte qui arrête le scroll),
   verdict (VRAI | FAUX : badge hexagonal tamponné à VERDICT_AT), icone (icones.js), note, dur,
   reflexion (s : silence de la voix a la fin de la scene, 4_generate_subtitles) : quiz, duel, intrus, indices et relier y
   font leur compte a rebours et ne revelent la reponse qu'a la fin de la scene, quand la voix a fini de poser la question.
@@ -55,6 +58,9 @@
   #lab{font-family:CVTitle,sans-serif;font-size:54px;letter-spacing:.06em;color:var(--marine);background:var(--creme);padding:10px 34px 6px;
     clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 50%,calc(100% - 18px) 100%,18px 100%,0 50%)}
   #prog{display:flex;gap:14px}
+  #entete{position:absolute;left:80px;right:80px;top:270px;display:none;align-items:center;gap:18px;font-family:CVTitle,sans-serif;
+    font-size:44px;line-height:1;letter-spacing:.08em;color:var(--or);white-space:nowrap}
+  #entete i{flex:none;display:block;width:70px;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--bleu),#fff 50%,var(--rouge))}
   #prog i{display:block;width:40px;height:46px;background:rgba(255,247,234,.22);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
   #prog i.on{background:linear-gradient(135deg,var(--bleu),var(--rouge))}
   #zone{position:absolute;inset:0}
@@ -113,6 +119,7 @@
 <div id="projo"></div>
 <div id="bande"></div>
 <div id="haut"><b id="lab"></b><div id="prog"></div></div>
+<div id="entete"><i></i><span></span></div>
 <div id="zone"></div>
 <svg id="dessin" width="1080" height="1920"></svg>
 <div id="note"></div>
@@ -123,7 +130,7 @@
 <script src="sketch.js"></script>
 <script>
   const DUR = num("dur", 4);
-  const FIRST_AT = 0.3, VERDICT_AT = 0.45;
+  const IMMEDIAT = num("immediat", 0) > 0, FIRST_AT = IMMEDIAT ? 0 : 0.3, VERDICT_AT = 0.45;
   // Temps de reflexion : la reponse tombe a la fin de la scene, le compte a rebours remplit le silence de la voix.
   const REFL = Math.max(num("reflexion", 0), 0), REV_FIN = 0.45;
   const revele = (finOpts, marge) => REFL ? Math.max(finOpts + 0.6, DUR - REV_FIN) : Math.max(finOpts + 1.2, DUR - marge);
@@ -154,6 +161,13 @@
   if (mode === "accroche" || mode === "fin") document.getElementById("haut").style.display = "none";
   lab.textContent = RESUME ? "À RETENIR" : ETIQ ? ETIQ.replace("{n}", N).replace("{total}", TOTAL) : `QUESTION ${N}/${TOTAL}`;
   if (!RESUME) for (let i = 1; i <= TOTAL; i++) { const h = document.createElement("i"); if (i <= N) h.className = "on"; prog.appendChild(h); }
+  // Bandeau de la serie (format a "entete") : le rendez-vous se reconnait des la 1re image, au-dessus de la question.
+  const ENTETE = mode === "accroche" || mode === "fin" ? "" : frTypo(param("entete", "")), entete = document.getElementById("entete");
+  if (ENTETE) { entete.style.display = "flex"; entete.querySelector("span").textContent = ENTETE; }
+  function ajusterEntete() {   // polices chargees : un bandeau trop long baisse de taille pour tenir sur une ligne
+    const sp = entete.querySelector("span"), dispo = entete.clientWidth - 88;
+    if (ENTETE && sp.scrollWidth > dispo) sp.style.fontSize = `${Math.floor(44 * dispo / sp.scrollWidth)}px`;
+  }
 
   // Texte mot a mot : les mots *cles* passent en or et se soulignent en tricolore.
   function motAMot(el, txt, t0, gap) {
@@ -161,7 +175,7 @@
     (txt.match(/\*[^*]+\*[^\s*]*|[^\s*]+/g) || []).forEach((tok) => { const cle = tok.startsWith("*"), m = document.createElement("span");
       m.className = "m" + (cle ? " cle" : ""); m.textContent = cle ? tok.replace(/\*/g, "") : tok; el.appendChild(m); mots.push(m); });
     if (mots.length > 10 && parseFloat(getComputedStyle(el).fontSize) > 86) el.style.fontSize = "86px";   // ne fait que reduire
-    const g = gap ?? Math.min(0.3, Math.max(0.12, (DUR * 0.55 - t0) / Math.max(mots.length, 1)));
+    const g = gap ?? (IMMEDIAT ? 0.07 : Math.min(0.3, Math.max(0.12, (DUR * 0.55 - t0) / Math.max(mots.length, 1))));
     mots.forEach((m, i) => { const t = t0 + i * g; tl.from(m, { y: 40, opacity: 0, scale: 0.85, duration: 0.22, ease: EASE.pop }, t);
       if (m.classList.contains("cle")) tl.fromTo(m, { "--ul": 0 }, { "--ul": 1, duration: 0.3, ease: "power2.out", immediateRender: false }, t + 0.15);
       son(t, "click", { gain: 0.35 }); });
@@ -233,10 +247,10 @@
     }
   }
   function construire() {
-    tl.from("#fond", { opacity: 0, duration: 0.25 }, 0)
-      .fromTo("#alveoles", { x: 0, y: 0 }, { x: -60, y: -104, duration: Math.max(DUR, 3), ease: "none" }, 0)
-      .fromTo("#projo", { rotation: -10 }, { rotation: 10, duration: Math.max(DUR, 3), ease: "sine.inOut" }, 0)
-      .from("#haut", { y: -60, opacity: 0, duration: 0.3, ease: EASE.pop }, 0.05);
+    if (!IMMEDIAT) tl.from("#fond", { opacity: 0, duration: 0.25 }, 0).from("#haut", { y: -60, opacity: 0, duration: 0.3, ease: EASE.pop }, 0.05);
+    tl.fromTo("#alveoles", { x: 0, y: 0 }, { x: -60, y: -104, duration: Math.max(DUR, 3), ease: "none" }, 0)
+      .fromTo("#projo", { rotation: -10 }, { rotation: 10, duration: Math.max(DUR, 3), ease: "sine.inOut" }, 0);
+    if (ENTETE && !IMMEDIAT) tl.from("#entete", { x: -40, opacity: 0, duration: 0.3, ease: EASE.entree }, 0.1);
     son(0.05, "pop", { gain: 0.6 });
     flottants();
 
@@ -270,7 +284,7 @@
       tl.from(lg, { y: 50, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT + 1.0); fin = FIRST_AT + 1.6;
     } else if (mode === "quiz") {
       const q = add("abs", hl(texte), { top: "360px", fontSize: "84px", lineHeight: 1.2, right: "330px" });
-      tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
+      if (!IMMEDIAT) tl.from(q, { y: 40, opacity: 0, duration: 0.35, ease: EASE.entree }, FIRST_AT);
       // 4 reponses (carte « qcm », comme a l'examen) : capsules plus serrees, toujours au-dessus des sous-titres (y < 1500).
       const quatre = points.length >= 4, pas = quatre ? 166 : 216, haut = quatre ? 770 : 820;
       const bonne = Math.min(Math.max(Math.round(num("bonne", 1)), 1), points.length), box = add("abs", "", { top: `${haut}px` }), pods = [];
@@ -278,8 +292,8 @@
       points.slice(0, 4).forEach((pt, i) => { const p = add("pod", `<span class="hexb">${"ABCD"[i]}</span><span>${hl(pt)}</span>`,
           quatre ? { height: "140px", marginBottom: "26px", fontSize: "56px" } : {}, box); pods.push(p);
         if (quatre) Object.assign(p.querySelector(".hexb").style, { width: "100px", height: "114px", fontSize: "60px" });
-        const t = FIRST_AT + 0.6 + i * gap; tl.from(p, { x: 160, opacity: 0, duration: 0.3, ease: EASE.entree }, t); son(t, "pop"); });
-      const finOpts = FIRST_AT + 0.6 + points.length * gap, rev = revele(finOpts, 0.8);
+        const t = IMMEDIAT ? 0.15 + i * 0.15 : FIRST_AT + 0.6 + i * gap; tl.from(p, { x: 160, opacity: 0, duration: 0.3, ease: EASE.entree }, t); son(t, "pop"); });
+      const finOpts = IMMEDIAT ? 0.15 + points.length * 0.15 + 0.3 : FIRST_AT + 0.6 + points.length * gap, rev = revele(finOpts, 0.8);
       compte(880, 470, debutCompte(finOpts, rev), rev);
       pods.forEach((p, i) => { if (i === bonne - 1) {
           tl.to(p, { backgroundColor: "rgba(34,181,115,.9)", borderColor: "#7dffb8", scale: 1.04, duration: 0.25, ease: EASE.pop }, rev)
@@ -551,6 +565,7 @@
   Promise.all([FONTS_READY, window.HAND_READY, document.fonts.load("100px CVTitle"), document.fonts.load("60px CVText"), document.fonts.load("60px CVSerif")]).then(() => {
     construire();
     ajusterTuiles();
+    ajusterEntete();
     tl.to({}, { duration: 0.01 }, Math.max(DUR, fin + 0.6));
     expose(tl);
     window.SONS = SONS.filter((s) => s.t < Math.max(DUR, 0.5)).sort((a, b) => a.t - b.t);   // lus par render_js_anim.py
