@@ -113,6 +113,7 @@ Avant de commiter, relire les passages du README concernés et retirer ce qui es
 
 ## Points ouverts (décisions utilisateur en attente)
 
+- Nom définitif de la mascotte d'Objectif Civique (« Hexa », provisoire ; `assets/marques/examen_civique/mascotte*.svg`) : sa place dans les reels (intro, écran de fin, personnage du dessin animé) reste à décider.
 - Nom définitif de la chaîne `psycho` (`Dans ta tête`, provisoire) et des personnages (Théo, Jade).
 - Noms de la série dessinée d'Objectif Civique (« Sami prépare son examen » : Sami, Claire, M. Bernard), provisoires.
 

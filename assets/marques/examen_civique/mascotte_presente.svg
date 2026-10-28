@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2D5BE3"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="#EF3E4A"/></linearGradient></defs><g><g transform="rotate(-4 200 300)"><rect x="40" y="130" width="300" height="190" rx="22" fill="#14204F" stroke="#FFF7EA" stroke-width="10"/>
+  <text x="190" y="205" font-family="Anton,Impact,sans-serif" font-size="46" fill="#FFF7EA" text-anchor="middle">LA FORMATION</text>
+  <text x="190" y="268" font-family="Anton,Impact,sans-serif" font-size="58" fill="#EF3E4A" text-anchor="middle">CIVIQUE</text>
+  <rect x="90" y="285" width="200" height="8" rx="4" fill="url(#g)"/></g></g>
+  <ellipse cx="512" cy="905" rx="230" ry="26" fill="#14204F" opacity=".12"/>
+  <g stroke="#14204F" stroke-width="22" stroke-linecap="round" fill="none">
+    <path d="M430,845 L430,905 M594,845 L594,905"/>
+  </g>
+  <g fill="#14204F"><ellipse cx="410" cy="912" rx="44" ry="20"/><ellipse cx="614" cy="912" rx="44" ry="20"/></g>
+  <path d="M205,600 Q150,520 160,430" fill="none" stroke="#14204F" stroke-width="22" stroke-linecap="round"/><circle cx="160" cy="420" r="36" fill="#FFF7EA" stroke="#14204F" stroke-width="16"/><path d="M819,620 Q880,680 870,740" fill="none" stroke="#14204F" stroke-width="22" stroke-linecap="round"/><circle cx="870" cy="750" r="36" fill="#FFF7EA" stroke="#14204F" stroke-width="16"/>
+  <path d="M512,150 L822,330 L822,690 L512,870 L202,690 L202,330 Z" fill="#FFF7EA" stroke="url(#g)" stroke-width="48" stroke-linejoin="round"/>
+  <path d="M355,330 Q512,245 669,330" fill="none" stroke="#2D5BE3" stroke-width="0"/>
+  <g transform="translate(512,320)"><path d="M-62,0 L-22,40 L66,-44" fill="none" stroke="#2D5BE3" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><circle cx="66" cy="-44" r="9" fill="#EF3E4A"/></g>
+  <g fill="#14204F"><ellipse cx="420" cy="515" rx="30" ry="38"/><ellipse cx="604" cy="515" rx="30" ry="38"/></g>
+  <g fill="#fff"><circle cx="431" cy="500" r="11"/><circle cx="615" cy="500" r="11"/></g>
+  <ellipse cx="350" cy="590" rx="36" ry="22" fill="#EF3E4A" opacity=".3"/><ellipse cx="674" cy="590" rx="36" ry="22" fill="#EF3E4A" opacity=".3"/>
+  <path d="M440,590 Q512,680 584,590 Z" fill="#14204F" stroke="#14204F" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M470,615 Q512,650 554,615 Q512,632 470,615 Z" fill="#EF3E4A"/>
+  
+</svg>
