@@ -1,6 +1,6 @@
 # Reel Pipeline — OpusCV et chaînes faceless
 
-Pipeline automatique de génération de reels TikTok / Instagram / YouTube Shorts, d'abord pour OpusCV (SaaS d'optimisation de CV) :
+Pipeline automatique de génération de reels TikTok / Instagram / YouTube Shorts, d'abord pour [OpusCV](https://opuscv.tech/) (SaaS d'optimisation de CV) :
 scénario + choix d'angle (Gemini) → voix off (Gemini TTS) → démo écran (Playwright) → sous-titres (Whisper) → montage final (FFmpeg, musique + CTA mis en avant).
 Le même outil fait tourner plusieurs **chaînes** (voir « Chaînes ») : OpusCV (avec captures de l'app) et des chaînes
 faceless sans produit — `examen_civique` (révision de l'examen civique) et `psycho` (psychologie du quotidien).
